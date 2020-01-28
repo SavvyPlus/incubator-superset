@@ -44,6 +44,7 @@ export default {
         ['color_picker', 'target_color_picker'],
         ['dimension', 'color_scheme', 'label_colors'],
         ['stroke_width', 'legend_position'],
+        ['legend_format', null],
       ],
     },
     {
@@ -59,7 +60,9 @@ export default {
   controlOverrides: {
     dimension: {
       label: t('Categorical Color'),
-      description: t('Pick a dimension from which categorical colors are defined'),
+      description: t(
+        'Pick a dimension from which categorical colors are defined',
+      ),
     },
     size: {
       validators: [],

@@ -62,6 +62,7 @@ export default {
       label: t('Point Color'),
       controlSetRows: [
         ['color_picker', 'legend_position'],
+        [null, 'legend_format'],
         ['dimension', 'color_scheme', 'label_colors'],
       ],
     },
@@ -78,7 +79,9 @@ export default {
   controlOverrides: {
     dimension: {
       label: t('Categorical Color'),
-      description: t('Pick a dimension from which categorical colors are defined'),
+      description: t(
+        'Pick a dimension from which categorical colors are defined',
+      ),
     },
     size: {
       validators: [],

@@ -36,11 +36,20 @@ export default {
       controlSetRows: [
         ['pandas_aggfunc', 'pivot_margins'],
         ['number_format', 'combine_metric'],
+        ['transpose_pivot'],
       ],
     },
   ],
   controlOverrides: {
     groupby: { includeTime: true },
     columns: { includeTime: true },
+  },
+  sectionOverrides: {
+    druidTimeSeries: {
+      controlSetRows: [['granularity', 'druid_time_origin'], ['time_range']],
+    },
+    sqlaTimeSeries: {
+      controlSetRows: [['granularity_sqla', 'time_grain_sqla'], ['time_range']],
+    },
   },
 };

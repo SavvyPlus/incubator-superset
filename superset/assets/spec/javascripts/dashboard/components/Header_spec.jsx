@@ -21,6 +21,7 @@ import { shallow } from 'enzyme';
 import Header from '../../../../src/dashboard/components/Header';
 import EditableTitle from '../../../../src/components/EditableTitle';
 import FaveStar from '../../../../src/components/FaveStar';
+import PublishedStatus from '../../../../src/dashboard/components/PublishedStatus';
 import HeaderActionsDropdown from '../../../../src/dashboard/components/HeaderActionsDropdown';
 import Button from '../../../../src/components/Button';
 import UndoRedoKeylisteners from '../../../../src/dashboard/components/UndoRedoKeylisteners';
@@ -43,13 +44,14 @@ describe('Header', () => {
     fetchFaveStar: () => {},
     fetchCharts: () => {},
     saveFaveStar: () => {},
+    savePublished: () => {},
+    isPublished: () => {},
     startPeriodicRender: () => {},
     updateDashboardTitle: () => {},
     editMode: false,
     setEditMode: () => {},
     showBuilderPane: () => {},
     builderPaneType: BUILDER_PANE_TYPE.NONE,
-    toggleBuilderPane: () => {},
     updateCss: () => {},
     hasUnsavedChanges: false,
     maxUndoHistoryExceeded: false,
@@ -61,6 +63,8 @@ describe('Header', () => {
     redoLength: 0,
     setMaxUndoHistoryExceeded: () => {},
     maxUndoHistoryToast: () => {},
+    dashboardInfoChanged: () => {},
+    dashboardTitleChanged: () => {},
   };
 
   function setup(overrideProps) {
@@ -76,6 +80,11 @@ describe('Header', () => {
     it('should render the EditableTitle', () => {
       const wrapper = setup(overrideProps);
       expect(wrapper.find(EditableTitle)).toHaveLength(1);
+    });
+
+    it('should render the PublishedStatus', () => {
+      const wrapper = setup(overrideProps);
+      expect(wrapper.find(PublishedStatus)).toHaveLength(1);
     });
 
     it('should render the FaveStar', () => {
@@ -108,6 +117,11 @@ describe('Header', () => {
     it('should render the EditableTitle', () => {
       const wrapper = setup(overrideProps);
       expect(wrapper.find(EditableTitle)).toHaveLength(1);
+    });
+
+    it('should render the PublishedStatus', () => {
+      const wrapper = setup(overrideProps);
+      expect(wrapper.find(PublishedStatus)).toHaveLength(1);
     });
 
     it('should render the FaveStar', () => {
@@ -145,6 +159,11 @@ describe('Header', () => {
     it('should render the FaveStar', () => {
       const wrapper = setup(overrideProps);
       expect(wrapper.find(FaveStar)).toHaveLength(1);
+    });
+
+    it('should render the PublishedStatus', () => {
+      const wrapper = setup(overrideProps);
+      expect(wrapper.find(PublishedStatus)).toHaveLength(1);
     });
 
     it('should render the HeaderActionsDropdown', () => {

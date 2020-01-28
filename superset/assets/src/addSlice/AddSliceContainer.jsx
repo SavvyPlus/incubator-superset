@@ -25,13 +25,15 @@ import { t } from '@superset-ui/translation';
 import VizTypeControl from '../explore/components/controls/VizTypeControl';
 
 const propTypes = {
-  datasources: PropTypes.arrayOf(PropTypes.shape({
-    label: PropTypes.string.isRequired,
-    value: PropTypes.string.isRequired,
-  })).isRequired,
+  datasources: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      value: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
 };
 
-const styleSelectWidth = { width: 300 };
+const styleSelectWidth = { width: 600 };
 
 export default class AddSliceContainer extends React.PureComponent {
   constructor(props) {
@@ -50,7 +52,8 @@ export default class AddSliceContainer extends React.PureComponent {
       JSON.stringify({
         viz_type: this.state.visType,
         datasource: this.state.datasourceValue,
-      }));
+      }),
+    );
     return `/superset/explore/?form_data=${formData}`;
   }
 
@@ -83,21 +86,25 @@ export default class AddSliceContainer extends React.PureComponent {
             <div style={styleSelectWidth}>
               <Select
                 clearable={false}
-                style={styleSelectWidth}
+                ignoreAccents={false}
                 name="select-datasource"
                 onChange={this.changeDatasource}
                 options={this.props.datasources}
                 placeholder={t('Choose a datasource')}
+                style={styleSelectWidth}
                 value={this.state.datasourceValue}
-                width={200}
+                width={600}
               />
             </div>
             <p className="text-muted">
               {t(
-                'If the datasource your are looking for is not ' +
-                'available in the list, ' +
-                'follow the instructions on the how to add it on the ')}
-              <a href="https://superset.apache.org/tutorial.html">{t('Superset tutorial')}</a>
+                'If the datasource you are looking for is not ' +
+                  'available in the list, ' +
+                  'follow the instructions on the how to add it on the ',
+              )}
+              <a href="https://superset.apache.org/tutorial.html">
+                {t('Superset tutorial')}
+              </a>
             </p>
           </div>
           <br />
@@ -118,7 +125,8 @@ export default class AddSliceContainer extends React.PureComponent {
           >
             {t('Create new chart')}
           </Button>
-          <br /><br />
+          <br />
+          <br />
         </Panel>
       </div>
     );

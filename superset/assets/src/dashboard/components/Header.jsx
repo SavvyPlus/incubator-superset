@@ -26,6 +26,8 @@ import HeaderActionsDropdown from './HeaderActionsDropdown';
 import EditableTitle from '../../components/EditableTitle';
 import Button from '../../components/Button';
 import FaveStar from '../../components/FaveStar';
+import FilterScopeModal from './filterscope/FilterScopeModal';
+import PublishedStatus from './PublishedStatus';
 import UndoRedoKeylisteners from './UndoRedoKeylisteners';
 
 import { chartPropShape } from '../util/propShapes';
@@ -42,6 +44,7 @@ import {
   LOG_ACTIONS_FORCE_REFRESH_DASHBOARD,
   LOG_ACTIONS_TOGGLE_EDIT_DASHBOARD,
 } from '../../logger/LogUtils';
+import PropertiesModal from './PropertiesModal';
 
 const propTypes = {
   addSuccessToast: PropTypes.func.isRequired,
@@ -51,18 +54,19 @@ const propTypes = {
   dashboardTitle: PropTypes.string.isRequired,
   charts: PropTypes.objectOf(chartPropShape).isRequired,
   layout: PropTypes.object.isRequired,
-  filters: PropTypes.object.isRequired,
   expandedSlices: PropTypes.object.isRequired,
   css: PropTypes.string.isRequired,
   colorNamespace: PropTypes.string,
   colorScheme: PropTypes.string,
   isStarred: PropTypes.bool.isRequired,
+  isPublished: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool.isRequired,
   onSave: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
   fetchFaveStar: PropTypes.func.isRequired,
   fetchCharts: PropTypes.func.isRequired,
   saveFaveStar: PropTypes.func.isRequired,
+  savePublished: PropTypes.func.isRequired,
   startPeriodicRender: PropTypes.func.isRequired,
   updateDashboardTitle: PropTypes.func.isRequired,
   editMode: PropTypes.bool.isRequired,
@@ -83,6 +87,8 @@ const propTypes = {
   maxUndoHistoryToast: PropTypes.func.isRequired,
   refreshFrequency: PropTypes.number.isRequired,
   setRefreshFrequency: PropTypes.func.isRequired,
+  dashboardInfoChanged: PropTypes.func.isRequired,
+  dashboardTitleChanged: PropTypes.func.isRequired,
 };
 
 const defaultProps = {
@@ -100,6 +106,7 @@ class Header extends React.PureComponent {
     this.state = {
       didNotifyMaxUndoHistoryToast: false,
       emphasizeUndo: false,
+      showingPropertiesModal: false,
     };
 
     this.handleChangeText = this.handleChangeText.bind(this);
@@ -113,6 +120,8 @@ class Header extends React.PureComponent {
     this.forceRefresh = this.forceRefresh.bind(this);
     this.startPeriodicRender = this.startPeriodicRender.bind(this);
     this.overwriteDashboard = this.overwriteDashboard.bind(this);
+    this.showPropertiesModal = this.showPropertiesModal.bind(this);
+    this.hidePropertiesModal = this.hidePropertiesModal.bind(this);
   }
 
   componentDidMount() {
@@ -120,7 +129,7 @@ class Header extends React.PureComponent {
     this.props.startPeriodicRender(refreshFrequency * 1000);
   }
 
-  componentWillReceiveProps(nextProps) {
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (
       UNDO_LIMIT - nextProps.undoLength <= 0 &&
       !this.state.didNotifyMaxUndoHistoryToast
@@ -213,7 +222,6 @@ class Header extends React.PureComponent {
       css,
       colorNamespace,
       colorScheme,
-      filters,
       dashboardInfo,
       refreshFrequency,
     } = this.props;
@@ -231,7 +239,6 @@ class Header extends React.PureComponent {
       color_scheme: colorScheme,
       label_colors: labelColors,
       dashboard_title: dashboardTitle,
-      default_filters: safeStringify(filters),
       refresh_frequency: refreshFrequency,
     };
 
@@ -255,11 +262,18 @@ class Header extends React.PureComponent {
     }
   }
 
+  showPropertiesModal() {
+    this.setState({ showingPropertiesModal: true });
+  }
+
+  hidePropertiesModal() {
+    this.setState({ showingPropertiesModal: false });
+  }
+
   render() {
     const {
       dashboardTitle,
       layout,
-      filters,
       expandedSlices,
       css,
       colorNamespace,
@@ -272,6 +286,7 @@ class Header extends React.PureComponent {
       onSave,
       updateCss,
       editMode,
+      isPublished,
       builderPaneType,
       dashboardInfo,
       hasUnsavedChanges,
@@ -293,6 +308,15 @@ class Header extends React.PureComponent {
             onSaveTitle={this.handleChangeText}
             showTooltip={false}
           />
+          <span className="publish">
+            <PublishedStatus
+              dashboardId={dashboardInfo.id}
+              isPublished={isPublished}
+              savePublished={this.props.savePublished}
+              canEdit={userCanEdit}
+              canSave={userCanSaveAs}
+            />
+          </span>
           <span className="favstar">
             <FaveStar
               itemId={dashboardInfo.id}
@@ -334,7 +358,7 @@ class Header extends React.PureComponent {
                   bsSize="small"
                   onClick={this.onInsertComponentsButtonClick}
                 >
-                  {t('Insert components')}
+                  {t('Components')}
                 </Button>
               )}
 
@@ -346,6 +370,12 @@ class Header extends React.PureComponent {
                 >
                   {t('Colors')}
                 </Button>
+              )}
+
+              {editMode && (
+                <FilterScopeModal
+                  triggerNode={<Button bsSize="small">{t('Filters')}</Button>}
+                />
               )}
 
               {editMode && hasUnsavedChanges && (
@@ -389,13 +419,35 @@ class Header extends React.PureComponent {
             </Button>
           )}
 
+          {this.state.showingPropertiesModal && (
+            <PropertiesModal
+              dashboardTitle={dashboardTitle}
+              dashboardInfo={dashboardInfo}
+              show={this.state.showingPropertiesModal}
+              onHide={this.hidePropertiesModal}
+              onDashboardSave={updates => {
+                this.props.dashboardInfoChanged({
+                  slug: updates.slug,
+                  metadata: JSON.parse(updates.jsonMetadata),
+                });
+                this.props.dashboardTitleChanged(updates.title);
+                if (updates.slug) {
+                  history.pushState(
+                    { event: 'dashboard_properties_changed' },
+                    '',
+                    `/superset/dashboard/${updates.slug}/`,
+                  );
+                }
+              }}
+            />
+          )}
+
           <HeaderActionsDropdown
             addSuccessToast={this.props.addSuccessToast}
             addDangerToast={this.props.addDangerToast}
             dashboardId={dashboardInfo.id}
             dashboardTitle={dashboardTitle}
             layout={layout}
-            filters={filters}
             expandedSlices={expandedSlices}
             css={css}
             colorNamespace={colorNamespace}
@@ -412,6 +464,7 @@ class Header extends React.PureComponent {
             userCanEdit={userCanEdit}
             userCanSave={userCanSaveAs}
             isLoading={isLoading}
+            showPropertiesModal={this.showPropertiesModal}
           />
         </div>
       </div>

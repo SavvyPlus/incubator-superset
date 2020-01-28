@@ -27,14 +27,19 @@ import RefreshChartOverlay from '../components/RefreshChartOverlay';
 import StackTraceMessage from '../components/StackTraceMessage';
 import ErrorBoundary from '../components/ErrorBoundary';
 import ChartRenderer from './ChartRenderer';
-import './chart.css';
+import './chart.less';
 
 const propTypes = {
   annotationData: PropTypes.object,
   actions: PropTypes.object,
   chartId: PropTypes.number.isRequired,
   datasource: PropTypes.object.isRequired,
-  filters: PropTypes.object,
+  // original selected values for FilterBox viz
+  // so that FilterBox can pre-populate selected values
+  // only affect UI control
+  initialValues: PropTypes.object,
+  // formData contains chart's own filter parameter
+  // and merged with extra filter that current dashboard applying
   formData: PropTypes.object.isRequired,
   height: PropTypes.number,
   width: PropTypes.number,
@@ -53,13 +58,17 @@ const propTypes = {
   // dashboard callbacks
   addFilter: PropTypes.func,
   onQuery: PropTypes.func,
+  onFilterMenuOpen: PropTypes.func,
+  onFilterMenuClose: PropTypes.func,
 };
 
 const BLANK = {};
 
 const defaultProps = {
   addFilter: () => BLANK,
-  filters: BLANK,
+  onFilterMenuOpen: () => BLANK,
+  onFilterMenuClose: () => BLANK,
+  initialValues: BLANK,
   setControlValue() {},
   triggerRender: false,
 };
@@ -67,34 +76,51 @@ const defaultProps = {
 class Chart extends React.PureComponent {
   constructor(props) {
     super(props);
-    this.handleRenderContainerFailure = this.handleRenderContainerFailure.bind(this);
+    this.handleRenderContainerFailure = this.handleRenderContainerFailure.bind(
+      this,
+    );
   }
+
   componentDidMount() {
     if (this.props.triggerQuery) {
-      if (this.props.chartId > 0 && isFeatureEnabled(FeatureFlag.CLIENT_CACHE)) {
-        // Load saved chart with a GET request
-        this.props.actions.getSavedChart(
-          this.props.formData,
-          false,
-          this.props.timeout,
-          this.props.chartId,
-        );
-      } else {
-        // Create chart with POST request
-        this.props.actions.postChartFormData(
-          this.props.formData,
-          false,
-          this.props.timeout,
-          this.props.chartId,
-        );
-      }
+      this.runQuery();
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.props.triggerQuery) {
+      this.runQuery();
+    }
+  }
+
+  runQuery() {
+    if (this.props.chartId > 0 && isFeatureEnabled(FeatureFlag.CLIENT_CACHE)) {
+      // Load saved chart with a GET request
+      this.props.actions.getSavedChart(
+        this.props.formData,
+        false,
+        this.props.timeout,
+        this.props.chartId,
+      );
+    } else {
+      // Create chart with POST request
+      this.props.actions.postChartFormData(
+        this.props.formData,
+        false,
+        this.props.timeout,
+        this.props.chartId,
+      );
     }
   }
 
   handleRenderContainerFailure(error, info) {
     const { actions, chartId } = this.props;
     console.warn(error); // eslint-disable-line
-    actions.chartRenderingFailed(error.toString(), chartId, info ? info.componentStack : null);
+    actions.chartRenderingFailed(
+      error.toString(),
+      chartId,
+      info ? info.componentStack : null,
+    );
 
     actions.logEvent(LOG_ACTIONS_RENDER_CHART_CONTAINER, {
       slice_id: chartId,
@@ -113,7 +139,8 @@ class Chart extends React.PureComponent {
         message={chartAlert}
         link={queryResponse ? queryResponse.link : null}
         stackTrace={chartStackTrace}
-      />);
+      />
+    );
   }
 
   render() {
@@ -140,12 +167,14 @@ class Chart extends React.PureComponent {
       return <Alert bsStyle="warning">{errorMessage}</Alert>;
     }
     return (
-      <ErrorBoundary onError={this.handleRenderContainerFailure} showMessage={false}>
+      <ErrorBoundary
+        onError={this.handleRenderContainerFailure}
+        showMessage={false}
+      >
         <div
           className={`chart-container ${isLoading ? 'is-loading' : ''}`}
           style={containerStyles}
         >
-
           {isLoading && <Loading size={50} />}
 
           {!isLoading && !chartAlert && isFaded && (
@@ -156,9 +185,7 @@ class Chart extends React.PureComponent {
             />
           )}
           <div className={`slice_container ${isFaded ? ' faded' : ''}`}>
-            <ChartRenderer
-              {...this.props}
-            />
+            <ChartRenderer {...this.props} />
           </div>
         </div>
       </ErrorBoundary>

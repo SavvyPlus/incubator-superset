@@ -36,27 +36,31 @@ export default class OnPasteSelect extends React.Component {
     const selected = this.props.value || [];
     const existingOptions = {};
     const existing = {};
-    this.props.options.forEach((v) => {
+    this.props.options.forEach(v => {
       existingOptions[v[this.props.valueKey]] = 1;
     });
     let options = [];
-    selected.forEach((v) => {
+    selected.forEach(v => {
       options.push({ [this.props.labelKey]: v, [this.props.valueKey]: v });
       existing[v] = 1;
     });
-    options = options.concat(values
-      .filter((v) => {
-        const notExists = !existing[v];
-        existing[v] = 1;
-        return notExists && (validator ? validator({ [this.props.labelKey]: v }) : !!v);
-      })
-      .map((v) => {
-        const opt = { [this.props.labelKey]: v, [this.props.valueKey]: v };
-        if (!existingOptions[v]) {
-          this.props.options.unshift(opt);
-        }
-        return opt;
-      }),
+    options = options.concat(
+      values
+        .filter(v => {
+          const notExists = !existing[v];
+          existing[v] = 1;
+          return (
+            notExists &&
+            (validator ? validator({ [this.props.labelKey]: v }) : !!v)
+          );
+        })
+        .map(v => {
+          const opt = { [this.props.labelKey]: v, [this.props.valueKey]: v };
+          if (!existingOptions[v]) {
+            this.props.options.unshift(opt);
+          }
+          return opt;
+        }),
     );
     if (options.length) {
       if (this.props.onChange) {
@@ -66,7 +70,7 @@ export default class OnPasteSelect extends React.Component {
   }
   render() {
     const SelectComponent = this.props.selectWrap;
-    const refFunc = (ref) => {
+    const refFunc = ref => {
       if (this.props.refFunc) {
         this.props.refFunc(ref);
       }
@@ -74,17 +78,13 @@ export default class OnPasteSelect extends React.Component {
     };
     const inputProps = { onPaste: this.onPaste.bind(this) };
     return (
-      <SelectComponent
-        {...this.props}
-        ref={refFunc}
-        inputProps={inputProps}
-      />
+      <SelectComponent {...this.props} ref={refFunc} inputProps={inputProps} />
     );
   }
 }
 
 OnPasteSelect.propTypes = {
-  separator: PropTypes.string.isRequired,
+  separator: PropTypes.array.isRequired,
   selectWrap: PropTypes.func.isRequired,
   refFunc: PropTypes.func,
   onChange: PropTypes.func.isRequired,
@@ -94,9 +94,10 @@ OnPasteSelect.propTypes = {
   multi: PropTypes.bool.isRequired,
   value: PropTypes.any,
   isValidNewOption: PropTypes.func,
+  noResultsText: PropTypes.string,
 };
 OnPasteSelect.defaultProps = {
-  separator: ',',
+  separator: [',', '\n', '\t'],
   selectWrap: Select,
   valueKey: 'value',
   labelKey: 'label',

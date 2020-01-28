@@ -19,6 +19,7 @@
 import React from 'react';
 import configureStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
+import sinon from 'sinon';
 import { shallow } from 'enzyme';
 
 import getInitialState from 'src/explore/reducers/getInitialState';
@@ -36,8 +37,9 @@ describe('ExploreViewContainer', () => {
   let isFeatureEnabledMock;
 
   beforeAll(() => {
-    isFeatureEnabledMock = jest.spyOn(featureFlags, 'isFeatureEnabled')
-        .mockReturnValue(false);
+    isFeatureEnabledMock = jest
+      .spyOn(featureFlags, 'isFeatureEnabled')
+      .mockReturnValue(false);
 
     const bootstrapData = {
       common: {
@@ -58,24 +60,51 @@ describe('ExploreViewContainer', () => {
     wrapper = shallow(<ExploreViewContainer />, {
       context: { store },
       disableLifecycleMethods: true,
-    });
+    }).dive();
   });
 
   it('renders', () => {
-    expect(
-      React.isValidElement(<ExploreViewContainer />),
-    ).toBe(true);
+    expect(React.isValidElement(<ExploreViewContainer />)).toBe(true);
   });
 
   it('renders QueryAndSaveButtons', () => {
-    expect(wrapper.dive().find(QueryAndSaveBtns)).toHaveLength(1);
+    expect(wrapper.find(QueryAndSaveBtns)).toHaveLength(1);
   });
 
   it('renders ControlPanelsContainer', () => {
-    expect(wrapper.dive().find(ControlPanelsContainer)).toHaveLength(1);
+    expect(wrapper.find(ControlPanelsContainer)).toHaveLength(1);
   });
 
   it('renders ChartContainer', () => {
-    expect(wrapper.dive().find(ChartContainer)).toHaveLength(1);
+    expect(wrapper.find(ChartContainer)).toHaveLength(1);
+  });
+
+  describe('componentWillReceiveProps()', () => {
+    it('when controls change, should call resetControls', () => {
+      expect(wrapper.instance().props.controls.viz_type.value).toBe('table');
+      const resetControls = sinon.stub(
+        wrapper.instance().props.actions,
+        'resetControls',
+      );
+      const triggerQuery = sinon.stub(
+        wrapper.instance().props.actions,
+        'triggerQuery',
+      );
+
+      // triggers componentWillReceiveProps
+      wrapper.setProps({
+        controls: {
+          viz_type: {
+            value: 'bar',
+          },
+        },
+      });
+      expect(resetControls.callCount).toBe(1);
+      // exploreview container should not force chart run query
+      // it should be controlled by redux state.
+      expect(triggerQuery.callCount).toBe(0);
+      resetControls.reset();
+      triggerQuery.reset();
+    });
   });
 });

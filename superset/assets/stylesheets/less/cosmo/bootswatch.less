@@ -30,14 +30,13 @@
   }
 
   &-inverse {
-
     .badge {
-      background-color: #fff;
+      background-color: @lightest;
       color: @brand-primary;
     }
   }
 
-  b.caret {
+  .caret {
     display: inline-block;
     padding: 0 5px 18px 5px;
   }
@@ -68,8 +67,8 @@
 // Buttons ====================================================================
 
 .btn-default:hover {
-  color: #555;
-  background-color: #efefef;
+  color: @gray-dark;
+  background-color: @gray-bg;
 }
 
 .nav-tabs {
@@ -93,9 +92,9 @@
 }
 
 .caret:before {
-  font-family: "FontAwesome";
-  font-size: 10px;
-  content: "\f078";
+  font-family: 'FontAwesome';
+  font-size: @font-size-xs;
+  content: '\f078';
 }
 
 .caret:hover {
@@ -115,7 +114,7 @@ body {
 
 .text-success,
 .text-success:hover {
-  color: @brand-success;
+  color: @success;
 }
 
 .text-danger,
@@ -137,7 +136,6 @@ body {
 
 table,
 .table {
-
   .dropdown-menu a {
     text-decoration: none;
   }
@@ -146,10 +144,10 @@ table,
   .warning,
   .danger,
   .info {
-    color: #fff;
+    color: @lightest;
 
     a {
-      color: #fff;
+      color: @lightest;
     }
 
     .btn-default {
@@ -159,7 +157,6 @@ table,
 }
 
 // Forms ======================================================================
-
 
 .has-warning {
   .help-block,
@@ -230,14 +227,12 @@ table,
 // Navs =======================================================================
 
 .nav-pills {
-
   & > li > a {
-    border-radius: 2px;
+    border-radius: @border-radius-normal;
   }
 }
 
 .dropdown-menu {
-
   & > li > a:hover,
   & > li > a:focus {
     background-image: none;
@@ -278,10 +273,10 @@ table,
 }
 
 .label {
-  border-radius: 2px;
+  border-radius: @border-radius-normal;
 }
 label {
-  font-weight: normal;
+  font-weight: @font-weight-normal;
 }
 
 // Progress bars ==============================================================
@@ -290,8 +285,8 @@ label {
   height: 14px;
   .box-shadow(none);
   .progress-bar {
-    font-size: 12px;
-    line-height: 12px;
+    font-size: @font-size-s;
+    line-height: @line-height-tight;
     padding-top: 1px;
   }
 }
@@ -315,16 +310,21 @@ label {
       color: @text-color;
       padding-bottom: 5px;
       border-bottom: 1px solid @gray-light;
-      h1, h2, h3, h4, h5, h6 {
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
         margin: 10px 0 0 0;
-        font-weight: bold;
+        font-weight: @font-weight-bold;
       }
     }
     .close {
       color: @text-color;
     }
   }
-  &-primary{
+  &-primary {
     .panel-heading {
       padding: 15px 15px 0 15px;
       background-color: transparent;
@@ -333,9 +333,14 @@ label {
       color: @text-color;
       padding-bottom: 5px;
       border-bottom: 1px solid @gray-light;
-      h1, h2, h3, h4, h5, h6 {
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
         margin: 10px 0 0 0;
-        font-weight: bold;
+        font-weight: @font-weight-bold;
       }
     }
     .close {
@@ -349,7 +354,6 @@ label {
 }
 
 a.list-group-item {
-
   &-success {
     &.active {
       background-color: @state-success-bg;
@@ -400,9 +404,11 @@ a.list-group-item {
   border-top: 3px solid transparent;
 }
 
-.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
-  background-color: #fff;
-  font-weight: bold;
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  background-color: @lightest;
+  font-weight: @font-weight-bold;
   border-top: 3px solid @brand-primary;
 }
 
@@ -430,7 +436,7 @@ hr {
 
 // generate space-n classes for vertical spacing
 .space-loop(@counter) when (@counter > 0) {
-  .space-loop((@counter - 1));    // next iteration
+  .space-loop((@counter - 1)); // next iteration
   .space-@{counter} {
     margin-bottom: (10px * @counter); // code for each iteration
   }
@@ -440,4 +446,3 @@ hr {
 a {
   cursor: pointer;
 }
-

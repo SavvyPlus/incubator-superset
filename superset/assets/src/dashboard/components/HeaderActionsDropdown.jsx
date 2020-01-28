@@ -29,6 +29,7 @@ import injectCustomCss from '../util/injectCustomCss';
 import { SAVE_TYPE_NEWDASHBOARD } from '../util/constants';
 import URLShortLinkModal from '../../components/URLShortLinkModal';
 import getDashboardUrl from '../util/getDashboardUrl';
+import { getActiveFilters } from '../util/activeDashboardFilters';
 
 const propTypes = {
   addSuccessToast: PropTypes.func.isRequired,
@@ -50,9 +51,9 @@ const propTypes = {
   userCanSave: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool.isRequired,
   layout: PropTypes.object.isRequired,
-  filters: PropTypes.object.isRequired,
   expandedSlices: PropTypes.object.isRequired,
   onSave: PropTypes.func.isRequired,
+  showPropertiesModal: PropTypes.func.isRequired,
 };
 
 const defaultProps = {
@@ -76,7 +77,7 @@ class HeaderActionsDropdown extends React.PureComponent {
     this.changeRefreshInterval = this.changeRefreshInterval.bind(this);
   }
 
-  componentWillMount() {
+  UNSAFE_componentWillMount() {
     injectCustomCss(this.state.css);
 
     SupersetClient.get({ endpoint: '/csstemplateasyncmodelview/api/read' })
@@ -103,8 +104,8 @@ class HeaderActionsDropdown extends React.PureComponent {
     this.props.updateCss(css);
   }
 
-  changeRefreshInterval(refreshInterval) {
-    this.props.setRefreshFrequency(refreshInterval);
+  changeRefreshInterval(refreshInterval, isPersistent) {
+    this.props.setRefreshFrequency(refreshInterval, isPersistent);
     this.props.startPeriodicRender(refreshInterval * 1000);
   }
 
@@ -120,7 +121,6 @@ class HeaderActionsDropdown extends React.PureComponent {
       colorScheme,
       hasUnsavedChanges,
       layout,
-      filters,
       expandedSlices,
       onSave,
       userCanEdit,
@@ -148,7 +148,6 @@ class HeaderActionsDropdown extends React.PureComponent {
             dashboardTitle={dashboardTitle}
             saveType={SAVE_TYPE_NEWDASHBOARD}
             layout={layout}
-            filters={filters}
             expandedSlices={expandedSlices}
             refreshFrequency={refreshFrequency}
             css={css}
@@ -177,23 +176,30 @@ class HeaderActionsDropdown extends React.PureComponent {
         <MenuItem onClick={forceRefreshAllCharts} disabled={isLoading}>
           {t('Force refresh dashboard')}
         </MenuItem>
+
+        <RefreshIntervalModal
+          refreshFrequency={refreshFrequency}
+          onChange={this.changeRefreshInterval}
+          editMode={editMode}
+          triggerNode={
+            <span>
+              {editMode
+                ? t('Set auto-refresh interval')
+                : t('Auto-refresh dashboard')}
+            </span>
+          }
+        />
+
         {editMode && (
-          <RefreshIntervalModal
-            refreshFrequency={refreshFrequency}
-            onChange={this.changeRefreshInterval}
-            triggerNode={<span>{t('Set auto-refresh interval')}</span>}
-          />
-        )}
-        {editMode && (
-          <MenuItem target="_blank" href={`/dashboard/edit/${dashboardId}`}>
-            {t('Edit dashboard metadata')}
+          <MenuItem onClick={this.props.showPropertiesModal}>
+            {t('Edit dashboard properties')}
           </MenuItem>
         )}
 
         <URLShortLinkModal
           url={getDashboardUrl(
             window.location.pathname,
-            this.props.filters,
+            getActiveFilters(),
             window.location.hash,
           )}
           emailSubject={emailSubject}
