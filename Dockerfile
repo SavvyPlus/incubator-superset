@@ -67,7 +67,8 @@ ENV LANG=C.UTF-8 \
     FLASK_APP="superset.app:create_app()" \
     PYTHONPATH="/app/pythonpath" \
     SUPERSET_HOME="/app/superset_home" \
-    SUPERSET_PORT=8088
+    SUPERSET_PORT=8088 \
+    SUPERSET_MYSQL=${SUPERSET_MYSQL}
 
 RUN useradd --user-group --no-create-home --no-log-init --shell /bin/bash superset \
         && mkdir -p ${SUPERSET_HOME} ${PYTHONPATH} \

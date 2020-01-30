@@ -21,6 +21,7 @@ if [ "${#}" -ne 0 ]; then
     exec "${@}"
 else
     gunicorn \
+        -e SUPERSET_MYSQL=${SUPERSET_MYSQL} \
         --bind  "0.0.0.0:${SUPERSET_PORT}" \
         --access-logfile '-' \
         --error-logfile '-' \
