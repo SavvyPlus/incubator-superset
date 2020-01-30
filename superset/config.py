@@ -314,7 +314,13 @@ IMG_UPLOAD_URL = "/static/uploads/"
 # IMG_SIZE = (300, 200, True)
 
 CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24
-CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
+# CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
+CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'redis',
+    'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
+    'CACHE_KEY_PREFIX': 'superset_results',
+    'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+}
 TABLE_NAMES_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
 # CORS Options
@@ -513,6 +519,11 @@ SQLLAB_DEFAULT_DBID = None
 # The MAX duration (in seconds) a query can run for before being killed
 # by celery.
 SQLLAB_ASYNC_TIME_LIMIT_SEC = 60 * 60 * 6
+
+# On Redis
+from werkzeug.contrib.cache import RedisCache  # noqa
+RESULTS_BACKEND = RedisCache(
+    host='localhost', port=6379, key_prefix='superset_results')
 
 # Some databases support running EXPLAIN queries that allow users to estimate
 # query costs before they run. These EXPLAIN queries should have a small
