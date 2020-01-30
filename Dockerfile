@@ -61,6 +61,7 @@ RUN cd /app/superset/assets \
 ARG PY_VER=3.6.9
 FROM python:${PY_VER} AS lean
 
+ARG SUPERSET_MYSQL
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     FLASK_ENV=production \
