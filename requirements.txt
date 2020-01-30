@@ -83,3 +83,11 @@ werkzeug==0.16.0          # via flask, flask-jwt-extended
 wtforms-json==0.3.3
 wtforms==2.2.1            # via flask-wtf, wtforms-json
 zipp==2.0.0               # via importlib-metadata
+Flask-Split==0.4.0
+sentry-sdk==0.13.5
+sendgrid==6.1.0
+stripe==2.37.2
+PyAthenaJDBC==2.0.5
+mysqlclient==1.4.6
+Cython==0.29.14
+pymssql==2.1.4
