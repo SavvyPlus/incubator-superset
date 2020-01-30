@@ -128,7 +128,8 @@ SECRET_KEY = (
 
 # The SQLAlchemy connection string.
 # SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "superset.db")
-SQLALCHEMY_DATABASE_URI = 'mysql://root:' + os.environ["TEST_MYSQL_PASSWORD"] + '@localhost:3306/model_reporting'
+# SQLALCHEMY_DATABASE_URI = 'mysql://root:' + os.environ["TEST_MYSQL_PASSWORD"] + '@localhost:3306/model_reporting'
+SQLALCHEMY_DATABASE_URI = os.environ["SUPERSET_MYSQL"]
 # SQLALCHEMY_DATABASE_URI = 'postgresql://root:password@localhost/myapp'
 
 # In order to hook up a custom password store for all SQLACHEMY connections
@@ -171,8 +172,9 @@ PROXY_FIX_CONFIG = {"x_for": 1, "x_proto": 1, "x_host": 1, "x_port": 1, "x_prefi
 APP_NAME = "Superset"
 
 # Uncomment to setup an App icon
-APP_ICON = "/static/assets/images/superset-logo@2x.png"
-APP_ICON_WIDTH = 126
+# APP_ICON = "/static/assets/images/superset-logo@2x.png"
+APP_ICON = "/static/assets/images/empower-logo.png"
+APP_ICON_WIDTH = 106
 
 # Uncomment to specify where clicking the logo would take the user
 # e.g. setting it to '/welcome' would take the user to '/superset/welcome'

@@ -17,6 +17,8 @@
 #
 set -eo pipefail
 
+export SUPERSET_MYSQL=${SUPERSET_MYSQL}
+
 if [ "${#}" -ne 0 ]; then
     exec "${@}"
 else

@@ -61,13 +61,15 @@ RUN cd /app/superset/assets \
 ARG PY_VER=3.6.9
 FROM python:${PY_VER} AS lean
 
+ARG SUPERSET_MYSQL
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     FLASK_ENV=production \
     FLASK_APP="superset.app:create_app()" \
     PYTHONPATH="/app/pythonpath" \
     SUPERSET_HOME="/app/superset_home" \
-    SUPERSET_PORT=8080
+    SUPERSET_PORT=8088 \
+    SUPERSET_MYSQL=${SUPERSET_MYSQL}
 
 RUN useradd --user-group --no-create-home --no-log-init --shell /bin/bash superset \
         && mkdir -p ${SUPERSET_HOME} ${PYTHONPATH} \
