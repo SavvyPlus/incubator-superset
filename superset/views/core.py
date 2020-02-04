@@ -985,8 +985,8 @@ class SolarBIBillingView(ModelView):
                     "plan_name": old_plan.plan_name,
                     "new_plan_name": new_plan.plan_name,
                     "num_request": old_count + new_plan.num_request - old_plan.num_request,
-                    "end_date": (date.today() + timedelta(30)).isoformat()
-                    # datetime.fromtimestamp(new_sub['current_period_end'])
+                    # "end_date": (date.today() + timedelta(30)).isoformat()
+                    "end_date": str(datetime.fromtimestamp(new_sub['current_period_end']))
                 }
                 template_id = 'd-58fa993811e2490aac30a2acc047e08e'
 
@@ -1005,8 +1005,8 @@ class SolarBIBillingView(ModelView):
                             stripe.Subscription.delete(sub['id'])
                 # Create new plan with trial end at beginning of next period
                 new_sub = stripe.Subscription.create(customer=team.stripe_user_id, trial_end=period_end, items=[{
-                    'plan':new_plan.stripe_id,
-                    'quantity':'1',
+                    'plan': new_plan.stripe_id,
+                    'quantity': '1',
                 }])
                 return_subscription_id = old_plan.stripe_id
 
