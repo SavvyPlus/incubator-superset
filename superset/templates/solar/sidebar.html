@@ -23,7 +23,7 @@
 {% set logo_target_path = appbuilder.app.config.get('LOGO_TARGET_PATH') or '/profile/{}/'.format(current_user.username) %}
 {% set current_user_role = appbuilder.sm.get_role_in_team(current_user, session['team_id']).name %}
 {% set team_ids = appbuilder.sm.get_teams_for_user(current_user.id) %}
-<link href="{{url_for('static',filename='assets/stylesheets/solarbi.less')}}?v=2.8" rel="stylesheet">
+<link href="{{url_for('static',filename='assets/stylesheets/solarbi.less')}}?v=2.9" rel="stylesheet">
 
 
 <!-- Sidebar -->

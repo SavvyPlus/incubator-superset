@@ -637,7 +637,7 @@ class ExportModal extends React.Component {
                         <span className={classes.dateLabel}>Start</span>
                         <MuiPickersUtilsProvider utils={DateFnsUtils}>
                           <KeyboardDatePicker
-                            disableToolbar
+                            // disableToolbar
                             variant="inline"
                             format="dd/MM/yyyy"
                             id="date-picker-inline"
@@ -677,7 +677,8 @@ class ExportModal extends React.Component {
                         <span className={classes.dateLabel}>End</span>
                         <MuiPickersUtilsProvider utils={DateFnsUtils}>
                           <KeyboardDatePicker
-                            disableToolbar
+                            // disableToolbar
+                            animateYearScrolling
                             variant="inline"
                             format="dd/MM/yyyy"
                             id="date-picker-inline"

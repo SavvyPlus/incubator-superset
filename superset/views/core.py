@@ -935,7 +935,7 @@ class SolarBIBillingView(ModelView):
             new_plan = self.appbuilder.get_session.query(Plan).filter_by(stripe_id=plan_stripe_id).first()
 
             current_subscription = stripe.Subscription.retrieve(team_sub.stripe_sub_id)
-            #If upgrade plan, take effect immediately
+            # If upgrade plan, take effect immediately
             if new_plan.id > old_plan.id:
                 logging.info(f'Upgrading team {team.team_name} from {old_plan.stripe_id} to {new_plan.stripe_id}')
                 old_count = team_sub.remain_count
@@ -952,8 +952,8 @@ class SolarBIBillingView(ModelView):
                                                          'plan': plan_stripe_id}])
 
                 # If upgrading from paid plan to higher paid plan, cannot trigger payment succeeded event as it will be
-                # on next billing cycle. Since the customer has successfully paid before, assume the card is still valid,
-                # upgrade plan immediately
+                # on next billing cycle. Since the customer has successfully paid before, assume the card is still
+                # valid, upgrade plan immediately
                 if old_plan.id != 1:
                     logging.info('Customer paid before, upgrade immediately, prorate to next billing cycle')
                     team_sub.remain_count = old_count + new_plan.num_request - old_plan.num_request
@@ -961,20 +961,19 @@ class SolarBIBillingView(ModelView):
 
                     return_subscription_id = new_plan.stripe_id
 
-                # Otherwise if upgrade from free to paid, then will trigger payment event, wait for event and let webhook
-                # upgrade the plan
+                # Otherwise if upgrade from free to paid, then will trigger payment event, wait for event and let
+                # webhook upgrade the plan
                 else:
                     logging.info('Customer new to paid plan, will upgrade after payment succeeded')
                     return_subscription_id = old_plan.stripe_id
 
                 # In case customer has downgrade before and want to upgrade again
                 sub_list = stripe.Subscription.list(customer=team.stripe_user_id)
-                if len(sub_list['data']) >=2:
+                if len(sub_list['data']) >= 2:
                     logging.info(f'Team {team.team_name} has downgraded before')
                     for sub in sub_list['data']:
                         if sub['id'] != current_subscription.stripe_id:
                             stripe.Subscription.delete(sub['id'])
-
 
                 # log to mixpanel
                 log_to_mp(g.user, team.team_name, 'upgrade plan', {
@@ -983,7 +982,12 @@ class SolarBIBillingView(ModelView):
                 })
 
                 message = {
-                    "new_plan_name":new_plan.plan_name
+                    "first_name": g.user.first_name,
+                    "plan_name": old_plan.plan_name,
+                    "new_plan_name": new_plan.plan_name,
+                    "num_request": old_count + new_plan.num_request - old_plan.num_request,
+                    # "end_date": (date.today() + timedelta(30)).isoformat()
+                    "end_date": str(datetime.fromtimestamp(new_sub['current_period_end']))
                 }
                 template_id = 'd-58fa993811e2490aac30a2acc047e08e'
 
@@ -1002,8 +1006,8 @@ class SolarBIBillingView(ModelView):
                             stripe.Subscription.delete(sub['id'])
                 # Create new plan with trial end at beginning of next period
                 new_sub = stripe.Subscription.create(customer=team.stripe_user_id, trial_end=period_end, items=[{
-                    'plan':new_plan.stripe_id,
-                    'quantity':'1',
+                    'plan': new_plan.stripe_id,
+                    'quantity': '1',
                 }])
                 return_subscription_id = old_plan.stripe_id
 
@@ -1013,7 +1017,9 @@ class SolarBIBillingView(ModelView):
                     'new plan': new_plan.plan_name,
                 })
                 message = {
-                    "new_plan_name": new_plan.plan_name
+                    "first_name": g.user.first_name,
+                    "plan_name": old_plan.plan_name,
+                    "new_plan_name": new_plan.plan_name,
                 }
                 template_id = 'd-81ed56fd6c924e3b8337c3cce9fbd17b'
 
