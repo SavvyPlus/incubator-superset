@@ -965,7 +965,8 @@ class SolarBIBillingView(ModelView):
                 # webhook upgrade the plan
                 else:
                     logging.info('Customer new to paid plan, will upgrade after payment succeeded')
-                    return_subscription_id = old_plan.stripe_id
+                    # TODO: figure out better solution for updating from free to paid
+                    return_subscription_id = new_plan.stripe_id
 
                 # In case customer has downgrade before and want to upgrade again
                 sub_list = stripe.Subscription.list(customer=team.stripe_user_id)
