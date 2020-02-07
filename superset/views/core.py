@@ -1047,26 +1047,6 @@ class Superset(BaseSupersetView):
 
     @api
     @has_access_api
-    @expose("/checkbox/<model_view>/<id_>/<attr>/<value>", methods=["GET"])
-    def checkbox(self, model_view, id_, attr, value):
-        """endpoint for checking/unchecking any boolean in a sqla model"""
-        modelview_to_model = {
-            "{}ColumnInlineView".format(name.capitalize()): source.column_class
-            for name, source in ConnectorRegistry.sources.items()
-        }
-        model = modelview_to_model[model_view]
-        col = db.session.query(model).get(id_)
-        checked = value == "true"
-        if col:
-            setattr(col, attr, checked)
-            if checked:
-                metrics = col.get_metrics().values()
-                col.datasource.add_missing_metrics(metrics)
-            db.session.commit()
-        return json_success('"OK"')
-
-    @api
-    @has_access_api
     @expose("/schemas/<db_id>/")
     @expose("/schemas/<db_id>/<force_refresh>/")
     def schemas(self, db_id, force_refresh="false"):
@@ -1363,7 +1343,7 @@ class Superset(BaseSupersetView):
         except Exception as e:
             logging.exception(e)
             return json_error_response(
-                "Connection failed!\n\n" "The error message returned was:\n{}".format(e)
+                "Connection failed!\n\n" f"The error message returned was:\n{e}", 400
             )
 
     @api
@@ -2502,10 +2482,15 @@ class Superset(BaseSupersetView):
         :returns: Response with list of sql query dicts
         """
         query = db.session.query(Query)
-        if security_manager.can_only_access_owned_queries():
-            search_user_id = g.user.get_user_id()
-        else:
+        if security_manager.can_access_all_queries():
             search_user_id = request.args.get("user_id")
+        elif (
+            request.args.get("user_id") is not None
+            and request.args.get("user_id") != g.user.get_user_id()
+        ):
+            return Response(status=403, mimetype="application/json")
+        else:
+            search_user_id = g.user.get_user_id()
         database_id = request.args.get("database_id")
         search_text = request.args.get("search_text")
         status = request.args.get("status")
@@ -2711,11 +2696,11 @@ class Superset(BaseSupersetView):
                 database, schemas_allowed, False
             )
             return self.json_response(schemas_allowed_processed)
-        except Exception:
+        except Exception as e:
+            self.logger.exception(e)
             return json_error_response(
                 "Failed to fetch schemas allowed for csv upload in this database! "
-                "Please contact your Superset Admin!",
-                stacktrace=utils.get_stacktrace(),
+                "Please contact your Superset Admin!"
             )
 
 

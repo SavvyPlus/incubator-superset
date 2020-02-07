@@ -16,12 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-.dashboard-list-view {
-  .actions {
-    font-size: 20px;
+const stopPeriodicRender = refreshTimer => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
   }
+};
 
-  .action-button {
-    margin: 0 8px;
+export default function setPeriodicRunner({
+  interval = 0,
+  periodicRender,
+  refreshTimer,
+}) {
+  stopPeriodicRender(refreshTimer);
+
+  if (interval > 0) {
+    return setInterval(periodicRender, interval);
   }
+  return 0;
 }

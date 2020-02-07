@@ -244,6 +244,7 @@ class CoreTests(SupersetTestCase):
             "metric": "sum__value",
             "row_limit": 5000,
             "slice_id": slice_id,
+            "time_range_endpoints": ["inclusive", "exclusive"],
         }
         # Changing name and save as a new slice
         resp = self.client.post(
@@ -265,6 +266,7 @@ class CoreTests(SupersetTestCase):
             "row_limit": 5000,
             "slice_id": new_slice_id,
             "time_range": "now",
+            "time_range_endpoints": ["inclusive", "exclusive"],
         }
         # Setting the name back to its original name by overwriting new slice
         self.client.post(
@@ -415,6 +417,26 @@ class CoreTests(SupersetTestCase):
         )
         assert response.status_code == 200
         assert response.headers["Content-Type"] == "application/json"
+
+    def test_testconn_failed_conn(self, username="admin"):
+        self.login(username=username)
+
+        data = json.dumps(
+            {"uri": "broken://url", "name": "examples", "impersonate_user": False}
+        )
+        response = self.client.post(
+            "/superset/testconn", data=data, content_type="application/json"
+        )
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/json"
+        response_body = json.loads(response.data.decode("utf-8"))
+        expected_body = {
+            "error": "Connection failed!\n\nThe error message returned was:\nCan't load plugin: sqlalchemy.dialects:broken"
+        }
+        assert response_body == expected_body, "%s != %s" % (
+            response_body,
+            expected_body,
+        )
 
     def test_custom_password_store(self):
         database = utils.get_example_database()
