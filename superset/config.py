@@ -39,6 +39,9 @@ from superset.typing import CacheConfig
 from superset.utils.log import DBEventLogger
 from superset.utils.logging_configurator import DefaultLoggingConfigurator
 
+logger = logging.getLogger(__name__)
+
+
 # Realtime stats logger, a StatsD implementation exists
 STATS_LOGGER = DummyStatsLogger()
 EVENT_LOGGER = DBEventLogger()
@@ -54,9 +57,8 @@ else:
 # ---------------------------------------------------------
 # Superset specific config
 # ---------------------------------------------------------
-PACKAGE_DIR = os.path.join(BASE_DIR, "static", "assets")
-VERSION_INFO_FILE = os.path.join(PACKAGE_DIR, "version_info.json")
-PACKAGE_JSON_FILE = os.path.join(BASE_DIR, "assets", "package.json")
+VERSION_INFO_FILE = os.path.join(BASE_DIR, "static", "version_info.json")
+PACKAGE_JSON_FILE = os.path.join(BASE_DIR, "static", "assets", "package.json")
 
 # Multiple favicons can be specified here. The "href" property
 # is mandatory, but "sizes," "type," and "rel" are optional.
@@ -316,13 +318,13 @@ IMG_UPLOAD_URL = "/static/uploads/"
 # IMG_SIZE = (300, 200, True)
 
 CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24
-CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
-# CACHE_CONFIG: CacheConfig = {
-#     'CACHE_TYPE': 'redis',
-#     'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
-#     'CACHE_KEY_PREFIX': 'superset_results',
-#     'CACHE_REDIS_URL': 'redis://redis:6379/0'
-# }
+# CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
+CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'redis',
+    'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
+    'CACHE_KEY_PREFIX': 'superset_results',
+    'CACHE_REDIS_URL': 'redis://redis:6379/0'
+}
 TABLE_NAMES_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
 # CORS Options
@@ -786,7 +788,7 @@ if CONFIG_PATH_ENV_VAR in os.environ:
 
         print(f"Loaded your LOCAL configuration at [{cfg_path}]")
     except Exception:
-        logging.exception(
+        logger.exception(
             f"Failed to import config for {CONFIG_PATH_ENV_VAR}={cfg_path}"
         )
         raise
@@ -797,5 +799,5 @@ elif importlib.util.find_spec("superset_config"):
 
         print(f"Loaded your LOCAL configuration at [{superset_config.__file__}]")
     except Exception:
-        logging.exception("Found but failed to import local superset_config")
+        logger.exception("Found but failed to import local superset_config")
         raise
