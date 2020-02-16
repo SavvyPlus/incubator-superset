@@ -54,6 +54,8 @@ from superset.views.database.views import DatabaseView
 
 from .base_tests import SupersetTestCase
 
+logger = logging.getLogger(__name__)
+
 
 class CoreTests(SupersetTestCase):
     def __init__(self, *args, **kwargs):
@@ -321,7 +323,7 @@ class CoreTests(SupersetTestCase):
                 (slc.slice_name, "explore_json", slc.explore_json_url),
             ]
         for name, method, url in urls:
-            logging.info(f"[{name}]/[{method}]: {url}")
+            logger.info(f"[{name}]/[{method}]: {url}")
             print(f"[{name}]/[{method}]: {url}")
             resp = self.client.get(url)
             self.assertEqual(resp.status_code, 200)
@@ -857,6 +859,15 @@ class CoreTests(SupersetTestCase):
         examples_db = utils.get_example_database()
         resp = self.get_resp(f"/superset/select_star/{examples_db.id}/birth_names")
         self.assertIn("gender", resp)
+
+    def test_get_select_star_not_allowed(self):
+        """
+            Database API: Test get select star not allowed
+        """
+        self.login(username="gamma")
+        example_db = utils.get_example_database()
+        resp = self.client.get(f"/superset/select_star/{example_db.id}/birth_names")
+        self.assertEqual(resp.status_code, 404)
 
     @mock.patch("superset.views.core.results_backend_use_msgpack", False)
     @mock.patch("superset.views.core.results_backend")

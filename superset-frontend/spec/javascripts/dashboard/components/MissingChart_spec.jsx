@@ -16,32 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import PropTypes from 'prop-types';
 import React from 'react';
-import { t } from '@superset-ui/translation';
+import { shallow } from 'enzyme';
 
-import Loading from '../../components/Loading';
+import MissingChart from '../../../../src/dashboard/components/MissingChart';
 
-const propTypes = {
-  height: PropTypes.number.isRequired,
-};
+describe('MissingChart', () => {
+  function setup(overrideProps) {
+    const wrapper = shallow(<MissingChart height={100} {...overrideProps} />);
+    return wrapper;
+  }
 
-export default function MissingChart({ height }) {
-  return (
-    <div className="missing-chart-container" style={{ height: height + 20 }}>
-      <div className="loading-container">
-        <Loading />
-      </div>
-      <div className="missing-chart-body">
-        {t(
-          'There is no chart definition associated with this component, could it have been deleted?',
-        )}
-        <br />
-        <br />
-        {t('Delete this container and save to remove this message.')}
-      </div>
-    </div>
-  );
-}
+  it('renders a .missing-chart-container', () => {
+    const wrapper = setup();
+    expect(wrapper.find('.missing-chart-container')).toHaveLength(1);
+  });
 
-MissingChart.propTypes = propTypes;
+  it('renders a .missing-chart-body', () => {
+    const wrapper = setup();
+    expect(wrapper.find('.missing-chart-body')).toHaveLength(1);
+  });
+});
