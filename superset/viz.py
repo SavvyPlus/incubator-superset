@@ -878,7 +878,7 @@ class BoxPlotViz(NVD3Viz):
     viz_type = "box_plot"
     verbose_name = _("Box Plot")
     sort_series = False
-    is_timeseries = True
+    is_timeseries = False
 
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " - "
@@ -950,6 +950,7 @@ class BoxPlotViz(NVD3Viz):
             return set(above.tolist() + below.tolist())
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
+        # df = df.agg(aggregate)
         df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
