@@ -280,7 +280,8 @@ class BaseViz:
             groupby.remove(DTTM_ALIAS)
             is_timeseries = True
 
-        granularity = form_data.get("granularity") or form_data.get("granularity_sqla")
+        # granularity = form_data.get("granularity") or form_data.get("granularity_sqla")
+        granularity = None
         limit = int(form_data.get("limit") or 0)
         timeseries_limit_metric = form_data.get("timeseries_limit_metric")
         row_limit = int(form_data.get("row_limit") or config["ROW_LIMIT"])
@@ -288,13 +289,14 @@ class BaseViz:
         # default order direction
         order_desc = form_data.get("order_desc", True)
 
-        since, until = utils.get_since_until(
-            relative_start=relative_start,
-            relative_end=relative_end,
-            time_range=form_data.get("time_range"),
-            since=form_data.get("since"),
-            until=form_data.get("until"),
-        )
+        # since, until = utils.get_since_until(
+        #     relative_start=relative_start,
+        #     relative_end=relative_end,
+        #     time_range=form_data.get("time_range"),
+        #     since=form_data.get("since"),
+        #     until=form_data.get("until"),
+        # )
+        since, until = None, None
         time_shift = form_data.get("time_shift", "")
         self.time_shift = utils.parse_past_timedelta(time_shift)
         from_dttm = None if since is None else (since - self.time_shift)
@@ -895,7 +897,7 @@ class BoxPlotViz(NVD3Viz):
             for label, box in boxes.items():
                 if len(self.form_data.get("metrics")) > 1:
                     # need to render data labels with metrics
-                    chart_label = label_sep.join([index_value, label])
+                    chart_label = label_sep.join([str(index_value), label])
                 else:
                     chart_label = index_value
                 chart_data.append({"label": chart_label, "values": box})
@@ -951,8 +953,8 @@ class BoxPlotViz(NVD3Viz):
             return set(above.tolist() + below.tolist())
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
-        # df = df.agg(aggregate)
-        df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        # df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        df = df.groupby(['Year']).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 
