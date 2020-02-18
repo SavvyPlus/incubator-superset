@@ -225,6 +225,7 @@ class ChartRenderer extends React.Component {
       formData,
       queryResponse,
     } = this.props;
+    console.log(this.props);
 
     return (
       <>

@@ -33,5 +33,10 @@ export default {
         ['whisker_options', 'x_ticks_layout'],
       ],
     },
+    {
+      label: t('Empower'),
+      expanded: true,
+      controlSetRows: [['quarter']],
+    },
   ],
 };
