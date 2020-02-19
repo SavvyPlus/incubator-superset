@@ -1107,7 +1107,7 @@ export const controls = {
 
   group_type: {
     type: 'SelectControl',
-    freeForm: true,
+    freeForm: false,
     label: t('Group type'),
     validators: [],
     choices: formatSelectOptions([
@@ -1120,7 +1120,7 @@ export const controls = {
 
   cal_year: {
     type: 'SelectControl',
-    freeForm: true,
+    freeForm: false,
     label: t('Calendar year'),
     validators: [],
     choices: formatSelectOptions(['2017', '2018', '2019', '2020']),
@@ -1129,11 +1129,20 @@ export const controls = {
 
   quarter: {
     type: 'SelectControl',
-    freeForm: true,
+    freeForm: false,
     label: t('Quarter'),
     validators: [],
     choices: formatSelectOptions(['Q1', 'Q2', 'Q3', 'Q4']),
     description: t('Select the quarter'),
+  },
+
+  hot_days: {
+    type: 'SelectControl',
+    freeForm: true,
+    label: t('Hot Days'),
+    validators: [v.integer],
+    choices: formatSelectOptions([0, 5, 10, 25, 50]),
+    description: t('Select the minimum number of hot days in that period.'),
   },
 
   timeseries_limit_metric: {
