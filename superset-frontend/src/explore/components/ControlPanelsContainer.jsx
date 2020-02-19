@@ -180,7 +180,13 @@ class ControlPanelsContainer extends React.Component {
                 // centralized configs.
                 const name = controlItem;
 
-                return this.renderControl(name, controlConfigs[name], true);
+                if (name === 'quarter') {
+                  if (controls.data_group.value === 'Quarterly') {
+                    return this.renderControl(name, controlConfigs[name], true);
+                  }
+                } else {
+                  return this.renderControl(name, controlConfigs[name], true);
+                }
               }
               return null;
             })}

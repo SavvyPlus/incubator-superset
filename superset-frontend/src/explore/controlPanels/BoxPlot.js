@@ -36,7 +36,7 @@ export default {
     {
       label: t('Empower'),
       expanded: true,
-      controlSetRows: [['quarter']],
+      controlSetRows: [['data_group'], ['quarter']],
     },
   ],
 };

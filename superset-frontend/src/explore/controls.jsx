@@ -1105,6 +1105,15 @@ export const controls = {
     ),
   },
 
+  data_group: {
+    type: 'SelectControl',
+    freeForm: true,
+    label: t('Data group'),
+    validators: [],
+    choices: formatSelectOptions(['Quarterly', 'FinYear', 'CalYear']),
+    description: t('Select the data group'),
+  },
+
   quarter: {
     type: 'SelectControl',
     freeForm: true,
