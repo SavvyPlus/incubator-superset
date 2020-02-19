@@ -614,10 +614,9 @@ class ExportModal extends React.Component {
                       // inputProps={{ 'aria-label': 'secondary checkbox' }}
                       />
                       {
-                        this.state.generation &&
-                        <p>
-                          Including generation will take a little bit longer(~8 minutes).
-                        </p>
+                        this.state.generation ?
+                          <p>Including generation will take a little bit longer(~8 minutes).</p> :
+                          <p>No generation delivery estimates 5 minutes.</p>
                       }
                     </FormControl>
                     <div style={{ marginTop: 50 }}>
@@ -640,6 +639,12 @@ class ExportModal extends React.Component {
                     </p>
                   </Container>
                 </CardContent>
+                {(solarBI.sending || solarBI.requestStatus === 'success') &&
+                  <p className="sending-msg">
+                    We’ve send our pitchons to fetch your data, you will be re-directed to My Data
+                    in a few seconds, sit tight we will have it deliver to you in a little bit.
+                  </p>
+                }
               </Card>
             </DialogContent>
           </Dialog>
