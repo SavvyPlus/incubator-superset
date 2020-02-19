@@ -38,7 +38,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
-// import InputAdornment from '@material-ui/core/InputAdornment';
+import Switch from '@material-ui/core/Switch';
 import Container from '@material-ui/core/Container';
 import DateFnsUtils from '@date-io/date-fns';
 import { MuiPickersUtilsProvider, KeyboardDatePicker } from '@material-ui/pickers';
@@ -259,6 +259,9 @@ const styles = tm => ({
       borderRadius: 12,
     },
   },
+  switch: {
+    marginTop: 25,
+  },
   title: {
     color: '#0063B0',
     fontSize: '1.6em',
@@ -329,25 +332,22 @@ class ExportModal extends React.Component {
 
     this.state = {
       anchorEl: null,
-      // type: 'dni',
       pickerStart: new Date('2007-01-01T00:00:00'),
       pickerEnd: new Date('2019-07-01T00:00:00'),
       startDate: '2007-01-01',
       endDate: '2019-07-01',
       resolution: 'hourly',
-      cost: (16).toFixed(2),
+      generation: true,
     };
 
-    // this.handleTypeChange = this.handleTypeChange.bind(this);
     this.handleStartDateChange = this.handleStartDateChange.bind(this);
     this.handleEndDateChange = this.handleEndDateChange.bind(this);
     this.handleResolutionChange = this.handleResolutionChange.bind(this);
     this.handleRequestData = this.handleRequestData.bind(this);
     this.handleQuestionClick = this.handleQuestionClick.bind(this);
     this.handleQuestionClose = this.handleQuestionClose.bind(this);
+    this.handleGenerationChange = this.handleGenerationChange.bind(this);
     this.handleTrialClick = this.handleTrialClick.bind(this);
-    // this.calculateCost = this.calculateCost.bind(this);
-    // this.dateDiff = this.dateDiff.bind(this);
     this.onUnload = this.onUnload.bind(this);
   }
 
@@ -367,137 +367,6 @@ class ExportModal extends React.Component {
       event.returnValue = 'This will go back to search page, are you sure?';
     }
   }
-
-
-  // calculateCost() {
-  //   const timeCost = {
-  //     years: 5,
-  //     months: 0.42,
-  //     days: 0.01,
-  //   };
-  //   const gran = {
-  //     monthly: 5,
-  //     weekly: 7.5,
-  //     daily: 9,
-  //     hourly: 11,
-  //   };
-  //   const type = {
-  //     dni: 0,
-  //     ghi: 0,
-  //     both: 0,
-  //   };
-  //   const dt1 = new Date(this.state.startDate);
-  //   const dt2 = new Date(this.state.endDate);
-  //   const diff = this.dateDiff(dt1, dt2);
-  //   let result = diff.days * timeCost.days + diff.months * timeCost.months +
-  //     diff.years * timeCost.years;
-  //   let granularity;
-  //   switch (this.state.resolution) {
-  //     case 'hourly':
-  //       granularity = gran.hourly;
-  //       break;
-  //     case 'daily':
-  //       granularity = gran.daily;
-  //       break;
-  //     case 'weekly':
-  //       granularity = gran.weekly;
-  //       break;
-  //     case 'monthly':
-  //       granularity = gran.monthly;
-  //       break;
-  //     default:
-  //       granularity = 0;
-  //   }
-  //   let t;
-  //   switch (this.state.type) {
-  //     case 'dni':
-  //       t = type.dni;
-  //       break;
-  //     case 'ghi':
-  //       t = type.ghi;
-  //       break;
-  //     case 'both':
-  //       t = type.both;
-  //       break;
-  //     default:
-  //       t = 0;
-  //   }
-  //   result = result + granularity + t;
-  //   result = result.toFixed(2);
-  //   // console.log(result)
-  //   this.setState({ cost: result });
-  // }
-
-  // dateDiff(dt1, dt2) {
-  //   const ret = { days: 0, months: 0, years: 0 };
-  //   if (dt1 === dt2) return ret;
-  //   if (dt1 > dt2) {
-  //     const dtmp = dt2;
-  //     // eslint-disable-next-line no-param-reassign
-  //     dt2 = dt1;
-  //     // eslint-disable-next-line no-param-reassign
-  //     dt1 = dtmp;
-  //   }
-
-  //   /*
-  //    * First get the number of full years
-  //    */
-
-  //   const year1 = dt1.getFullYear();
-  //   const year2 = dt2.getFullYear();
-
-  //   const month1 = dt1.getMonth();
-  //   const month2 = dt2.getMonth();
-
-  //   const day1 = dt1.getDate();
-  //   const day2 = dt2.getDate();
-
-  //   /*
-  //    * Set initial values bearing in mind the months or days may be negative
-  //    */
-  //   ret.years = year2 - year1;
-  //   ret.months = month2 - month1;
-  //   ret.days = day2 - day1;
-
-  //   /*
-  //    * Now we deal with the negatives
-  //    */
-
-  //   /*
-  //    * First if the day difference is negative
-  //    * eg dt2 = 13 oct, dt1 = 25 sept
-  //    */
-  //   if (ret.days < 0) {
-  //     /*
-  //      * Use temporary dates to get the number of days remaining in the month
-  //      */
-  //     const dtmp1 = new Date(dt1.getFullYear(), dt1.getMonth() + 1, 1, 0, 0, -1);
-
-  //     const numDays = dtmp1.getDate();
-
-  //     ret.months -= 1;
-  //     ret.days += numDays;
-
-  //   }
-
-  //   /*
-  //    * Now if the month difference is negative
-  //    */
-  //   if (ret.months < 0) {
-  //     ret.months += 12;
-  //     ret.years -= 1;
-  //   }
-
-  //   return ret;
-  // }
-
-  // handleTypeChange(event) {
-  //   this.setState({ type: event.target.value });
-  // }
-
-  // handleStartDateChange(event) {
-  //   this.setState({ startDate: event.target.value });
-  // }
 
   handleStartDateChange(date) {
     this.setState({ pickerStart: date });
@@ -537,6 +406,10 @@ class ExportModal extends React.Component {
 
   handleQuestionClose() {
     this.setState({ anchorEl: null });
+  }
+
+  handleGenerationChange() {
+    this.setState({ generation: !this.state.generation });
   }
 
   handleTrialClick() {
@@ -640,7 +513,7 @@ class ExportModal extends React.Component {
                             // disableToolbar
                             variant="inline"
                             format="dd/MM/yyyy"
-                            id="date-picker-inline"
+                            id="date-picker-start"
                             inputVariant="outlined"
                             value={pickerStart}
                             minDate={new Date('1990-01-01')}
@@ -657,20 +530,6 @@ class ExportModal extends React.Component {
                             }}
                           />
                         </MuiPickersUtilsProvider>
-                        {/* <TextField
-                          error={new Date(startDate) > new Date(endDate) ||
-                            new Date(startDate) < new Date('1990-01-01')}
-                          id="date"
-                          type="date"
-                          value={startDate}
-                          placeholder="yyyy-mm-dd"
-                          variant="outlined"
-                          onChange={this.handleStartDateChange}
-                          className={classes.startText}
-                          InputProps={{
-                            classes: { input: classes.textInput },
-                          }}
-                        /> */}
                       </div>
 
                       <div className={classes.dateWrapper}>
@@ -681,7 +540,7 @@ class ExportModal extends React.Component {
                             animateYearScrolling
                             variant="inline"
                             format="dd/MM/yyyy"
-                            id="date-picker-inline"
+                            id="date-picker-end"
                             inputVariant="outlined"
                             value={pickerEnd}
                             minDate={new Date(pickerStart)}
@@ -698,20 +557,6 @@ class ExportModal extends React.Component {
                             }}
                           />
                         </MuiPickersUtilsProvider>
-                        {/* <TextField
-                          error={new Date(startDate) > new Date(endDate) ||
-                            new Date(endDate) > new Date('2019-07-31')}
-                          id="date"
-                          type="date"
-                          value={endDate}
-                          placeholder="yyyy-mm-dd"
-                          variant="outlined"
-                          onChange={this.handleEndDateChange}
-                          className={classes.endText}
-                          InputProps={{
-                            classes: { input: classes.textInput },
-                          }}
-                        /> */}
                       </div>
                       <IconButton
                         aria-label="More"
@@ -740,21 +585,6 @@ class ExportModal extends React.Component {
                         </Typography>
                       </Popover>
                     </div>
-                    {/* <hr className={classes.contentHr} />
-                    <FormControl component="fieldset" className={classes.formControl}>
-                      <FormLabel classes={{ root: classes.typeLabel, focused: classes.labelFocused }} component="legend">Type</FormLabel>
-                      <RadioGroup
-                        aria-label="type"
-                        name="type"
-                        className={classes.typeGroup}
-                        value={this.state.type}
-                        onChange={this.handleTypeChange}
-                      >
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="dni" control={<Radio color="secondary" />} label="DNI" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="ghi" control={<Radio color="secondary" />} label="GHI" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="both" control={<Radio color="secondary" />} label="Download both" labelPlacement="bottom" />
-                      </RadioGroup>
-                    </FormControl> */}
                     <hr className={classes.contentHr} />
                     <FormControl component="fieldset" className={classes.formControl}>
                       <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Resolution</FormLabel>
@@ -771,6 +601,24 @@ class ExportModal extends React.Component {
                         <FormControlLabel classes={{ label: classes.formControlLabel }} value="monthly" control={<Radio color="secondary" />} label="Monthly" labelPlacement="bottom" />
                         <FormControlLabel classes={{ label: classes.formControlLabel }} value="annual" control={<Radio color="secondary" />} label="Annual" labelPlacement="bottom" />
                       </RadioGroup>
+                    </FormControl>
+                    <hr className={classes.contentHr} />
+                    <FormControl component="fieldset" className={classes.formControl}>
+                      <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Generation</FormLabel>
+                      <Switch
+                        checked={this.state.generation}
+                        // onChange={this.handleGenerationChange}
+                        onClick={() => this.handleGenerationChange()}
+                        value="generation"
+                        classes={{ root: classes.switch }}
+                      // inputProps={{ 'aria-label': 'secondary checkbox' }}
+                      />
+                      {
+                        this.state.generation &&
+                        <p>
+                          Including generation will take a little bit longer(~8 minutes).
+                        </p>
+                      }
                     </FormControl>
                     <div style={{ marginTop: 50 }}>
                       <Button
