@@ -1127,6 +1127,15 @@ export const controls = {
     description: t('Select the calendar year'),
   },
 
+  quarter: {
+    type: 'SelectControl',
+    freeForm: true,
+    label: t('Quarter'),
+    validators: [],
+    choices: formatSelectOptions(['Q1', 'Q2', 'Q3', 'Q4']),
+    description: t('Select the quarter'),
+  },
+
   timeseries_limit_metric: {
     type: 'MetricsControl',
     label: t('Sort By'),

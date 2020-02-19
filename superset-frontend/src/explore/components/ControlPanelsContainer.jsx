@@ -185,6 +185,10 @@ class ControlPanelsContainer extends React.Component {
                   if (controls.group_type.value === 'CalYear Quarterly') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
+                } else if (name === 'quarter') {
+                  if (controls.group_type.value === 'Quarterly') {
+                    return this.renderControl(name, controlConfigs[name], true);
+                  }
                 } else {
                   return this.renderControl(name, controlConfigs[name], true);
                 }
