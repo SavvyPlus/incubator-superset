@@ -36,7 +36,7 @@ export default {
     {
       label: t('Empower'),
       expanded: true,
-      controlSetRows: [['data_group'], ['quarter']],
+      controlSetRows: [['group_type'], ['cal_year']],
     },
   ],
 };

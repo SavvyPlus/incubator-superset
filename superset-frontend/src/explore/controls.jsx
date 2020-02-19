@@ -1105,22 +1105,26 @@ export const controls = {
     ),
   },
 
-  data_group: {
+  group_type: {
     type: 'SelectControl',
     freeForm: true,
-    label: t('Data group'),
+    label: t('Group type'),
     validators: [],
-    choices: formatSelectOptions(['Quarterly', 'FinYear', 'CalYear']),
-    description: t('Select the data group'),
+    choices: formatSelectOptions([
+      'CalYearly',
+      'Quarterly',
+      'CalYear Quarterly',
+    ]),
+    description: t('Select the group type'),
   },
 
-  quarter: {
+  cal_year: {
     type: 'SelectControl',
     freeForm: true,
-    label: t('Quarter'),
+    label: t('Calendar year'),
     validators: [],
-    choices: formatSelectOptions(['Q1', 'Q2', 'Q3', 'Q4']),
-    description: t('Select the quarter'),
+    choices: formatSelectOptions(['2017', '2018', '2019', '2020']),
+    description: t('Select the calendar year'),
   },
 
   timeseries_limit_metric: {
