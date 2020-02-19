@@ -294,6 +294,16 @@ export const controls = {
       choices: state.datasource ? state.datasource.order_by_choices : [],
     }),
   },
+
+  run_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select Runs'),
+    default: [],
+    description: t('Select up to 3 run ids'),
+    choices: formatSelectOptions([119]),
+  },
+
   color_picker: {
     label: t('Fixed Color'),
     description: t('Use this to define a static color for all circles'),

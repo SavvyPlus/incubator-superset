@@ -36,7 +36,7 @@ export default {
     {
       label: t('Empower'),
       expanded: true,
-      controlSetRows: [['group_type'], ['cal_year'], ['quarter'], ['hot_days']],
+      controlSetRows: [['run_picker'], ['group_type'], ['cal_year'], ['quarter']],
     },
   ],
 };

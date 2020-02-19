@@ -397,6 +397,12 @@ class BaseViz:
         """Handles caching around the df payload retrieval"""
         if not query_obj:
             query_obj = self.query_obj()
+
+        # If this is for run comparison, add run filter
+        if 'run_picker' in self.form_data:
+            for run_id in self.form_data['run_picker']:
+                query_obj['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
+
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         logger.info("Cache key: {}".format(cache_key))
         is_loaded = False
@@ -882,13 +888,14 @@ class BoxPlotViz(NVD3Viz):
     verbose_name = _("Box Plot")
     sort_series = False
     is_timeseries = False
+    enforce_numerical_metrics = False
 
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " - "
         chart_data = []
         for index_value, row in zip(df.index, df.to_dict(orient="records")):
             if isinstance(index_value, tuple):
-                index_value = label_sep.join(index_value)
+                index_value = label_sep.join(list(str(x) for x in index_value))
             boxes = defaultdict(dict)
             for (label, key), value in row.items():
                 if key == "nanmedian":
@@ -905,7 +912,10 @@ class BoxPlotViz(NVD3Viz):
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         form_data = self.form_data
-
+        group_column = []
+        for metric_dic in form_data['metrics']:
+            if metric_dic['sqlExpression'] != 'SpotPrice':
+                group_column.append(metric_dic['sqlExpression'])
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
             return np.nanpercentile(series, 25)
@@ -954,7 +964,7 @@ class BoxPlotViz(NVD3Viz):
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
         # df = df.groupby(form_data.get("groupby")).agg(aggregate)
-        df = df.groupby(['Year']).agg(aggregate)
+        df = df.groupby(group_column).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 
