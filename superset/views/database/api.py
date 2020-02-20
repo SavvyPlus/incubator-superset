@@ -143,6 +143,8 @@ class DatabaseRestApi(DatabaseMixin, BaseSupersetModelRestApi):
     max_page_size = -1
     validators_columns = {"sqlalchemy_uri": sqlalchemy_uri_validator}
 
+    openapi_spec_tag = "Database"
+
     @expose(
         "/<int:pk>/table/<string:table_name>/<string:schema_name>/", methods=["GET"]
     )
@@ -283,7 +285,9 @@ class DatabaseRestApi(DatabaseMixin, BaseSupersetModelRestApi):
     @check_datasource_access
     @safe
     @event_logger.log_this
-    def select_star(self, database: Database, table_name: str, schema_name: str = None):
+    def select_star(
+        self, database: Database, table_name: str, schema_name: Optional[str] = None
+    ):
         """ Table schema info
         ---
         get:
