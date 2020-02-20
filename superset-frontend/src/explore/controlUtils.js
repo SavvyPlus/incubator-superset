@@ -145,6 +145,10 @@ export function getControlState(controlKey, vizType, state, value) {
 
 export function sectionsToRender(vizType, datasourceType) {
   const controlPanelConfig = getChartControlPanelRegistry().get(vizType) || {};
+  //console.log
+  console.log('getChartControlePanelRegistry')
+  console.log(getChartControlPanelRegistry().get('box_plot'))
+  console.log(controlPanelConfig)
   const {
     sectionOverrides = {},
     controlPanelSections = [],
