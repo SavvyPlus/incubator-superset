@@ -878,13 +878,8 @@ class Superset(BaseSupersetView):
         )
 
         # This part is for run comparison box plot, get distinct run id for frontend selection
-        has_run_id = False
+        has_run_id = 'RunID' in datasource.column_names
         run_ids = []
-        if form_data['viz_type'] == 'box_plot':
-            for metric in form_data['metrics']:
-                if metric['label'] == 'RunID':
-                    has_run_id = True
-
         if has_run_id:
             engine = self.appbuilder.get_session.get_bind()
             result = engine.execute("SELECT DISTINCT RunID FROM {}".format(datasource.table_name))
@@ -904,7 +899,7 @@ class Superset(BaseSupersetView):
             "user_id": user_id,
             "forced_height": request.args.get("height"),
             "common": common_bootstrap_payload(),
-            "run_ids": run_ids if run_ids else '',
+            "run_ids": run_ids,
         }
         table_name = (
             datasource.table_name
