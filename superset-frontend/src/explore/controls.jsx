@@ -301,7 +301,9 @@ export const controls = {
     label: t('Select Runs'),
     default: [],
     description: t('Select up to 3 run ids'),
-    choices: formatSelectOptions([119]),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.run_ids),
+    }),
   },
 
   color_picker: {
