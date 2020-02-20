@@ -401,7 +401,25 @@ class BaseViz:
         # If this is for run comparison, add run filter
         if 'run_picker' in self.form_data:
             for run_id in self.form_data['run_picker']:
-                query_obj['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
+                query_obj['filter'].append({'col': 'RunID', 'op': '==', 'val': str(run_id)})
+
+        if 'group_type' in self.form_data:
+            extra_metrics = [
+                {'expressionType': 'SQL', 'sqlExpression': 'Year', 'column': None,
+                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+                 'label': 'Year', 'optionName': 'metric_6d3rflef213_fkp51ioh3cu'},
+                {'expressionType': 'SQL', 'sqlExpression': 'Quarter', 'column': None,
+                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+                 'label': 'Quarter', 'optionName': 'metric_sy7828bzmzq_cu6n77opyy9'}
+            ]
+            if self.form_data['group_type'] == 'CalYearly':
+                query_obj['metrics'].append(extra_metrics[0])
+            elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
+                query_obj['metrics'].append(extra_metrics[1])
+            elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
+                query_obj['metrics'].append(extra_metrics[0])
+                query_obj['metrics'].append(extra_metrics[1])
+                query_obj['filter'].append({'col': 'Year', 'op': '==', 'val': str(self.form_data['cal_year'])})
 
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         logger.info("Cache key: {}".format(cache_key))
@@ -912,10 +930,19 @@ class BoxPlotViz(NVD3Viz):
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         form_data = self.form_data
+
         group_column = []
         for metric_dic in form_data['metrics']:
             if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
                 group_column.append(metric_dic['sqlExpression'])
+
+        if form_data['group_type'] == 'CalYearly':
+            group_column.append('Year')
+        elif form_data['group_type'] == 'Quarterly':
+            group_column.append('Quarter')
+        elif form_data['group_type'] == 'CalYear Quarterly':
+            group_column.append('Year')
+            group_column.append('Quarter')
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
