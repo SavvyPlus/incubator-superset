@@ -914,7 +914,7 @@ class BoxPlotViz(NVD3Viz):
         form_data = self.form_data
         group_column = []
         for metric_dic in form_data['metrics']:
-            if metric_dic['sqlExpression'] != 'SpotPrice':
+            if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
                 group_column.append(metric_dic['sqlExpression'])
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
