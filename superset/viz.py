@@ -396,32 +396,6 @@ class BaseViz:
         """Handles caching around the df payload retrieval"""
         if not query_obj:
             query_obj = self.query_obj()
-
-        # If this is for run comparison, add run filter
-        if type(self).__name__ == 'BoxPlotVizRunComp':
-            for run_id in self.form_data['run_picker']:
-                query_obj['filter'].append({'col': 'RunID', 'op': '==', 'val': str(run_id)})
-
-        if 'group_type' in self.form_data:
-            extra_metrics = [
-                {'expressionType': 'SQL', 'sqlExpression': 'Year', 'column': None,
-                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
-                 'label': 'Year', 'optionName': 'metric_6d3rflef213_fkp51ioh3cu'},
-                {'expressionType': 'SQL', 'sqlExpression': 'Quarter', 'column': None,
-                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
-                 'label': 'Quarter', 'optionName': 'metric_sy7828bzmzq_cu6n77opyy9'}
-            ]
-            if self.form_data['group_type'] == 'CalYearly':
-                query_obj['metrics'].append(extra_metrics[0])
-            elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
-                query_obj['metrics'].append(extra_metrics[1])
-                if self.form_data['quarter'] != 'All Qtrs':
-                    query_obj['filter'].append({'col': 'Quarter', 'op': '==', 'val': str(self.form_data['quarter'])})
-            elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
-                query_obj['metrics'].append(extra_metrics[0])
-                query_obj['metrics'].append(extra_metrics[1])
-                query_obj['filter'].append({'col': 'Year', 'op': '==', 'val': str(self.form_data['cal_year'])})
-
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         logger.info("Cache key: {}".format(cache_key))
         is_loaded = False
@@ -1013,6 +987,40 @@ class BoxPlotVizRunComp(BoxPlotViz):
     is_timeseries = False
     enforce_numerical_metrics = False
 
+    def query_obj(self) -> Dict[str, Any]:
+        d = super(BoxPlotVizRunComp, self).query_obj()
+        fd = self.form_data
+        d['metrics'].append({'aggregate': None,
+                             'column': None,
+                             'expressionType': 'SQL',
+                             'fromFormData': True,
+                             'hasCustomLabel': False,
+                             'label': 'SpotPrice',
+                             'optionName': 'metric_0qwzx39q1td_v7q6ibb8h4m',
+                             'sqlExpression': 'SpotPrice'})
+        d['metrics'].append({'aggregate': None,
+                              'column': None,
+                              'expressionType': 'SQL',
+                              'fromFormData': True,
+                              'hasCustomLabel': False,
+                              'label': 'RunID',
+                              'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
+                              'sqlExpression': 'RunID'})
+        d['metrics'].append({'aggregate': None,
+                              'column': None,
+                              'expressionType': 'SQL',
+                              'fromFormData': True,
+                              'hasCustomLabel': False,
+                              'label': 'Year',
+                              'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
+                              'sqlExpression': 'Year'})
+        for run_id in self.form_data['run_picker']:
+            d['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
+
+        return d
+
+
+
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " - "
         chart_data = []
@@ -1025,7 +1033,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
                     key = "Q2"
                 boxes[label][key] = value
             for label, box in boxes.items():
-                if len(self.form_data.get("metrics")) > 1:
+                if len(self.query_obj().get("metrics")) > 1:
                     # need to render data labels with metrics
                     chart_label = label_sep.join([str(index_value), label])
                 else:
@@ -1036,7 +1044,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
     def get_data(self, df: pd.DataFrame) -> VizData:
         form_data = self.form_data
         group_column = []
-        for metric_dic in form_data['metrics']:
+        for metric_dic in self.query_obj()['metrics']:
             if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
                 group_column.append(metric_dic['sqlExpression'])
         # conform to NVD3 names
@@ -1045,39 +1053,39 @@ class BoxPlotVizRunComp(BoxPlotViz):
 
         def Q3(series):
             return np.nanpercentile(series, 75)
+        #
+        # whisker_type = form_data.get("whisker_options")
+        # if whisker_type == "Tukey":
 
-        whisker_type = form_data.get("whisker_options")
-        if whisker_type == "Tukey":
+        def whisker_high(series):
+            upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
+            return series[series <= upper_outer_lim].max()
 
-            def whisker_high(series):
-                upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
-                return series[series <= upper_outer_lim].max()
+        def whisker_low(series):
+            lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
+            return series[series >= lower_outer_lim].min()
 
-            def whisker_low(series):
-                lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
-                return series[series >= lower_outer_lim].min()
-
-        elif whisker_type == "Min/max (no outliers)":
-
-            def whisker_high(series):
-                return series.max()
-
-            def whisker_low(series):
-                return series.min()
-
-        elif " percentiles" in whisker_type:  # type: ignore
-            low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
-                "/"
-            )
-
-            def whisker_high(series):
-                return np.nanpercentile(series, int(high))
-
-            def whisker_low(series):
-                return np.nanpercentile(series, int(low))
-
-        else:
-            raise ValueError("Unknown whisker type: {}".format(whisker_type))
+        # elif whisker_type == "Min/max (no outliers)":
+        #
+        #     def whisker_high(series):
+        #         return series.max()
+        #
+        #     def whisker_low(series):
+        #         return series.min()
+        #
+        # elif " percentiles" in whisker_type:  # type: ignore
+        #     low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
+        #         "/"
+        #     )
+        #
+        #     def whisker_high(series):
+        #         return np.nanpercentile(series, int(high))
+        #
+        #     def whisker_low(series):
+        #         return np.nanpercentile(series, int(low))
+        #
+        # else:
+        #     raise ValueError("Unknown whisker type: {}".format(whisker_type))
 
         def outliers(series):
             above = series[series > whisker_high(series)]
