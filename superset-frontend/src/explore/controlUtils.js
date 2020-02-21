@@ -145,7 +145,7 @@ export function getControlState(controlKey, vizType, state, value) {
 
 export function sectionsToRender(vizType, datasourceType) {
   let controlPanelConfig = getChartControlPanelRegistry().get(vizType) || {};
-  //console.log
+
   console.log('getChartControlePanelRegistry');
   if (vizType === 'box_plot_run_comp') {
     controlPanelConfig = {
