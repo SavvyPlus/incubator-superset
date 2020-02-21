@@ -415,6 +415,8 @@ class BaseViz:
                 query_obj['metrics'].append(extra_metrics[0])
             elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
                 query_obj['metrics'].append(extra_metrics[1])
+                if self.form_data['quarter'] != 'All Qtrs':
+                    query_obj['filter'].append({'col': 'Quarter', 'op': '==', 'val': str(self.form_data['quarter'])})
             elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
                 query_obj['metrics'].append(extra_metrics[0])
                 query_obj['metrics'].append(extra_metrics[1])
