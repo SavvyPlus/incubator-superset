@@ -23,7 +23,12 @@ export default {
     {
       label: t('Empower'),
       expanded: true,
-      controlSetRows: [['run_picker'], ['group_type'], ['cal_year'], ['quarter']],
+      controlSetRows: [
+        ['run_picker'],
+        ['group_type'],
+        ['cal_year'],
+        ['quarter'],
+      ],
     },
   ],
 };
