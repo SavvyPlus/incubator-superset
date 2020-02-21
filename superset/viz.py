@@ -398,7 +398,7 @@ class BaseViz:
             query_obj = self.query_obj()
 
         # If this is for run comparison, add run filter
-        if 'run_picker' in self.form_data:
+        if type(self).__name__ == 'BoxPlotVizRunComp':
             for run_id in self.form_data['run_picker']:
                 query_obj['filter'].append({'col': 'RunID', 'op': '==', 'val': str(run_id)})
 
@@ -1003,6 +1003,93 @@ class BoxPlotViz(NVD3Viz):
         chart_data = self.to_series(df)
         return chart_data
 
+class BoxPlotVizRunComp(BoxPlotViz):
+
+    """Box plot viz from ND3"""
+
+    viz_type = "box_plot_run_comp"
+    verbose_name = _("Box Plot For Run Comparison")
+    sort_series = False
+    is_timeseries = False
+    enforce_numerical_metrics = False
+
+    def to_series(self, df, classed="", title_suffix=""):
+        label_sep = " - "
+        chart_data = []
+        for index_value, row in zip(df.index, df.to_dict(orient="records")):
+            if isinstance(index_value, tuple):
+                index_value = label_sep.join(list(str(x) for x in index_value))
+            boxes = defaultdict(dict)
+            for (label, key), value in row.items():
+                if key == "nanmedian":
+                    key = "Q2"
+                boxes[label][key] = value
+            for label, box in boxes.items():
+                if len(self.form_data.get("metrics")) > 1:
+                    # need to render data labels with metrics
+                    chart_label = label_sep.join([str(index_value), label])
+                else:
+                    chart_label = index_value
+                chart_data.append({"label": chart_label, "values": box})
+        return chart_data
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        form_data = self.form_data
+        group_column = []
+        for metric_dic in form_data['metrics']:
+            if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
+                group_column.append(metric_dic['sqlExpression'])
+        # conform to NVD3 names
+        def Q1(series):  # need to be named functions - can't use lambdas
+            return np.nanpercentile(series, 25)
+
+        def Q3(series):
+            return np.nanpercentile(series, 75)
+
+        whisker_type = form_data.get("whisker_options")
+        if whisker_type == "Tukey":
+
+            def whisker_high(series):
+                upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
+                return series[series <= upper_outer_lim].max()
+
+            def whisker_low(series):
+                lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
+                return series[series >= lower_outer_lim].min()
+
+        elif whisker_type == "Min/max (no outliers)":
+
+            def whisker_high(series):
+                return series.max()
+
+            def whisker_low(series):
+                return series.min()
+
+        elif " percentiles" in whisker_type:  # type: ignore
+            low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
+                "/"
+            )
+
+            def whisker_high(series):
+                return np.nanpercentile(series, int(high))
+
+            def whisker_low(series):
+                return np.nanpercentile(series, int(low))
+
+        else:
+            raise ValueError("Unknown whisker type: {}".format(whisker_type))
+
+        def outliers(series):
+            above = series[series > whisker_high(series)]
+            below = series[series < whisker_low(series)]
+            # pandas sometimes doesn't like getting lists back here
+            return set(above.tolist() + below.tolist())
+
+        aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
+        # df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        df = df.groupby(group_column).agg(aggregate)
+        chart_data = self.to_series(df)
+        return chart_data
 
 class BubbleViz(NVD3Viz):
 

@@ -97,6 +97,7 @@ const DEFAULT_ORDER = [
   'para',
   'iframe',
   'country_map',
+  'box_plot_run_comp',
 ];
 
 const typesWithDefaultOrder = new Set(DEFAULT_ORDER);
@@ -162,7 +163,13 @@ export default class VizTypeControl extends React.PureComponent {
     const { filter, showModal } = this.state;
     const { value } = this.props;
 
-    const filterString = filter.toLowerCase();
+    //console.log
+    console.log(registry)
+    let new_box_plot =registry['items']['box_plot']
+    new_box_plot['value']['name'] = 'Box Plot Run Comparison'
+    registry['items']['box_plot_run_comp'] = new_box_plot
+
+  const filterString = filter.toLowerCase();
     const filteredTypes = DEFAULT_ORDER.filter(type => registry.has(type))
       .map(type => ({
         key: type,
