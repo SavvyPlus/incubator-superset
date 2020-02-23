@@ -396,6 +396,27 @@ class BaseViz:
         """Handles caching around the df payload retrieval"""
         if not query_obj:
             query_obj = self.query_obj()
+
+        if 'group_type' in self.form_data:
+            extra_metrics = [
+                {'expressionType': 'SQL', 'sqlExpression': 'Year', 'column': None,
+                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+                 'label': 'Year', 'optionName': 'metric_6d3rflef213_fkp51ioh3cu'},
+                {'expressionType': 'SQL', 'sqlExpression': 'Quarter', 'column': None,
+                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+                 'label': 'Quarter', 'optionName': 'metric_sy7828bzmzq_cu6n77opyy9'}
+            ]
+            if self.form_data['group_type'] == 'CalYearly':
+                query_obj['metrics'].append(extra_metrics[0])
+            elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
+                query_obj['metrics'].append(extra_metrics[1])
+                if self.form_data['quarter'] != 'All Qtrs':
+                    query_obj['filter'].append({'col': 'Quarter', 'op': '==', 'val': str(self.form_data['quarter'])})
+            elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
+                query_obj['metrics'].append(extra_metrics[0])
+                query_obj['metrics'].append(extra_metrics[1])
+                query_obj['filter'].append({'col': 'Year', 'op': '==', 'val': str(self.form_data['cal_year'])})
+
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         logger.info("Cache key: {}".format(cache_key))
         is_loaded = False
@@ -1018,8 +1039,6 @@ class BoxPlotVizRunComp(BoxPlotViz):
             d['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
 
         return d
-
-
 
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " - "
