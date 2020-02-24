@@ -260,7 +260,8 @@ const styles = tm => ({
     },
   },
   switch: {
-    marginTop: 25,
+    color: 'rgb(117, 117, 117)',
+    display: 'inline-block',
   },
   title: {
     color: '#0063B0',
@@ -338,6 +339,7 @@ class ExportModal extends React.Component {
       endDate: '2019-07-01',
       resolution: 'hourly',
       generation: true,
+      capacity: '1',
     };
 
     this.handleStartDateChange = this.handleStartDateChange.bind(this);
@@ -347,6 +349,7 @@ class ExportModal extends React.Component {
     this.handleQuestionClick = this.handleQuestionClick.bind(this);
     this.handleQuestionClose = this.handleQuestionClose.bind(this);
     this.handleGenerationChange = this.handleGenerationChange.bind(this);
+    this.handleCapacityChange = this.handleCapacityChange.bind(this);
     this.handleTrialClick = this.handleTrialClick.bind(this);
     this.onUnload = this.onUnload.bind(this);
   }
@@ -397,7 +400,10 @@ class ExportModal extends React.Component {
 
   handleResolutionChange(event) {
     this.setState({ resolution: event.target.value });
+  }
 
+  handleCapacityChange(event) {
+    this.setState({ capacity: event.target.value });
   }
 
   handleQuestionClick(event) {
@@ -605,19 +611,40 @@ class ExportModal extends React.Component {
                     <hr className={classes.contentHr} />
                     <FormControl component="fieldset" className={classes.formControl}>
                       <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Generation</FormLabel>
-                      <Switch
-                        checked={this.state.generation}
-                        // onChange={this.handleGenerationChange}
-                        onClick={() => this.handleGenerationChange()}
-                        value="generation"
-                        classes={{ root: classes.switch }}
-                      // inputProps={{ 'aria-label': 'secondary checkbox' }}
-                      />
-                      {
-                        this.state.generation ?
-                          <p>Including generation will take a little bit longer(~8 minutes).</p> :
-                          <p>No generation delivery estimates 5 minutes.</p>
-                      }
+                      <div style={{ marginTop: 25 }}>
+                        <Switch
+                          checked={this.state.generation}
+                          // onChange={this.handleGenerationChange}
+                          onClick={() => this.handleGenerationChange()}
+                          value="generation"
+                        />
+                        {
+                          this.state.generation ?
+                            <p className={classes.switch}>
+                              Including generation will take a little bit longer(~8 minutes).
+                            </p> :
+                            <p className={classes.switch}>
+                              No generation delivery estimates 5 minutes.
+                            </p>
+                        }
+                      </div>
+                    </FormControl>
+                    <hr className={classes.contentHr} />
+                    <FormControl component="fieldset" className={classes.formControl}>
+                      <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Capacity</FormLabel>
+                      <RadioGroup
+                        aria-label="capacity"
+                        name="capacity"
+                        className={classes.resolutionGroup}
+                        value={this.state.capacity}
+                        onChange={this.handleCapacityChange}
+                      >
+                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="1" control={<Radio color="secondary" />} label="1" labelPlacement="bottom" />
+                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="2" control={<Radio color="secondary" />} label="2" labelPlacement="bottom" />
+                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="3" control={<Radio color="secondary" />} label="3" labelPlacement="bottom" />
+                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="4" control={<Radio color="secondary" />} label="4" labelPlacement="bottom" />
+                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="5" control={<Radio color="secondary" />} label="5" labelPlacement="bottom" />
+                      </RadioGroup>
                     </FormControl>
                     <div style={{ marginTop: 50 }}>
                       <Button
