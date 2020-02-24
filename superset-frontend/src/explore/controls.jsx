@@ -1144,7 +1144,7 @@ export const controls = {
     freeForm: false,
     label: t('Quarter'),
     validators: [],
-    choices: formatSelectOptions(['Q1', 'Q2', 'Q3', 'Q4']),
+    choices: formatSelectOptions(['Q1', 'Q2', 'Q3', 'Q4', 'All Qtrs']),
     description: t('Select the quarter'),
   },
 
