@@ -225,7 +225,10 @@ class ChartRenderer extends React.Component {
       formData,
       queryResponse,
     } = this.props;
-    console.log(this.props);
+    console.log('renderer:',this.props);
+    // if (vizType === 'box_plot_run_comp'){
+    //
+    // }
 
     return (
       <>

@@ -1012,33 +1012,34 @@ class BoxPlotVizRunComp(BoxPlotViz):
     def query_obj(self) -> Dict[str, Any]:
         d = super(BoxPlotVizRunComp, self).query_obj()
         fd = self.form_data
-        d['metrics'].append({'aggregate': None,
-                             'column': None,
-                             'expressionType': 'SQL',
-                             'fromFormData': True,
-                             'hasCustomLabel': False,
-                             'label': 'SpotPrice',
-                             'optionName': 'metric_0qwzx39q1td_v7q6ibb8h4m',
-                             'sqlExpression': 'SpotPrice'})
-        d['metrics'].append({'aggregate': None,
-                              'column': None,
-                              'expressionType': 'SQL',
-                              'fromFormData': True,
-                              'hasCustomLabel': False,
-                              'label': 'RunID',
-                              'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
-                              'sqlExpression': 'RunID'})
-        d['metrics'].append({'aggregate': None,
-                              'column': None,
-                              'expressionType': 'SQL',
-                              'fromFormData': True,
-                              'hasCustomLabel': False,
-                              'label': 'Year',
-                              'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
-                              'sqlExpression': 'Year'})
+        if len(d['metrics']) < 1:
+            d['metrics'].append({'aggregate': None,
+                                 'column': None,
+                                 'expressionType': 'SQL',
+                                 'fromFormData': True,
+                                 'hasCustomLabel': False,
+                                 'label': 'SpotPrice',
+                                 'optionName': 'metric_0qwzx39q1td_v7q6ibb8h4m',
+                                 'sqlExpression': 'SpotPrice'})
+            d['metrics'].append({'aggregate': None,
+                                  'column': None,
+                                  'expressionType': 'SQL',
+                                  'fromFormData': True,
+                                  'hasCustomLabel': False,
+                                  'label': 'RunID',
+                                  'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
+                                  'sqlExpression': 'RunID'})
+            d['metrics'].append({'aggregate': None,
+                                  'column': None,
+                                  'expressionType': 'SQL',
+                                  'fromFormData': True,
+                                  'hasCustomLabel': False,
+                                  'label': 'Year',
+                                  'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
+                                  'sqlExpression': 'Year'})
         for run_id in self.form_data['run_picker']:
             d['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
-
+        self.form_data['metrics'] = d['metrics']
         return d
 
     def to_series(self, df, classed="", title_suffix=""):
