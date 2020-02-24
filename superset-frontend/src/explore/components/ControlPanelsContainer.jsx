@@ -180,7 +180,7 @@ class ControlPanelsContainer extends React.Component {
                 // centralized configs.
                 const name = controlItem;
 
-                // Dynamically render quarter selection based on the data group
+                // Dynamically render selection fields based on the group type
                 if (name === 'cal_year') {
                   if (controls.group_type.value === 'CalYear Quarterly') {
                     return this.renderControl(name, controlConfigs[name], true);

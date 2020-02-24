@@ -279,7 +279,9 @@ DEFAULT_FEATURE_FLAGS = {
     # Experimental feature introducing a client (browser) cache
     "CLIENT_CACHE": False,
     "ENABLE_EXPLORE_JSON_CSRF_PROTECTION": False,
+    "KV_STORE": False,
     "PRESTO_EXPAND_DATA": False,
+    "SHARE_QUERIES_VIA_KV_STORE": False,
     "TAGGING_SYSTEM": False,
 }
 
@@ -741,6 +743,15 @@ TALISMAN_CONFIG = {
     "force_https": True,
     "force_https_permanent": False,
 }
+
+# Note that: RowLevelSecurityFilter is only given by default to the Admin role
+# and the Admin Role does have the all_datasources security permission.
+# But, if users create a specific role with access to RowLevelSecurityFilter MVC
+# and a custom datasource access, the table dropdown will not be correctly filtered
+# by that custom datasource access. So we are assuming a default security config,
+# a custom security config could potentially give access to setting filters on
+# tables that users do not have access to.
+ENABLE_ROW_LEVEL_SECURITY = True
 
 #
 # Flask session cookie options

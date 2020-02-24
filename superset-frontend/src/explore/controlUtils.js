@@ -145,25 +145,25 @@ export function getControlState(controlKey, vizType, state, value) {
 
 export function sectionsToRender(vizType, datasourceType) {
   let controlPanelConfig = getChartControlPanelRegistry().get(vizType) || {};
-  //console.log
-  console.log('getChartControlePanelRegistry')
-  if (vizType === 'box_plot_run_comp'){
+
+  console.log('getChartControlePanelRegistry');
+  if (vizType === 'box_plot_run_comp') {
     controlPanelConfig = {
-      'controlPanelSections': [
+      controlPanelSections: [
         {
-          'label': 'Empower',
-          'expanded': true,
-          'controlSetRows': [
-              ['run_picker'],
-              ['group_type'],
-              ['cal_year'],
-              ['quarter'],
+          label: 'Empower',
+          expanded: true,
+          controlSetRows: [
+            ['run_picker'],
+            ['group_type'],
+            ['cal_year'],
+            ['quarter'],
           ],
         },
       ],
-    }
+    };
   }
-  console.log(controlPanelConfig)
+  console.log(controlPanelConfig);
 
   const {
     sectionOverrides = {},

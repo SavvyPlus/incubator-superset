@@ -30,7 +30,6 @@ import re
 import uuid
 from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
-from functools import reduce
 from itertools import product
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
@@ -46,7 +45,7 @@ from geopy.point import Point
 from markdown import markdown
 from pandas.tseries.frequencies import to_offset
 
-from superset import app, cache, get_css_manifest_files
+from superset import app, cache, get_css_manifest_files, security_manager
 from superset.constants import NULL_STRING
 from superset.exceptions import NullValueException, SpatialException
 from superset.models.helpers import QueryResult
@@ -374,6 +373,7 @@ class BaseViz:
         cache_dict["time_range"] = self.form_data.get("time_range")
         cache_dict["datasource"] = self.datasource.uid
         cache_dict["extra_cache_keys"] = self.datasource.get_extra_cache_keys(query_obj)
+        cache_dict["rls"] = security_manager.get_rls_ids(self.datasource)
         cache_dict["changed_on"] = self.datasource.changed_on
         json_data = self.json_dumps(cache_dict, sort_keys=True)
         return hashlib.md5(json_data.encode("utf-8")).hexdigest()
@@ -397,6 +397,27 @@ class BaseViz:
         """Handles caching around the df payload retrieval"""
         if not query_obj:
             query_obj = self.query_obj()
+
+        if 'group_type' in self.form_data:
+            extra_metrics = [
+                {'expressionType': 'SQL', 'sqlExpression': 'Year', 'column': None,
+                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+                 'label': 'Year', 'optionName': 'metric_6d3rflef213_fkp51ioh3cu'},
+                {'expressionType': 'SQL', 'sqlExpression': 'Quarter', 'column': None,
+                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+                 'label': 'Quarter', 'optionName': 'metric_sy7828bzmzq_cu6n77opyy9'}
+            ]
+            if self.form_data['group_type'] == 'CalYearly':
+                query_obj['metrics'].append(extra_metrics[0])
+            elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
+                query_obj['metrics'].append(extra_metrics[1])
+                if self.form_data['quarter'] != 'All Qtrs':
+                    query_obj['filter'].append({'col': 'Quarter', 'op': '==', 'val': str(self.form_data['quarter'])})
+            elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
+                query_obj['metrics'].append(extra_metrics[0])
+                query_obj['metrics'].append(extra_metrics[1])
+                query_obj['filter'].append({'col': 'Year', 'op': '==', 'val': str(self.form_data['cal_year'])})
+
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         logger.info("Cache key: {}".format(cache_key))
         is_loaded = False
@@ -534,11 +555,13 @@ class TableViz(BaseViz):
         d = super().query_obj()
         fd = self.form_data
 
-        if fd.get("all_columns") and (fd.get("groupby") or fd.get("metrics")):
+        if fd.get("all_columns") and (
+            fd.get("groupby") or fd.get("metrics") or fd.get("percent_metrics")
+        ):
             raise Exception(
                 _(
-                    "Choose either fields to [Group By] and [Metrics] or "
-                    "[Columns], not both"
+                    "Choose either fields to [Group By] and [Metrics] and/or "
+                    "[Percentage Metrics], or [Columns], not both"
                 )
             )
 
@@ -556,46 +579,50 @@ class TableViz(BaseViz):
 
         # Add all percent metrics that are not already in the list
         if "percent_metrics" in fd:
-            d["metrics"] = d["metrics"] + list(
-                filter(lambda m: m not in d["metrics"], fd["percent_metrics"] or [])
+            d["metrics"].extend(
+                m for m in fd["percent_metrics"] or [] if m not in d["metrics"]
             )
 
         d["is_timeseries"] = self.should_be_timeseries()
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
-        fd = self.form_data
-        if not self.should_be_timeseries() and df is not None and DTTM_ALIAS in df:
+        """
+        Transform the query result to the table representation.
+
+        :param df: The interim dataframe
+        :returns: The table visualization data
+
+        The interim dataframe comprises of the group-by and non-group-by columns and
+        the union of the metrics representing the non-percent and percent metrics. Note
+        the percent metrics have yet to be transformed.
+        """
+
+        if not self.should_be_timeseries() and DTTM_ALIAS in df:
             del df[DTTM_ALIAS]
 
-        # Sum up and compute percentages for all percent metrics
-        percent_metrics = fd.get("percent_metrics") or []
-        percent_metrics = [utils.get_metric_name(m) for m in percent_metrics]
+        # Transform the data frame to adhere to the UI ordering of the columns and
+        # metrics whilst simultaneously computing the percentages (via normalization)
+        # for the percent metrics.
+        non_percent_metric_columns = (
+            self.form_data.get("all_columns") or self.form_data.get("groupby") or []
+        ) + utils.get_metric_names(self.form_data.get("metrics") or [])
 
-        if len(percent_metrics):
-            percent_metrics = list(filter(lambda m: m in df, percent_metrics))
-            metric_sums = {
-                m: reduce(lambda a, b: a + b, df[m]) for m in percent_metrics
-            }
-            metric_percents = {
-                m: list(
-                    map(
-                        lambda a: None if metric_sums[m] == 0 else a / metric_sums[m],
-                        df[m],
-                    )
-                )
-                for m in percent_metrics
-            }
-            for m in percent_metrics:
-                m_name = "%" + m
-                df[m_name] = pd.Series(metric_percents[m], name=m_name)
-            # Remove metrics that are not in the main metrics list
-            metrics = fd.get("metrics") or []
-            metrics = [utils.get_metric_name(m) for m in metrics]
-            for m in filter(
-                lambda m: m not in metrics and m in df.columns, percent_metrics
-            ):
-                del df[m]
+        percent_metric_columns = utils.get_metric_names(
+            self.form_data.get("percent_metrics") or []
+        )
+
+        df = pd.concat(
+            [
+                df[non_percent_metric_columns],
+                (
+                    df[percent_metric_columns]
+                    .div(df[percent_metric_columns].sum())
+                    .add_prefix("%")
+                ),
+            ],
+            axis=1,
+        )
 
         data = self.handle_js_int_overflow(
             dict(records=df.to_dict(orient="records"), columns=list(df.columns))
@@ -906,10 +933,20 @@ class BoxPlotViz(NVD3Viz):
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         form_data = self.form_data
+
         group_column = []
         for metric_dic in form_data['metrics']:
             if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
                 group_column.append(metric_dic['sqlExpression'])
+
+        if form_data['group_type'] == 'CalYearly':
+            group_column.append('Year')
+        elif form_data['group_type'] == 'Quarterly':
+            group_column.append('Quarter')
+        elif form_data['group_type'] == 'CalYear Quarterly':
+            group_column.append('Year')
+            group_column.append('Quarter')
+
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
             return np.nanpercentile(series, 25)
@@ -1003,8 +1040,6 @@ class BoxPlotVizRunComp(BoxPlotViz):
             d['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
 
         return d
-
-
 
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " - "
@@ -1847,7 +1882,7 @@ class ChordViz(BaseViz):
         qry = super().query_obj()
         fd = self.form_data
         qry["groupby"] = [fd.get("groupby"), fd.get("columns")]
-        qry["metrics"] = [utils.get_metric_name(fd.get("metric"))]
+        qry["metrics"] = [fd.get("metric")]
         return qry
 
     def get_data(self, df: pd.DataFrame) -> VizData:
@@ -2010,7 +2045,7 @@ class IFrameViz(BaseViz):
     def query_obj(self):
         return None
 
-    def get_df(self, query_obj: Dict[str, Any] = None) -> pd.DataFrame:
+    def get_df(self, query_obj: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         return pd.DataFrame()
 
     def get_data(self, df: pd.DataFrame) -> VizData:
