@@ -448,6 +448,8 @@ class ExportModal extends React.Component {
         radius: this.props.solarBI.queryResponse.radius,
         spatial_address: { ...this.props.solarBI.queryResponse.form_data.spatial_address },
         address_name: this.props.address.slice(0, -11),
+        generation: this.state.generation ? '1' : '0',
+        capacity: this.state.capacity,
       };
       // this.props.onHide();
       this.props.requestSolarData(queryData)
@@ -668,7 +670,7 @@ class ExportModal extends React.Component {
                 </CardContent>
                 {(solarBI.sending || solarBI.requestStatus === 'success') &&
                   <p className="sending-msg">
-                    We’ve send our pitchons to fetch your data, you will be re-directed to My Data
+                    We’ve send our pigeons to fetch your data, you will be re-directed to My Data
                     in a few seconds, sit tight we will have it deliver to you in a little bit.
                   </p>
                 }
