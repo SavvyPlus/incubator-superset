@@ -751,7 +751,7 @@ TALISMAN_CONFIG = {
 # by that custom datasource access. So we are assuming a default security config,
 # a custom security config could potentially give access to setting filters on
 # tables that users do not have access to.
-ENABLE_ROW_LEVEL_SECURITY = False
+ENABLE_ROW_LEVEL_SECURITY = True
 
 #
 # Flask session cookie options
