@@ -16,10 +16,20 @@
   specific language governing permissions and limitations
   under the License.
 #}
+{% block title %}
+  {% if request.path == '/credit-register/form' %}
+    <title>SolarBI - Credit Register</title>
+  {% elif request.path == '/trial-register/form' %}
+    <title>SolarBI - Trial Register</title>
+  {% else %}
+    <title>SolarBI - Login or Sign Up</title>
+  {% endif %}
+  <meta name="description" content="30 years of hourly solar irradiance showing values across Australia every 5km and the last 3 years of potential generation.">
+{% endblock %}
 {% block head_css %}
     <link rel="icon" type="image/png" href="/static/assets/images/favicon.png">
     <link href="{{url_for('appbuilder.static',filename='css/bootstrap.min.css')}}" rel="stylesheet">
-    <link href="{{url_for('static',filename='assets/stylesheets/solarbi.less')}}?v=2.9" rel="stylesheet">
+    <link href="{{url_for('static',filename='assets/stylesheets/solarbi.less')}}?v=3.0" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,700&display=swap" rel="stylesheet">
 {% endblock %}
 {% block head_js %}
