@@ -21,14 +21,12 @@ import { t } from '@superset-ui/translation';
 export default {
   controlPanelSections: [
     {
-      label: t('Query'),
-      expanded: true,
-      controlSetRows: [['metrics'], ['adhoc_filters'], ['groupby']],
-    },
-    {
       label: t('Empower'),
       expanded: true,
       controlSetRows: [
+        ['metrics'],
+        ['adhoc_filters'],
+        ['groupby'],
         ['run_picker'],
         ['group_type'],
         ['cal_year'],
