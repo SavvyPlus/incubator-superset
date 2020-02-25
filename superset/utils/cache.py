@@ -14,15 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# pylint: disable=C,R,W
 from flask import request
 
-from superset import tables_cache
+from superset.extensions import cache_manager
 
 
-def view_cache_key(*unused_args, **unused_kwargs) -> str:
+def view_cache_key(*_, **__) -> str:
     args_hash = hash(frozenset(request.args.items()))
-    return 'view/{}/{}'.format(request.path, args_hash)
+    return "view/{}/{}".format(request.path, args_hash)
 
 
 def memoized_func(key=view_cache_key, attribute_in_key=None):
@@ -41,27 +40,34 @@ def memoized_func(key=view_cache_key, attribute_in_key=None):
     Key is a callable function that takes function arguments and
     returns the caching key.
     """
+
     def wrap(f):
-        if tables_cache:
+        if cache_manager.tables_cache:
+
             def wrapped_f(self, *args, **kwargs):
-                if not kwargs.get('cache', True):
+                if not kwargs.get("cache", True):
                     return f(self, *args, **kwargs)
 
                 if attribute_in_key:
                     cache_key = key(*args, **kwargs).format(
-                        getattr(self, attribute_in_key))
+                        getattr(self, attribute_in_key)
+                    )
                 else:
                     cache_key = key(*args, **kwargs)
-                o = tables_cache.get(cache_key)
-                if not kwargs.get('force') and o is not None:
+                o = cache_manager.tables_cache.get(cache_key)
+                if not kwargs.get("force") and o is not None:
                     return o
                 o = f(self, *args, **kwargs)
-                tables_cache.set(cache_key, o,
-                                 timeout=kwargs.get('cache_timeout'))
+                cache_manager.tables_cache.set(
+                    cache_key, o, timeout=kwargs.get("cache_timeout")
+                )
                 return o
+
         else:
             # noop
             def wrapped_f(self, *args, **kwargs):
                 return f(self, *args, **kwargs)
+
         return wrapped_f
+
     return wrap
