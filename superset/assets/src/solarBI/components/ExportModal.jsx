@@ -43,6 +43,7 @@ import Container from '@material-ui/core/Container';
 import DateFnsUtils from '@date-io/date-fns';
 import { MuiPickersUtilsProvider, KeyboardDatePicker } from '@material-ui/pickers';
 import SolarStepper from './SolarStepper';
+import CountdownDialog from './CountdownDialog';
 import { requestSolarData, startTrial } from '../actions/solarActions';
 
 const propTypes = {
@@ -340,6 +341,7 @@ class ExportModal extends React.Component {
       resolution: 'hourly',
       generation: true,
       capacity: '1',
+      countdown: false,
     };
 
     this.handleStartDateChange = this.handleStartDateChange.bind(this);
@@ -455,7 +457,8 @@ class ExportModal extends React.Component {
       this.props.requestSolarData(queryData)
         .then((json) => {
           if (json.type === 'REQEUST_SOLAR_DATA_SUCCEEDED') {
-            window.location = '/solar/list';
+            // window.location = '/solar/list';
+            this.setState({ countdown: true });
           }
         });
     }
@@ -464,7 +467,7 @@ class ExportModal extends React.Component {
   render() {
     const { classes, open, onHide, solarBI } = this.props;
     // const { startDate, endDate, anchorEl, pickerStart, pickerEnd } = this.state;
-    const { anchorEl, pickerStart, pickerEnd } = this.state;
+    const { anchorEl, pickerStart, pickerEnd, countdown } = this.state;
     let remainCount = null;
     if (solarBI.can_trial && solarBI.start_trial === 'starting') {
       remainCount = <img style={{ width: 30, marginLeft: 20 }} alt="Loading..." src="/static/assets/images/loading.gif" />;
@@ -677,6 +680,7 @@ class ExportModal extends React.Component {
               </Card>
             </DialogContent>
           </Dialog>
+          <CountdownDialog open={countdown} />
         </ThemeProvider>
       </div>
     );

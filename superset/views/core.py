@@ -1978,6 +1978,8 @@ class Superset(BaseSupersetView):
 
         This endpoint evolved to be the entry point of many different
         requests that GETs or POSTs a form_data."""
+        return json_success(json.dumps({'query_id': '123123123'}))
+
         try:
             # Check whether the team has available requests. If there is no remaining request, then return an
             # error json message, otherwise subtract the remaining requests by 1
