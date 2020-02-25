@@ -61,6 +61,7 @@ yarn-error.log
 # IntelliJ
 *.iml
 venv
+empower_venv
 @eaDir/
 
 # Docker
