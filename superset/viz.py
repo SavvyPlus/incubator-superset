@@ -1074,39 +1074,39 @@ class BoxPlotVizRunComp(BoxPlotViz):
 
         def Q3(series):
             return np.nanpercentile(series, 75)
-        #
-        # whisker_type = form_data.get("whisker_options")
-        # if whisker_type == "Tukey":
 
-        def whisker_high(series):
-            upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
-            return series[series <= upper_outer_lim].max()
+        whisker_type = form_data.get("whisker_options")
+        if whisker_type == "Tukey":
 
-        def whisker_low(series):
-            lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
-            return series[series >= lower_outer_lim].min()
+            def whisker_high(series):
+                upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
+                return series[series <= upper_outer_lim].max()
 
-        # elif whisker_type == "Min/max (no outliers)":
-        #
-        #     def whisker_high(series):
-        #         return series.max()
-        #
-        #     def whisker_low(series):
-        #         return series.min()
-        #
-        # elif " percentiles" in whisker_type:  # type: ignore
-        #     low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
-        #         "/"
-        #     )
-        #
-        #     def whisker_high(series):
-        #         return np.nanpercentile(series, int(high))
-        #
-        #     def whisker_low(series):
-        #         return np.nanpercentile(series, int(low))
-        #
-        # else:
-        #     raise ValueError("Unknown whisker type: {}".format(whisker_type))
+            def whisker_low(series):
+                lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
+                return series[series >= lower_outer_lim].min()
+
+        elif whisker_type == "Min/max (no outliers)":
+
+            def whisker_high(series):
+                return series.max()
+
+            def whisker_low(series):
+                return series.min()
+
+        elif " percentiles" in whisker_type:  # type: ignore
+            low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
+                "/"
+            )
+
+            def whisker_high(series):
+                return np.nanpercentile(series, int(high))
+
+            def whisker_low(series):
+                return np.nanpercentile(series, int(low))
+
+        else:
+            raise ValueError("Unknown whisker type: {}".format(whisker_type))
 
         def outliers(series):
             above = series[series > whisker_high(series)]
