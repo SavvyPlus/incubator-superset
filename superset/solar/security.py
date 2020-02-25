@@ -199,12 +199,13 @@ class CustomSecurityManager(SupersetSecurityManager):
             self, user: object, permission_name: str, view_name: str
     ) -> bool:
 
+        if user.roles[0].name == 'Admin':
+            return True
+        
         team_id, team_name = get_session_team(self, user.id)
         team_roles = user.team_role
         db_role_ids = list()
 
-        if user.roles[0].name == 'Admin':
-            return True
 
         # First check against builtin (statically configured) roles
         # because no database query is needed
