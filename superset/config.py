@@ -129,7 +129,8 @@ SECRET_KEY = (
 )
 
 # The SQLAlchemy connection string.
-SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "superset.db")
+# SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "superset.db")
+SQLALCHEMY_DATABASE_URI = os.environ["SAVVYBI_DB"]
 # SQLALCHEMY_DATABASE_URI = 'mysql://myapp@localhost/myapp'
 # SQLALCHEMY_DATABASE_URI = 'postgresql://root:password@localhost/myapp'
 
@@ -653,7 +654,7 @@ SQL_QUERY_MUTATOR = None
 ENABLE_FLASK_COMPRESS = True
 
 # Enable / disable scheduled email reports
-ENABLE_SCHEDULED_EMAIL_REPORTS = False
+ENABLE_SCHEDULED_EMAIL_REPORTS = True
 
 # If enabled, certail features are run in debug mode
 # Current list:
@@ -741,7 +742,7 @@ TALISMAN_CONFIG = {
 # by that custom datasource access. So we are assuming a default security config,
 # a custom security config could potentially give access to setting filters on
 # tables that users do not have access to.
-ENABLE_ROW_LEVEL_SECURITY = False
+ENABLE_ROW_LEVEL_SECURITY = True
 
 #
 # Flask session cookie options

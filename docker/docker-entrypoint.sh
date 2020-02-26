@@ -17,6 +17,8 @@
 #
 set -eo pipefail
 
+export SAVVYBI_DB=${SAVVYBI_DB}
+
 if [ "${#}" -ne 0 ]; then
     exec "${@}"
 else
