@@ -60,6 +60,7 @@ const propTypes = {
 const theme = createMuiTheme({
   typography: {
     useNextVariants: true,
+    fontFamily: 'Montserrat',
   },
   palette: {
     primary: {
@@ -479,6 +480,12 @@ class ExportModal extends React.Component {
         Start trial
       </a>);
     }
+    let request = <Button className={classNames(classes.button, classes.requestBtn)} onClick={this.handleRequestData} color="primary" disabled={solarBI.remain_count === 0}>REQUEST</Button>;
+    if (solarBI.sending) {
+      request = <img className={classes.loading} alt="Loading..." src="/static/assets/images/loading.gif" />;
+    } else if (solarBI.requestStatus === 'success') {
+      request = <img className={classes.loading} alt="Request success!" src="/static/assets/images/tick_mark.gif" />;
+    }
 
     const openAnchor = Boolean(anchorEl);
 
@@ -660,10 +667,7 @@ class ExportModal extends React.Component {
                       >
                         Back
                       </Button>
-                      {(solarBI.sending || solarBI.requestStatus === 'success') ?
-                        (<img className={classes.loading} alt="Loading..." src="/static/assets/images/loading.gif" />) :
-                        (<Button className={classNames(classes.button, classes.requestBtn)} onClick={this.handleRequestData} color="primary" disabled={solarBI.remain_count === 0}>REQUEST</Button>)
-                      }
+                      {request}
                     </div>
                     <p className={classes.remainCount}>
                       * Remaining request(s): {solarBI.remain_count}
@@ -671,12 +675,12 @@ class ExportModal extends React.Component {
                     </p>
                   </Container>
                 </CardContent>
-                {(solarBI.sending || solarBI.requestStatus === 'success') &&
+                {/* {(solarBI.sending || solarBI.requestStatus === 'success') &&
                   <p className="sending-msg">
                     We’ve send our pigeons to fetch your data, you will be re-directed to My Data
                     in a few seconds, sit tight we will have it deliver to you in a little bit.
                   </p>
-                }
+                } */}
               </Card>
             </DialogContent>
           </Dialog>
