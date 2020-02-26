@@ -37,6 +37,8 @@ function CountdownDialog({ open }) {
     <div>
       <Dialog
         open={open}
+        disableBackdropClick
+        disableEscapeKeyDown
       // onClose={handleClose}
       >
         <DialogTitle id="alert-dialog-title">THANK YOU!</DialogTitle>
