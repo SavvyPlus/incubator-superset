@@ -663,7 +663,7 @@ SQL_QUERY_MUTATOR = None
 ENABLE_FLASK_COMPRESS = True
 
 # Enable / disable scheduled email reports
-ENABLE_SCHEDULED_EMAIL_REPORTS = False
+ENABLE_SCHEDULED_EMAIL_REPORTS = True
 
 # If enabled, certail features are run in debug mode
 # Current list:
