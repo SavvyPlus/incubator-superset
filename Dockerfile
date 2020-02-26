@@ -68,7 +68,7 @@ ENV LANG=C.UTF-8 \
     FLASK_APP="superset.app:create_app()" \
     PYTHONPATH="/app/pythonpath" \
     SUPERSET_HOME="/app/superset_home" \
-    SUPERSET_PORT=8080
+    SUPERSET_PORT=8088
 
 RUN useradd --user-group --no-create-home --no-log-init --shell /bin/bash superset \
         && mkdir -p ${SUPERSET_HOME} ${PYTHONPATH} \
@@ -77,6 +77,7 @@ RUN useradd --user-group --no-create-home --no-log-init --shell /bin/bash supers
             build-essential \
             default-libmysqlclient-dev \
             libpq-dev \
+            default-jre \
         && rm -rf /var/lib/apt/lists/*
 
 COPY --from=superset-py /usr/local/lib/python3.6/site-packages/ /usr/local/lib/python3.6/site-packages/
