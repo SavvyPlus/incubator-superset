@@ -320,13 +320,13 @@ IMG_UPLOAD_URL = "/static/uploads/"
 # IMG_SIZE = (300, 200, True)
 
 CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24
-# CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
-CACHE_CONFIG: CacheConfig = {
-    'CACHE_TYPE': 'redis',
-    'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
-    'CACHE_KEY_PREFIX': 'superset_results',
-    'CACHE_REDIS_URL': 'redis://redis:6379/0'
-}
+CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
+# CACHE_CONFIG: CacheConfig = {
+#     'CACHE_TYPE': 'redis',
+#     'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
+#     'CACHE_KEY_PREFIX': 'superset_results',
+#     'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+# }
 TABLE_NAMES_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
 # CORS Options
@@ -599,6 +599,9 @@ ENABLE_CHUNK_ENCODING = False
 SILENCE_FAB = True
 
 FAB_ADD_SECURITY_VIEWS = True
+FAB_ADD_SECURITY_PERMISSION_VIEW = False
+FAB_ADD_SECURITY_VIEW_MENU_VIEW = False
+FAB_ADD_SECURITY_PERMISSION_VIEWS_VIEW = False
 
 # The link to a page containing common errors and their resolutions
 # It will be appended at the bottom of sql_lab errors.
@@ -743,6 +746,15 @@ TALISMAN_CONFIG = {
     "force_https": True,
     "force_https_permanent": False,
 }
+
+# Note that: RowLevelSecurityFilter is only given by default to the Admin role
+# and the Admin Role does have the all_datasources security permission.
+# But, if users create a specific role with access to RowLevelSecurityFilter MVC
+# and a custom datasource access, the table dropdown will not be correctly filtered
+# by that custom datasource access. So we are assuming a default security config,
+# a custom security config could potentially give access to setting filters on
+# tables that users do not have access to.
+ENABLE_ROW_LEVEL_SECURITY = True
 
 #
 # Flask session cookie options

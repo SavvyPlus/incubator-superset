@@ -83,6 +83,10 @@ class ChartRenderer extends React.Component {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
+    if (nextProps.vizType === 'box_plot') {
+      return true;
+    }
+
     const resultsReady =
       nextProps.queryResponse &&
       ['success', 'rendered'].indexOf(nextProps.chartStatus) > -1 &&
@@ -221,6 +225,7 @@ class ChartRenderer extends React.Component {
       formData,
       queryResponse,
     } = this.props;
+    console.log(this.props);
 
     return (
       <>

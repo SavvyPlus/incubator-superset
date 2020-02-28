@@ -45,7 +45,7 @@ from geopy.point import Point
 from markdown import markdown
 from pandas.tseries.frequencies import to_offset
 
-from superset import app, cache, get_css_manifest_files
+from superset import app, cache, get_css_manifest_files, security_manager
 from superset.constants import NULL_STRING
 from superset.exceptions import NullValueException, SpatialException
 from superset.models.helpers import QueryResult
@@ -279,7 +279,8 @@ class BaseViz:
             groupby.remove(DTTM_ALIAS)
             is_timeseries = True
 
-        granularity = form_data.get("granularity") or form_data.get("granularity_sqla")
+        # granularity = form_data.get("granularity") or form_data.get("granularity_sqla")
+        granularity = None
         limit = int(form_data.get("limit") or 0)
         timeseries_limit_metric = form_data.get("timeseries_limit_metric")
         row_limit = int(form_data.get("row_limit") or config["ROW_LIMIT"])
@@ -287,13 +288,14 @@ class BaseViz:
         # default order direction
         order_desc = form_data.get("order_desc", True)
 
-        since, until = utils.get_since_until(
-            relative_start=relative_start,
-            relative_end=relative_end,
-            time_range=form_data.get("time_range"),
-            since=form_data.get("since"),
-            until=form_data.get("until"),
-        )
+        # since, until = utils.get_since_until(
+        #     relative_start=relative_start,
+        #     relative_end=relative_end,
+        #     time_range=form_data.get("time_range"),
+        #     since=form_data.get("since"),
+        #     until=form_data.get("until"),
+        # )
+        since, until = None, None
         time_shift = form_data.get("time_shift", "")
         self.time_shift = utils.parse_past_timedelta(time_shift)
         from_dttm = None if since is None else (since - self.time_shift)
@@ -371,6 +373,7 @@ class BaseViz:
         cache_dict["time_range"] = self.form_data.get("time_range")
         cache_dict["datasource"] = self.datasource.uid
         cache_dict["extra_cache_keys"] = self.datasource.get_extra_cache_keys(query_obj)
+        cache_dict["rls"] = security_manager.get_rls_ids(self.datasource)
         cache_dict["changed_on"] = self.datasource.changed_on
         json_data = self.json_dumps(cache_dict, sort_keys=True)
         return hashlib.md5(json_data.encode("utf-8")).hexdigest()
@@ -394,6 +397,27 @@ class BaseViz:
         """Handles caching around the df payload retrieval"""
         if not query_obj:
             query_obj = self.query_obj()
+
+        if 'group_type' in self.form_data:
+            extra_metrics = [
+                {'expressionType': 'SQL', 'sqlExpression': 'Year', 'column': None,
+                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+                 'label': 'Year', 'optionName': 'metric_6d3rflef213_fkp51ioh3cu'},
+                {'expressionType': 'SQL', 'sqlExpression': 'Quarter', 'column': None,
+                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+                 'label': 'Quarter', 'optionName': 'metric_sy7828bzmzq_cu6n77opyy9'}
+            ]
+            if self.form_data['group_type'] == 'CalYearly':
+                query_obj['metrics'].append(extra_metrics[0])
+            elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
+                query_obj['metrics'].append(extra_metrics[1])
+                if self.form_data['quarter'] != 'All Qtrs':
+                    query_obj['filter'].append({'col': 'Quarter', 'op': '==', 'val': str(self.form_data['quarter'])})
+            elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
+                query_obj['metrics'].append(extra_metrics[0])
+                query_obj['metrics'].append(extra_metrics[1])
+                query_obj['filter'].append({'col': 'Year', 'op': '==', 'val': str(self.form_data['cal_year'])})
+
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         logger.info("Cache key: {}".format(cache_key))
         is_loaded = False
@@ -574,15 +598,30 @@ class TableViz(BaseViz):
         the percent metrics have yet to be transformed.
         """
 
-        if not self.should_be_timeseries() and DTTM_ALIAS in df:
-            del df[DTTM_ALIAS]
-
+        non_percent_metric_columns = []
         # Transform the data frame to adhere to the UI ordering of the columns and
         # metrics whilst simultaneously computing the percentages (via normalization)
         # for the percent metrics.
-        non_percent_metric_columns = (
+
+        if DTTM_ALIAS in df:
+            if self.should_be_timeseries():
+                non_percent_metric_columns.append(DTTM_ALIAS)
+            else:
+                del df[DTTM_ALIAS]
+
+        non_percent_metric_columns.extend(
             self.form_data.get("all_columns") or self.form_data.get("groupby") or []
-        ) + utils.get_metric_names(self.form_data.get("metrics") or [])
+        )
+
+        non_percent_metric_columns.extend(
+            utils.get_metric_names(self.form_data.get("metrics") or [])
+        )
+
+        timeseries_limit_metric = utils.get_metric_name(
+            self.form_data.get("timeseries_limit_metric")
+        )
+        if timeseries_limit_metric:
+            non_percent_metric_columns.append(timeseries_limit_metric)
 
         percent_metric_columns = utils.get_metric_names(
             self.form_data.get("percent_metrics") or []
@@ -884,14 +923,15 @@ class BoxPlotViz(NVD3Viz):
     viz_type = "box_plot"
     verbose_name = _("Box Plot")
     sort_series = False
-    is_timeseries = True
+    is_timeseries = False
+    enforce_numerical_metrics = False
 
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " - "
         chart_data = []
         for index_value, row in zip(df.index, df.to_dict(orient="records")):
             if isinstance(index_value, tuple):
-                index_value = label_sep.join(index_value)
+                index_value = label_sep.join(list(str(x) for x in index_value))
             boxes = defaultdict(dict)
             for (label, key), value in row.items():
                 if key == "nanmedian":
@@ -900,7 +940,7 @@ class BoxPlotViz(NVD3Viz):
             for label, box in boxes.items():
                 if len(self.form_data.get("metrics")) > 1:
                     # need to render data labels with metrics
-                    chart_label = label_sep.join([index_value, label])
+                    chart_label = label_sep.join([str(index_value), label])
                 else:
                     chart_label = index_value
                 chart_data.append({"label": chart_label, "values": box})
@@ -908,6 +948,19 @@ class BoxPlotViz(NVD3Viz):
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         form_data = self.form_data
+
+        group_column = []
+        for metric_dic in form_data['metrics']:
+            if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
+                group_column.append(metric_dic['sqlExpression'])
+
+        if form_data['group_type'] == 'CalYearly':
+            group_column.append('Year')
+        elif form_data['group_type'] == 'Quarterly':
+            group_column.append('Quarter')
+        elif form_data['group_type'] == 'CalYear Quarterly':
+            group_column.append('Year')
+            group_column.append('Quarter')
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
@@ -956,10 +1009,130 @@ class BoxPlotViz(NVD3Viz):
             return set(above.tolist() + below.tolist())
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
-        df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        # df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        df = df.groupby(group_column).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 
+class BoxPlotVizRunComp(BoxPlotViz):
+
+    """Box plot viz from ND3"""
+
+    viz_type = "box_plot_run_comp"
+    verbose_name = _("Box Plot For Run Comparison")
+    sort_series = False
+    is_timeseries = False
+    enforce_numerical_metrics = False
+
+    def query_obj(self) -> Dict[str, Any]:
+        d = super(BoxPlotVizRunComp, self).query_obj()
+        fd = self.form_data
+        d['metrics'].append({'aggregate': None,
+                             'column': None,
+                             'expressionType': 'SQL',
+                             'fromFormData': True,
+                             'hasCustomLabel': False,
+                             'label': 'SpotPrice',
+                             'optionName': 'metric_0qwzx39q1td_v7q6ibb8h4m',
+                             'sqlExpression': 'SpotPrice'})
+        d['metrics'].append({'aggregate': None,
+                              'column': None,
+                              'expressionType': 'SQL',
+                              'fromFormData': True,
+                              'hasCustomLabel': False,
+                              'label': 'RunID',
+                              'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
+                              'sqlExpression': 'RunID'})
+        d['metrics'].append({'aggregate': None,
+                              'column': None,
+                              'expressionType': 'SQL',
+                              'fromFormData': True,
+                              'hasCustomLabel': False,
+                              'label': 'Year',
+                              'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
+                              'sqlExpression': 'Year'})
+        for run_id in self.form_data['run_picker']:
+            d['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
+
+        return d
+
+    def to_series(self, df, classed="", title_suffix=""):
+        label_sep = " - "
+        chart_data = []
+        for index_value, row in zip(df.index, df.to_dict(orient="records")):
+            if isinstance(index_value, tuple):
+                index_value = label_sep.join(list(str(x) for x in index_value))
+            boxes = defaultdict(dict)
+            for (label, key), value in row.items():
+                if key == "nanmedian":
+                    key = "Q2"
+                boxes[label][key] = value
+            for label, box in boxes.items():
+                if len(self.query_obj().get("metrics")) > 1:
+                    # need to render data labels with metrics
+                    chart_label = label_sep.join([str(index_value), label])
+                else:
+                    chart_label = index_value
+                chart_data.append({"label": chart_label, "values": box})
+        return chart_data
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        form_data = self.form_data
+        group_column = []
+        for metric_dic in self.query_obj()['metrics']:
+            if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
+                group_column.append(metric_dic['sqlExpression'])
+        # conform to NVD3 names
+        def Q1(series):  # need to be named functions - can't use lambdas
+            return np.nanpercentile(series, 25)
+
+        def Q3(series):
+            return np.nanpercentile(series, 75)
+        #
+        # whisker_type = form_data.get("whisker_options")
+        # if whisker_type == "Tukey":
+
+        def whisker_high(series):
+            upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
+            return series[series <= upper_outer_lim].max()
+
+        def whisker_low(series):
+            lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
+            return series[series >= lower_outer_lim].min()
+
+        # elif whisker_type == "Min/max (no outliers)":
+        #
+        #     def whisker_high(series):
+        #         return series.max()
+        #
+        #     def whisker_low(series):
+        #         return series.min()
+        #
+        # elif " percentiles" in whisker_type:  # type: ignore
+        #     low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
+        #         "/"
+        #     )
+        #
+        #     def whisker_high(series):
+        #         return np.nanpercentile(series, int(high))
+        #
+        #     def whisker_low(series):
+        #         return np.nanpercentile(series, int(low))
+        #
+        # else:
+        #     raise ValueError("Unknown whisker type: {}".format(whisker_type))
+
+        def outliers(series):
+            above = series[series > whisker_high(series)]
+            below = series[series < whisker_low(series)]
+            # pandas sometimes doesn't like getting lists back here
+            return set(above.tolist() + below.tolist())
+
+        aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
+        # df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        df = df.groupby(group_column).agg(aggregate)
+        chart_data = self.to_series(df)
+        return chart_data
 
 class BubbleViz(NVD3Viz):
 

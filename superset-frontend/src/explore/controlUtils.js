@@ -144,7 +144,27 @@ export function getControlState(controlKey, vizType, state, value) {
 }
 
 export function sectionsToRender(vizType, datasourceType) {
-  const controlPanelConfig = getChartControlPanelRegistry().get(vizType) || {};
+  let controlPanelConfig = getChartControlPanelRegistry().get(vizType) || {};
+
+  console.log('getChartControlePanelRegistry');
+  if (vizType === 'box_plot_run_comp') {
+    controlPanelConfig = {
+      controlPanelSections: [
+        {
+          label: 'Empower',
+          expanded: true,
+          controlSetRows: [
+            ['run_picker'],
+            ['group_type'],
+            ['cal_year'],
+            ['quarter'],
+          ],
+        },
+      ],
+    };
+  }
+  console.log(controlPanelConfig);
+
   const {
     sectionOverrides = {},
     controlPanelSections = [],

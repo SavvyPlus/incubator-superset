@@ -294,6 +294,18 @@ export const controls = {
       choices: state.datasource ? state.datasource.order_by_choices : [],
     }),
   },
+
+  run_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select Runs'),
+    default: [],
+    description: t('Select up to 3 run ids'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.run_ids),
+    }),
+  },
+
   color_picker: {
     label: t('Fixed Color'),
     description: t('Use this to define a static color for all circles'),
@@ -1103,6 +1115,46 @@ export const controls = {
         'the number of time series that get fetched and displayed. This feature is useful ' +
         'when grouping by high cardinality dimension(s).',
     ),
+  },
+
+  group_type: {
+    type: 'SelectControl',
+    freeForm: false,
+    label: t('Group type'),
+    validators: [],
+    choices: formatSelectOptions([
+      'CalYearly',
+      'Quarterly',
+      'CalYear Quarterly',
+    ]),
+    description: t('Select the group type'),
+  },
+
+  cal_year: {
+    type: 'SelectControl',
+    freeForm: false,
+    label: t('Calendar year'),
+    validators: [],
+    choices: formatSelectOptions(['2017', '2018', '2019', '2020']),
+    description: t('Select the calendar year'),
+  },
+
+  quarter: {
+    type: 'SelectControl',
+    freeForm: false,
+    label: t('Quarter'),
+    validators: [],
+    choices: formatSelectOptions(['Q1', 'Q2', 'Q3', 'Q4', 'All Qtrs']),
+    description: t('Select the quarter'),
+  },
+
+  hot_days: {
+    type: 'SelectControl',
+    freeForm: true,
+    label: t('Hot Days'),
+    validators: [v.integer],
+    choices: formatSelectOptions([0, 5, 10, 25, 50]),
+    description: t('Select the minimum number of hot days in that period.'),
   },
 
   timeseries_limit_metric: {
