@@ -1097,15 +1097,21 @@ class SolarBIBillingView(ModelView):
     def renew(self, event_object):
         paid_list = event_object['lines']['data']
 
+        valid_item_index = 0
         # Check lines on the paid list
         if len(paid_list) > 1:
             logging.info('Contains more than one items in the invoice')
-            for item in paid_list:
+            # Find the paid plan with latest end time of subscription, use it to update database
+            end_time = 0
+            for i in range(0,paid_list):
+                item = paid_list[i]
                 logging.info(f'Customer {event_object["customer_name"]} Item {item["plan"]["nickname"]}')
-
+                if item['amount'] >0 and item['period']['end'] > end_time:
+                    end_time = item['period']['end']
+                    valid_item_index = i
 
         try:
-            stripe_plan = paid_list[0]
+            stripe_plan = paid_list[valid_item_index]
             local_plan = self.appbuilder.get_session.query(Plan).filter_by(stripe_id=stripe_plan["plan"]['id']).first()
 
             # Fetch team_subscription by the subscription on invoice
