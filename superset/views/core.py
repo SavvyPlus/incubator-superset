@@ -940,7 +940,8 @@ class SolarBIBillingView(ModelView):
                 old_count = team_sub.remain_count
 
                 # Disable free trial for future
-                team_sub.trial_used = True
+                # team_sub.trial_used = True
+                g.user.trial_used = True
 
                 # Update the stripe subscription to new plan
                 new_sub = stripe.Subscription.modify(current_subscription.stripe_id,
@@ -1103,7 +1104,7 @@ class SolarBIBillingView(ModelView):
             logging.info('Contains more than one items in the invoice')
             # Find the paid plan with latest end time of subscription, use it to update database
             end_time = 0
-            for i in range(0,paid_list):
+            for i in range(0, paid_list):
                 item = paid_list[i]
                 logging.info(f'Customer {event_object["customer_name"]} Item {item["plan"]["nickname"]}')
                 if item['amount'] >0 and item['period']['end'] > end_time:
