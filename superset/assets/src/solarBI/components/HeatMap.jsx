@@ -85,18 +85,6 @@ class HeatMap extends React.Component {
       [0, 9, Math.round(data[1][27])],
       [0, 10, Math.round(data[1][28])],
       [0, 11, Math.round(data[1][29])],
-      // [1, 0, Math.round(data[1][0])],
-      // [1, 1, Math.round(data[1][1])],
-      // [1, 2, Math.round(data[1][2])],
-      // [1, 3, Math.round(data[1][3])],
-      // [1, 4, Math.round(data[1][4])],
-      // [1, 5, Math.round(data[1][5])],
-      // [1, 6, Math.round(data[1][18])],
-      // [1, 7, Math.round(data[1][19])],
-      // [1, 8, Math.round(data[1][20])],
-      // [1, 9, Math.round(data[1][21])],
-      // [1, 10, Math.round(data[1][22])],
-      // [1, 11, Math.round(data[1][23])],
     ];
 
     const solarValues = solarData.map(item => item[2]);
