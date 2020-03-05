@@ -446,7 +446,8 @@ class ExportModal extends React.Component {
     } else if (new Date(sDate) < new Date('1990-01-01') ||
       new Date(eDate) > new Date('2019-07-31')) {
       alert('Available date: 01/01/1990 ~ 31/07/2019.'); // eslint-disable-line no-alert
-    } else if (this.state.cap1 === undefined || this.state.cap2 === undefined || this.state.cap1Err || this.state.cap2Err) {
+    } else if (this.state.cap1 === undefined || this.state.cap2 === undefined ||
+      this.state.cap1Err || this.state.cap2Err) {
       alert('Please provide a valid capacity value!'); // eslint-disable-line no-alert
     } else {
       const queryData = {
