@@ -27,10 +27,10 @@ import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Dialog from '@material-ui/core/Dialog';
-import Typography from '@material-ui/core/Typography';
-import IconButton from '@material-ui/core/IconButton';
-import Popover from '@material-ui/core/Popover';
-import HelpIcon from '@material-ui/icons/Help';
+// import Typography from '@material-ui/core/Typography';
+// import IconButton from '@material-ui/core/IconButton';
+// import Popover from '@material-ui/core/Popover';
+// import HelpIcon from '@material-ui/icons/Help';
 import DialogContent from '@material-ui/core/DialogContent';
 import Chip from '@material-ui/core/Chip';
 import Radio from '@material-ui/core/Radio';
@@ -44,6 +44,8 @@ import DateFnsUtils from '@date-io/date-fns';
 import { MuiPickersUtilsProvider, KeyboardDatePicker } from '@material-ui/pickers';
 import SolarStepper from './SolarStepper';
 import CountdownDialog from './CountdownDialog';
+import CheatSheet from './CheatSheet';
+import RemainingRequests from './RemainingRequests';
 import { requestSolarData, startTrial } from '../actions/solarActions';
 
 const propTypes = {
@@ -144,6 +146,15 @@ const styles = tm => ({
   },
   dates: {
     display: 'flex',
+    width: 500,
+    marginLeft: 127,
+    transition: 'all 0.5s',
+  },
+  datesLeft: {
+    display: 'flex',
+    width: 500,
+    marginLeft: -45,
+    transition: 'all 0.5s',
   },
   dateLabel: {
     color: '#0063B0',
@@ -165,11 +176,6 @@ const styles = tm => ({
       marginLeft: '4em',
     },
   },
-  dollar: {
-    '& p': {
-      fontSize: 16,
-    },
-  },
   endText: {
     marginLeft: '15px',
     '& fieldset': {
@@ -178,8 +184,9 @@ const styles = tm => ({
   },
   exportCard: {
     margin: '40px auto',
-    width: '70%',
-    // height: 680,
+    width: 850,
+    height: 700,
+    position: 'relative',
   },
   lengthLabel: {
     fontSize: '1.3rem',
@@ -192,10 +199,10 @@ const styles = tm => ({
     marginTop: '45px',
   },
   formControl: {
-    marginBottom: '5px',
-    width: '90%',
+    // marginBottom: '5px',
+    width: 220,
     display: 'inline-block',
-    margin: theme.spacing(2),
+    // margin: theme.spacing(2),
     '& svg': {
       fontSize: '1.2em',
     },
@@ -205,17 +212,6 @@ const styles = tm => ({
     color: '#0063B0',
     fontFamily: 'Montserrat',
     fontWeight: 500,
-  },
-  head: {
-    textAlign: 'center',
-    height: 50,
-    background: 'linear-gradient(.25turn, #10998C, #09809D, #0063B0)',
-    backgroundColor: 'white',
-    marginTop: -10,
-    marginLeft: -10,
-    width: '105%',
-    color: 'white',
-    paddingTop: 15,
   },
   helperText: {
     fontSize: '0.9em',
@@ -237,24 +233,26 @@ const styles = tm => ({
   resolutionLabel: {
     fontSize: '1.3rem',
     color: '#0063B0',
-    width: '10%',
+    width: 120,
     float: 'left',
     borderBottom: 'none',
-    marginTop: '35px',
-    marginRight: '45px',
+    marginTop: 25,
   },
   remainCount: {
     float: 'right',
   },
-  // costLabel: {
-  //   fontSize: '1.3rem',
-  //   color: '#0063B0',
-  //   width: '10%',
-  //   float: 'left',
-  //   borderBottom: 'none',
-  //   marginTop: '35px',
-  //   marginLeft: '15px',
-  // },
+  selections: {
+    display: 'flex',
+    width: 460,
+    marginLeft: 150,
+    transition: 'all 0.5s',
+  },
+  selectionsLeft: {
+    display: 'flex',
+    width: 460,
+    marginLeft: -20,
+    transition: 'all 0.5s',
+  },
   startText: {
     marginLeft: '10px',
     '& fieldset': {
@@ -270,15 +268,6 @@ const styles = tm => ({
     fontSize: '1.6em',
     textAlign: 'center',
     paddingBottom: 0,
-  },
-  titleHr: {
-    display: 'block',
-    width: 159,
-    height: 1,
-    border: 0,
-    borderTop: '1px solid #AFDEDF',
-    margin: '1em auto 2em',
-    padding: 0,
   },
   textLabel: {
     fontSize: '16px',
@@ -301,24 +290,15 @@ const styles = tm => ({
     width: '70%',
     float: 'left',
   },
-  typeLabel: {
-    fontSize: '1.3rem',
-    color: '#0063B0',
-    width: '10%',
-    float: 'left',
-    borderBottom: 'none',
-    marginTop: '35px',
-    marginRight: '45px',
-  },
   typography: {
     margin: theme.spacing(2),
     fontSize: 15,
     width: 300,
   },
   resolutionGroup: {
-    flexDirection: 'row',
-    width: '80%',
-    float: 'left',
+    // flexDirection: 'row',
+    width: 250,
+    // float: 'left',
   },
   notUse: {
     margin: tm.spacing(1),
@@ -343,6 +323,7 @@ class ExportModal extends React.Component {
       generation: true,
       capacity: '1',
       countdown: false,
+      opencs: false,
     };
 
     this.handleStartDateChange = this.handleStartDateChange.bind(this);
@@ -354,6 +335,7 @@ class ExportModal extends React.Component {
     this.handleGenerationChange = this.handleGenerationChange.bind(this);
     this.handleCapacityChange = this.handleCapacityChange.bind(this);
     this.handleTrialClick = this.handleTrialClick.bind(this);
+    this.toggleCSDrawer = this.toggleCSDrawer.bind(this);
     this.onUnload = this.onUnload.bind(this);
   }
 
@@ -465,10 +447,14 @@ class ExportModal extends React.Component {
     }
   }
 
+  toggleCSDrawer() {
+    this.setState({ opencs: !this.state.opencs });
+  }
+
   render() {
     const { classes, open, onHide, solarBI } = this.props;
     // const { startDate, endDate, anchorEl, pickerStart, pickerEnd } = this.state;
-    const { anchorEl, pickerStart, pickerEnd, countdown } = this.state;
+    const { anchorEl, pickerStart, pickerEnd, countdown, opencs } = this.state;
     let remainCount = null;
     if (solarBI.can_trial && solarBI.start_trial === 'starting') {
       remainCount = <img style={{ width: 30, marginLeft: 20 }} alt="Loading..." src="/static/assets/images/loading.gif" />;
@@ -516,13 +502,14 @@ class ExportModal extends React.Component {
                     {solarBI.remain_days >= 0 && solarBI.plan_id !== 1 && <Chip style={{ fontSize: '1.05em' }} label={`Current subscription remains ${solarBI.remain_days} days left`} />}
                     {solarBI.plan_id === 1 && <Chip style={{ fontSize: '1.05em' }} label="You are in the free plan" />}
                     {solarBI.remain_days < 0 && solarBI.plan_id !== 1 && <Chip style={{ fontSize: '1.05em' }} label={`Your plan has passed due for ${-solarBI.remain_days} days`} />}
+                    <RemainingRequests requests={solarBI.remain_count} />
                     <p className={classes.addressText}>
                       {this.props.address.slice(0, -11)}
                     </p>
                     <hr style={{ display: 'block', width: 159, height: 1, border: 0, borderTop: '1px solid #808495', margin: '1em auto 2em', padding: 0 }} />
                   </div>
                   <Container maxWidth="md">
-                    <FormLabel classes={{ root: classes.lengthLabel, focused: classes.labelFocused }} component="legend">Length</FormLabel>
+                    {/* <FormLabel classes={{ root: classes.lengthLabel, focused: classes.labelFocused }} component="legend">Length</FormLabel> */}
                     <div className={classes.dates}>
                       <div className={classes.dateWrapper}>
                         <span className={classes.dateLabel}>Start</span>
@@ -576,7 +563,7 @@ class ExportModal extends React.Component {
                           />
                         </MuiPickersUtilsProvider>
                       </div>
-                      <IconButton
+                      {/* <IconButton
                         aria-label="More"
                         className={classes.iconButton}
                         onClick={this.handleQuestionClick}
@@ -601,27 +588,42 @@ class ExportModal extends React.Component {
                           Available date: 01/01/1990 ~ 31/07/2019.
                           Both Start and End date are inclusive.
                         </Typography>
-                      </Popover>
+                      </Popover> */}
                     </div>
-                    <hr className={classes.contentHr} />
-                    <FormControl component="fieldset" className={classes.formControl}>
-                      <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Resolution</FormLabel>
-                      <RadioGroup
-                        aria-label="resolution"
-                        name="resolution"
-                        className={classes.resolutionGroup}
-                        value={this.state.resolution}
-                        onChange={this.handleResolutionChange}
-                      >
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="hourly" control={<Radio color="secondary" />} label="Hourly" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="daily" control={<Radio color="secondary" />} label="Daily" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="weekly" control={<Radio color="secondary" />} label="Weekly" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="monthly" control={<Radio color="secondary" />} label="Monthly" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="annual" control={<Radio color="secondary" />} label="Annual" labelPlacement="bottom" />
-                      </RadioGroup>
-                    </FormControl>
-                    <hr className={classes.contentHr} />
-                    <FormControl component="fieldset" className={classes.formControl}>
+                    {/* <hr className={classes.contentHr} /> */}
+                    <div className={classes.selections}>
+                      <FormControl component="fieldset" className={classes.formControl}>
+                        <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Generation</FormLabel>
+                        <div style={{ marginTop: 15 }}>
+                          <Switch
+                            checked={this.state.generation}
+                            // onChange={this.handleGenerationChange}
+                            onClick={() => this.handleGenerationChange()}
+                            value="generation"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormControl style={{ margin: '15px 0 0 25px' }} component="fieldset" className={classes.formControl}>
+                        {/* <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Resolution</FormLabel> */}
+                        <RadioGroup
+                          aria-label="resolution"
+                          name="resolution"
+                          className={classes.resolutionGroup}
+                          value={this.state.resolution}
+                          onChange={this.handleResolutionChange}
+                        >
+                          <FormControlLabel disabled={!this.state.generation} classes={{ label: classes.formControlLabel }} value="halfhourly" control={<Radio color="secondary" />} label="30 min (Generation only)" labelPlacement="right" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="hourly" control={<Radio color="secondary" />} label="Hourly" labelPlacement="right" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="daily" control={<Radio color="secondary" />} label="Daily" labelPlacement="right" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="weekly" control={<Radio color="secondary" />} label="Weekly" labelPlacement="right" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="monthly" control={<Radio color="secondary" />} label="Monthly" labelPlacement="right" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="annual" control={<Radio color="secondary" />} label="Annual" labelPlacement="right" />
+                        </RadioGroup>
+                      </FormControl>
+                    </div>
+
+                    {/* <hr className={classes.contentHr} /> */}
+                    {/* <FormControl component="fieldset" className={classes.formControl}>
                       <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Generation</FormLabel>
                       <div style={{ marginTop: 25 }}>
                         <Switch
@@ -640,8 +642,8 @@ class ExportModal extends React.Component {
                             </p>
                         }
                       </div>
-                    </FormControl>
-                    <hr className={classes.contentHr} />
+                    </FormControl> */}
+                    {/* <hr className={classes.contentHr} />
                     <FormControl component="fieldset" className={classes.formControl}>
                       <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Capacity</FormLabel>
                       <RadioGroup
@@ -657,7 +659,7 @@ class ExportModal extends React.Component {
                         <FormControlLabel classes={{ label: classes.formControlLabel }} value="4" control={<Radio color="secondary" />} label="4" labelPlacement="bottom" />
                         <FormControlLabel classes={{ label: classes.formControlLabel }} value="5" control={<Radio color="secondary" />} label="5" labelPlacement="bottom" />
                       </RadioGroup>
-                    </FormControl>
+                    </FormControl> */}
                     <div style={{ marginTop: 50 }}>
                       <Button
                         className={classNames(classes.button, classes.closeBtn)}
@@ -670,17 +672,12 @@ class ExportModal extends React.Component {
                       {request}
                     </div>
                     <p className={classes.remainCount}>
-                      * Remaining request(s): {solarBI.remain_count}
+                      {/* * Remaining request(s): {solarBI.remain_count} */}
                       {remainCount}
                     </p>
                   </Container>
                 </CardContent>
-                {/* {(solarBI.sending || solarBI.requestStatus === 'success') &&
-                  <p className="sending-msg">
-                    We’ve send our pigeons to fetch your data, you will be re-directed to My Data
-                    in a few seconds, sit tight we will have it deliver to you in a little bit.
-                  </p>
-                } */}
+                <CheatSheet open={opencs} toggleDrawer={this.toggleCSDrawer} />
               </Card>
             </DialogContent>
           </Dialog>
