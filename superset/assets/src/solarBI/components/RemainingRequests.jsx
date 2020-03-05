@@ -9,10 +9,9 @@ const propTypes = {
 const useStyles = makeStyles({
   remain: {
     float: 'right',
-    marginTop: -20,
     position: 'absolute',
     right: 20,
-    top: 15,
+    top: 10,
   },
   left: {
     fontSize: '0.9em',
@@ -29,7 +28,7 @@ const useStyles = makeStyles({
   requestsText: {
     fontSize: '1.7em',
     fontWeight: 500,
-  }
+  },
 });
 
 function RemainingRequests({ requests }) {

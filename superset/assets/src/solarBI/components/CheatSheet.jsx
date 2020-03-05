@@ -3,16 +3,16 @@ import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 
 const propTypes = {
-  openCS: PropTypes.bool.isRequired,
+  open: PropTypes.bool.isRequired,
+  toggleDrawer: PropTypes.func.isRequired,
 };
-
 
 const useStyles = makeStyles({
   csopen: {
     position: 'absolute',
     top: 0,
     width: 400,
-    height: 650,
+    height: 700,
     transition: '0.5s',
     right: 0,
   },
@@ -20,7 +20,7 @@ const useStyles = makeStyles({
     position: 'absolute',
     top: 0,
     width: 450,
-    height: 650,
+    height: 700,
     transition: '0.5s',
     right: -374,
   },
@@ -45,7 +45,7 @@ const useStyles = makeStyles({
     borderLeft: '0.5px solid',
   },
   explains: {
-    margin: 50,
+    margin: 40,
     color: '#757575',
   },
 });

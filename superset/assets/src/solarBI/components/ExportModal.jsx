@@ -46,6 +46,8 @@ import SolarStepper from './SolarStepper';
 import CountdownDialog from './CountdownDialog';
 import CheatSheet from './CheatSheet';
 import RemainingRequests from './RemainingRequests';
+import UnitSelection from './UnitSelection';
+import CapacityInputs from './CapacityInputs';
 import { requestSolarData, startTrial } from '../actions/solarActions';
 
 const propTypes = {
@@ -114,9 +116,16 @@ const styles = tm => ({
     },
   },
   buttons: {
-    width: '80%',
-    marginLeft: '50',
-    display: 'inline-block',
+    marginTop: 50,
+    marginLeft: 0,
+    width: '100%',
+    transition: 'all 0.5s',
+  },
+  buttonsLeft: {
+    marginTop: 50,
+    marginLeft: 127,
+    width: 500,
+    transition: 'all 0.5s',
   },
   requestBtn: {
     float: 'right',
@@ -130,31 +139,18 @@ const styles = tm => ({
     margin: '2em auto 0',
     padding: 0,
   },
-  costOutput: {
-    fontFamily: 'Montserrat',
-    fontSize: '16px',
-    fontWeight: 500,
-    backgroundColor: '#EEEFF0',
-    borderRadius: 12,
-    lineHeight: '18px',
-    marginTop: '25px',
-    marginLeft: '30px',
-    marginBottom: '40px',
-    '& fieldset': {
-      borderRadius: 12,
-    },
+  ctn: {
+    marginLeft: 0,
+    transition: 'all 0.5s',
+  },
+  ctnLeft: {
+    marginLeft: -160,
+    transition: 'all 0.5s',
   },
   dates: {
     display: 'flex',
     width: 500,
     marginLeft: 127,
-    transition: 'all 0.5s',
-  },
-  datesLeft: {
-    display: 'flex',
-    width: 500,
-    marginLeft: -45,
-    transition: 'all 0.5s',
   },
   dateLabel: {
     color: '#0063B0',
@@ -245,13 +241,6 @@ const styles = tm => ({
     display: 'flex',
     width: 460,
     marginLeft: 150,
-    transition: 'all 0.5s',
-  },
-  selectionsLeft: {
-    display: 'flex',
-    width: 460,
-    marginLeft: -20,
-    transition: 'all 0.5s',
   },
   startText: {
     marginLeft: '10px',
@@ -324,6 +313,11 @@ class ExportModal extends React.Component {
       capacity: '1',
       countdown: false,
       opencs: false,
+      unit: 'mwh',
+      cap1: null,
+      cap1Err: false,
+      cap2: null,
+      cap2Err: false,
     };
 
     this.handleStartDateChange = this.handleStartDateChange.bind(this);
@@ -336,6 +330,9 @@ class ExportModal extends React.Component {
     this.handleCapacityChange = this.handleCapacityChange.bind(this);
     this.handleTrialClick = this.handleTrialClick.bind(this);
     this.toggleCSDrawer = this.toggleCSDrawer.bind(this);
+    this.handleUnitChange = this.handleUnitChange.bind(this);
+    this.handleCap1Change = this.handleCap1Change.bind(this);
+    this.handleCap2Change = this.handleCap2Change.bind(this);
     this.onUnload = this.onUnload.bind(this);
   }
 
@@ -368,9 +365,7 @@ class ExportModal extends React.Component {
     }
   }
 
-  // handleEndDateChange(event) {
-  //   this.setState({ endDate: event.target.value });
-  // }
+
   handleEndDateChange(date) {
     this.setState({ pickerEnd: date });
     try {
@@ -400,7 +395,23 @@ class ExportModal extends React.Component {
   }
 
   handleGenerationChange() {
+    if (this.state.resolution === 'halfhourly') {
+      this.setState({ resolution: 'hourly' });
+    }
+
     this.setState({ generation: !this.state.generation });
+  }
+
+  handleUnitChange(event) {
+    this.setState({ unit: event.target.value });
+  }
+
+  handleCap1Change(event) {
+    this.setState({ cap1: event.target.value });
+  }
+
+  handleCap2Change(event) {
+    this.setState({ cap2: event.target.value });
   }
 
   handleTrialClick() {
@@ -408,6 +419,8 @@ class ExportModal extends React.Component {
   }
 
   handleRequestData() {
+    this.setState({ cap1Err: false, cap2Err: false });
+
     const sDate = new Date(this.state.startDate);
     const eDate = new Date(this.state.endDate);
     if (this.state.startDate === '') {
@@ -419,6 +432,9 @@ class ExportModal extends React.Component {
     } else if (new Date(sDate) < new Date('1990-01-01') ||
       new Date(eDate) > new Date('2019-07-31')) {
       alert('Available date: 01/01/1990 ~ 31/07/2019.'); // eslint-disable-line no-alert
+    } else if (this.state.cap1 === null || this.state.cap2 === null) {
+      if (this.state.cap1 === null) this.setState({ cap1Err: true });
+      if (this.state.cap2 === null) this.setState({ cap2Err: true });
     } else {
       const queryData = {
         lat: this.props.solarBI.queryResponse.data.lat.toFixed(7) + '',
@@ -454,7 +470,8 @@ class ExportModal extends React.Component {
   render() {
     const { classes, open, onHide, solarBI } = this.props;
     // const { startDate, endDate, anchorEl, pickerStart, pickerEnd } = this.state;
-    const { anchorEl, pickerStart, pickerEnd, countdown, opencs } = this.state;
+    const { anchorEl, pickerStart, pickerEnd, countdown,
+      opencs, unit, cap1, cap1Err, cap2, cap2Err, generation } = this.state;
     let remainCount = null;
     if (solarBI.can_trial && solarBI.start_trial === 'starting') {
       remainCount = <img style={{ width: 30, marginLeft: 20 }} alt="Loading..." src="/static/assets/images/loading.gif" />;
@@ -508,7 +525,7 @@ class ExportModal extends React.Component {
                     </p>
                     <hr style={{ display: 'block', width: 159, height: 1, border: 0, borderTop: '1px solid #808495', margin: '1em auto 2em', padding: 0 }} />
                   </div>
-                  <Container maxWidth="md">
+                  <Container className={!opencs ? classes.ctn : classes.ctnLeft} maxWidth="md">
                     {/* <FormLabel classes={{ root: classes.lengthLabel, focused: classes.labelFocused }} component="legend">Length</FormLabel> */}
                     <div className={classes.dates}>
                       <div className={classes.dateWrapper}>
@@ -596,12 +613,26 @@ class ExportModal extends React.Component {
                         <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Generation</FormLabel>
                         <div style={{ marginTop: 15 }}>
                           <Switch
-                            checked={this.state.generation}
+                            checked={generation}
                             // onChange={this.handleGenerationChange}
                             onClick={() => this.handleGenerationChange()}
                             value="generation"
                           />
                         </div>
+                        {generation && (
+                          <React.Fragment>
+                            <UnitSelection unit={unit} handleUnitChange={this.handleUnitChange} />
+                            <CapacityInputs
+                              cap1={cap1}
+                              cap1Err={cap1Err}
+                              cap2={cap2}
+                              cap2Err={cap2Err}
+                              handleCap1Change={this.handleCap1Change}
+                              handleCap2Change={this.handleCap2Change}
+                            />
+                          </React.Fragment>
+                        )}
+
                       </FormControl>
                       <FormControl style={{ margin: '15px 0 0 25px' }} component="fieldset" className={classes.formControl}>
                         {/* <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Resolution</FormLabel> */}
@@ -612,55 +643,16 @@ class ExportModal extends React.Component {
                           value={this.state.resolution}
                           onChange={this.handleResolutionChange}
                         >
-                          <FormControlLabel disabled={!this.state.generation} classes={{ label: classes.formControlLabel }} value="halfhourly" control={<Radio color="secondary" />} label="30 min (Generation only)" labelPlacement="right" />
-                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="hourly" control={<Radio color="secondary" />} label="Hourly" labelPlacement="right" />
-                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="daily" control={<Radio color="secondary" />} label="Daily" labelPlacement="right" />
-                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="weekly" control={<Radio color="secondary" />} label="Weekly" labelPlacement="right" />
-                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="monthly" control={<Radio color="secondary" />} label="Monthly" labelPlacement="right" />
-                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="annual" control={<Radio color="secondary" />} label="Annual" labelPlacement="right" />
+                          <FormControlLabel disabled={!generation} classes={{ label: classes.formControlLabel }} value="halfhourly" control={<Radio color="secondary" />} label="30 min (Generation only)" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="hourly" control={<Radio color="secondary" />} label="Hourly" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="daily" control={<Radio color="secondary" />} label="Daily" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="weekly" control={<Radio color="secondary" />} label="Weekly" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="monthly" control={<Radio color="secondary" />} label="Monthly" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="annual" control={<Radio color="secondary" />} label="Annual" labelPlacement="end" />
                         </RadioGroup>
                       </FormControl>
                     </div>
-
-                    {/* <hr className={classes.contentHr} /> */}
-                    {/* <FormControl component="fieldset" className={classes.formControl}>
-                      <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Generation</FormLabel>
-                      <div style={{ marginTop: 25 }}>
-                        <Switch
-                          checked={this.state.generation}
-                          // onChange={this.handleGenerationChange}
-                          onClick={() => this.handleGenerationChange()}
-                          value="generation"
-                        />
-                        {
-                          this.state.generation ?
-                            <p className={classes.switch}>
-                              Including generation will take a little bit longer(~8 minutes).
-                            </p> :
-                            <p className={classes.switch}>
-                              No generation delivery estimates 5 minutes.
-                            </p>
-                        }
-                      </div>
-                    </FormControl> */}
-                    {/* <hr className={classes.contentHr} />
-                    <FormControl component="fieldset" className={classes.formControl}>
-                      <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Capacity</FormLabel>
-                      <RadioGroup
-                        aria-label="capacity"
-                        name="capacity"
-                        className={classes.resolutionGroup}
-                        value={this.state.capacity}
-                        onChange={this.handleCapacityChange}
-                      >
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="1" control={<Radio color="secondary" />} label="1" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="2" control={<Radio color="secondary" />} label="2" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="3" control={<Radio color="secondary" />} label="3" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="4" control={<Radio color="secondary" />} label="4" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="5" control={<Radio color="secondary" />} label="5" labelPlacement="bottom" />
-                      </RadioGroup>
-                    </FormControl> */}
-                    <div style={{ marginTop: 50 }}>
+                    <div className={!opencs ? classes.buttons : classes.buttonsLeft}>
                       <Button
                         className={classNames(classes.button, classes.closeBtn)}
                         disabled={solarBI.sending || solarBI.requestStatus === 'success'}
