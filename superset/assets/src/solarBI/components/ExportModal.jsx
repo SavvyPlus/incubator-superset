@@ -179,9 +179,9 @@ const styles = tm => ({
     },
   },
   exportCard: {
-    margin: '40px auto',
+    margin: '0 auto',
     width: 850,
-    height: 700,
+    height: 680,
     position: 'relative',
   },
   lengthLabel: {
@@ -314,9 +314,9 @@ class ExportModal extends React.Component {
       countdown: false,
       opencs: false,
       unit: 'MWh',
-      cap1: null,
+      cap1: '',
       cap1Err: false,
-      cap2: null,
+      cap2: '',
       cap2Err: false,
     };
 
@@ -407,11 +407,25 @@ class ExportModal extends React.Component {
   }
 
   handleCap1Change(event) {
-    this.setState({ cap1: event.target.value });
+    this.setState({ cap1Err: false });
+    this.setState({
+      cap1: event.target.value,
+    }, () => {
+      if (!/^(1|2|3|4|5)$/.test(this.state.cap1)) {
+        this.setState({ cap1Err: true });
+      }
+    });
   }
 
   handleCap2Change(event) {
-    this.setState({ cap2: event.target.value });
+    this.setState({ cap2Err: false });
+    this.setState({
+      cap2: event.target.value,
+    }, () => {
+      if (!/^(1|2|3|4|5)$/.test(this.state.cap2)) {
+        this.setState({ cap2Err: true });
+      }
+    });
   }
 
   handleTrialClick() {
@@ -432,9 +446,8 @@ class ExportModal extends React.Component {
     } else if (new Date(sDate) < new Date('1990-01-01') ||
       new Date(eDate) > new Date('2019-07-31')) {
       alert('Available date: 01/01/1990 ~ 31/07/2019.'); // eslint-disable-line no-alert
-    } else if (this.state.cap1 === null || this.state.cap2 === null) {
-      if (this.state.cap1 === null) this.setState({ cap1Err: true });
-      if (this.state.cap2 === null) this.setState({ cap2Err: true });
+    } else if (this.state.cap1 === undefined || this.state.cap2 === undefined || this.state.cap1Err || this.state.cap2Err) {
+      alert('Please provide a valid capacity value!'); // eslint-disable-line no-alert
     } else {
       const queryData = {
         lat: this.props.solarBI.queryResponse.data.lat.toFixed(7) + '',
@@ -513,7 +526,7 @@ class ExportModal extends React.Component {
             <div style={{ padding: 0, width: 800, margin: 'auto' }}>
               <SolarStepper activeStep={2} />
             </div>
-            <DialogContent>
+            <DialogContent style={{ marginTop: 40 }}>
               <Card className={classes.exportCard}>
                 <CardContent>
                   <div>
@@ -632,7 +645,6 @@ class ExportModal extends React.Component {
                             />
                           </React.Fragment>
                         )}
-
                       </FormControl>
                       <FormControl style={{ margin: '15px 0 0 25px' }} component="fieldset" className={classes.formControl}>
                         <RadioGroup
@@ -662,10 +674,7 @@ class ExportModal extends React.Component {
                       </Button>
                       {request}
                     </div>
-                    <p className={classes.remainCount}>
-                      {/* * Remaining request(s): {solarBI.remain_count} */}
-                      {remainCount}
-                    </p>
+                    <p className={classes.remainCount}>{remainCount}</p>
                   </Container>
                 </CardContent>
                 <CheatSheet open={opencs} toggleDrawer={this.toggleCSDrawer} />

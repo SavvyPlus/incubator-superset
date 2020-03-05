@@ -4,9 +4,9 @@ import { makeStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 
 const propTypes = {
-  cap1: PropTypes.number,
+  cap1: PropTypes.string,
   cap1Err: PropTypes.bool.isRequired,
-  cap2: PropTypes.number,
+  cap2: PropTypes.string,
   cap2Err: PropTypes.bool.isRequired,
   handleCap1Change: PropTypes.func.isRequired,
   handleCap2Change: PropTypes.func.isRequired,
@@ -56,7 +56,7 @@ function CapacityInputs({ cap1, cap1Err, cap2, cap2Err, handleCap1Change, handle
           variant="outlined"
           value={cap1}
           onChange={handleCap1Change}
-          helperText={cap1Err ? 'Please provide a valid number' : null}
+          helperText={cap1Err ? 'Please provide an interger from 1 to 5' : null}
         />
       </div>
       <div className={classes.inputs}>
@@ -71,7 +71,7 @@ function CapacityInputs({ cap1, cap1Err, cap2, cap2Err, handleCap1Change, handle
           variant="outlined"
           value={cap2}
           onChange={handleCap2Change}
-          helperText={cap2Err ? 'Please provide a valid number' : null}
+          helperText={cap2Err ? 'Please provide an interger from 1 to 5' : null}
         />
       </div>
     </div>
