@@ -5,7 +5,9 @@ import TextField from '@material-ui/core/TextField';
 
 const propTypes = {
   cap1: PropTypes.number,
+  cap1Err: PropTypes.bool.isRequired,
   cap2: PropTypes.number,
+  cap2Err: PropTypes.bool.isRequired,
   handleCap1Change: PropTypes.func.isRequired,
   handleCap2Change: PropTypes.func.isRequired,
 };

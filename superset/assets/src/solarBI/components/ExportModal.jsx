@@ -310,10 +310,10 @@ class ExportModal extends React.Component {
       endDate: '2019-07-01',
       resolution: 'hourly',
       generation: true,
-      capacity: '1',
+      // capacity: '1',
       countdown: false,
       opencs: false,
-      unit: 'mwh',
+      unit: 'MWh',
       cap1: null,
       cap1Err: false,
       cap2: null,
@@ -327,7 +327,7 @@ class ExportModal extends React.Component {
     this.handleQuestionClick = this.handleQuestionClick.bind(this);
     this.handleQuestionClose = this.handleQuestionClose.bind(this);
     this.handleGenerationChange = this.handleGenerationChange.bind(this);
-    this.handleCapacityChange = this.handleCapacityChange.bind(this);
+    // this.handleCapacityChange = this.handleCapacityChange.bind(this);
     this.handleTrialClick = this.handleTrialClick.bind(this);
     this.toggleCSDrawer = this.toggleCSDrawer.bind(this);
     this.handleUnitChange = this.handleUnitChange.bind(this);
@@ -382,9 +382,9 @@ class ExportModal extends React.Component {
     this.setState({ resolution: event.target.value });
   }
 
-  handleCapacityChange(event) {
-    this.setState({ capacity: event.target.value });
-  }
+  // handleCapacityChange(event) {
+  //   this.setState({ capacity: event.target.value });
+  // }
 
   handleQuestionClick(event) {
     this.setState({ anchorEl: event.currentTarget });
@@ -450,13 +450,14 @@ class ExportModal extends React.Component {
         spatial_address: { ...this.props.solarBI.queryResponse.form_data.spatial_address },
         address_name: this.props.address.slice(0, -11),
         generation: this.state.generation ? '1' : '0',
-        capacity: this.state.capacity,
+        unit: this.state.unit,
+        cap1: this.state.cap1,
+        cap2: this.state.cap2,
       };
-      // this.props.onHide();
+
       this.props.requestSolarData(queryData)
         .then((json) => {
           if (json.type === 'REQEUST_SOLAR_DATA_SUCCEEDED') {
-            // window.location = '/solar/list';
             this.setState({ countdown: true });
           }
         });
@@ -470,7 +471,7 @@ class ExportModal extends React.Component {
   render() {
     const { classes, open, onHide, solarBI } = this.props;
     // const { startDate, endDate, anchorEl, pickerStart, pickerEnd } = this.state;
-    const { anchorEl, pickerStart, pickerEnd, countdown,
+    const { pickerStart, pickerEnd, countdown,
       opencs, unit, cap1, cap1Err, cap2, cap2Err, generation } = this.state;
     let remainCount = null;
     if (solarBI.can_trial && solarBI.start_trial === 'starting') {
@@ -490,7 +491,7 @@ class ExportModal extends React.Component {
       request = <img className={classes.loading} alt="Request success!" src="/static/assets/images/tick_mark.gif" />;
     }
 
-    const openAnchor = Boolean(anchorEl);
+    // const openAnchor = Boolean(anchorEl);
 
     return (
       <div>
@@ -526,7 +527,6 @@ class ExportModal extends React.Component {
                     <hr style={{ display: 'block', width: 159, height: 1, border: 0, borderTop: '1px solid #808495', margin: '1em auto 2em', padding: 0 }} />
                   </div>
                   <Container className={!opencs ? classes.ctn : classes.ctnLeft} maxWidth="md">
-                    {/* <FormLabel classes={{ root: classes.lengthLabel, focused: classes.labelFocused }} component="legend">Length</FormLabel> */}
                     <div className={classes.dates}>
                       <div className={classes.dateWrapper}>
                         <span className={classes.dateLabel}>Start</span>
@@ -635,7 +635,6 @@ class ExportModal extends React.Component {
 
                       </FormControl>
                       <FormControl style={{ margin: '15px 0 0 25px' }} component="fieldset" className={classes.formControl}>
-                        {/* <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Resolution</FormLabel> */}
                         <RadioGroup
                           aria-label="resolution"
                           name="resolution"

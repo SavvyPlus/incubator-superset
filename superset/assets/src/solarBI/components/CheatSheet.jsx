@@ -33,6 +33,7 @@ const useStyles = makeStyles({
     color: 'white',
     padding: 10,
     fontWeight: 500,
+    border: '1px solid #0063B3',
     '&:focus': {
       outline: 0,
     },

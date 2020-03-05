@@ -24,8 +24,8 @@ function UnitSelection({ unit, handleUnitChange }) {
     <div>
       <FormControl component="fieldset">
         <RadioGroup aria-label="unit" className={classes.unit} name="unit" value={unit} onChange={handleUnitChange}>
-          <FormControlLabel value="mwh" control={<Radio />} label="MWh" />
-          <FormControlLabel value="kwh" control={<Radio />} label="KWh" />
+          <FormControlLabel value="MWh" control={<Radio />} label="MWh" />
+          <FormControlLabel value="KWh" control={<Radio />} label="KWh" />
         </RadioGroup>
       </FormControl>
     </div>

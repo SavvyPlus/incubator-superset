@@ -1977,10 +1977,10 @@ class Superset(BaseSupersetView):
     @event_logger.log_this
     @api
     @handle_api_exception
-    @expose('/request_data/<lat>/<lng>/<start_date>/<end_date>/<resolution>/<address_name>/<generation>/<capacity>/',
-            methods=['GET', 'POST'])
+    @expose('/request_data/<lat>/<lng>/<start_date>/<end_date>/<resolution>/<address_name>/<generation>/<unit>/'
+            '<cap1>/<cap2>/', methods=['GET', 'POST'])
     def request_data(self, lat=None, lng=None, start_date=None, end_date=None, resolution=None, address_name=None,
-                     generation=None, capacity=None):
+                     generation=None, unit=None, cap1=None, cap2=None):
         """Serves all request that GET or POST form_data
 
         This endpoint evolved to be the entry point of many different
@@ -2002,7 +2002,8 @@ class Superset(BaseSupersetView):
                       ", 'lng': " + lng + ", 'bucket': 'colin-query-test', " \
                       "'team_id': '" + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + \
                       "', 'email': '" + g.user.email + "', 'resolution': '" + resolution + \
-                      "', 'generation': " + generation + ", 'capacity': " + capacity + "}"
+                      "', 'generation': " + generation + ", 'capacity': [" + cap1 + ", " + cap2 + \
+                      "], 'capacity_unit': '" + unit + "'}"
             response = requests.request("POST", url, data=payload)
             response = json.loads(response.text)
 
@@ -2020,7 +2021,7 @@ class Superset(BaseSupersetView):
             #     ResultConfiguration={
             #         'OutputLocation': 's3://colin-query-test/TID' +
             #                           str(get_session_team(self.appbuilder.sm, g.user.id)[0]) +
-            #                           '/' + g.user.email,
+            #                           '/'test + g.user.email,
             #         # 'EncryptionConfiguration': {
             #         #     'EncryptionOption': 'SSE_S3',
             #         #     'KmsKey': 'string'
