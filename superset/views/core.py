@@ -1978,9 +1978,9 @@ class Superset(BaseSupersetView):
     @api
     @handle_api_exception
     @expose('/request_data/<lat>/<lng>/<start_date>/<end_date>/<resolution>/<address_name>/<generation>/<unit>/'
-            '<cap1>/<cap2>/', methods=['GET', 'POST'])
+            '<cap1>/<cap2>/<cap3>/', methods=['GET', 'POST'])
     def request_data(self, lat=None, lng=None, start_date=None, end_date=None, resolution=None, address_name=None,
-                     generation=None, unit=None, cap1=None, cap2=None):
+                     generation=None, unit=None, cap1=None, cap2=None, cap3=None):
         """Serves all request that GET or POST form_data
 
         This endpoint evolved to be the entry point of many different
@@ -1998,11 +1998,17 @@ class Superset(BaseSupersetView):
 
             # Start call the api to request solar radiation data and compute the generation
             url = os.environ["GENERATION_API"]
+            if cap2 == '0':
+                capacity_list = ", 'capacity': [" + cap1
+            elif cap3 == '0':
+                capacity_list = ", 'capacity': [" + cap1 + ", " + cap2
+            else:
+                capacity_list = ", 'capacity': [" + cap1 + ", " + cap2 + ", " + cap3
             payload = "{'start_date': '" + start_date + "', 'end_date': '" + end_date + "', 'lat': " + lat + \
                       ", 'lng': " + lng + ", 'bucket': 'colin-query-test', " \
                       "'team_id': '" + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + \
                       "', 'email': '" + g.user.email + "', 'resolution': '" + resolution + \
-                      "', 'generation': " + generation + ", 'capacity': [" + cap1 + ", " + cap2 + \
+                      "', 'generation': " + generation + capacity_list + \
                       "], 'capacity_unit': '" + unit + "'}"
             response = requests.request("POST", url, data=payload)
             response = json.loads(response.text)

@@ -116,13 +116,13 @@ const styles = tm => ({
     },
   },
   buttons: {
-    marginTop: 50,
+    marginTop: 40,
     marginLeft: 0,
     width: '100%',
     transition: 'all 0.5s',
   },
   buttonsLeft: {
-    marginTop: 50,
+    marginTop: 40,
     marginLeft: 127,
     width: 500,
     transition: 'all 0.5s',
@@ -181,8 +181,9 @@ const styles = tm => ({
   exportCard: {
     margin: '0 auto',
     width: 850,
-    height: 680,
+    height: 695,
     position: 'relative',
+    overflowY: 'auto',
   },
   lengthLabel: {
     fontSize: '1.3rem',
@@ -235,12 +236,18 @@ const styles = tm => ({
     marginTop: 25,
   },
   remainCount: {
-    float: 'right',
+    marginLeft: 640,
+    transition: 'all 0.5s',
+  },
+  remainCountLeft: {
+    marginLeft: 510,
+    transition: 'all 0.5s',
   },
   selections: {
     display: 'flex',
     width: 460,
     marginLeft: 150,
+    height: 320,
   },
   startText: {
     marginLeft: '10px',
@@ -318,6 +325,10 @@ class ExportModal extends React.Component {
       cap1Err: false,
       cap2: '2',
       cap2Err: false,
+      showCap2: false,
+      cap3: '3',
+      cap3Err: false,
+      showCap3: false,
     };
 
     this.handleStartDateChange = this.handleStartDateChange.bind(this);
@@ -333,6 +344,9 @@ class ExportModal extends React.Component {
     this.handleUnitChange = this.handleUnitChange.bind(this);
     this.handleCap1Change = this.handleCap1Change.bind(this);
     this.handleCap2Change = this.handleCap2Change.bind(this);
+    this.handleCap3Change = this.handleCap3Change.bind(this);
+    this.handleCapDelete = this.handleCapDelete.bind(this);
+    this.handleCapAdd = this.handleCapAdd.bind(this);
     this.onUnload = this.onUnload.bind(this);
   }
 
@@ -428,6 +442,27 @@ class ExportModal extends React.Component {
     });
   }
 
+  handleCap3Change(event) {
+    this.setState({ cap3Err: false });
+    this.setState({
+      cap3: event.target.value,
+    }, () => {
+      if (!/^(1|2|3|4|5)$/.test(this.state.cap3)) {
+        this.setState({ cap3Err: true });
+      }
+    });
+  }
+
+  handleCapDelete(number) {
+    if (number === 2) this.setState({ showCap2: false });
+    if (number === 3) this.setState({ showCap3: false });
+  }
+
+  handleCapAdd(number) {
+    if (number === 2) this.setState({ showCap2: true });
+    if (number === 3) this.setState({ showCap3: true });
+  }
+
   handleTrialClick() {
     this.props.startTrial();
   }
@@ -446,8 +481,8 @@ class ExportModal extends React.Component {
     } else if (new Date(sDate) < new Date('1990-01-01') ||
       new Date(eDate) > new Date('2019-07-31')) {
       alert('Available date: 01/01/1990 ~ 31/07/2019.'); // eslint-disable-line no-alert
-    } else if (this.state.generation && (this.state.cap1 === '' || this.state.cap2 === '' ||
-      this.state.cap1Err || this.state.cap2Err)) {
+    } else if (this.state.generation &&
+      (this.state.cap1Err || this.state.cap2Err || this.state.cap3Err)) {
       alert('Please provide a valid capacity value!'); // eslint-disable-line no-alert
     } else {
       const queryData = {
@@ -466,7 +501,8 @@ class ExportModal extends React.Component {
         generation: this.state.generation ? '1' : '0',
         unit: this.state.unit,
         cap1: this.state.cap1,
-        cap2: this.state.cap2,
+        cap2: this.state.showCap2 ? this.state.cap2 : '0',
+        cap3: this.state.showCap3 ? this.state.cap3 : '0',
       };
 
       this.props.requestSolarData(queryData)
@@ -485,8 +521,8 @@ class ExportModal extends React.Component {
   render() {
     const { classes, open, onHide, solarBI } = this.props;
     // const { startDate, endDate, anchorEl, pickerStart, pickerEnd } = this.state;
-    const { pickerStart, pickerEnd, countdown,
-      opencs, unit, cap1, cap1Err, cap2, cap2Err, generation } = this.state;
+    const { pickerStart, pickerEnd, countdown, showCap2, showCap3,
+      opencs, unit, cap1, cap1Err, cap2, cap2Err, cap3, cap3Err, generation } = this.state;
     let remainCount = null;
     if (solarBI.can_trial && solarBI.start_trial === 'starting') {
       remainCount = <img style={{ width: 30, marginLeft: 20 }} alt="Loading..." src="/static/assets/images/loading.gif" />;
@@ -641,8 +677,15 @@ class ExportModal extends React.Component {
                               cap1Err={cap1Err}
                               cap2={cap2}
                               cap2Err={cap2Err}
+                              showCap2={showCap2}
+                              cap3={cap3}
+                              cap3Err={cap3Err}
+                              showCap3={showCap3}
                               handleCap1Change={this.handleCap1Change}
                               handleCap2Change={this.handleCap2Change}
+                              handleCap3Change={this.handleCap3Change}
+                              handleCapDelete={this.handleCapDelete}
+                              handleCapAdd={this.handleCapAdd}
                             />
                           </React.Fragment>
                         )}
@@ -675,7 +718,11 @@ class ExportModal extends React.Component {
                       </Button>
                       {request}
                     </div>
-                    <p className={classes.remainCount}>{remainCount}</p>
+                    <p
+                      className={!opencs ? classes.remainCount : classes.remainCountLeft}
+                    >
+                      {remainCount}
+                    </p>
                   </Container>
                 </CardContent>
                 <CheatSheet open={opencs} toggleDrawer={this.toggleCSDrawer} />
