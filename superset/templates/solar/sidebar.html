@@ -23,7 +23,7 @@
 {% set logo_target_path = appbuilder.app.config.get('LOGO_TARGET_PATH') or '/profile/{}/'.format(current_user.username) %}
 {% set current_user_role = appbuilder.sm.get_role_in_team(current_user, session['team_id']).name %}
 {% set team_ids = appbuilder.sm.get_teams_for_user(current_user.id) %}
-<link href="{{url_for('static',filename='assets/stylesheets/solarbi.less')}}?v=3.0" rel="stylesheet">
+<link href="{{url_for('static',filename='assets/stylesheets/solarbi.less')}}?v=3.2" rel="stylesheet">
 
 
 <!-- Sidebar -->
@@ -113,7 +113,11 @@
 			</li>
 		</ul>
 		<div class="md-select">
-			<label for="ul-id"><button type="button" class="ng-binding">{{ session['team_name'] }}</button></label>
+			<label for="ul-id">
+        <button type="button" class="ng-binding">
+          <span id="current_team_name" class="ng-binding"><i style="width: 2em" class="fas fa-user-cog"></i>{{ session['team_name'] }}</span>
+        </button>
+      </label>
 			<ul role="listbox" id="ul-id" class="md-whiteframe-z1" name="ul-id">
 				<li role="option" id="{{ session['team_id'] }}" class="ng-binding ng-scope active" tabindex="-1" aria-selected="true">
 					<span class="checkmark">

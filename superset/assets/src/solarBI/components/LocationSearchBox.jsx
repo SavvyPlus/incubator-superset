@@ -22,12 +22,10 @@ import { withStyles } from '@material-ui/styles';
 import withWidth from '@material-ui/core/withWidth';
 import Button from '@material-ui/core/Button';
 import Fab from '@material-ui/core/Fab';
-// import InputAdornment from '@material-ui/core/InputAdornment';
 import Input from '@material-ui/core/Input';
 import Search from '@material-ui/icons/Search';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
-// import Button from 'src/components/Button';
 
 
 const propTypes = {

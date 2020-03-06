@@ -197,7 +197,8 @@ export function requestSolarData(queryData, timeout = 60) {
       queryData.lat + '/' + queryData.lng + '/' +
       queryData.startDate + '/' + queryData.endDate + '/' +
       queryData.resolution + '/' + queryData.address_name + '/' +
-      queryData.generation + '/' + queryData.capacity + '/';
+      queryData.generation + '/' + queryData.unit + '/' +
+      queryData.cap1 + '/' + queryData.cap2 + '/' + queryData.cap3 + '/';
 
     // const logStart = Logger.getTimestamp();
     const controller = new AbortController();

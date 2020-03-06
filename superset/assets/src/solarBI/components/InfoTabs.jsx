@@ -21,7 +21,6 @@ import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
-// import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import GoBackModal from './GoBackModal';
 import ExportModal from './ExportModal';
 

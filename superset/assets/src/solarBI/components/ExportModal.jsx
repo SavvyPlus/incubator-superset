@@ -27,10 +27,10 @@ import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Dialog from '@material-ui/core/Dialog';
-import Typography from '@material-ui/core/Typography';
-import IconButton from '@material-ui/core/IconButton';
-import Popover from '@material-ui/core/Popover';
-import HelpIcon from '@material-ui/icons/Help';
+// import Typography from '@material-ui/core/Typography';
+// import IconButton from '@material-ui/core/IconButton';
+// import Popover from '@material-ui/core/Popover';
+// import HelpIcon from '@material-ui/icons/Help';
 import DialogContent from '@material-ui/core/DialogContent';
 import Chip from '@material-ui/core/Chip';
 import Radio from '@material-ui/core/Radio';
@@ -44,6 +44,10 @@ import DateFnsUtils from '@date-io/date-fns';
 import { MuiPickersUtilsProvider, KeyboardDatePicker } from '@material-ui/pickers';
 import SolarStepper from './SolarStepper';
 import CountdownDialog from './CountdownDialog';
+import CheatSheet from './CheatSheet';
+import RemainingRequests from './RemainingRequests';
+import UnitSelection from './UnitSelection';
+import CapacityInputs from './CapacityInputs';
 import { requestSolarData, startTrial } from '../actions/solarActions';
 
 const propTypes = {
@@ -112,9 +116,16 @@ const styles = tm => ({
     },
   },
   buttons: {
-    width: '80%',
-    marginLeft: '50',
-    display: 'inline-block',
+    marginTop: 40,
+    marginLeft: 0,
+    width: '100%',
+    transition: 'all 0.5s',
+  },
+  buttonsLeft: {
+    marginTop: 40,
+    marginLeft: 127,
+    width: 500,
+    transition: 'all 0.5s',
   },
   requestBtn: {
     float: 'right',
@@ -128,22 +139,18 @@ const styles = tm => ({
     margin: '2em auto 0',
     padding: 0,
   },
-  costOutput: {
-    fontFamily: 'Montserrat',
-    fontSize: '16px',
-    fontWeight: 500,
-    backgroundColor: '#EEEFF0',
-    borderRadius: 12,
-    lineHeight: '18px',
-    marginTop: '25px',
-    marginLeft: '30px',
-    marginBottom: '40px',
-    '& fieldset': {
-      borderRadius: 12,
-    },
+  ctn: {
+    marginLeft: 0,
+    transition: 'all 0.5s',
+  },
+  ctnLeft: {
+    marginLeft: -160,
+    transition: 'all 0.5s',
   },
   dates: {
     display: 'flex',
+    width: 500,
+    marginLeft: 127,
   },
   dateLabel: {
     color: '#0063B0',
@@ -165,11 +172,6 @@ const styles = tm => ({
       marginLeft: '4em',
     },
   },
-  dollar: {
-    '& p': {
-      fontSize: 16,
-    },
-  },
   endText: {
     marginLeft: '15px',
     '& fieldset': {
@@ -177,9 +179,11 @@ const styles = tm => ({
     },
   },
   exportCard: {
-    margin: '40px auto',
-    width: '70%',
-    // height: 680,
+    margin: '0 auto',
+    width: 850,
+    height: 695,
+    position: 'relative',
+    overflowY: 'auto',
   },
   lengthLabel: {
     fontSize: '1.3rem',
@@ -192,10 +196,10 @@ const styles = tm => ({
     marginTop: '45px',
   },
   formControl: {
-    marginBottom: '5px',
-    width: '90%',
+    // marginBottom: '5px',
+    width: 220,
     display: 'inline-block',
-    margin: theme.spacing(2),
+    // margin: theme.spacing(2),
     '& svg': {
       fontSize: '1.2em',
     },
@@ -205,17 +209,6 @@ const styles = tm => ({
     color: '#0063B0',
     fontFamily: 'Montserrat',
     fontWeight: 500,
-  },
-  head: {
-    textAlign: 'center',
-    height: 50,
-    background: 'linear-gradient(.25turn, #10998C, #09809D, #0063B0)',
-    backgroundColor: 'white',
-    marginTop: -10,
-    marginLeft: -10,
-    width: '105%',
-    color: 'white',
-    paddingTop: 15,
   },
   helperText: {
     fontSize: '0.9em',
@@ -237,24 +230,25 @@ const styles = tm => ({
   resolutionLabel: {
     fontSize: '1.3rem',
     color: '#0063B0',
-    width: '10%',
+    width: 120,
     float: 'left',
     borderBottom: 'none',
-    marginTop: '35px',
-    marginRight: '45px',
+    marginTop: 25,
   },
   remainCount: {
-    float: 'right',
+    marginLeft: 640,
+    transition: 'all 0.5s',
   },
-  // costLabel: {
-  //   fontSize: '1.3rem',
-  //   color: '#0063B0',
-  //   width: '10%',
-  //   float: 'left',
-  //   borderBottom: 'none',
-  //   marginTop: '35px',
-  //   marginLeft: '15px',
-  // },
+  remainCountLeft: {
+    marginLeft: 510,
+    transition: 'all 0.5s',
+  },
+  selections: {
+    display: 'flex',
+    width: 460,
+    marginLeft: 150,
+    height: 320,
+  },
   startText: {
     marginLeft: '10px',
     '& fieldset': {
@@ -270,15 +264,6 @@ const styles = tm => ({
     fontSize: '1.6em',
     textAlign: 'center',
     paddingBottom: 0,
-  },
-  titleHr: {
-    display: 'block',
-    width: 159,
-    height: 1,
-    border: 0,
-    borderTop: '1px solid #AFDEDF',
-    margin: '1em auto 2em',
-    padding: 0,
   },
   textLabel: {
     fontSize: '16px',
@@ -301,24 +286,15 @@ const styles = tm => ({
     width: '70%',
     float: 'left',
   },
-  typeLabel: {
-    fontSize: '1.3rem',
-    color: '#0063B0',
-    width: '10%',
-    float: 'left',
-    borderBottom: 'none',
-    marginTop: '35px',
-    marginRight: '45px',
-  },
   typography: {
     margin: theme.spacing(2),
     fontSize: 15,
     width: 300,
   },
   resolutionGroup: {
-    flexDirection: 'row',
-    width: '80%',
-    float: 'left',
+    // flexDirection: 'row',
+    width: 250,
+    // float: 'left',
   },
   notUse: {
     margin: tm.spacing(1),
@@ -341,8 +317,18 @@ class ExportModal extends React.Component {
       endDate: '2019-07-01',
       resolution: 'hourly',
       generation: true,
-      capacity: '1',
+      // capacity: '1',
       countdown: false,
+      opencs: false,
+      unit: 'MWh',
+      cap1: '1',
+      cap1Err: false,
+      cap2: '2',
+      cap2Err: false,
+      showCap2: false,
+      cap3: '3',
+      cap3Err: false,
+      showCap3: false,
     };
 
     this.handleStartDateChange = this.handleStartDateChange.bind(this);
@@ -352,8 +338,15 @@ class ExportModal extends React.Component {
     this.handleQuestionClick = this.handleQuestionClick.bind(this);
     this.handleQuestionClose = this.handleQuestionClose.bind(this);
     this.handleGenerationChange = this.handleGenerationChange.bind(this);
-    this.handleCapacityChange = this.handleCapacityChange.bind(this);
+    // this.handleCapacityChange = this.handleCapacityChange.bind(this);
     this.handleTrialClick = this.handleTrialClick.bind(this);
+    this.toggleCSDrawer = this.toggleCSDrawer.bind(this);
+    this.handleUnitChange = this.handleUnitChange.bind(this);
+    this.handleCap1Change = this.handleCap1Change.bind(this);
+    this.handleCap2Change = this.handleCap2Change.bind(this);
+    this.handleCap3Change = this.handleCap3Change.bind(this);
+    this.handleCapDelete = this.handleCapDelete.bind(this);
+    this.handleCapAdd = this.handleCapAdd.bind(this);
     this.onUnload = this.onUnload.bind(this);
   }
 
@@ -386,9 +379,7 @@ class ExportModal extends React.Component {
     }
   }
 
-  // handleEndDateChange(event) {
-  //   this.setState({ endDate: event.target.value });
-  // }
+
   handleEndDateChange(date) {
     this.setState({ pickerEnd: date });
     try {
@@ -405,9 +396,9 @@ class ExportModal extends React.Component {
     this.setState({ resolution: event.target.value });
   }
 
-  handleCapacityChange(event) {
-    this.setState({ capacity: event.target.value });
-  }
+  // handleCapacityChange(event) {
+  //   this.setState({ capacity: event.target.value });
+  // }
 
   handleQuestionClick(event) {
     this.setState({ anchorEl: event.currentTarget });
@@ -418,7 +409,58 @@ class ExportModal extends React.Component {
   }
 
   handleGenerationChange() {
+    if (this.state.resolution === 'halfhourly') {
+      this.setState({ resolution: 'hourly' });
+    }
+
     this.setState({ generation: !this.state.generation });
+  }
+
+  handleUnitChange(event) {
+    this.setState({ unit: event.target.value });
+  }
+
+  handleCap1Change(event) {
+    this.setState({ cap1Err: false });
+    this.setState({
+      cap1: event.target.value,
+    }, () => {
+      if (!/^(1|2|3|4|5)$/.test(this.state.cap1)) {
+        this.setState({ cap1Err: true });
+      }
+    });
+  }
+
+  handleCap2Change(event) {
+    this.setState({ cap2Err: false });
+    this.setState({
+      cap2: event.target.value,
+    }, () => {
+      if (!/^(1|2|3|4|5)$/.test(this.state.cap2)) {
+        this.setState({ cap2Err: true });
+      }
+    });
+  }
+
+  handleCap3Change(event) {
+    this.setState({ cap3Err: false });
+    this.setState({
+      cap3: event.target.value,
+    }, () => {
+      if (!/^(1|2|3|4|5)$/.test(this.state.cap3)) {
+        this.setState({ cap3Err: true });
+      }
+    });
+  }
+
+  handleCapDelete(number) {
+    if (number === 2) this.setState({ showCap2: false });
+    if (number === 3) this.setState({ showCap3: false });
+  }
+
+  handleCapAdd(number) {
+    if (number === 2) this.setState({ showCap2: true });
+    if (number === 3) this.setState({ showCap3: true });
   }
 
   handleTrialClick() {
@@ -426,6 +468,8 @@ class ExportModal extends React.Component {
   }
 
   handleRequestData() {
+    this.setState({ cap1Err: false, cap2Err: false });
+
     const sDate = new Date(this.state.startDate);
     const eDate = new Date(this.state.endDate);
     if (this.state.startDate === '') {
@@ -437,6 +481,9 @@ class ExportModal extends React.Component {
     } else if (new Date(sDate) < new Date('1990-01-01') ||
       new Date(eDate) > new Date('2019-07-31')) {
       alert('Available date: 01/01/1990 ~ 31/07/2019.'); // eslint-disable-line no-alert
+    } else if (this.state.generation &&
+      (this.state.cap1Err || this.state.cap2Err || this.state.cap3Err)) {
+      alert('Please provide a valid capacity value!'); // eslint-disable-line no-alert
     } else {
       const queryData = {
         lat: this.props.solarBI.queryResponse.data.lat.toFixed(7) + '',
@@ -452,23 +499,30 @@ class ExportModal extends React.Component {
         spatial_address: { ...this.props.solarBI.queryResponse.form_data.spatial_address },
         address_name: this.props.address.slice(0, -11),
         generation: this.state.generation ? '1' : '0',
-        capacity: this.state.capacity,
+        unit: this.state.unit,
+        cap1: this.state.cap1,
+        cap2: this.state.showCap2 ? this.state.cap2 : '0',
+        cap3: this.state.showCap3 ? this.state.cap3 : '0',
       };
-      // this.props.onHide();
+
       this.props.requestSolarData(queryData)
         .then((json) => {
           if (json.type === 'REQEUST_SOLAR_DATA_SUCCEEDED') {
-            // window.location = '/solar/list';
             this.setState({ countdown: true });
           }
         });
     }
   }
 
+  toggleCSDrawer() {
+    this.setState({ opencs: !this.state.opencs });
+  }
+
   render() {
     const { classes, open, onHide, solarBI } = this.props;
     // const { startDate, endDate, anchorEl, pickerStart, pickerEnd } = this.state;
-    const { anchorEl, pickerStart, pickerEnd, countdown } = this.state;
+    const { pickerStart, pickerEnd, countdown, showCap2, showCap3,
+      opencs, unit, cap1, cap1Err, cap2, cap2Err, cap3, cap3Err, generation } = this.state;
     let remainCount = null;
     if (solarBI.can_trial && solarBI.start_trial === 'starting') {
       remainCount = <img style={{ width: 30, marginLeft: 20 }} alt="Loading..." src="/static/assets/images/loading.gif" />;
@@ -487,7 +541,7 @@ class ExportModal extends React.Component {
       request = <img className={classes.loading} alt="Request success!" src="/static/assets/images/tick_mark.gif" />;
     }
 
-    const openAnchor = Boolean(anchorEl);
+    // const openAnchor = Boolean(anchorEl);
 
     return (
       <div>
@@ -509,20 +563,20 @@ class ExportModal extends React.Component {
             <div style={{ padding: 0, width: 800, margin: 'auto' }}>
               <SolarStepper activeStep={2} />
             </div>
-            <DialogContent>
+            <DialogContent style={{ marginTop: 40 }}>
               <Card className={classes.exportCard}>
                 <CardContent>
                   <div>
                     {solarBI.remain_days >= 0 && solarBI.plan_id !== 1 && <Chip style={{ fontSize: '1.05em' }} label={`Current subscription remains ${solarBI.remain_days} days left`} />}
                     {solarBI.plan_id === 1 && <Chip style={{ fontSize: '1.05em' }} label="You are in the free plan" />}
                     {solarBI.remain_days < 0 && solarBI.plan_id !== 1 && <Chip style={{ fontSize: '1.05em' }} label={`Your plan has passed due for ${-solarBI.remain_days} days`} />}
+                    <RemainingRequests requests={solarBI.remain_count} />
                     <p className={classes.addressText}>
                       {this.props.address.slice(0, -11)}
                     </p>
                     <hr style={{ display: 'block', width: 159, height: 1, border: 0, borderTop: '1px solid #808495', margin: '1em auto 2em', padding: 0 }} />
                   </div>
-                  <Container maxWidth="md">
-                    <FormLabel classes={{ root: classes.lengthLabel, focused: classes.labelFocused }} component="legend">Length</FormLabel>
+                  <Container className={!opencs ? classes.ctn : classes.ctnLeft} maxWidth="md">
                     <div className={classes.dates}>
                       <div className={classes.dateWrapper}>
                         <span className={classes.dateLabel}>Start</span>
@@ -576,7 +630,7 @@ class ExportModal extends React.Component {
                           />
                         </MuiPickersUtilsProvider>
                       </div>
-                      <IconButton
+                      {/* <IconButton
                         aria-label="More"
                         className={classes.iconButton}
                         onClick={this.handleQuestionClick}
@@ -601,64 +655,59 @@ class ExportModal extends React.Component {
                           Available date: 01/01/1990 ~ 31/07/2019.
                           Both Start and End date are inclusive.
                         </Typography>
-                      </Popover>
+                      </Popover> */}
                     </div>
-                    <hr className={classes.contentHr} />
-                    <FormControl component="fieldset" className={classes.formControl}>
-                      <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Resolution</FormLabel>
-                      <RadioGroup
-                        aria-label="resolution"
-                        name="resolution"
-                        className={classes.resolutionGroup}
-                        value={this.state.resolution}
-                        onChange={this.handleResolutionChange}
-                      >
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="hourly" control={<Radio color="secondary" />} label="Hourly" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="daily" control={<Radio color="secondary" />} label="Daily" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="weekly" control={<Radio color="secondary" />} label="Weekly" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="monthly" control={<Radio color="secondary" />} label="Monthly" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="annual" control={<Radio color="secondary" />} label="Annual" labelPlacement="bottom" />
-                      </RadioGroup>
-                    </FormControl>
-                    <hr className={classes.contentHr} />
-                    <FormControl component="fieldset" className={classes.formControl}>
-                      <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Generation</FormLabel>
-                      <div style={{ marginTop: 25 }}>
-                        <Switch
-                          checked={this.state.generation}
-                          // onChange={this.handleGenerationChange}
-                          onClick={() => this.handleGenerationChange()}
-                          value="generation"
-                        />
-                        {
-                          this.state.generation ?
-                            <p className={classes.switch}>
-                              Including generation will take a little bit longer(~8 minutes).
-                            </p> :
-                            <p className={classes.switch}>
-                              No generation delivery estimates 5 minutes.
-                            </p>
-                        }
-                      </div>
-                    </FormControl>
-                    <hr className={classes.contentHr} />
-                    <FormControl component="fieldset" className={classes.formControl}>
-                      <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Capacity</FormLabel>
-                      <RadioGroup
-                        aria-label="capacity"
-                        name="capacity"
-                        className={classes.resolutionGroup}
-                        value={this.state.capacity}
-                        onChange={this.handleCapacityChange}
-                      >
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="1" control={<Radio color="secondary" />} label="1" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="2" control={<Radio color="secondary" />} label="2" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="3" control={<Radio color="secondary" />} label="3" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="4" control={<Radio color="secondary" />} label="4" labelPlacement="bottom" />
-                        <FormControlLabel classes={{ label: classes.formControlLabel }} value="5" control={<Radio color="secondary" />} label="5" labelPlacement="bottom" />
-                      </RadioGroup>
-                    </FormControl>
-                    <div style={{ marginTop: 50 }}>
+                    {/* <hr className={classes.contentHr} /> */}
+                    <div className={classes.selections}>
+                      <FormControl component="fieldset" className={classes.formControl}>
+                        <FormLabel classes={{ root: classes.resolutionLabel, focused: classes.labelFocused }} component="legend">Generation</FormLabel>
+                        <div style={{ marginTop: 15 }}>
+                          <Switch
+                            checked={generation}
+                            // onChange={this.handleGenerationChange}
+                            onClick={() => this.handleGenerationChange()}
+                            value="generation"
+                          />
+                        </div>
+                        {generation && (
+                          <React.Fragment>
+                            <UnitSelection unit={unit} handleUnitChange={this.handleUnitChange} />
+                            <CapacityInputs
+                              cap1={cap1}
+                              cap1Err={cap1Err}
+                              cap2={cap2}
+                              cap2Err={cap2Err}
+                              showCap2={showCap2}
+                              cap3={cap3}
+                              cap3Err={cap3Err}
+                              showCap3={showCap3}
+                              handleCap1Change={this.handleCap1Change}
+                              handleCap2Change={this.handleCap2Change}
+                              handleCap3Change={this.handleCap3Change}
+                              handleCapDelete={this.handleCapDelete}
+                              handleCapAdd={this.handleCapAdd}
+                            />
+                          </React.Fragment>
+                        )}
+                      </FormControl>
+                      <FormControl style={{ margin: '15px 0 0 25px' }} component="fieldset" className={classes.formControl}>
+                        <RadioGroup
+                          aria-label="resolution"
+                          name="resolution"
+                          className={classes.resolutionGroup}
+                          value={this.state.resolution}
+                          onChange={this.handleResolutionChange}
+                        >
+                          <FormControlLabel disabled={!generation} classes={{ label: classes.formControlLabel }} value="halfhourly" control={<Radio color="secondary" />} label="30 min (Generation only)" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="hourly" control={<Radio color="secondary" />} label="Hourly" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="daily" control={<Radio color="secondary" />} label="Daily" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="weekly" control={<Radio color="secondary" />} label="Weekly" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="monthly" control={<Radio color="secondary" />} label="Monthly" labelPlacement="end" />
+                          <FormControlLabel classes={{ label: classes.formControlLabel }} value="annual" control={<Radio color="secondary" />} label="Annual" labelPlacement="end" />
+                        </RadioGroup>
+                      </FormControl>
+                    </div>
+                    <div className={!opencs ? classes.buttons : classes.buttonsLeft}>
                       <Button
                         className={classNames(classes.button, classes.closeBtn)}
                         disabled={solarBI.sending || solarBI.requestStatus === 'success'}
@@ -669,18 +718,14 @@ class ExportModal extends React.Component {
                       </Button>
                       {request}
                     </div>
-                    <p className={classes.remainCount}>
-                      * Remaining request(s): {solarBI.remain_count}
+                    <p
+                      className={!opencs ? classes.remainCount : classes.remainCountLeft}
+                    >
                       {remainCount}
                     </p>
                   </Container>
                 </CardContent>
-                {/* {(solarBI.sending || solarBI.requestStatus === 'success') &&
-                  <p className="sending-msg">
-                    We’ve send our pigeons to fetch your data, you will be re-directed to My Data
-                    in a few seconds, sit tight we will have it deliver to you in a little bit.
-                  </p>
-                } */}
+                <CheatSheet open={opencs} toggleDrawer={this.toggleCSDrawer} />
               </Card>
             </DialogContent>
           </Dialog>

@@ -941,7 +941,8 @@ class SolarBIBillingView(ModelView):
                 old_count = team_sub.remain_count
 
                 # Disable free trial for future
-                team_sub.trial_used = True
+                # team_sub.trial_used = True
+                g.user.trial_used = True
 
                 # Update the stripe subscription to new plan
                 new_sub = stripe.Subscription.modify(current_subscription.stripe_id,
@@ -1098,15 +1099,21 @@ class SolarBIBillingView(ModelView):
     def renew(self, event_object):
         paid_list = event_object['lines']['data']
 
+        valid_item_index = 0
         # Check lines on the paid list
         if len(paid_list) > 1:
             logging.info('Contains more than one items in the invoice')
-            for item in paid_list:
+            # Find the paid plan with latest end time of subscription, use it to update database
+            end_time = 0
+            for i in range(0, paid_list):
+                item = paid_list[i]
                 logging.info(f'Customer {event_object["customer_name"]} Item {item["plan"]["nickname"]}')
-
+                if item['amount'] >0 and item['period']['end'] > end_time:
+                    end_time = item['period']['end']
+                    valid_item_index = i
 
         try:
-            stripe_plan = paid_list[0]
+            stripe_plan = paid_list[valid_item_index]
             local_plan = self.appbuilder.get_session.query(Plan).filter_by(stripe_id=stripe_plan["plan"]['id']).first()
 
             # Fetch team_subscription by the subscription on invoice
@@ -1971,10 +1978,10 @@ class Superset(BaseSupersetView):
     @event_logger.log_this
     @api
     @handle_api_exception
-    @expose('/request_data/<lat>/<lng>/<start_date>/<end_date>/<resolution>/<address_name>/<generation>/<capacity>/',
-            methods=['GET', 'POST'])
+    @expose('/request_data/<lat>/<lng>/<start_date>/<end_date>/<resolution>/<address_name>/<generation>/<unit>/'
+            '<cap1>/<cap2>/<cap3>/', methods=['GET', 'POST'])
     def request_data(self, lat=None, lng=None, start_date=None, end_date=None, resolution=None, address_name=None,
-                     generation=None, capacity=None):
+                     generation=None, unit=None, cap1=None, cap2=None, cap3=None):
         """Serves all request that GET or POST form_data
 
         This endpoint evolved to be the entry point of many different
@@ -1992,11 +1999,18 @@ class Superset(BaseSupersetView):
 
             # Start call the api to request solar radiation data and compute the generation
             url = os.environ["GENERATION_API"]
+            if cap2 == '0':
+                capacity_list = ", 'capacity': [" + cap1
+            elif cap3 == '0':
+                capacity_list = ", 'capacity': [" + cap1 + ", " + cap2
+            else:
+                capacity_list = ", 'capacity': [" + cap1 + ", " + cap2 + ", " + cap3
             payload = "{'start_date': '" + start_date + "', 'end_date': '" + end_date + "', 'lat': " + lat + \
                       ", 'lng': " + lng + ", 'bucket': 'solarbi-saved-radiation', " \
                       "'team_id': '" + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + \
                       "', 'email': '" + g.user.email + "', 'resolution': '" + resolution + \
-                      "', 'generation': " + generation + ", 'capacity': " + capacity + "}"
+                      "', 'generation': " + generation + capacity_list + \
+                      "], 'capacity_unit': '" + unit + "'}"
             response = requests.request("POST", url, data=payload)
             response = json.loads(response.text)
 
@@ -2014,7 +2028,7 @@ class Superset(BaseSupersetView):
             #     ResultConfiguration={
             #         'OutputLocation': 's3://colin-query-test/TID' +
             #                           str(get_session_team(self.appbuilder.sm, g.user.id)[0]) +
-            #                           '/' + g.user.email,
+            #                           '/'test + g.user.email,
             #         # 'EncryptionConfiguration': {
             #         #     'EncryptionOption': 'SSE_S3',
             #         #     'KmsKey': 'string'
