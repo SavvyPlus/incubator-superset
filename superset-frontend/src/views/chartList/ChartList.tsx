@@ -25,7 +25,11 @@ import React from 'react';
 import { Panel } from 'react-bootstrap';
 import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
 import ListView from 'src/components/ListView/ListView';
-import { FetchDataConfig, FilterTypeMap } from 'src/components/ListView/types';
+import {
+  FetchDataConfig,
+  FilterOperatorMap,
+  Filters,
+} from 'src/components/ListView/types';
 import withToasts from 'src/messageToasts/enhancers/withToasts';
 
 const PAGE_SIZE = 25;
@@ -36,12 +40,13 @@ interface Props {
 }
 
 interface State {
-  chartCount: number;
   charts: any[];
-  filterTypes: FilterTypeMap;
-  labelColumns: { [key: string]: string };
-  lastFetchDataConfig: FetchDataConfig | null;
+  chartCount: number;
   loading: boolean;
+  filterOperators: FilterOperatorMap;
+  filters: Filters;
+  owners: Array<{ text: string; value: number }>;
+  lastFetchDataConfig: FetchDataConfig | null;
   permissions: string[];
 }
 
@@ -62,22 +67,43 @@ class ChartList extends React.PureComponent<Props, State> {
   state: State = {
     chartCount: 0,
     charts: [],
-    filterTypes: {},
-    labelColumns: {},
+    filterOperators: {},
+    filters: [],
     lastFetchDataConfig: null,
     loading: false,
+    owners: [],
     permissions: [],
   };
 
   componentDidMount() {
-    SupersetClient.get({
-      endpoint: `/api/v1/chart/_info`,
-    }).then(({ json = {} }) => {
-      this.setState({
-        filterTypes: json.filters,
-        permissions: json.permissions,
-      });
-    });
+    Promise.all([
+      SupersetClient.get({
+        endpoint: `/api/v1/chart/_info`,
+      }),
+      SupersetClient.get({
+        endpoint: `/api/v1/chart/related/owners`,
+      }),
+    ]).then(
+      ([{ json: infoJson = {} }, { json: ownersJson = {} }]) => {
+        this.setState(
+          {
+            filterOperators: infoJson.filters,
+            owners: ownersJson.result,
+            permissions: infoJson.permissions,
+          },
+          this.updateFilters,
+        );
+      },
+      ([e1, e2]) => {
+        this.props.addDangerToast(t('An error occurred while fetching Charts'));
+        if (e1) {
+          console.error(e1);
+        }
+        if (e2) {
+          console.error(e2);
+        }
+      },
+    );
   }
 
   get canEdit() {
@@ -99,7 +125,6 @@ class ChartList extends React.PureComponent<Props, State> {
       }: any) => <a href={url}>{sliceName}</a>,
       Header: t('Chart'),
       accessor: 'slice_name',
-      filterable: true,
       sortable: true,
     },
     {
@@ -122,7 +147,7 @@ class ChartList extends React.PureComponent<Props, State> {
         },
       }: any) => <a href={dsLink}>{dsNameTxt}</a>,
       Header: t('Datasource'),
-      accessor: 'datasource_name_text',
+      accessor: 'datasource_name',
       sortable: true,
     },
     {
@@ -133,9 +158,9 @@ class ChartList extends React.PureComponent<Props, State> {
             changed_by_url: changedByUrl,
           },
         },
-      }: any) => <a href={changedByName}>{changedByUrl}</a>,
+      }: any) => <a href={changedByUrl}>{changedByName}</a>,
       Header: t('Creator'),
-      accessor: 'creator',
+      accessor: 'changed_by_fk',
       sortable: true,
     },
     {
@@ -147,6 +172,14 @@ class ChartList extends React.PureComponent<Props, State> {
       Header: t('Last Modified'),
       accessor: 'changed_on',
       sortable: true,
+    },
+    {
+      accessor: 'description',
+      hidden: true,
+    },
+    {
+      accessor: 'owners',
+      hidden: true,
     },
     {
       Cell: ({ row: { state, original } }: any) => {
@@ -255,11 +288,20 @@ class ChartList extends React.PureComponent<Props, State> {
   };
 
   fetchData = ({ pageIndex, pageSize, sortBy, filters }: FetchDataConfig) => {
-    this.setState({ loading: true });
-    const filterExps = Object.keys(filters).map(fk => ({
-      col: fk,
-      opr: filters[fk].filterId,
-      value: filters[fk].filterValue,
+    // set loading state, cache the last config for fetching data in this component.
+    this.setState({
+      lastFetchDataConfig: {
+        filters,
+        pageIndex,
+        pageSize,
+        sortBy,
+      },
+      loading: true,
+    });
+    const filterExps = filters.map(({ id: col, operator: opr, value }) => ({
+      col,
+      opr,
+      value,
     }));
 
     const queryParams = JSON.stringify({
@@ -274,11 +316,7 @@ class ChartList extends React.PureComponent<Props, State> {
       endpoint: `/api/v1/chart/?q=${queryParams}`,
     })
       .then(({ json = {} }) => {
-        this.setState({
-          charts: json.result,
-          chartCount: json.count,
-          labelColumns: json.label_columns,
-        });
+        this.setState({ charts: json.result, chartCount: json.count });
       })
       .catch(() => {
         this.props.addDangerToast(t('An error occurred while fetching Charts'));
@@ -288,8 +326,51 @@ class ChartList extends React.PureComponent<Props, State> {
       });
   };
 
+  updateFilters = () => {
+    const { filterOperators, owners } = this.state;
+    const convertFilter = ({
+      name: label,
+      operator,
+    }: {
+      name: string;
+      operator: string;
+    }) => ({ label, value: operator });
+
+    this.setState({
+      filters: [
+        {
+          Header: 'Chart',
+          id: 'slice_name',
+          operators: filterOperators.slice_name.map(convertFilter),
+        },
+        {
+          Header: 'Description',
+          id: 'description',
+          operators: filterOperators.slice_name.map(convertFilter),
+        },
+        {
+          Header: 'Visualization Type',
+          id: 'viz_type',
+          operators: filterOperators.viz_type.map(convertFilter),
+        },
+        {
+          Header: 'Datasource Name',
+          id: 'datasource_name',
+          operators: filterOperators.datasource_name.map(convertFilter),
+        },
+        {
+          Header: 'Owners',
+          id: 'owners',
+          input: 'select',
+          operators: filterOperators.owners.map(convertFilter),
+          selects: owners.map(({ text: label, value }) => ({ label, value })),
+        },
+      ],
+    });
+  };
+
   render() {
-    const { charts, chartCount, loading, filterTypes } = this.state;
+    const { charts, chartCount, loading, filters } = this.state;
     return (
       <div className="container welcome">
         <Panel>
@@ -324,7 +405,7 @@ class ChartList extends React.PureComponent<Props, State> {
                   fetchData={this.fetchData}
                   loading={loading}
                   initialSort={this.initialSort}
-                  filterTypes={filterTypes}
+                  filters={filters}
                   bulkActions={bulkActions}
                 />
               );
