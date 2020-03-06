@@ -19,7 +19,7 @@ import logging
 import re
 from contextlib import closing
 from datetime import datetime, timedelta
-from typing import Any, cast, Dict, List, Optional, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Union
 from urllib import parse
 
 import backoff
@@ -48,7 +48,6 @@ import superset.models.core as models
 from superset import (
     app,
     appbuilder,
-    cache,
     conf,
     dataframe,
     db,
@@ -73,11 +72,16 @@ from superset.exceptions import (
     SupersetTimeoutException,
 )
 from superset.jinja_context import get_template_processor
+from superset.models.core import Database
 from superset.models.dashboard import Dashboard
 from superset.models.datasource_access_request import DatasourceAccessRequest
 from superset.models.slice import Slice
 from superset.models.sql_lab import Query, TabState
 from superset.models.user_attributes import UserAttribute
+from superset.security.analytics_db_safety import (
+    check_sqlalchemy_uri,
+    DBSecurityException,
+)
 from superset.sql_parse import ParsedQuery
 from superset.sql_validators import get_validator_by_name
 from superset.utils import core as utils, dashboard_import_export
@@ -241,6 +245,17 @@ def _deserialize_results_payload(
             "sqllab.query.results_backend_json_deserialize", stats_logger
         ):
             return json.loads(payload)  # type: ignore
+
+
+def get_cta_schema_name(
+    database: Database, user: ab_models.User, schema: str, sql: str
+) -> Optional[str]:
+    func: Optional[Callable[[Database, ab_models.User, str, str], str]] = config[
+        "SQLLAB_CTAS_SCHEMA_NAME_FUNC"
+    ]
+    if not func:
+        return None
+    return func(database, user, schema, sql)
 
 
 class AccessRequestsModelView(SupersetModelView, DeleteMixin):
@@ -1187,16 +1202,16 @@ class Superset(BaseSupersetView):
         dash.owners = [g.user] if g.user else []
         dash.dashboard_title = data["dashboard_title"]
 
+        old_to_new_slice_ids: Dict[int, int] = {}
         if data["duplicate_slices"]:
             # Duplicating slices as well, mapping old ids to new ones
-            old_to_new_sliceids: Dict[int, int] = {}
             for slc in original_dash.slices:
                 new_slice = slc.clone()
                 new_slice.owners = [g.user] if g.user else []
                 session.add(new_slice)
                 session.flush()
                 new_slice.dashboards.append(dash)
-                old_to_new_sliceids[slc.id] = new_slice.id
+                old_to_new_slice_ids[slc.id] = new_slice.id
 
             # update chartId of layout entities
             for value in data["positions"].values():
@@ -1206,29 +1221,14 @@ class Superset(BaseSupersetView):
                     and value.get("meta").get("chartId")
                 ):
                     old_id = value.get("meta").get("chartId")
-                    new_id = old_to_new_sliceids[old_id]
+                    new_id = old_to_new_slice_ids[old_id]
                     value["meta"]["chartId"] = new_id
-
-            # replace filter_id and immune ids from old slice id to new slice id:
-            if "filter_scopes" in data:
-                new_filter_scopes = copy_filter_scopes(
-                    old_to_new_slc_id_dict=old_to_new_sliceids,
-                    old_filter_scopes=json.loads(data["filter_scopes"] or "{}"),
-                )
-                data["filter_scopes"] = json.dumps(new_filter_scopes)
         else:
             dash.slices = original_dash.slices
-            # remove slice id from filter_scopes metadata if slice is removed from dashboard
-            if "filter_scopes" in data:
-                new_filter_scopes = copy_filter_scopes(
-                    old_to_new_slc_id_dict={slc.id: slc.id for slc in dash.slices},
-                    old_filter_scopes=json.loads(data["filter_scopes"] or "{}"),
-                )
-                data["filter_scopes"] = json.dumps(new_filter_scopes)
 
         dash.params = original_dash.params
 
-        self._set_dash_metadata(dash, data)
+        self._set_dash_metadata(dash, data, old_to_new_slice_ids)
         session.add(dash)
         session.commit()
         dash_json = json.dumps(dash.data)
@@ -1244,12 +1244,6 @@ class Superset(BaseSupersetView):
         dash = session.query(Dashboard).get(dashboard_id)
         check_ownership(dash, raise_if_false=True)
         data = json.loads(request.form.get("data"))
-        if "filter_scopes" in data:
-            new_filter_scopes = copy_filter_scopes(
-                old_to_new_slc_id_dict={slc.id: slc.id for slc in dash.slices},
-                old_filter_scopes=json.loads(data["filter_scopes"] or "{}"),
-            )
-            data["filter_scopes"] = json.dumps(new_filter_scopes)
         self._set_dash_metadata(dash, data)
         session.merge(dash)
         session.commit()
@@ -1257,7 +1251,10 @@ class Superset(BaseSupersetView):
         return json_success(json.dumps({"status": "SUCCESS"}))
 
     @staticmethod
-    def _set_dash_metadata(dashboard, data):
+    def _set_dash_metadata(
+        dashboard, data, old_to_new_slice_ids: Optional[Dict[int, int]] = None
+    ):
+        old_to_new_slice_ids = old_to_new_slice_ids or {}
         positions = data["positions"]
         # find slices in the position data
         slice_ids = []
@@ -1298,9 +1295,21 @@ class Superset(BaseSupersetView):
 
         if "timed_refresh_immune_slices" not in md:
             md["timed_refresh_immune_slices"] = []
+        new_filter_scopes: Dict[str, Dict] = {}
         if "filter_scopes" in data:
-            md["filter_scopes"] = json.loads(data["filter_scopes"] or "{}")
-        md["expanded_slices"] = data["expanded_slices"]
+            # replace filter_id and immune ids from old slice id to new slice id:
+            # and remove slice ids that are not in dash anymore
+            new_filter_scopes = copy_filter_scopes(
+                old_to_new_slc_id_dict={
+                    sid: old_to_new_slice_ids.get(sid, sid) for sid in slice_ids
+                },
+                old_filter_scopes=json.loads(data["filter_scopes"] or "{}"),
+            )
+        if new_filter_scopes:
+            md["filter_scopes"] = new_filter_scopes
+        else:
+            md.pop("filter_scopes", None)
+        md["expanded_slices"] = data.get("expanded_slices", {})
         md["refresh_frequency"] = data.get("refresh_frequency", 0)
         default_filters_data = json.loads(data.get("default_filters", "{}"))
         applicable_filters = {
@@ -1339,6 +1348,8 @@ class Superset(BaseSupersetView):
         db_name = request.json.get("name")
         uri = request.json.get("uri")
         try:
+            if app.config["PREVENT_UNSAFE_DB_CONNECTIONS"]:
+                check_sqlalchemy_uri(uri)
             # if the database already exists in the database, only its safe (password-masked) URI
             # would be shown in the UI and would be passed in the form data.
             # so if the database already exists and the form was submitted with the safe URI,
@@ -1390,6 +1401,9 @@ class Superset(BaseSupersetView):
             return json_error_response(
                 _("Connection failed, please check your connection settings."), 400
             )
+        except DBSecurityException as e:
+            logger.warning("Stopped an unsafe database connection. %s", e)
+            return json_error_response(_(str(e)), 400)
         except Exception as e:
             logger.error("Unexpected error %s", e)
             return json_error_response(_("Unexpected error occurred."), 400)
@@ -2359,9 +2373,14 @@ class Superset(BaseSupersetView):
         if not mydb:
             return json_error_response(f"Database with id {database_id} is missing.")
 
-        # Set tmp_table_name for CTA
+        # Set tmp_schema_name for CTA
+        # TODO(bkyryliuk): consider parsing, splitting tmp_schema_name from tmp_table_name if user enters
+        # <schema_name>.<table_name>
+        tmp_schema_name: Optional[str] = schema
         if select_as_cta and mydb.force_ctas_schema:
-            tmp_table_name = f"{mydb.force_ctas_schema}.{tmp_table_name}"
+            tmp_schema_name = mydb.force_ctas_schema
+        elif select_as_cta:
+            tmp_schema_name = get_cta_schema_name(mydb, g.user, schema, sql)
 
         # Save current query
         query = Query(
@@ -2374,6 +2393,7 @@ class Superset(BaseSupersetView):
             status=status,
             sql_editor_id=sql_editor_id,
             tmp_table_name=tmp_table_name,
+            tmp_schema_name=tmp_schema_name,
             user_id=g.user.get_id() if g.user else None,
             client_id=client_id,
         )
@@ -2414,9 +2434,11 @@ class Superset(BaseSupersetView):
                 f"Query {query_id}: Template rendering failed: {error_msg}"
             )
 
-        # set LIMIT after template processing
-        limits = [mydb.db_engine_spec.get_limit_from_sql(rendered_query), limit]
-        query.limit = min(lim for lim in limits if lim is not None)
+        # Limit is not applied to the CTA queries if SQLLAB_CTAS_NO_LIMIT flag is set to True.
+        if not (config.get("SQLLAB_CTAS_NO_LIMIT") and select_as_cta):
+            # set LIMIT after template processing
+            limits = [mydb.db_engine_spec.get_limit_from_sql(rendered_query), limit]
+            query.limit = min(lim for lim in limits if lim is not None)
 
         # Flag for whether or not to expand data
         # (feature that will expand Presto row objects and arrays)

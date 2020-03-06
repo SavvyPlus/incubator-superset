@@ -220,7 +220,7 @@ class ControlPanelsContainer extends React.Component {
         displaySectionsToRender.push(section);
       }
     });
-    console.log('querySectionsToRender:', querySectionsToRender);
+    // console.log('querySectionsToRender:', querySectionsToRender);
 
     return (
       <div className="scrollbar-container">
