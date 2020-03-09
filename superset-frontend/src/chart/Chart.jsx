@@ -153,7 +153,8 @@ class Chart extends React.PureComponent {
       onQuery,
       refreshOverlayVisible,
     } = this.props;
-
+    //console.log
+    // console.log('props',this.props)
     const isLoading = chartStatus === 'loading';
 
     // this allows <Loading /> to be positioned in the middle of the chart
