@@ -130,6 +130,8 @@ ChangeCreditCard.propTypes = {
   billing: PropTypes.object.isRequired,
   openCCC: PropTypes.bool.isRequired,
   handleCloseCCC: PropTypes.func.isRequired,
+  stripe: PropTypes.object.isRequired,
+  changeCreditCard: PropTypes.func.isRequired,
 };
 
 export default injectStripe(ChangeCreditCard);
