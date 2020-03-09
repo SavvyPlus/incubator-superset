@@ -137,6 +137,8 @@ AddCreditCard.propTypes = {
   openACC: PropTypes.bool.isRequired,
   handleCloseACC: PropTypes.func.isRequired,
   changePlan: PropTypes.func.isRequired,
+  updateCC: PropTypes.string.isRequired,
+  stripe: PropTypes.object.isRequired,
 };
 
 export default injectStripe(AddCreditCard);

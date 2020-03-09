@@ -201,7 +201,7 @@ function BillingDetails({ billing, changeBillDetailConnect, changeCreditCardConn
         handleChange={handleChange}
       />
 
-      <StripeProvider apiKey="pk_live_ZZHStm71rvqmg8a9bPTw9lYL00iYtMq89h">
+      <StripeProvider apiKey="pk_test_2CT1LvA7viLp1j7yCHJ2MezU00xXxxnRdM">
         <Elements>
           <ChangeCreditCard
             openCCC={openCCC}
