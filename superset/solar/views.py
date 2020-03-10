@@ -132,7 +132,9 @@ class SolarBIAuthDBView(AuthDBView):
             'first_name': register_user.first_name,
         }
         template_id = 'd-41d88127f1e14a28b1fedc2e0b456657'
-        return send_sendgrid_email(register_user, dynamic_template_data, template_id)
+        send_sendgrid_email(register_user, dynamic_template_data, template_id)
+        flash(as_unicode('Successfully resend your activation'), 'info')
+        return jsonify(dict(redirect='/'))
 
 
 class SolarBIPasswordRecoverView(PublicFormView):
