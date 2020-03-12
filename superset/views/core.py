@@ -515,7 +515,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         #         continue
         all_object_keys = []
         try:
-            all_object_keys = self.list_object_key('colin-query-test',
+            all_object_keys = self.list_object_key('solarbi-saved-radiation',
                                                    'TID' + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + '/')
         except Exception:
             pass
@@ -547,13 +547,14 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         return widgets
 
     def list_object_key(self, bucket, prefix):
-        AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
-        AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-        session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-        client = session.client('s3', region_name='ap-southeast-2')
+        # AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+        # AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+        # session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
+        #                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        # client = session.client('s3', region_name='ap-southeast-2')
+        s3_client = boto3.client('s3')
         key_list = []
-        response = client.list_objects_v2(
+        response = s3_client.list_objects_v2(
             Bucket=bucket,
             Prefix=prefix
         )
@@ -573,7 +574,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         if is_truncated:
             cont_token = response['NextContinuationToken']
         while is_truncated:
-            response = client.list_objects_v2(
+            response = s3_client.list_objects_v2(
                 Bucket=bucket,
                 Prefix=prefix,
                 ContinuationToken=cont_token
@@ -2005,7 +2006,7 @@ class Superset(BaseSupersetView):
             else:
                 capacity_list = ", 'capacity': [" + cap1 + ", " + cap2 + ", " + cap3
             payload = "{'start_date': '" + start_date + "', 'end_date': '" + end_date + "', 'lat': " + lat + \
-                      ", 'lng': " + lng + ", 'bucket': 'colin-query-test', " \
+                      ", 'lng': " + lng + ", 'bucket': 'solarbi-saved-radiation', " \
                       "'team_id': '" + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + \
                       "', 'email': '" + g.user.email + "', 'resolution': '" + resolution + \
                       "', 'generation': " + generation + capacity_list + \
