@@ -32,6 +32,7 @@ export SG_API_KEY=${10}
 export VERSION=${11}
 export FREE_CREDIT_DOLLAR=${12}
 export GENERATION_API=${13}
+export REDIS_URL=${14}
 
 celery worker --app=superset.sql_lab:celery_app --pool=gevent -Ofair &
 gunicorn --bind  0.0.0.0:8088 \
