@@ -1178,7 +1178,7 @@ export const controls = {
 
   rolling_type: {
     type: 'SelectControl',
-    label: t('Rolling'),
+    label: t('Rolling Function'),
     default: 'None',
     choices: formatSelectOptions(['None', 'mean', 'sum', 'std', 'cumsum']),
     description: t(
