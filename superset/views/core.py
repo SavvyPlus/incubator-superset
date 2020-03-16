@@ -17,6 +17,7 @@
 # pylint: disable=C,R,W
 import logging
 import re
+from collections import defaultdict
 from contextlib import closing
 from datetime import datetime, timedelta
 from typing import Any, Callable, cast, Dict, List, Optional, Union
@@ -745,6 +746,7 @@ class Superset(BaseSupersetView):
             try:
                 dashboard_import_export.import_dashboards(db.session, f.stream)
             except DatabaseNotFound as e:
+                logger.exception(e)
                 flash(
                     _(
                         "Cannot import dashboard: %(db_error)s.\n"
@@ -1254,7 +1256,6 @@ class Superset(BaseSupersetView):
     def _set_dash_metadata(
         dashboard, data, old_to_new_slice_ids: Optional[Dict[int, int]] = None
     ):
-        old_to_new_slice_ids = old_to_new_slice_ids or {}
         positions = data["positions"]
         # find slices in the position data
         slice_ids = []
@@ -1299,10 +1300,17 @@ class Superset(BaseSupersetView):
         if "filter_scopes" in data:
             # replace filter_id and immune ids from old slice id to new slice id:
             # and remove slice ids that are not in dash anymore
+            slc_id_dict: Dict[int, int] = {}
+            if old_to_new_slice_ids:
+                slc_id_dict = {
+                    old: new
+                    for old, new in old_to_new_slice_ids.items()
+                    if new in slice_ids
+                }
+            else:
+                slc_id_dict = {sid: sid for sid in slice_ids}
             new_filter_scopes = copy_filter_scopes(
-                old_to_new_slc_id_dict={
-                    sid: old_to_new_slice_ids.get(sid, sid) for sid in slice_ids
-                },
+                old_to_new_slc_id_dict=slc_id_dict,
                 old_filter_scopes=json.loads(data["filter_scopes"] or "{}"),
             )
         if new_filter_scopes:
@@ -1371,6 +1379,7 @@ class Superset(BaseSupersetView):
                 encrypted_extra=json.dumps(request.json.get("encrypted_extra", {})),
             )
             database.set_sqlalchemy_uri(uri)
+            database.db_engine_spec.mutate_db_for_connection_test(database)
 
             username = g.user.username if g.user is not None else None
             engine = database.get_sqla_engine(user_name=username)
@@ -1406,7 +1415,9 @@ class Superset(BaseSupersetView):
             return json_error_response(_(str(e)), 400)
         except Exception as e:
             logger.error("Unexpected error %s", e)
-            return json_error_response(_("Unexpected error occurred."), 400)
+            return json_error_response(
+                _("Unexpected error occurred, please check your logs for details"), 400
+            )
 
     @api
     @has_access_api
@@ -1792,11 +1803,12 @@ class Superset(BaseSupersetView):
         dash = qry.one_or_none()
         if not dash:
             abort(404)
-        datasources = set()
+
+        datasources = defaultdict(list)
         for slc in dash.slices:
             datasource = slc.datasource
             if datasource:
-                datasources.add(datasource)
+                datasources[datasource].append(slc)
 
         if config["ENABLE_ACCESS_REQUEST"]:
             for datasource in datasources:
@@ -1810,6 +1822,14 @@ class Superset(BaseSupersetView):
                     return redirect(
                         "superset/request_access/?" f"dashboard_id={dash.id}&"
                     )
+
+        # Filter out unneeded fields from the datasource payload
+        datasources_payload = {
+            datasource.uid: datasource.data_for_slices(slices)
+            if is_feature_enabled("REDUCE_DASHBOARD_BOOTSTRAP_PAYLOAD")
+            else datasource.data
+            for datasource, slices in datasources.items()
+        }
 
         dash_edit_perm = check_ownership(
             dash, raise_if_false=False
@@ -1858,7 +1878,7 @@ class Superset(BaseSupersetView):
         bootstrap_data = {
             "user_id": g.user.get_id(),
             "dashboard_data": dashboard_data,
-            "datasources": {ds.uid: ds.data for ds in datasources},
+            "datasources": datasources_payload,
             "common": common_bootstrap_payload(),
             "editMode": edit_mode,
             "urlParams": url_params,
