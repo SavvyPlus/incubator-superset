@@ -1122,6 +1122,7 @@ export const controls = {
     freeForm: false,
     label: t('Group type'),
     validators: [],
+    default: 'CalYearly',
     choices: formatSelectOptions([
       'CalYearly',
       'Quarterly',

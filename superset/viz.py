@@ -1056,6 +1056,9 @@ class BoxPlotVizRunComp(BoxPlotViz):
     def query_obj(self) -> Dict[str, Any]:
         d = super(BoxPlotVizRunComp, self).query_obj()
         fd = self.form_data
+        if len(d['metrics']) == 1:
+            if 'count' in fd['metrics']:
+                raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
         if len(d['metrics']) < 1:
             d['metrics'].append({'aggregate': None,
                                  'column': None,
@@ -1091,6 +1094,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                      'label': 'Year',
                                      'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
                                      'sqlExpression': 'Year'})
+        if self.form_data['run_picker'] == []:
+            raise Exception('Please select at least one run ID')
         for run_id in self.form_data['run_picker']:
             d['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
         self.form_data['metrics'] = d['metrics']
