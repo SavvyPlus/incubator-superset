@@ -982,14 +982,14 @@ class BoxPlotViz(NVD3Viz):
         for metric_dic in form_data['metrics']:
             if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
                 group_column.append(metric_dic['sqlExpression'])
-
-        if form_data['group_type'] == 'CalYearly':
-            group_column.append('Year')
-        elif form_data['group_type'] == 'Quarterly':
-            group_column.append('Quarter')
-        elif form_data['group_type'] == 'CalYear Quarterly':
-            group_column.append('Year')
-            group_column.append('Quarter')
+        if 'group_type' in form_data.keys():
+            if form_data['group_type'] == 'CalYearly':
+                group_column.append('Year')
+            elif form_data['group_type'] == 'Quarterly':
+                group_column.append('Quarter')
+            elif form_data['group_type'] == 'CalYear Quarterly':
+                group_column.append('Year')
+                group_column.append('Quarter')
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
@@ -1081,6 +1081,16 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                   'label': 'Year',
                                   'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
                                   'sqlExpression': 'Year'})
+        elif 'group_type' in fd.keys():
+            if fd['group_type'] == 'Quarterly' and "Year" not in list(x['label'] for x in d['metrics']):
+                d['metrics'].append({'aggregate': None,
+                                     'column': None,
+                                     'expressionType': 'SQL',
+                                     'fromFormData': True,
+                                     'hasCustomLabel': False,
+                                     'label': 'Year',
+                                     'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
+                                     'sqlExpression': 'Year'})
         for run_id in self.form_data['run_picker']:
             d['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
         self.form_data['metrics'] = d['metrics']
@@ -1159,8 +1169,11 @@ class BoxPlotVizRunComp(BoxPlotViz):
             return set(above.tolist() + below.tolist())
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
-        # df = df.groupby(form_data.get("groupby")).agg(aggregate)
-        df = df.groupby(group_column).agg(aggregate)
+
+        if group_column:
+            df = df.groupby(group_column).agg(aggregate)
+        else:
+            df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 

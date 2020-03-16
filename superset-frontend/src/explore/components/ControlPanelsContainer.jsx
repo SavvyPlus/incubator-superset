@@ -202,6 +202,7 @@ class ControlPanelsContainer extends React.Component {
   }
   render() {
     const { viz_type } = this.props.form_data;
+    // console.log(this.props)
     const allSectionsToRender = this.sectionsToRender();
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
