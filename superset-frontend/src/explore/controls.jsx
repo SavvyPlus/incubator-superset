@@ -1120,14 +1120,14 @@ export const controls = {
   group_type: {
     type: 'SelectControl',
     freeForm: false,
-    label: t('Group type'),
+    label: t('Period type'),
     validators: [],
     choices: formatSelectOptions([
       'CalYearly',
       'Quarterly',
       'CalYear Quarterly',
     ]),
-    description: t('Select the group type'),
+    description: t('Select the period type'),
   },
 
   cal_year: {

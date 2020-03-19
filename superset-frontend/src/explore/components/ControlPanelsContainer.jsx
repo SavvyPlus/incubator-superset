@@ -201,10 +201,14 @@ class ControlPanelsContainer extends React.Component {
     );
   }
   render() {
+    const { viz_type } = this.props.form_data;
     const allSectionsToRender = this.sectionsToRender();
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
     allSectionsToRender.forEach(section => {
+      if (viz_type === 'box_plot_run_comp' && section.label === 'Time') {
+        return;
+      }
       if (
         section.controlSetRows.some(rows =>
           rows.some(
@@ -215,7 +219,17 @@ class ControlPanelsContainer extends React.Component {
           ),
         )
       ) {
-        querySectionsToRender.push(section);
+        if (viz_type === 'box_plot_run_comp' && section.label === 'Empower') {
+          const s1 = {
+            ...section,
+            controlSetRows: [
+              ...section.controlSetRows.filter(item => item[0] !== 'groupby'),
+            ],
+          };
+          querySectionsToRender.push(s1);
+        } else {
+          querySectionsToRender.push(section);
+        }
       } else {
         displaySectionsToRender.push(section);
       }
