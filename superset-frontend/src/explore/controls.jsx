@@ -302,7 +302,7 @@ export const controls = {
     default: [],
     description: t('Select up to 3 run ids'),
     mapStateToProps: state => ({
-      choices: formatSelectOptions(state.run_ids),
+      choices: formatSelectOptions(state.scenarios),
     }),
   },
 
@@ -1122,11 +1122,11 @@ export const controls = {
     freeForm: false,
     label: t('Group type'),
     validators: [],
-    default: 'CalYearly',
+    default: 'CalYears',
     choices: formatSelectOptions([
-      'CalYearly',
-      'Quarterly',
-      'CalYear Quarterly',
+      'CalYear',
+      'FinYear',
+      'Qtr',
     ]),
     description: t('Select the group type'),
   },

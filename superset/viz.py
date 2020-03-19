@@ -415,25 +415,25 @@ class BaseViz:
         if not query_obj:
             query_obj = self.query_obj()
 
-        if 'group_type' in self.form_data:
-            extra_metrics = [
-                {'expressionType': 'SQL', 'sqlExpression': 'Year', 'column': None,
-                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
-                 'label': 'Year', 'optionName': 'metric_6d3rflef213_fkp51ioh3cu'},
-                {'expressionType': 'SQL', 'sqlExpression': 'Quarter', 'column': None,
-                 'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
-                 'label': 'Quarter', 'optionName': 'metric_sy7828bzmzq_cu6n77opyy9'}
-            ]
-            if self.form_data['group_type'] == 'CalYearly':
-                query_obj['metrics'].append(extra_metrics[0])
-            elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
-                query_obj['metrics'].append(extra_metrics[1])
-                if self.form_data['quarter'] != 'All Qtrs':
-                    query_obj['filter'].append({'col': 'Quarter', 'op': '==', 'val': str(self.form_data['quarter'])})
-            elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
-                query_obj['metrics'].append(extra_metrics[0])
-                query_obj['metrics'].append(extra_metrics[1])
-                query_obj['filter'].append({'col': 'Year', 'op': '==', 'val': str(self.form_data['cal_year'])})
+        # if 'group_type' in self.form_data:
+        #     extra_metrics = [
+        #         {'expressionType': 'SQL', 'sqlExpression': 'Year', 'column': None,
+        #          'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+        #          'label': 'Year', 'optionName': 'metric_6d3rflef213_fkp51ioh3cu'},
+        #         {'expressionType': 'SQL', 'sqlExpression': 'Quarter', 'column': None,
+        #          'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
+        #          'label': 'Quarter', 'optionName': 'metric_sy7828bzmzq_cu6n77opyy9'}
+        #     ]
+        #     if self.form_data['group_type'] == 'CalYearly':
+        #         query_obj['metrics'].append(extra_metrics[0])
+        #     elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
+        #         query_obj['metrics'].append(extra_metrics[1])
+        #         if self.form_data['quarter'] != 'All Qtrs':
+        #             query_obj['filter'].append({'col': 'Quarter', 'op': '==', 'val': str(self.form_data['quarter'])})
+        #     elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
+        #         query_obj['metrics'].append(extra_metrics[0])
+        #         query_obj['metrics'].append(extra_metrics[1])
+        #         query_obj['filter'].append({'col': 'Year', 'op': '==', 'val': str(self.form_data['cal_year'])})
 
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         logger.info("Cache key: {}".format(cache_key))
@@ -977,19 +977,19 @@ class BoxPlotViz(NVD3Viz):
             return None
 
         form_data = self.form_data
-
-        group_column = []
-        for metric_dic in form_data['metrics']:
-            if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
-                group_column.append(metric_dic['sqlExpression'])
-        if 'group_type' in form_data.keys():
-            if form_data['group_type'] == 'CalYearly':
-                group_column.append('Year')
-            elif form_data['group_type'] == 'Quarterly':
-                group_column.append('Quarter')
-            elif form_data['group_type'] == 'CalYear Quarterly':
-                group_column.append('Year')
-                group_column.append('Quarter')
+        #
+        # group_column = []
+        # for metric_dic in form_data['metrics']:
+        #     if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
+        #         group_column.append(metric_dic['sqlExpression'])
+        # if 'group_type' in form_data.keys():
+        #     if form_data['group_type'] == 'CalYearly':
+        #         group_column.append('Year')
+        #     elif form_data['group_type'] == 'Quarterly':
+        #         group_column.append('Quarter')
+        #     elif form_data['group_type'] == 'CalYear Quarterly':
+        #         group_column.append('Year')
+        #         group_column.append('Quarter')
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
@@ -1038,8 +1038,8 @@ class BoxPlotViz(NVD3Viz):
             return set(above.tolist() + below.tolist())
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
-        # df = df.groupby(form_data.get("groupby")).agg(aggregate)
-        df = df.groupby(group_column).agg(aggregate)
+        df = df.groupby(form_data['group_by']).agg(aggregate)
+        # df = df.groupby(group_column).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 
@@ -1059,45 +1059,29 @@ class BoxPlotVizRunComp(BoxPlotViz):
         if len(d['metrics']) == 1:
             if 'count' in fd['metrics']:
                 raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
-        if len(d['metrics']) < 1:
-            d['metrics'].append({'aggregate': None,
-                                 'column': None,
-                                 'expressionType': 'SQL',
-                                 'fromFormData': True,
-                                 'hasCustomLabel': False,
-                                 'label': 'SpotPrice',
-                                 'optionName': 'metric_0qwzx39q1td_v7q6ibb8h4m',
-                                 'sqlExpression': 'SpotPrice'})
+        if 'group_type' in fd.keys():
+            for group_type in ['CalYear', 'FinYear', 'Qtr']:
+                if fd['group_type'] == group_type and group_type not in list(x['label'] for x in d['metrics']):
+                    d['metrics'].append({'aggregate': None,
+                                         'column': None,
+                                         'expressionType': 'SQL',
+                                         'fromFormData': True,
+                                         'hasCustomLabel': False,
+                                         'label': group_type,
+                                         'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
+                                         'sqlExpression': group_type})
+        if self.form_data['run_picker'] != [] and 'RunComb' not in list(metric['label'] for metric in d['metrics']):
             d['metrics'].append({'aggregate': None,
                                   'column': None,
                                   'expressionType': 'SQL',
                                   'fromFormData': True,
                                   'hasCustomLabel': False,
-                                  'label': 'RunID',
+                                  'label': 'RunComb',
                                   'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
-                                  'sqlExpression': 'RunID'})
-            d['metrics'].append({'aggregate': None,
-                                  'column': None,
-                                  'expressionType': 'SQL',
-                                  'fromFormData': True,
-                                  'hasCustomLabel': False,
-                                  'label': 'Year',
-                                  'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
-                                  'sqlExpression': 'Year'})
-        elif 'group_type' in fd.keys():
-            if fd['group_type'] == 'Quarterly' and "Year" not in list(x['label'] for x in d['metrics']):
-                d['metrics'].append({'aggregate': None,
-                                     'column': None,
-                                     'expressionType': 'SQL',
-                                     'fromFormData': True,
-                                     'hasCustomLabel': False,
-                                     'label': 'Year',
-                                     'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
-                                     'sqlExpression': 'Year'})
-        if self.form_data['run_picker'] == []:
-            raise Exception('Please select at least one run ID')
-        for run_id in self.form_data['run_picker']:
-            d['filter'].append({'col':'RunID', 'op':'==', 'val':str(run_id)})
+                                  'sqlExpression': 'RunComb'})
+        for scenario in self.form_data['run_picker']:
+            d['filter'].append({'col':'RunComb', 'op':'==', 'val':str(scenario)})
+
         self.form_data['metrics'] = d['metrics']
         return d
 
@@ -1175,10 +1159,10 @@ class BoxPlotVizRunComp(BoxPlotViz):
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
 
-        if group_column:
-            df = df.groupby(group_column).agg(aggregate)
-        else:
-            df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        # if group_column:
+        df = df.groupby(group_column).agg(aggregate)
+        # else:
+        #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 
