@@ -1043,6 +1043,7 @@ class BoxPlotViz(NVD3Viz):
         chart_data = self.to_series(df)
         return chart_data
 
+
 class BoxPlotVizRunComp(BoxPlotViz):
 
     """Box plot viz from ND3"""
@@ -1112,6 +1113,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         for metric_dic in self.query_obj()['metrics']:
             if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
                 group_column.append(metric_dic['sqlExpression'])
+
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
             return np.nanpercentile(series, 25)
@@ -1163,6 +1165,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         df = df.groupby(group_column).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
+
 
 class BubbleViz(NVD3Viz):
 
