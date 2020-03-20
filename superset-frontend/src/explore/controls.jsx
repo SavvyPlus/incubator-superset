@@ -298,12 +298,34 @@ export const controls = {
   run_picker: {
     type: 'SelectControl',
     multi: true,
+    allowAll: true,
     label: t('Select Runs'),
     default: [],
     description: t('Select up to 3 run ids'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.run_ids),
     }),
+  },
+
+  state_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select State'),
+    default: [],
+    description: t('Select one state'),
+    choices: [
+      ['VIC', 'VIC'],
+      ['NSW', 'NSW'],
+    ],
+  },
+
+  run_comb_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select Run Combination'),
+    default: [],
+    description: t('Select one run combination'),
+    choices: [['Central-Snowy', 'Central-Snowy']],
   },
 
   color_picker: {

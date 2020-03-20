@@ -206,9 +206,9 @@ class ControlPanelsContainer extends React.Component {
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
     allSectionsToRender.forEach(section => {
-      if (viz_type === 'box_plot_run_comp' && section.label === 'Time') {
-        return;
-      }
+      // if (viz_type === 'box_plot_run_comp' && section.label === 'Time') {
+      //   return;
+      // }
       if (
         section.controlSetRows.some(rows =>
           rows.some(

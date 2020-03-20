@@ -28,6 +28,8 @@ export default {
         ['adhoc_filters'],
         ['groupby'],
         ['run_picker'],
+        ['state_picker'],
+        ['run_comb_picker'],
         ['group_type'],
         ['cal_year'],
         ['quarter'],

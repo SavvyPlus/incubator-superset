@@ -299,8 +299,8 @@ class BaseViz:
             groupby.remove(DTTM_ALIAS)
             is_timeseries = True
 
-        # granularity = form_data.get("granularity") or form_data.get("granularity_sqla")
-        granularity = None
+        granularity = form_data.get("granularity") or form_data.get("granularity_sqla")
+        # granularity = None
         limit = int(form_data.get("limit") or 0)
         timeseries_limit_metric = form_data.get("timeseries_limit_metric")
         row_limit = int(form_data.get("row_limit") or config["ROW_LIMIT"])
@@ -308,14 +308,14 @@ class BaseViz:
         # default order direction
         order_desc = form_data.get("order_desc", True)
 
-        # since, until = utils.get_since_until(
-        #     relative_start=relative_start,
-        #     relative_end=relative_end,
-        #     time_range=form_data.get("time_range"),
-        #     since=form_data.get("since"),
-        #     until=form_data.get("until"),
-        # )
-        since, until = None, None
+        since, until = utils.get_since_until(
+            relative_start=relative_start,
+            relative_end=relative_end,
+            time_range=form_data.get("time_range"),
+            since=form_data.get("since"),
+            until=form_data.get("until"),
+        )
+        # since, until = None, None
         time_shift = form_data.get("time_shift", "")
         self.time_shift = utils.parse_past_timedelta(time_shift)
         from_dttm = None if since is None else (since - self.time_shift)
@@ -1051,8 +1051,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
     viz_type = "box_plot_run_comp"
     verbose_name = _("Box Plot For Run Comparison")
     sort_series = False
-    is_timeseries = False
-    enforce_numerical_metrics = False
+    is_timeseries = True
+    # enforce_numerical_metrics = False
 
     def query_obj(self) -> Dict[str, Any]:
         d = super(BoxPlotVizRunComp, self).query_obj()

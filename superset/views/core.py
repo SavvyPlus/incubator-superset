@@ -895,6 +895,7 @@ class Superset(BaseSupersetView):
             result = engine.execute("SELECT DISTINCT RunID FROM {}".format(datasource.table_name))
             for row in result:
                 run_ids.append(row[0])
+        run_ids.append(120)
 
         bootstrap_data = {
             "can_add": slice_add_perm,
