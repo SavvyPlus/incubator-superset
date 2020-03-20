@@ -887,14 +887,29 @@ class Superset(BaseSupersetView):
             request.args.get(utils.ReservedUrlParameters.STANDALONE.value) == "true"
         )
 
-        # This part is for run comparison box plot, get distinct run id for frontend selection
-        has_run_id = 'RunID' in datasource.column_names
-        run_ids = []
-        if has_run_id:
+        # This part is for run comparison box plot, get distinct scenarios, state and
+        # firming technologies for frontend selection
+        has_scenario = 'RunComb' in datasource.column_names
+        has_firm_tech = 'FirmingTechnology' in datasource.column_names
+        has_state = 'State' in datasource.column_names
+        scenarios = []
+        firm_tech = []
+        states = []
+        if has_scenario:
             engine = self.appbuilder.get_session.get_bind()
-            result = engine.execute("SELECT DISTINCT RunID FROM {}".format(datasource.table_name))
+            result = engine.execute("SELECT DISTINCT RunComb FROM {}".format(datasource.table_name))
             for row in result:
-                run_ids.append(row[0])
+                scenarios.append(row[0])
+        if has_firm_tech:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT FirmingTechnology FROM {}".format(datasource.table_name))
+            for row in result:
+                firm_tech.append(row[0])
+        if has_state:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT State FROM {}".format(datasource.table_name))
+            for row in result:
+                states.append(row[0])
 
         bootstrap_data = {
             "can_add": slice_add_perm,
@@ -909,7 +924,9 @@ class Superset(BaseSupersetView):
             "user_id": user_id,
             "forced_height": request.args.get("height"),
             "common": common_bootstrap_payload(),
-            "run_ids": run_ids,
+            "scenarios": scenarios,
+            "firm_tech": firm_tech,
+            "states": states,
         }
         table_name = (
             datasource.table_name
