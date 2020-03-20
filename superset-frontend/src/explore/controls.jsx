@@ -317,14 +317,14 @@ export const controls = {
     }),
   },
 
-  run_comb_picker: {
-    type: 'SelectControl',
-    multi: true,
-    label: t('Select Run Combination'),
-    default: [],
-    description: t('Select one run combination'),
-    choices: [['Central-Snowy', 'Central-Snowy']],
-  },
+  // run_comb_picker: {
+  //   type: 'SelectControl',
+  //   multi: true,
+  //   label: t('Select Run Combination'),
+  //   default: [],
+  //   description: t('Select one run combination'),
+  //   choices: [['Central-Snowy', 'Central-Snowy']],
+  // },
 
   technology_picker: {
     type: 'SelectControl',
