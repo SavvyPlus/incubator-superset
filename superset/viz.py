@@ -1079,8 +1079,10 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                   'label': 'RunComb',
                                   'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
                                   'sqlExpression': 'RunComb'})
-        for scenario in self.form_data['run_picker']:
-            d['filter'].append({'col':'RunComb', 'op':'==', 'val':str(scenario)})
+        if self.form_data['run_picker'] != []:
+            # for scenario in self.form_data['run_picker']:
+            d['filter'].append({'col':'RunComb','op':'in','val':self .form_data['run_picker']})
+                # d['filter'].append({'col':'RunComb', 'op':'==', 'val':str(scenario)})
 
         self.form_data['metrics'] = d['metrics']
         return d
