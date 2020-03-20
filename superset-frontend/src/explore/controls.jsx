@@ -311,11 +311,10 @@ export const controls = {
     multi: true,
     label: t('Select State'),
     default: [],
-    description: t('Select one state'),
-    choices: [
-      ['VIC', 'VIC'],
-      ['NSW', 'NSW'],
-    ],
+    description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.states),
+    }),
   },
 
   run_comb_picker: {

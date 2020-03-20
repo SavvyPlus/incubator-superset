@@ -1086,6 +1086,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
             d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
         if self.form_data['technology_picker']:
             d['filter'].append({'col': 'FirmingTechnology', 'op': 'in', 'val': self.form_data['technology_picker']})
+        if self.form_data['state_picker']:
+            d['filter'].append({'col': 'State', 'op': 'in', 'val': self.form_data['state_picker']})
 
         self.form_data['metrics'] = d['metrics']
         return d
