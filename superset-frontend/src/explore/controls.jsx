@@ -298,9 +298,9 @@ export const controls = {
   run_picker: {
     type: 'SelectControl',
     multi: true,
-    label: t('Select Runs'),
+    label: t('Select Senarios'),
     default: [],
-    description: t('Select up to 3 run ids'),
+    description: t('Select up to 3 run senarios'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.scenarios),
     }),
@@ -1144,11 +1144,7 @@ export const controls = {
     label: t('Period type'),
     validators: [],
     default: 'CalYear',
-    choices: formatSelectOptions([
-      'CalYear',
-      'FinYear',
-      'Qtr',
-    ]),
+    choices: formatSelectOptions(['CalYear', 'FinYear', 'Qtr']),
     description: t('Select the period type'),
   },
 
