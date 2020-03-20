@@ -327,6 +327,17 @@ export const controls = {
     choices: [['Central-Snowy', 'Central-Snowy']],
   },
 
+  technology_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select Firming Technology'),
+    default: [],
+    description: t('Select firming technologies'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.firm_tech),
+    }),
+  },
+
   color_picker: {
     label: t('Fixed Color'),
     description: t('Use this to define a static color for all circles'),

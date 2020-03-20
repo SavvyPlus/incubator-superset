@@ -30,6 +30,7 @@ export default {
         ['run_picker'],
         ['state_picker'],
         ['run_comb_picker'],
+        ['technology_picker'],
         ['group_type'],
         ['cal_year'],
         ['quarter'],
