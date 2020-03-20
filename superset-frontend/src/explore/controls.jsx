@@ -298,7 +298,6 @@ export const controls = {
   run_picker: {
     type: 'SelectControl',
     multi: true,
-    allowAll: true,
     label: t('Select Runs'),
     default: [],
     description: t('Select up to 3 run ids'),

@@ -179,7 +179,7 @@ export default class VizTypeControl extends React.PureComponent {
       .filter(entry => entry.value.name.toLowerCase().includes(filterString));
 
     const rows = [];
-    filteredTypes[46].value.name = 'Box Plot Run Comp';
+    // filteredTypes[46].value.name = 'Box Plot Run Comp';
     for (let i = 0; i <= filteredTypes.length; i += IMAGE_PER_ROW) {
       rows.push(
         <Row key={`row-${i}`}>
