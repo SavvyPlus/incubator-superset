@@ -887,14 +887,29 @@ class Superset(BaseSupersetView):
             request.args.get(utils.ReservedUrlParameters.STANDALONE.value) == "true"
         )
 
-        # This part is for run comparison box plot, get distinct scenarios for frontend selection
+        # This part is for run comparison box plot, get distinct scenarios, state and
+        # firming technologies for frontend selection
         has_scenario = 'RunComb' in datasource.column_names
+        has_firm_tech = 'FirmingTechnology' in datasource.column_names
+        has_state = 'State' in datasource.column_names
         scenarios = []
+        firm_tech = []
+        states = []
         if has_scenario:
             engine = self.appbuilder.get_session.get_bind()
             result = engine.execute("SELECT DISTINCT RunComb FROM {}".format(datasource.table_name))
             for row in result:
                 scenarios.append(row[0])
+        if has_firm_tech:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT FirmingTechnology FROM {}".format(datasource.table_name))
+            for row in result:
+                firm_tech.append(row[0])
+        if has_state:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT State FROM {}".format(datasource.table_name))
+            for row in result:
+                states.append(row[0])
 
         bootstrap_data = {
             "can_add": slice_add_perm,
@@ -910,6 +925,8 @@ class Superset(BaseSupersetView):
             "forced_height": request.args.get("height"),
             "common": common_bootstrap_payload(),
             "scenarios": scenarios,
+            "firm_tech": firm_tech,
+            "states": states,
         }
         table_name = (
             datasource.table_name

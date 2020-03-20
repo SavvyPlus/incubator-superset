@@ -299,8 +299,8 @@ class BaseViz:
             groupby.remove(DTTM_ALIAS)
             is_timeseries = True
 
-        # granularity = form_data.get("granularity") or form_data.get("granularity_sqla")
-        granularity = None
+        granularity = form_data.get("granularity") or form_data.get("granularity_sqla")
+        # granularity = None
         limit = int(form_data.get("limit") or 0)
         timeseries_limit_metric = form_data.get("timeseries_limit_metric")
         row_limit = int(form_data.get("row_limit") or config["ROW_LIMIT"])
@@ -308,14 +308,14 @@ class BaseViz:
         # default order direction
         order_desc = form_data.get("order_desc", True)
 
-        # since, until = utils.get_since_until(
-        #     relative_start=relative_start,
-        #     relative_end=relative_end,
-        #     time_range=form_data.get("time_range"),
-        #     since=form_data.get("since"),
-        #     until=form_data.get("until"),
-        # )
-        since, until = None, None
+        since, until = utils.get_since_until(
+            relative_start=relative_start,
+            relative_end=relative_end,
+            time_range=form_data.get("time_range"),
+            since=form_data.get("since"),
+            until=form_data.get("until"),
+        )
+        # since, until = None, None
         time_shift = form_data.get("time_shift", "")
         self.time_shift = utils.parse_past_timedelta(time_shift)
         from_dttm = None if since is None else (since - self.time_shift)
@@ -1043,6 +1043,7 @@ class BoxPlotViz(NVD3Viz):
         chart_data = self.to_series(df)
         return chart_data
 
+
 class BoxPlotVizRunComp(BoxPlotViz):
 
     """Box plot viz from ND3"""
@@ -1050,8 +1051,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
     viz_type = "box_plot_run_comp"
     verbose_name = _("Box Plot For Run Comparison")
     sort_series = False
-    is_timeseries = False
-    enforce_numerical_metrics = False
+    is_timeseries = True
+    # enforce_numerical_metrics = False
 
     def query_obj(self) -> Dict[str, Any]:
         d = super(BoxPlotVizRunComp, self).query_obj()
@@ -1079,10 +1080,14 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                   'label': 'RunComb',
                                   'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
                                   'sqlExpression': 'RunComb'})
-        if self.form_data['run_picker'] != []:
+
+        if self.form_data['run_picker']:
             # for scenario in self.form_data['run_picker']:
-            d['filter'].append({'col':'RunComb','op':'in','val':self .form_data['run_picker']})
-                # d['filter'].append({'col':'RunComb', 'op':'==', 'val':str(scenario)})
+            d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
+        if self.form_data['technology_picker']:
+            d['filter'].append({'col': 'FirmingTechnology', 'op': 'in', 'val': self.form_data['technology_picker']})
+        if self.form_data['state_picker']:
+            d['filter'].append({'col': 'State', 'op': 'in', 'val': self.form_data['state_picker']})
 
         self.form_data['metrics'] = d['metrics']
         return d
@@ -1113,6 +1118,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         for metric_dic in self.query_obj()['metrics']:
             if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
                 group_column.append(metric_dic['sqlExpression'])
+
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
             return np.nanpercentile(series, 25)
@@ -1167,6 +1173,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
+
 
 class BubbleViz(NVD3Viz):
 

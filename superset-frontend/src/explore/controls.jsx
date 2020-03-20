@@ -298,11 +298,42 @@ export const controls = {
   run_picker: {
     type: 'SelectControl',
     multi: true,
-    label: t('Select Runs'),
+    label: t('Select Senarios'),
     default: [],
-    description: t('Select up to 3 run ids'),
+    description: t('Select up to 3 run senarios'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.scenarios),
+    }),
+  },
+
+  state_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select State'),
+    default: [],
+    description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.states),
+    }),
+  },
+
+  run_comb_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select Run Combination'),
+    default: [],
+    description: t('Select one run combination'),
+    choices: [['Central-Snowy', 'Central-Snowy']],
+  },
+
+  technology_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select Firming Technology'),
+    default: [],
+    description: t('Select firming technologies'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.firm_tech),
     }),
   },
 
@@ -1120,15 +1151,11 @@ export const controls = {
   group_type: {
     type: 'SelectControl',
     freeForm: false,
-    label: t('Group type'),
+    label: t('Period type'),
     validators: [],
     default: 'CalYear',
-    choices: formatSelectOptions([
-      'CalYear',
-      'FinYear',
-      'Qtr',
-    ]),
-    description: t('Select the group type'),
+    choices: formatSelectOptions(['CalYear', 'FinYear', 'Qtr']),
+    description: t('Select the period type'),
   },
 
   cal_year: {
