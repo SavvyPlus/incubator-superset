@@ -306,6 +306,22 @@ export const controls = {
     }),
   },
 
+  percentile_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Select Percentile'),
+    default: '100',
+    description: t('Select the percentile you want to drill down'),
+    choices:[
+        ['100', '100'],
+        ['95', '95'],
+        ['75', '75'],
+        ['50', '50'],
+        ['25', '25'],
+        ['5', '5'],
+    ]
+  },
+
   state_picker: {
     type: 'SelectControl',
     multi: true,
@@ -314,26 +330,6 @@ export const controls = {
     description: t('Select states'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.states),
-    }),
-  },
-
-  // run_comb_picker: {
-  //   type: 'SelectControl',
-  //   multi: true,
-  //   label: t('Select Run Combination'),
-  //   default: [],
-  //   description: t('Select one run combination'),
-  //   choices: [['Central-Snowy', 'Central-Snowy']],
-  // },
-
-  technology_picker: {
-    type: 'SelectControl',
-    multi: true,
-    label: t('Select Firming Technology'),
-    default: [],
-    description: t('Select firming technologies'),
-    mapStateToProps: state => ({
-      choices: formatSelectOptions(state.firm_tech),
     }),
   },
 

@@ -1084,8 +1084,6 @@ class BoxPlotVizRunComp(BoxPlotViz):
         if self.form_data['run_picker']:
             # for scenario in self.form_data['run_picker']:
             d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
-        if self.form_data['technology_picker']:
-            d['filter'].append({'col': 'FirmingTechnology', 'op': 'in', 'val': self.form_data['technology_picker']})
         if self.form_data['state_picker']:
             d['filter'].append({'col': 'State', 'op': 'in', 'val': self.form_data['state_picker']})
 
@@ -1112,12 +1110,31 @@ class BoxPlotVizRunComp(BoxPlotViz):
                 chart_data.append({"label": chart_label, "values": box})
         return chart_data
 
+    def filter_by_percentile(self, df:pd.DataFrame, required_percentile, group_column) -> pd.DataFrame:
+        from itertools import product
+        distinct_column_values = []
+        for column in group_column:
+            distinct_column_values.append(list(df[column].unique()))
+        combinations = list(product(*distinct_column_values))
+        filtered_df = pd.DataFrame()
+        for combination in combinations:
+            df_temp = df
+            for column, value in zip(group_column, combination):
+                df_temp = df_temp[df_temp[column] == value]
+            under_price = np.nanpercentile(df_temp['SpotPrice'], required_percentile)
+            filtered_df = filtered_df.append(df_temp[df_temp['SpotPrice']<= under_price])
+        return filtered_df
+
     def get_data(self, df: pd.DataFrame) -> VizData:
         form_data = self.form_data
         group_column = []
         for metric_dic in self.query_obj()['metrics']:
             if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
                 group_column.append(metric_dic['sqlExpression'])
+
+        # Drill down by percentile if not 100
+        if form_data['percentile_picker'] != 100 or form_data['percentile_picker']!= []:
+            df = self.filter_by_percentile(df, int(form_data['percentile_picker']), group_column)
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
