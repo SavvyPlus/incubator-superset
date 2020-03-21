@@ -1080,12 +1080,23 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                   'label': 'RunComb',
                                   'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
                                   'sqlExpression': 'RunComb'})
+        if self.form_data['daylike_picker'] != [] and 'DayLike' not in list(metric['label'] for metric in d['metrics']):
+            d['metrics'].append({'aggregate': None,
+                                  'column': None,
+                                  'expressionType': 'SQL',
+                                  'fromFormData': True,
+                                  'hasCustomLabel': False,
+                                  'label': 'DayLike',
+                                  'optionName': 'metric_0lo5gnmglhew_liwkucr4sel',
+                                  'sqlExpression': 'DayLike'})
 
         if self.form_data['run_picker']:
             # for scenario in self.form_data['run_picker']:
             d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
         if self.form_data['state_picker']:
             d['filter'].append({'col': 'State', 'op': 'in', 'val': self.form_data['state_picker']})
+        if self.form_data['daylike_picker']:
+            d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
 
         self.form_data['metrics'] = d['metrics']
         return d

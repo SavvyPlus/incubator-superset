@@ -33,6 +33,7 @@ export default {
         ['group_type'],
         ['cal_year'],
         ['quarter'],
+        ['daylike_picker'],
         ['whisker_options'],
       ],
     },
