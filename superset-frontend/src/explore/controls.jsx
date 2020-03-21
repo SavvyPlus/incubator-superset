@@ -312,14 +312,14 @@ export const controls = {
     label: t('Select Percentile'),
     default: '100',
     description: t('Select the percentile you want to drill down'),
-    choices:[
-        ['100', '100'],
-        ['95', '95'],
-        ['75', '75'],
-        ['50', '50'],
-        ['25', '25'],
-        ['5', '5'],
-    ]
+    choices: [
+      ['100', '100'],
+      ['95', '95'],
+      ['75', '75'],
+      ['50', '50'],
+      ['25', '25'],
+      ['5', '5'],
+    ],
   },
 
   state_picker: {
@@ -1066,7 +1066,7 @@ export const controls = {
     type: 'DateFilterControl',
     freeForm: true,
     label: TIME_FILTER_LABELS.time_range,
-    default: t('Last week'),
+    default: t('No filter'),
     description: t(
       'The time range for the visualization. All relative times, e.g. "Last month", ' +
         '"Last 7 days", "now", etc. are evaluated on the server using the server\'s ' +
