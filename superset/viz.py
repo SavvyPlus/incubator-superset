@@ -1058,7 +1058,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         d = super(BoxPlotVizRunComp, self).query_obj()
         fd = self.form_data
         if len(d['metrics']) == 1:
-            if 'count' in fd['metrics']:
+            if 'count' in fd['metrics'] or 'SpotPrice' in fd['metrics']:
                 raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
         if 'group_type' in fd.keys():
             for group_type in ['CalYear', 'FinYear', 'Qtr']:
@@ -1126,6 +1126,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
         return filtered_df
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if len(df) == 0:
+            raise Exception('No data is fetched. Please adjust your time range and conditions.')
         form_data = self.form_data
         group_column = []
         for metric_dic in self.query_obj()['metrics']:
