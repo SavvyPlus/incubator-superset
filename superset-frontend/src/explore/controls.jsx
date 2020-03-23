@@ -100,6 +100,10 @@ const ROW_LIMIT_OPTIONS = [10, 50, 100, 250, 500, 1000, 5000, 10000, 50000];
 
 const SERIES_LIMITS = [0, 5, 10, 25, 50, 100, 500];
 
+const CAL_YEAR_OPTIONS = [2019, 2020, 2021, 2022, 2023];
+
+const FIN_YEAR_OPTIONS = [2018, 2019, 2020, 2021, 2022, 2022];
+
 export const D3_TIME_FORMAT_OPTIONS = [
   ['smart_date', 'Adaptative formating'],
   ['%d/%m/%Y', '%d/%m/%Y | 14/01/2019'],
@@ -1144,7 +1148,7 @@ export const controls = {
     ),
   },
 
-  group_type: {
+  period_type: {
     type: 'SelectControl',
     freeForm: false,
     label: t('Period type'),
@@ -1154,13 +1158,44 @@ export const controls = {
     description: t('Select the period type'),
   },
 
-  cal_year: {
+  cal_start_year: {
+    type: 'SelectControl',
+    validators: [v.nonEmpty],
+    freeForm: false,
+    default: 2019,
+    label: t('Start calendar year'),
+    choices: formatSelectOptions(CAL_YEAR_OPTIONS),
+    description: t('Select a start calendar year'),
+  },
+
+  cal_end_year: {
+    type: 'SelectControl',
+    validators: [v.nonEmpty],
+    freeForm: false,
+    default: 2020,
+    label: t('End calendar year'),
+    choices: formatSelectOptions(CAL_YEAR_OPTIONS),
+    description: t('Select an end calendar year'),
+  },
+
+  fin_start_year: {
     type: 'SelectControl',
     freeForm: false,
-    label: t('Calendar year'),
+    default: 2018,
+    label: t('Start financial year'),
     validators: [],
-    choices: formatSelectOptions(['2017', '2018', '2019', '2020']),
-    description: t('Select the calendar year'),
+    choices: formatSelectOptions(FIN_YEAR_OPTIONS),
+    description: t('Select an end financial year'),
+  },
+
+  fin_end_year: {
+    type: 'SelectControl',
+    freeForm: false,
+    default: 2019,
+    label: t('End financial year'),
+    validators: [],
+    choices: formatSelectOptions(FIN_YEAR_OPTIONS),
+    description: t('Select an end financial year'),
   },
 
   quarter: {
