@@ -929,8 +929,7 @@ class BoxPlotViz(NVD3Viz):
     viz_type = "box_plot"
     verbose_name = _("Box Plot")
     sort_series = False
-    is_timeseries = False
-    enforce_numerical_metrics = False
+    is_timeseries = True
 
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " - "
@@ -957,19 +956,6 @@ class BoxPlotViz(NVD3Viz):
             return None
 
         form_data = self.form_data
-        #
-        # group_column = []
-        # for metric_dic in form_data['metrics']:
-        #     if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
-        #         group_column.append(metric_dic['sqlExpression'])
-        # if 'group_type' in form_data.keys():
-        #     if form_data['group_type'] == 'CalYearly':
-        #         group_column.append('Year')
-        #     elif form_data['group_type'] == 'Quarterly':
-        #         group_column.append('Quarter')
-        #     elif form_data['group_type'] == 'CalYear Quarterly':
-        #         group_column.append('Year')
-        #         group_column.append('Quarter')
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
@@ -1018,8 +1004,7 @@ class BoxPlotViz(NVD3Viz):
             return set(above.tolist() + below.tolist())
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
-        df = df.groupby(form_data['group_by']).agg(aggregate)
-        # df = df.groupby(group_column).agg(aggregate)
+        df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 
