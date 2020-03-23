@@ -220,11 +220,13 @@ class ControlPanelsContainer extends React.Component {
           ),
         )
       ) {
+        // In Empower box plot, we need to hide default selects
         if (viz_type === 'box_plot_run_comp' && section.label === 'Empower') {
           const s1 = {
             ...section,
             controlSetRows: [
               ...section.controlSetRows
+                .filter(item => item[0] !== 'metrics')
                 .filter(item => item[0] !== 'groupby')
                 .filter(item => item[0] !== 'adhoc_filters'),
             ],

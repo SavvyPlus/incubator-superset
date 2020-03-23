@@ -295,6 +295,20 @@ export const controls = {
     }),
   },
 
+  data_type_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Data Type'),
+    validator: [v.nonEmpty],
+    default: 'SpotPrice',
+    description: t('Select one data type'),
+    choices: [
+      ['SpotPrice', 'SpotPrice'],
+      // ['Generation', 'Generation'],
+      // ['Revenue', 'Revenue'],
+    ],
+  },
+
   run_picker: {
     type: 'SelectControl',
     multi: true,
@@ -331,6 +345,38 @@ export const controls = {
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.states),
     }),
+  },
+
+  period_type: {
+    type: 'SelectControl',
+    freeForm: false,
+    label: t('Period type'),
+    validators: [],
+    default: 'CalYear',
+    choices: formatSelectOptions(['CalYear', 'FinYear', 'Qtr']),
+    description: t('Select the period type'),
+  },
+
+  cal_years: {
+    type: 'SelectControl',
+    validators: [v.nonEmpty],
+    freeForm: true,
+    multi: true,
+    default: ['2019'],
+    label: t('Calendar years'),
+    choices: formatSelectOptionsForRange(2019, 2023),
+    description: t('Select calendar years'),
+  },
+
+  fin_years: {
+    type: 'SelectControl',
+    validators: [v.nonEmpty],
+    freeForm: true,
+    multi: true,
+    default: ['2018'],
+    label: t('Financial years'),
+    choices: formatSelectOptionsForRange(2018, 2022),
+    description: t('Select financial years'),
   },
 
   daylike_picker: {
@@ -1155,38 +1201,6 @@ export const controls = {
     ),
   },
 
-  period_type: {
-    type: 'SelectControl',
-    freeForm: false,
-    label: t('Period type'),
-    validators: [],
-    default: 'CalYear',
-    choices: formatSelectOptions(['CalYear', 'FinYear', 'Qtr']),
-    description: t('Select the period type'),
-  },
-
-  cal_years: {
-    type: 'SelectControl',
-    validators: [v.nonEmpty],
-    freeForm: true,
-    multi: true,
-    default: ['2019'],
-    label: t('Calendar years'),
-    choices: formatSelectOptionsForRange(2019, 2023),
-    description: t('Select calendar years'),
-  },
-
-  fin_years: {
-    type: 'SelectControl',
-    validators: [v.nonEmpty],
-    freeForm: true,
-    multi: true,
-    default: ['2018'],
-    label: t('Financial years'),
-    choices: formatSelectOptionsForRange(2018, 2022),
-    description: t('Select financial years'),
-  },
-
   quarter: {
     type: 'SelectControl',
     freeForm: false,
@@ -1194,15 +1208,6 @@ export const controls = {
     validators: [],
     choices: formatSelectOptions(['Q1', 'Q2', 'Q3', 'Q4', 'All Qtrs']),
     description: t('Select the quarter'),
-  },
-
-  hot_days: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('Hot Days'),
-    validators: [v.integer],
-    choices: formatSelectOptions([0, 5, 10, 25, 50]),
-    description: t('Select the minimum number of hot days in that period.'),
   },
 
   timeseries_limit_metric: {

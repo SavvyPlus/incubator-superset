@@ -27,6 +27,7 @@ export default {
         ['metrics'],
         ['adhoc_filters'],
         ['groupby'],
+        ['data_type_picker'],
         ['run_picker'],
         ['percentile_picker'],
         ['state_picker'],
