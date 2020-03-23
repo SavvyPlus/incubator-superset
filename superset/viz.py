@@ -1060,10 +1060,11 @@ class BoxPlotVizRunComp(BoxPlotViz):
             d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
         if self.form_data['state_picker']:
             d['filter'].append({'col': 'State', 'op': 'in', 'val': self.form_data['state_picker']})
-        if self.form_data['cal_start_year'] and self.form_data['cal_end_year']:
-            d['filter'].append({'col': 'CalYear', 'op': '>=', 'val': self.form_data['cal_start_year']})
-            d['filter'].append({'col': 'CalYear', 'op': '<=', 'val': self.form_data['cal_end_year']})
-        if self.form_data['daylike_picker']:
+        if self.form_data['period_type'] == 'CalYear' and self.form_data['cal_years']:
+            d['filter'].append({'col': 'CalYear', 'op': 'in', 'val': self.form_data['cal_years']})
+        if self.form_data['period_type'] == 'FinYear' and self.form_data['fin_years']:
+            d['filter'].append({'col': 'FinYear', 'op': 'in', 'val': self.form_data['fin_years']})
+        if self.form_data['daylike_picker'] and self.form_data['daylike_picker'] != 'All':
             d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
 
         self.form_data['metrics'] = d['metrics']

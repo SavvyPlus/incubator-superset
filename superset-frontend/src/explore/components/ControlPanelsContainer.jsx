@@ -181,14 +181,11 @@ class ControlPanelsContainer extends React.Component {
                 const name = controlItem;
 
                 // Dynamically render selection fields based on the group type
-                if (name === 'cal_start_year' || name === 'cal_end_year') {
+                if (name === 'cal_years') {
                   if (controls.period_type.value === 'CalYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
-                } else if (
-                  name === 'fin_start_year' ||
-                  name === 'fin_end_year'
-                ) {
+                } else if (name === 'fin_years') {
                   if (controls.period_type.value === 'FinYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
