@@ -1022,9 +1022,17 @@ class BoxPlotVizRunComp(BoxPlotViz):
     def query_obj(self) -> Dict[str, Any]:
         d = super(BoxPlotVizRunComp, self).query_obj()
         fd = self.form_data
-        if len(d['metrics']) == 1:
-            if 'count' in fd['metrics'] or 'SpotPrice' in fd['metrics']:
-                raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
+        d['metrics'] = [{'expressionType': 'SQL',
+                         'sqlExpression': 'SpotPrice',
+                         'column': None,
+                         'aggregate': None,
+                         'hasCustomLabel': False,
+                         'fromFormData': True,
+                         'label': 'SpotPrice',
+                         'optionName': 'metric_fk548mk5nw_h2fyj2n9w3o'}]
+        # if len(d['metrics']) == 1:
+        #     if 'count' in fd['metrics'] or 'SpotPrice' in fd['metrics']:
+        #         raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
         if 'period_type' in fd.keys():
             for period_type in ['CalYear', 'FinYear', 'Qtr']:
                 if fd['period_type'] == period_type and period_type not in list(x['label'] for x in d['metrics']):
