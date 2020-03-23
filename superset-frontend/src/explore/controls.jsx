@@ -359,7 +359,7 @@ export const controls = {
 
   cal_years: {
     type: 'SelectControl',
-    validators: [v.nonEmpty],
+    validators: [v.nonEmpty, v.noLongerThan10],
     freeForm: true,
     multi: true,
     default: ['2020'],
