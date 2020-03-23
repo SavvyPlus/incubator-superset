@@ -33,15 +33,5 @@ export default {
         ['whisker_options', 'x_ticks_layout'],
       ],
     },
-    {
-      label: t('Empower'),
-      expanded: true,
-      controlSetRows: [
-        ['run_picker'],
-        ['group_type'],
-        ['cal_year'],
-        ['quarter'],
-      ],
-    },
   ],
 };

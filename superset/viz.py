@@ -415,26 +415,6 @@ class BaseViz:
         if not query_obj:
             query_obj = self.query_obj()
 
-        # if 'group_type' in self.form_data:
-        #     extra_metrics = [
-        #         {'expressionType': 'SQL', 'sqlExpression': 'Year', 'column': None,
-        #          'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
-        #          'label': 'Year', 'optionName': 'metric_6d3rflef213_fkp51ioh3cu'},
-        #         {'expressionType': 'SQL', 'sqlExpression': 'Quarter', 'column': None,
-        #          'aggregate': None, 'hasCustomLabel': False, 'fromFormData': True,
-        #          'label': 'Quarter', 'optionName': 'metric_sy7828bzmzq_cu6n77opyy9'}
-        #     ]
-        #     if self.form_data['group_type'] == 'CalYearly':
-        #         query_obj['metrics'].append(extra_metrics[0])
-        #     elif self.form_data['group_type'] == 'Quarterly' and self.form_data['quarter']:
-        #         query_obj['metrics'].append(extra_metrics[1])
-        #         if self.form_data['quarter'] != 'All Qtrs':
-        #             query_obj['filter'].append({'col': 'Quarter', 'op': '==', 'val': str(self.form_data['quarter'])})
-        #     elif self.form_data['group_type'] == 'CalYear Quarterly' and self.form_data['cal_year']:
-        #         query_obj['metrics'].append(extra_metrics[0])
-        #         query_obj['metrics'].append(extra_metrics[1])
-        #         query_obj['filter'].append({'col': 'Year', 'op': '==', 'val': str(self.form_data['cal_year'])})
-
         cache_key = self.cache_key(query_obj, **kwargs) if query_obj else None
         logger.info("Cache key: {}".format(cache_key))
         is_loaded = False
@@ -949,8 +929,7 @@ class BoxPlotViz(NVD3Viz):
     viz_type = "box_plot"
     verbose_name = _("Box Plot")
     sort_series = False
-    is_timeseries = False
-    enforce_numerical_metrics = False
+    is_timeseries = True
 
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " - "
@@ -977,19 +956,6 @@ class BoxPlotViz(NVD3Viz):
             return None
 
         form_data = self.form_data
-        #
-        # group_column = []
-        # for metric_dic in form_data['metrics']:
-        #     if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
-        #         group_column.append(metric_dic['sqlExpression'])
-        # if 'group_type' in form_data.keys():
-        #     if form_data['group_type'] == 'CalYearly':
-        #         group_column.append('Year')
-        #     elif form_data['group_type'] == 'Quarterly':
-        #         group_column.append('Quarter')
-        #     elif form_data['group_type'] == 'CalYear Quarterly':
-        #         group_column.append('Year')
-        #         group_column.append('Quarter')
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
@@ -1038,8 +1004,7 @@ class BoxPlotViz(NVD3Viz):
             return set(above.tolist() + below.tolist())
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
-        df = df.groupby(form_data['group_by']).agg(aggregate)
-        # df = df.groupby(group_column).agg(aggregate)
+        df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 
@@ -1051,7 +1016,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
     viz_type = "box_plot_run_comp"
     verbose_name = _("Box Plot For Run Comparison")
     sort_series = False
-    is_timeseries = True
+    is_timeseries = False
     # enforce_numerical_metrics = False
 
     def query_obj(self) -> Dict[str, Any]:
@@ -1076,9 +1041,9 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                          'expressionType': 'SQL',
                                          'fromFormData': True,
                                          'hasCustomLabel': False,
-                                         'label': group_type,
+                                         'label': period_type,
                                          'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
-                                         'sqlExpression': group_type})
+                                         'sqlExpression': period_type})
         if self.form_data['run_picker'] != [] and 'RunComb' not in list(metric['label'] for metric in d['metrics']):
             d['metrics'].append({'aggregate': None,
                                   'column': None,
@@ -1088,12 +1053,26 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                   'label': 'RunComb',
                                   'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
                                   'sqlExpression': 'RunComb'})
+        if self.form_data['daylike_picker'] != [] and 'DayLike' not in list(metric['label'] for metric in d['metrics']):
+            d['metrics'].append({'aggregate': None,
+                                  'column': None,
+                                  'expressionType': 'SQL',
+                                  'fromFormData': True,
+                                  'hasCustomLabel': False,
+                                  'label': 'DayLike',
+                                  'optionName': 'metric_0lo5gnmglhew_liwkucr4sel',
+                                  'sqlExpression': 'DayLike'})
 
         if self.form_data['run_picker']:
             # for scenario in self.form_data['run_picker']:
             d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
         if self.form_data['state_picker']:
             d['filter'].append({'col': 'State', 'op': 'in', 'val': self.form_data['state_picker']})
+        if self.form_data['cal_start_year'] and self.form_data['cal_end_year']:
+            d['filter'].append({'col': 'CalYear', 'op': '>=', 'val': self.form_data['cal_start_year']})
+            d['filter'].append({'col': 'CalYear', 'op': '<=', 'val': self.form_data['cal_end_year']})
+        if self.form_data['daylike_picker']:
+            d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
 
         self.form_data['metrics'] = d['metrics']
         return d

@@ -892,8 +892,10 @@ class Superset(BaseSupersetView):
         has_scenario = 'RunComb' in datasource.column_names
         has_firm_tech = 'FirmingTechnology' in datasource.column_names
         has_state = 'State' in datasource.column_names
+        has_daylike = 'DayLike' in datasource.column_names
         scenarios = []
         firm_tech = []
+        daylike = []
         states = []
         if has_scenario:
             engine = self.appbuilder.get_session.get_bind()
@@ -905,6 +907,11 @@ class Superset(BaseSupersetView):
             result = engine.execute("SELECT DISTINCT State FROM {}".format(datasource.table_name))
             for row in result:
                 states.append(row[0])
+        if has_daylike:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT DayLike FROM {}".format(datasource.table_name))
+            for row in result:
+                daylike.append(row[0])
 
         bootstrap_data = {
             "can_add": slice_add_perm,
@@ -921,6 +928,7 @@ class Superset(BaseSupersetView):
             "common": common_bootstrap_payload(),
             "scenarios": scenarios,
             "states": states,
+            "daylike": daylike,
         }
         table_name = (
             datasource.table_name

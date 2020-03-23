@@ -181,7 +181,7 @@ export default class VizTypeControl extends React.PureComponent {
           {filteredTypes.slice(i, i + IMAGE_PER_ROW).map(entry => {
             if (entry.key === 'box_plot_run_comp') {
               // eslint-disable-next-line no-param-reassign
-              entry.value.name = 'Empower Box Plot';
+              entry.value.name = 'Spot-Rev-Gen BoxPlot';
             }
             return (
               <Col md={12 / IMAGE_PER_ROW} key={`grid-col-${entry.key}`}>

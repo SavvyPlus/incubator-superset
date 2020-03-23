@@ -225,10 +225,6 @@ class ChartRenderer extends React.Component {
       formData,
       queryResponse,
     } = this.props;
-    // console.log('renderer:', this.props);
-    // if (vizType === 'box_plot_run_comp'){
-    //
-    // }
 
     // It's bad practice to use unprefixed `vizType` as classnames for chart
     // container. It may cause css conflicts as in the case of legacy table chart.
@@ -239,6 +235,11 @@ class ChartRenderer extends React.Component {
       vizType === 'table'
         ? `superset-chart-${snakeCaseVizType}`
         : snakeCaseVizType;
+
+    const fd = { ...formData };
+    if (formData.viz_type === 'box_plot_run_comp') {
+      fd.metrics = ['SpotPrice'];
+    }
 
     return (
       <>
@@ -253,7 +254,7 @@ class ChartRenderer extends React.Component {
           annotationData={annotationData}
           datasource={datasource}
           initialValues={initialValues}
-          formData={formData}
+          formData={fd}
           hooks={this.hooks}
           queryData={queryResponse}
           onRenderSuccess={this.handleRenderSuccess}
