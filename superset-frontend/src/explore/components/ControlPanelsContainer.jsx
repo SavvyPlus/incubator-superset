@@ -229,7 +229,8 @@ class ControlPanelsContainer extends React.Component {
             controlSetRows: [
               ...section.controlSetRows
                 .filter(item => item[0] !== 'groupby')
-                .filter(item => item[0] !== 'adhoc_filters'),
+                .filter(item => item[0] !== 'adhoc_filters')
+                  .filter(item => item[0] !== 'metrics'),
             ],
           };
           querySectionsToRender.push(s1);

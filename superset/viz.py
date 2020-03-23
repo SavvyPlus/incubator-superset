@@ -1033,9 +1033,9 @@ class BoxPlotVizRunComp(BoxPlotViz):
         # if len(d['metrics']) == 1:
         #     if 'count' in fd['metrics'] or 'SpotPrice' in fd['metrics']:
         #         raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
-        if 'group_type' in fd.keys():
-            for group_type in ['CalYear', 'FinYear', 'Qtr']:
-                if fd['group_type'] == group_type and group_type not in list(x['label'] for x in d['metrics']):
+        if 'period_type' in fd.keys():
+            for period_type in ['CalYear', 'FinYear', 'Qtr']:
+                if fd['period_type'] == period_type and period_type not in list(x['label'] for x in d['metrics']):
                     d['metrics'].append({'aggregate': None,
                                          'column': None,
                                          'expressionType': 'SQL',
