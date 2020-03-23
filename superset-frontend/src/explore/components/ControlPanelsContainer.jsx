@@ -181,14 +181,11 @@ class ControlPanelsContainer extends React.Component {
                 const name = controlItem;
 
                 // Dynamically render selection fields based on the group type
-                if (name === 'cal_start_year' || name === 'cal_end_year') {
+                if (name === 'cal_years') {
                   if (controls.period_type.value === 'CalYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
-                } else if (
-                  name === 'fin_start_year' ||
-                  name === 'fin_end_year'
-                ) {
+                } else if (name === 'fin_years') {
                   if (controls.period_type.value === 'FinYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
@@ -223,11 +220,13 @@ class ControlPanelsContainer extends React.Component {
           ),
         )
       ) {
+        // In Empower box plot, we need to hide default selects
         if (viz_type === 'box_plot_run_comp' && section.label === 'Empower') {
           const s1 = {
             ...section,
             controlSetRows: [
               ...section.controlSetRows
+                .filter(item => item[0] !== 'metrics')
                 .filter(item => item[0] !== 'groupby')
                 .filter(item => item[0] !== 'adhoc_filters'),
             ],
