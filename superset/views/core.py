@@ -890,13 +890,14 @@ class Superset(BaseSupersetView):
         # This part is for run comparison box plot, get distinct scenarios, state and
         # firming technologies for frontend selection
         has_scenario = 'RunComb' in datasource.column_names
-        # has_firm_tech = 'FirmingTechnology' in datasource.column_names
         has_state = 'State' in datasource.column_names
+        has_year = "CalYear" in datasource.column_names and "FinYear" in datasource.column_names
         has_daylike = 'DayLike' in datasource.column_names
         scenarios = []
-        # firm_tech = []
-        daylike = []
         states = []
+        cal_year = []
+        fin_year = []
+        daylike = []
         if has_scenario:
             engine = self.appbuilder.get_session.get_bind()
             result = engine.execute("SELECT DISTINCT RunComb FROM {}".format(datasource.table_name))
@@ -907,6 +908,14 @@ class Superset(BaseSupersetView):
             result = engine.execute("SELECT DISTINCT State FROM {}".format(datasource.table_name))
             for row in result:
                 states.append(row[0])
+        if has_year:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT CalYear FROM {}".format(datasource.table_name))
+            for row in result:
+                cal_year.append(row[0])
+            result = engine.execute("SELECT DISTINCT FinYear FROM {}".format(datasource.table_name))
+            for row in result:
+                fin_year.append(row[0])
         if has_daylike:
             engine = self.appbuilder.get_session.get_bind()
             result = engine.execute("SELECT DISTINCT DayLike FROM {}".format(datasource.table_name))
@@ -928,7 +937,9 @@ class Superset(BaseSupersetView):
             "common": common_bootstrap_payload(),
             "scenarios": scenarios,
             "states": states,
-            "daylike": daylike,
+            "cal_year":cal_year,
+            "fin_year":fin_year,
+            # "daylike": daylike,
         }
         table_name = (
             datasource.table_name

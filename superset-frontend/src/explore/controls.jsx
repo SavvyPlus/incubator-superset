@@ -353,7 +353,7 @@ export const controls = {
     label: t('Period type'),
     validators: [],
     default: 'CalYear',
-    choices: formatSelectOptions(['CalYear', 'FinYear', 'Qtr']),
+    choices: formatSelectOptions(['CalYear', 'FinYear']),
     description: t('Select the period type'),
   },
 
@@ -364,7 +364,10 @@ export const controls = {
     multi: true,
     default: ['2019'],
     label: t('Calendar years'),
-    choices: formatSelectOptionsForRange(2019, 2023),
+    // choices: formatSelectOptionsForRange(2019, 2023),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.cal_year),
+    }),
     description: t('Select calendar years'),
   },
 
@@ -379,16 +382,16 @@ export const controls = {
     description: t('Select financial years'),
   },
 
-  daylike_picker: {
-    type: 'SelectControl',
-    multi: false,
-    label: t('Select One Day Like'),
-    default: 'All',
-    description: t('Select day like'),
-    mapStateToProps: state => ({
-      choices: [['All', 'All'], ...formatSelectOptions(state.daylike)],
-    }),
-  },
+  // daylike_picker: {
+  //   type: 'SelectControl',
+  //   multi: false,
+  //   label: t('Select One Day Like'),
+  //   default: 'All',
+  //   description: t('Select day like'),
+  //   mapStateToProps: state => ({
+  //     choices: [['All', 'All'], ...formatSelectOptions(state.daylike)],
+  //   }),
+  // },
 
   color_picker: {
     label: t('Fixed Color'),

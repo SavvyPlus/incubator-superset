@@ -34,7 +34,7 @@ export default {
         ['period_type'],
         ['cal_years'],
         ['fin_years'],
-        ['daylike_picker'],
+        // ['daylike_picker'],
         ['whisker_options'],
       ],
     },

@@ -1055,15 +1055,15 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                   'label': 'RunComb',
                                   'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
                                   'sqlExpression': 'RunComb'})
-        if self.form_data['daylike_picker'] != [] and 'DayLike' not in list(metric['label'] for metric in d['metrics']):
-            d['metrics'].append({'aggregate': None,
-                                  'column': None,
-                                  'expressionType': 'SQL',
-                                  'fromFormData': True,
-                                  'hasCustomLabel': False,
-                                  'label': 'DayLike',
-                                  'optionName': 'metric_0lo5gnmglhew_liwkucr4sel',
-                                  'sqlExpression': 'DayLike'})
+        # if self.form_data['daylike_picker'] != [] and 'DayLike' not in list(metric['label'] for metric in d['metrics']):
+        #     d['metrics'].append({'aggregate': None,
+        #                           'column': None,
+        #                           'expressionType': 'SQL',
+        #                           'fromFormData': True,
+        #                           'hasCustomLabel': False,
+        #                           'label': 'DayLike',
+        #                           'optionName': 'metric_0lo5gnmglhew_liwkucr4sel',
+        #                           'sqlExpression': 'DayLike'})
 
         if self.form_data['run_picker']:
             # for scenario in self.form_data['run_picker']:
@@ -1074,8 +1074,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
             d['filter'].append({'col': 'CalYear', 'op': 'in', 'val': self.form_data['cal_years']})
         if self.form_data['period_type'] == 'FinYear' and self.form_data['fin_years']:
             d['filter'].append({'col': 'FinYear', 'op': 'in', 'val': self.form_data['fin_years']})
-        if self.form_data['daylike_picker'] and self.form_data['daylike_picker'] != 'All':
-            d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
+        # if self.form_data['daylike_picker'] and self.form_data['daylike_picker'] != 'All':
+        #     d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
 
         self.form_data['metrics'] = d['metrics']
         return d
