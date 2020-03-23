@@ -1038,7 +1038,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         d = super(BoxPlotVizRunComp, self).query_obj()
         fd = self.form_data
         if len(d['metrics']) == 1:
-            if 'count' in fd['metrics']:
+            if 'count' in fd['metrics'] or 'SpotPrice' in fd['metrics']:
                 raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
         if 'period_type' in fd.keys():
             for period_type in ['CalYear', 'FinYear', 'Qtr']:
@@ -1053,13 +1053,22 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                          'sqlExpression': period_type})
         if self.form_data['run_picker'] != [] and 'RunComb' not in list(metric['label'] for metric in d['metrics']):
             d['metrics'].append({'aggregate': None,
-                                 'column': None,
-                                 'expressionType': 'SQL',
-                                 'fromFormData': True,
-                                 'hasCustomLabel': False,
-                                 'label': 'RunComb',
-                                 'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
-                                 'sqlExpression': 'RunComb'})
+                                  'column': None,
+                                  'expressionType': 'SQL',
+                                  'fromFormData': True,
+                                  'hasCustomLabel': False,
+                                  'label': 'RunComb',
+                                  'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
+                                  'sqlExpression': 'RunComb'})
+        if self.form_data['daylike_picker'] != [] and 'DayLike' not in list(metric['label'] for metric in d['metrics']):
+            d['metrics'].append({'aggregate': None,
+                                  'column': None,
+                                  'expressionType': 'SQL',
+                                  'fromFormData': True,
+                                  'hasCustomLabel': False,
+                                  'label': 'DayLike',
+                                  'optionName': 'metric_0lo5gnmglhew_liwkucr4sel',
+                                  'sqlExpression': 'DayLike'})
 
         if self.form_data['run_picker']:
             # for scenario in self.form_data['run_picker']:
@@ -1069,6 +1078,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
         if self.form_data['cal_start_year'] and self.form_data['cal_end_year']:
             d['filter'].append({'col': 'CalYear', 'op': '>=', 'val': self.form_data['cal_start_year']})
             d['filter'].append({'col': 'CalYear', 'op': '<=', 'val': self.form_data['cal_end_year']})
+        if self.form_data['daylike_picker']:
+            d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
 
         self.form_data['metrics'] = d['metrics']
         return d
@@ -1109,6 +1120,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
         return filtered_df
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if len(df) == 0:
+            raise Exception('No data is fetched. Please adjust your time range and conditions.')
         form_data = self.form_data
         group_column = []
         for metric_dic in self.query_obj()['metrics']:

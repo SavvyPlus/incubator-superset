@@ -337,6 +337,17 @@ export const controls = {
     }),
   },
 
+  daylike_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select Day Like'),
+    default: [],
+    description: t('Select day like'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.daylike),
+    }),
+  },
+
   color_picker: {
     label: t('Fixed Color'),
     description: t('Use this to define a static color for all circles'),

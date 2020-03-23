@@ -35,6 +35,7 @@ export default {
         ['cal_end_year'],
         ['fin_start_year'],
         ['fin_end_year'],
+        ['daylike_picker'],
         ['whisker_options'],
       ],
     },
