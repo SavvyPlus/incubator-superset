@@ -49,3 +49,10 @@ export function nonEmpty(v) {
   }
   return false;
 }
+
+export function longerThan3(v) {
+  if (Array.isArray(v) && v.length > 3) {
+    return t('cannot exceed 3 senarios');
+  }
+  return false;
+}

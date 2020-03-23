@@ -1022,14 +1022,16 @@ class BoxPlotVizRunComp(BoxPlotViz):
     def query_obj(self) -> Dict[str, Any]:
         d = super(BoxPlotVizRunComp, self).query_obj()
         fd = self.form_data
-        d['metrics'] = [{'expressionType': 'SQL',
-                         'sqlExpression': 'SpotPrice',
-                         'column': None,
-                         'aggregate': None,
-                         'hasCustomLabel': False,
-                         'fromFormData': True,
-                         'label': 'SpotPrice',
-                         'optionName': 'metric_fk548mk5nw_h2fyj2n9w3o'}]
+        if 'data_type_picker' in fd.keys():
+            if fd['data_type_picker'] == 'SpotPrice':
+                d['metrics'] = [{'expressionType': 'SQL',
+                                 'sqlExpression': 'SpotPrice',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'SpotPrice',
+                                 'optionName': 'metric_fk548mk5nw_h2fyj2n9w3o'}]
         # if len(d['metrics']) == 1:
         #     if 'count' in fd['metrics'] or 'SpotPrice' in fd['metrics']:
         #         raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
@@ -1068,10 +1070,11 @@ class BoxPlotVizRunComp(BoxPlotViz):
             d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
         if self.form_data['state_picker']:
             d['filter'].append({'col': 'State', 'op': 'in', 'val': self.form_data['state_picker']})
-        if self.form_data['cal_start_year'] and self.form_data['cal_end_year']:
-            d['filter'].append({'col': 'CalYear', 'op': '>=', 'val': self.form_data['cal_start_year']})
-            d['filter'].append({'col': 'CalYear', 'op': '<=', 'val': self.form_data['cal_end_year']})
-        if self.form_data['daylike_picker']:
+        if self.form_data['period_type'] == 'CalYear' and self.form_data['cal_years']:
+            d['filter'].append({'col': 'CalYear', 'op': 'in', 'val': self.form_data['cal_years']})
+        if self.form_data['period_type'] == 'FinYear' and self.form_data['fin_years']:
+            d['filter'].append({'col': 'FinYear', 'op': 'in', 'val': self.form_data['fin_years']})
+        if self.form_data['daylike_picker'] and self.form_data['daylike_picker'] != 'All':
             d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
 
         self.form_data['metrics'] = d['metrics']
