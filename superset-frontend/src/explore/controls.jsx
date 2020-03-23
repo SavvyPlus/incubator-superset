@@ -317,12 +317,11 @@ export const controls = {
     default: '100',
     description: t('Select the percentile you want to drill down'),
     choices: [
-      ['100', '100'],
-      ['95', '95'],
-      ['75', '75'],
-      ['50', '50'],
-      ['25', '25'],
-      ['5', '5'],
+      ['100', 'All'],
+      ['75', '75-100'],
+      ['50', '50-75'],
+      ['25', '25-50'],
+      ['0', '0-25'],
     ],
   },
 
