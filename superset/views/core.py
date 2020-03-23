@@ -890,11 +890,11 @@ class Superset(BaseSupersetView):
         # This part is for run comparison box plot, get distinct scenarios, state and
         # firming technologies for frontend selection
         has_scenario = 'RunComb' in datasource.column_names
-        has_firm_tech = 'FirmingTechnology' in datasource.column_names
+        # has_firm_tech = 'FirmingTechnology' in datasource.column_names
         has_state = 'State' in datasource.column_names
         has_daylike = 'DayLike' in datasource.column_names
         scenarios = []
-        firm_tech = []
+        # firm_tech = []
         daylike = []
         states = []
         if has_scenario:

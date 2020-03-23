@@ -313,7 +313,7 @@ export const controls = {
     type: 'SelectControl',
     multi: true,
     label: t('Select Senarios'),
-    validators: [v.nonEmpty, v.longerThan3],
+    validators: [v.nonEmpty, v.noLongerThan3],
     default: ['Central-Snowy'],
     description: t('Select up to 3 run senarios'),
     mapStateToProps: state => ({
