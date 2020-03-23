@@ -314,7 +314,7 @@ export const controls = {
     multi: true,
     label: t('Select Senarios'),
     validators: [v.nonEmpty, v.noLongerThan3],
-    default: ['Central-Snowy'],
+    default: ['Base Case'],
     description: t('Select up to 3 run senarios'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.scenarios),
@@ -362,7 +362,7 @@ export const controls = {
     validators: [v.nonEmpty],
     freeForm: true,
     multi: true,
-    default: ['2019'],
+    default: ['2020'],
     label: t('Calendar years'),
     // choices: formatSelectOptionsForRange(2019, 2023),
     mapStateToProps: state => ({
@@ -376,7 +376,7 @@ export const controls = {
     validators: [v.nonEmpty],
     freeForm: true,
     multi: true,
-    default: ['2018'],
+    default: ['2020'],
     label: t('Financial years'),
     choices: formatSelectOptionsForRange(2018, 2022),
     description: t('Select financial years'),
