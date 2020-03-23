@@ -798,7 +798,7 @@ class SqlaTable(Model, BaseDatasource):
             time_grain = extras.get("time_grain_sqla")
             time_filters = []
 
-            if is_timeseries and dttm_col.column_name != 'Date':
+            if is_timeseries:
                 timestamp = dttm_col.get_timestamp_expression(time_grain)
                 select_exprs += [timestamp]
                 groupby_exprs_with_timestamp[timestamp.name] = timestamp

@@ -181,12 +181,15 @@ class ControlPanelsContainer extends React.Component {
                 const name = controlItem;
 
                 // Dynamically render selection fields based on the group type
-                if (name === 'cal_year') {
-                  if (controls.group_type.value === 'CalYear Quarterly') {
+                if (name === 'cal_start_year' || name === 'cal_end_year') {
+                  if (controls.period_type.value === 'CalYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
-                } else if (name === 'quarter') {
-                  if (controls.group_type.value === 'Quarterly') {
+                } else if (
+                  name === 'fin_start_year' ||
+                  name === 'fin_end_year'
+                ) {
+                  if (controls.period_type.value === 'FinYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
                 } else {
@@ -207,9 +210,9 @@ class ControlPanelsContainer extends React.Component {
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
     allSectionsToRender.forEach(section => {
-      // if (viz_type === 'box_plot_run_comp' && section.label === 'Time') {
-      //   return;
-      // }
+      if (viz_type === 'box_plot_run_comp' && section.label === 'Time') {
+        return;
+      }
       if (
         section.controlSetRows.some(rows =>
           rows.some(
@@ -224,7 +227,9 @@ class ControlPanelsContainer extends React.Component {
           const s1 = {
             ...section,
             controlSetRows: [
-              ...section.controlSetRows.filter(item => item[0] !== 'groupby'),
+              ...section.controlSetRows
+                .filter(item => item[0] !== 'groupby')
+                .filter(item => item[0] !== 'adhoc_filters'),
             ],
           };
           querySectionsToRender.push(s1);
