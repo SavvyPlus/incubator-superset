@@ -1111,18 +1111,25 @@ class BoxPlotVizRunComp(BoxPlotViz):
         return chart_data
 
     def filter_by_percentile(self, df:pd.DataFrame, required_percentile, group_column) -> pd.DataFrame:
+        upper_percentile = required_percentile+25
         from itertools import product
         distinct_column_values = []
+        # Get the unique value for each group columns
         for column in group_column:
             distinct_column_values.append(list(df[column].unique()))
+
+        # generation combinations for all different values of each column
         combinations = list(product(*distinct_column_values))
         filtered_df = pd.DataFrame()
+
+        # slice dataframe for each generaion and filter for the percentile, combine to one final dataframe
         for combination in combinations:
             df_temp = df
             for column, value in zip(group_column, combination):
                 df_temp = df_temp[df_temp[column] == value]
-            under_price = np.nanpercentile(df_temp['SpotPrice'], required_percentile)
-            filtered_df = filtered_df.append(df_temp[df_temp['SpotPrice']<= under_price])
+            under_price = np.nanpercentile(df_temp['SpotPrice'], upper_percentile)
+            above_price = np.nanpercentile(df_temp['SpotPrice'], required_percentile)
+            filtered_df = filtered_df.append(df_temp[(df_temp['SpotPrice']<= under_price) & (df_temp['SpotPrice'] >=  above_price)])
         return filtered_df
 
     def get_data(self, df: pd.DataFrame) -> VizData:
@@ -1135,7 +1142,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
                 group_column.append(metric_dic['sqlExpression'])
 
         # Drill down by percentile if not 100
-        if form_data['percentile_picker'] != 100 or form_data['percentile_picker']!= []:
+        if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
             df = self.filter_by_percentile(df, int(form_data['percentile_picker']), group_column)
 
         # conform to NVD3 names
