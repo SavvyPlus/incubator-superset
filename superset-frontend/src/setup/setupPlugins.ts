@@ -26,6 +26,7 @@ import BigNumber from '../explore/controlPanels/BigNumber';
 import BigNumberTotal from '../explore/controlPanels/BigNumberTotal';
 import BoxPlot from '../explore/controlPanels/BoxPlot';
 import BoxPlotRunComp from '../explore/controlPanels/BoxPlotRunComp';
+import BoxPlotFin from '../explore/controlPanels/BoxPlotFin';
 import Bubble from '../explore/controlPanels/Bubble';
 import Bullet from '../explore/controlPanels/Bullet';
 import CalHeatmap from '../explore/controlPanels/CalHeatmap';
@@ -81,6 +82,7 @@ export default function setupPlugins() {
     .registerValue('big_number_total', BigNumberTotal)
     .registerValue('box_plot', BoxPlot)
     .registerValue('box_plot_run_comp', BoxPlotRunComp)
+    .registerValue('box_plot_fin', BoxPlotFin)
     .registerValue('bubble', Bubble)
     .registerValue('bullet', Bullet)
     .registerValue('cal_heatmap', CalHeatmap)
