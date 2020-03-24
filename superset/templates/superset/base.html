@@ -31,10 +31,8 @@
 {% endblock %}
 
   {% block tail_js %}
-    {{super()}}
-    {% with filename="preamble" %}
-      {% include "superset/partials/_script_tag.html" %}
-    {% endwith %}
+    {{ super() }}
+    {{ js_bundle("preamble") }}
     <!-- Intercom Tracking Code -->
     <script>
       {% if not current_user.is_anonymous %}
