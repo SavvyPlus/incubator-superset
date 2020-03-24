@@ -496,6 +496,10 @@ npm run dev-server -- --devserverPort=9001
 
 # Run the dev server proxying to a Flask server on a non-default port
 npm run dev-server -- --supersetPort=8081
+
+# Or proxy it to a remote backend so you can test frontend changes without
+# starting the backend locally
+npm run dev-server -- --superset=https://superset-dev.example.com
 ```
 
 Alternatively you can use one of the following commands.
@@ -1051,7 +1055,6 @@ The filter-box configuration references column names (via the `column` key) and 
 | `x_axis_format`      | _string_  | The **X Axis Format** widget |
 | `x_axis_label`       | _string_  | The **X Axis Label** widget  |
 | `x_axis_showminmax`  | _boolean_ | The **X bounds** widget      |
-| `x_axis_time_format` | _N/A_     | _Deprecated?_                |
 | `x_log_scale`        | _N/A_     | _Deprecated?_                |
 | `x_ticks_layout`     | _string_  | The **X Tick Layout** widget |
 
@@ -1091,9 +1094,6 @@ Note the `y_axis_format` is defined under various section for some charts.
 | `bar_stacked`                   | _N/A_ |       |
 | `cache_timeout`                 | _N/A_ |       |
 | `canvas_image_rendering`        | _N/A_ |       |
-| `cell_padding`                  | _N/A_ |       |
-| `cell_radius`                   | _N/A_ |       |
-| `cell_size`                     | _N/A_ |       |
 | `charge`                        | _N/A_ |       |
 | `clustering_radius`             | _N/A_ |       |
 | `code`                          | _N/A_ |       |
@@ -1108,7 +1108,6 @@ Note the `y_axis_format` is defined under various section for some charts.
 | `deck_slices`                   | _N/A_ |       |
 | `default_filters`               | _N/A_ |       |
 | `dimension`                     | _N/A_ |       |
-| `domain_granularity`            | _N/A_ |       |
 | `end_spatial`                   | _N/A_ |       |
 | `entity`                        | _N/A_ |       |
 | `equal_date_size`               | _N/A_ |       |
@@ -1154,7 +1153,6 @@ Note the `y_axis_format` is defined under various section for some charts.
 | `markers`                       | _N/A_ |       |
 | `markup_type`                   | _N/A_ |       |
 | `max_radius`                    | _N/A_ |       |
-| `min_leaf_node_event_count`     | _N/A_ |       |
 | `min_periods`                   | _N/A_ |       |
 | `min_radius`                    | _N/A_ |       |
 | `multiplier`                    | _N/A_ |       |
@@ -1164,7 +1162,6 @@ Note the `y_axis_format` is defined under various section for some charts.
 | `num_buckets`                   | _N/A_ |       |
 | `num_period_compare`            | _N/A_ |       |
 | `order_bars`                    | _N/A_ |       |
-| `order_by_entity`               | _N/A_ |       |
 | `order_desc`                    | _N/A_ |       |
 | `page_length`                   | _N/A_ |       |
 | `pandas_aggfunc`                | _N/A_ |       |
@@ -1207,7 +1204,6 @@ Note the `y_axis_format` is defined under various section for some charts.
 | `show_druid_time_granularity`   | _N/A_ |       |
 | `show_druid_time_origin`        | _N/A_ |       |
 | `show_labels`                   | _N/A_ |       |
-| `show_metric_name`              | _N/A_ |       |
 | `show_perc`                     | _N/A_ |       |
 | `show_sqla_time_column`         | _N/A_ |       |
 | `show_sqla_time_granularity`    | _N/A_ |       |
@@ -1220,11 +1216,9 @@ Note the `y_axis_format` is defined under various section for some charts.
 | `spatial`                       | _N/A_ |       |
 | `stacked_style`                 | _N/A_ |       |
 | `start_spatial`                 | _N/A_ |       |
-| `steps`                         | _N/A_ |       |
 | `stroke_color_picker`           | _N/A_ |       |
 | `stroke_width`                  | _N/A_ |       |
 | `stroked`                       | _N/A_ |       |
-| `subdomain_granularity`         | _N/A_ |       |
 | `subheader`                     | _N/A_ |       |
 | `table_filter`                  | _N/A_ |       |
 | `table_timestamp_format`        | _N/A_ |       |
@@ -1233,7 +1227,6 @@ Note the `y_axis_format` is defined under various section for some charts.
 | `timed_refresh_immune_slices`   | _N/A_ |       |
 | `toggle_polygons`               | _N/A_ |       |
 | `transpose_pivot`               | _N/A_ |       |
-| `treemap_ratio`                 | _N/A_ |       |
 | `url`                           | _N/A_ |       |
 | `userid`                        | _N/A_ |       |
 | `viewport`                      | _N/A_ |       |
