@@ -313,8 +313,8 @@ export const controls = {
     type: 'SelectControl',
     multi: true,
     label: t('Select Senarios'),
-    validators: [v.nonEmpty, v.longerThan3],
-    default: ['Central-Snowy'],
+    validators: [v.nonEmpty, v.noLongerThan3],
+    default: ['Base Case'],
     description: t('Select up to 3 run senarios'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.scenarios),
@@ -353,18 +353,21 @@ export const controls = {
     label: t('Period type'),
     validators: [],
     default: 'CalYear',
-    choices: formatSelectOptions(['CalYear', 'FinYear', 'Qtr']),
+    choices: formatSelectOptions(['CalYear', 'FinYear']),
     description: t('Select the period type'),
   },
 
   cal_years: {
     type: 'SelectControl',
-    validators: [v.nonEmpty],
+    validators: [v.nonEmpty, v.noLongerThan10],
     freeForm: true,
     multi: true,
-    default: ['2019'],
+    default: ['2020'],
     label: t('Calendar years'),
-    choices: formatSelectOptionsForRange(2019, 2023),
+    // choices: formatSelectOptionsForRange(2019, 2023),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.cal_year),
+    }),
     description: t('Select calendar years'),
   },
 
@@ -373,22 +376,22 @@ export const controls = {
     validators: [v.nonEmpty],
     freeForm: true,
     multi: true,
-    default: ['2018'],
+    default: ['2020'],
     label: t('Financial years'),
     choices: formatSelectOptionsForRange(2018, 2022),
     description: t('Select financial years'),
   },
 
-  daylike_picker: {
-    type: 'SelectControl',
-    multi: false,
-    label: t('Select One Day Like'),
-    default: 'All',
-    description: t('Select day like'),
-    mapStateToProps: state => ({
-      choices: [['All', 'All'], ...formatSelectOptions(state.daylike)],
-    }),
-  },
+  // daylike_picker: {
+  //   type: 'SelectControl',
+  //   multi: false,
+  //   label: t('Select One Day Like'),
+  //   default: 'All',
+  //   description: t('Select day like'),
+  //   mapStateToProps: state => ({
+  //     choices: [['All', 'All'], ...formatSelectOptions(state.daylike)],
+  //   }),
+  // },
 
   color_picker: {
     label: t('Fixed Color'),
@@ -1149,7 +1152,7 @@ export const controls = {
     type: 'SelectControl',
     freeForm: true,
     label: t('Whisker/outlier options'),
-    default: 'Tukey',
+    default: 'Min/max (no outliers)',
     description: t('Determines how whiskers and outliers are calculated.'),
     choices: formatSelectOptions([
       'Tukey',

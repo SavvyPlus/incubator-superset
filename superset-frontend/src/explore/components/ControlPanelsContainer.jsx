@@ -225,10 +225,13 @@ class ControlPanelsContainer extends React.Component {
           const s1 = {
             ...section,
             controlSetRows: [
-              ...section.controlSetRows
-                .filter(item => item[0] !== 'metrics')
-                .filter(item => item[0] !== 'groupby')
-                .filter(item => item[0] !== 'adhoc_filters'),
+              ...section.controlSetRows.filter(
+                item =>
+                  item[0] !== 'metrics' &&
+                  item[0] !== 'groupby' &&
+                  item[0] !== 'adhoc_filters' &&
+                  item[0] !== 'whisker_options',
+              ),
             ],
           };
           querySectionsToRender.push(s1);
