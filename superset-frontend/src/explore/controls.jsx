@@ -1152,7 +1152,7 @@ export const controls = {
     type: 'SelectControl',
     freeForm: true,
     label: t('Whisker/outlier options'),
-    default: 'Tukey',
+    default: 'Min/max (no outliers)',
     description: t('Determines how whiskers and outliers are calculated.'),
     choices: formatSelectOptions([
       'Tukey',

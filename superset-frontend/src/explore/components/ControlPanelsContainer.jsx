@@ -229,7 +229,8 @@ class ControlPanelsContainer extends React.Component {
                 item =>
                   item[0] !== 'metrics' &&
                   item[0] !== 'groupby' &&
-                  item[0] !== 'adhoc_filters',
+                  item[0] !== 'adhoc_filters' &&
+                  item[0] !== 'whisker_options',
               ),
             ],
           };
