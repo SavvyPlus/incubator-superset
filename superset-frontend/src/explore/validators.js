@@ -49,3 +49,17 @@ export function nonEmpty(v) {
   }
   return false;
 }
+
+export function noLongerThan3(v) {
+  if (Array.isArray(v) && v.length > 3) {
+    return t('cannot exceed 3 senarios');
+  }
+  return false;
+}
+
+export function noLongerThan10(v) {
+  if (Array.isArray(v) && v.length > 10) {
+    return t('cannot exceed 10 years');
+  }
+  return false;
+}

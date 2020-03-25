@@ -295,16 +295,183 @@ export const controls = {
     }),
   },
 
+  data_type_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Data Type'),
+    validator: [v.nonEmpty],
+    default: 'SpotPrice',
+    description: t('Select one data type'),
+    choices: [
+      ['SpotPrice', 'SpotPrice'],
+      // ['Generation', 'Generation'],
+      // ['Revenue', 'Revenue'],
+    ],
+  },
+
   run_picker: {
     type: 'SelectControl',
     multi: true,
-    label: t('Select Runs'),
-    default: [],
-    description: t('Select up to 3 run ids'),
+    label: t('Select Senarios'),
+    validators: [v.nonEmpty, v.noLongerThan3],
+    default: ['Base Case'],
+    description: t('Select up to 3 run senarios'),
     mapStateToProps: state => ({
-      choices: formatSelectOptions(state.run_ids),
+      choices: formatSelectOptions(state.scenarios),
     }),
   },
+
+  percentile_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Select Percentile'),
+    default: '100',
+    description: t('Select the percentile you want to drill down'),
+    choices: [
+      ['100', 'All'],
+      ['75', '75-100'],
+      ['50', '50-75'],
+      ['25', '25-50'],
+      ['0', '0-25'],
+    ],
+  },
+
+  state_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Select State'),
+    default: ['VIC'],
+    description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.states),
+    }),
+  },
+
+  period_type: {
+    type: 'SelectControl',
+    freeForm: false,
+    label: t('Period type'),
+    validators: [],
+    default: 'CalYear',
+    choices: formatSelectOptions(['CalYear', 'FinYear']),
+    description: t('Select the period type'),
+  },
+
+  cal_years: {
+    type: 'SelectControl',
+    validators: [v.nonEmpty, v.noLongerThan10],
+    freeForm: true,
+    multi: true,
+    default: ['2020'],
+    label: t('Calendar years'),
+    // choices: formatSelectOptionsForRange(2019, 2023),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.cal_year),
+    }),
+    description: t('Select calendar years'),
+  },
+
+  fin_years: {
+    type: 'SelectControl',
+    validators: [v.nonEmpty],
+    freeForm: true,
+    multi: true,
+    default: ['2020'],
+    label: t('Financial years'),
+    choices: formatSelectOptionsForRange(2018, 2022),
+    description: t('Select financial years'),
+  },
+
+  // daylike_picker: {
+  //   type: 'SelectControl',
+  //   multi: false,
+  //   label: t('Select One Day Like'),
+  //   default: 'All',
+  //   description: t('Select day like'),
+  //   mapStateToProps: state => ({
+  //     choices: [['All', 'All'], ...formatSelectOptions(state.daylike)],
+  //   }),
+  // },
+
+  // control for financial charts
+  fin_scenario_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Scenario'),
+    default: null,
+    description: t('Select one scenario'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_scenarios),
+    }),
+  },
+
+  fin_firm_tech_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Firming Technology'),
+    default: null,
+    description: t('Select one firming technology'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_firm_techs),
+    }),
+  },
+
+  fin_tech_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Technology'),
+    default: null,
+    description: t('Select one technology'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_techs),
+    }),
+  },
+
+  fin_period_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Period'),
+    default: null,
+    description: t('Select one period'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_periods),
+    }),
+  },
+
+  fin_unit_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Unit'),
+    default: '1',
+    description: t('Select unit'),
+    choices: [
+      ['0', '$'],
+      ['1', ' $/MWh'],
+    ],
+  },
+
+  fin_metric_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Metric'),
+    default: null,
+    description: t('Select metric'),
+    choices: [
+      ['PPA CFD', 'PPA CFD'],
+      ['MW Sold CFD', 'MW Sold CFD'],
+      ['Non-Firming Contribution Margin', 'Non-Firming Contribution Margin'],
+      ['Contribution Margin', 'Contribution Margin'],
+      ['Fixed O&M', 'Fixed O&M'],
+      ['EBIT', 'EBIT'],
+      ['EBIT (Discounted)', 'EBIT (Discounted)'],
+      ['Capital Expenditure', 'Capital Expenditure'],
+      ['Terminal Value (Discounted)', 'Terminal Value (Discounted)'],
+      ['Net Present Value', 'Net Present Value'],
+      ['PPA CFD (Annually)', 'PPA CFD (Annually)'],
+      ['MW Sold CFD (Annually)', 'MW Sold CFD (Annually)'],
+    ],
+  },
+  // control for financial charts
 
   color_picker: {
     label: t('Fixed Color'),
@@ -1039,7 +1206,7 @@ export const controls = {
     type: 'DateFilterControl',
     freeForm: true,
     label: TIME_FILTER_LABELS.time_range,
-    default: t('Last week'),
+    default: t('No filter'),
     description: t(
       'The time range for the visualization. All relative times, e.g. "Last month", ' +
         '"Last 7 days", "now", etc. are evaluated on the server using the server\'s ' +
@@ -1065,7 +1232,7 @@ export const controls = {
     type: 'SelectControl',
     freeForm: true,
     label: t('Whisker/outlier options'),
-    default: 'Tukey',
+    default: 'Min/max (no outliers)',
     description: t('Determines how whiskers and outliers are calculated.'),
     choices: formatSelectOptions([
       'Tukey',
@@ -1117,28 +1284,6 @@ export const controls = {
     ),
   },
 
-  group_type: {
-    type: 'SelectControl',
-    freeForm: false,
-    label: t('Group type'),
-    validators: [],
-    choices: formatSelectOptions([
-      'CalYearly',
-      'Quarterly',
-      'CalYear Quarterly',
-    ]),
-    description: t('Select the group type'),
-  },
-
-  cal_year: {
-    type: 'SelectControl',
-    freeForm: false,
-    label: t('Calendar year'),
-    validators: [],
-    choices: formatSelectOptions(['2017', '2018', '2019', '2020']),
-    description: t('Select the calendar year'),
-  },
-
   quarter: {
     type: 'SelectControl',
     freeForm: false,
@@ -1146,15 +1291,6 @@ export const controls = {
     validators: [],
     choices: formatSelectOptions(['Q1', 'Q2', 'Q3', 'Q4', 'All Qtrs']),
     description: t('Select the quarter'),
-  },
-
-  hot_days: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('Hot Days'),
-    validators: [v.integer],
-    choices: formatSelectOptions([0, 5, 10, 25, 50]),
-    description: t('Select the minimum number of hot days in that period.'),
   },
 
   timeseries_limit_metric: {

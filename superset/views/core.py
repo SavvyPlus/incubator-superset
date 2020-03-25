@@ -887,14 +887,71 @@ class Superset(BaseSupersetView):
             request.args.get(utils.ReservedUrlParameters.STANDALONE.value) == "true"
         )
 
-        # This part is for run comparison box plot, get distinct run id for frontend selection
-        has_run_id = 'RunID' in datasource.column_names
-        run_ids = []
-        if has_run_id:
+        # This part is for run comparison box plot, get distinct scenarios, state and
+        # firming technologies for frontend selection
+        has_scenario = 'RunComb' in datasource.column_names
+        has_state = 'State' in datasource.column_names
+        has_year = "CalYear" in datasource.column_names and "FinYear" in datasource.column_names
+        has_daylike = 'DayLike' in datasource.column_names
+        scenarios = []
+        states = []
+        cal_year = []
+        fin_year = []
+        daylike = []
+
+        # data for financial charts
+        fin_scenarios = []
+        if 'Scenario' in datasource.column_names:
             engine = self.appbuilder.get_session.get_bind()
-            result = engine.execute("SELECT DISTINCT RunID FROM {}".format(datasource.table_name))
+            result = engine.execute("SELECT DISTINCT Scenario FROM {}".format(datasource.table_name))
             for row in result:
-                run_ids.append(row[0])
+                fin_scenarios.append(row[0])
+
+        fin_firm_techs = []
+        if 'FirmingTechnology' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT FirmingTechnology FROM {}".format(datasource.table_name))
+            for row in result:
+                fin_firm_techs.append(row[0])
+
+        fin_periods = []
+        if 'Period' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT Period FROM {}".format(datasource.table_name))
+            for row in result:
+                fin_periods.append(row[0])
+
+        fin_techs = []
+        if 'Technology' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT Technology FROM {}".format(datasource.table_name))
+            for row in result:
+                fin_techs.append(row[0])
+        # end data for financial charts
+
+        if has_scenario:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT RunComb FROM {}".format(datasource.table_name))
+            for row in result:
+                scenarios.append(row[0])
+        if has_state:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT State FROM {}".format(datasource.table_name))
+            for row in result:
+                states.append(row[0])
+        if has_year:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT CalYear FROM {}".format(datasource.table_name))
+            for row in result:
+                cal_year.append(row[0])
+            result = engine.execute("SELECT DISTINCT FinYear FROM {}".format(datasource.table_name))
+            for row in result:
+                fin_year.append(row[0])
+        if has_daylike:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT DayLike FROM {}".format(datasource.table_name))
+            for row in result:
+                daylike.append(row[0])
 
         bootstrap_data = {
             "can_add": slice_add_perm,
@@ -909,7 +966,15 @@ class Superset(BaseSupersetView):
             "user_id": user_id,
             "forced_height": request.args.get("height"),
             "common": common_bootstrap_payload(),
-            "run_ids": run_ids,
+            "scenarios": scenarios,
+            "states": states,
+            "cal_year": cal_year,
+            "fin_year": fin_year,
+            # "daylike": daylike,
+            "fin_scenarios": fin_scenarios,
+            "fin_firm_techs": fin_firm_techs,
+            "fin_periods": fin_periods,
+            "fin_techs": fin_techs,
         }
         table_name = (
             datasource.table_name

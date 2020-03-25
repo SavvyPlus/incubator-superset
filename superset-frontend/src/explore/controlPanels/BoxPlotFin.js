@@ -21,17 +21,29 @@ import { t } from '@superset-ui/translation';
 export default {
   controlPanelSections: [
     {
-      label: t('Query'),
-      expanded: true,
-      controlSetRows: [['metrics'], ['adhoc_filters'], ['groupby'], ['limit']],
-    },
-    {
-      label: t('Chart Options'),
+      label: t('Empower'),
       expanded: true,
       controlSetRows: [
-        ['color_scheme', 'label_colors'],
-        ['whisker_options', 'x_ticks_layout'],
+        ['metrics'],
+        ['adhoc_filters'],
+        ['groupby'],
+        ['whisker_options'],
+        
+        ['fin_scenario_picker'],
+        ['fin_firm_tech_picker'],
+        ['fin_period_picker'],
+        ['fin_metric_picker'],
+        ['fin_unit_picker'],
+        ['fin_tech_picker']
       ],
     },
+    // {
+    //   label: t('Chart Options'),
+    //   expanded: true,
+    //   controlSetRows: [
+    //     ['color_scheme', 'label_colors'],
+    //     ['whisker_options', 'x_ticks_layout'],
+    //   ],
+    // },
   ],
 };

@@ -181,12 +181,12 @@ class ControlPanelsContainer extends React.Component {
                 const name = controlItem;
 
                 // Dynamically render selection fields based on the group type
-                if (name === 'cal_year') {
-                  if (controls.group_type.value === 'CalYear Quarterly') {
+                if (name === 'cal_years') {
+                  if (controls.period_type.value === 'CalYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
-                } else if (name === 'quarter') {
-                  if (controls.group_type.value === 'Quarterly') {
+                } else if (name === 'fin_years') {
+                  if (controls.period_type.value === 'FinYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
                 } else {
@@ -201,10 +201,18 @@ class ControlPanelsContainer extends React.Component {
     );
   }
   render() {
+    const { viz_type } = this.props.form_data;
+    // console.log(this.props)
     const allSectionsToRender = this.sectionsToRender();
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
     allSectionsToRender.forEach(section => {
+      if (viz_type === 'box_plot_run_comp' && section.label === 'Time') {
+        return;
+      }
+      if (viz_type === 'box_plot_fin' && section.label === 'Time') {
+        return;
+      }
       if (
         section.controlSetRows.some(rows =>
           rows.some(
@@ -215,7 +223,24 @@ class ControlPanelsContainer extends React.Component {
           ),
         )
       ) {
-        querySectionsToRender.push(section);
+        // In Empower box plot, we need to hide default selects
+        if ((viz_type === 'box_plot_run_comp' || viz_type === 'box_plot_fin') && section.label === 'Empower') {
+          const s1 = {
+            ...section,
+            controlSetRows: [
+              ...section.controlSetRows.filter(
+                item =>
+                  item[0] !== 'metrics' &&
+                  item[0] !== 'groupby' &&
+                  item[0] !== 'adhoc_filters' &&
+                  item[0] !== 'whisker_options',
+              ),
+            ],
+          };
+          querySectionsToRender.push(s1);
+        } else {
+          querySectionsToRender.push(section);
+        }
       } else {
         displaySectionsToRender.push(section);
       }
