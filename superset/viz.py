@@ -1038,6 +1038,13 @@ class BoxPlotFinViz(BoxPlotViz):
             d['filter'].append({'col': 'Technology', 'op': '==',
                                 'val': self.form_data['fin_tech_picker']})
 
+        # Select the percentiles for box plot to draw
+        d['filter'].append({
+            'col': 'Percentile',
+            'op': 'in',
+            'val': ['0','0.25','0.5','0.75','1']
+        })
+
         metric = self.form_data['fin_metric_picker']
         unit = self.form_data['fin_unit_picker']
 
