@@ -393,6 +393,86 @@ export const controls = {
   //   }),
   // },
 
+  // control for financial charts
+  fin_scenario_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Scenario'),
+    default: null,
+    description: t('Select one scenario'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_scenarios),
+    }),
+  },
+
+  fin_firm_tech_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Firming Technology'),
+    default: null,
+    description: t('Select one firming technology'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_firm_techs),
+    }),
+  },
+
+  fin_tech_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Technology'),
+    default: null,
+    description: t('Select one technology'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_techs),
+    }),
+  },
+
+  fin_period_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Period'),
+    default: null,
+    description: t('Select one period'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_periods),
+    }),
+  },
+
+  fin_unit_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Unit'),
+    default: '1',
+    description: t('Select unit'),
+    choices: [
+      ['0', '$'],
+      ['1', ' $/MWh'],
+    ],
+  },
+
+  fin_metric_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Metric'),
+    default: null,
+    description: t('Select metric'),
+    choices: [
+      ['PPA CFD', 'PPA CFD'],
+      ['MW Sold CFD', 'MW Sold CFD'],
+      ['Non-Firming Contribution Margin', 'Non-Firming Contribution Margin'],
+      ['Contribution Margin', 'Contribution Margin'],
+      ['Fixed O&M', 'Fixed O&M'],
+      ['EBIT', 'EBIT'],
+      ['EBIT (Discounted)', 'EBIT (Discounted)'],
+      ['Capital Expenditure', 'Capital Expenditure'],
+      ['Terminal Value (Discounted)', 'Terminal Value (Discounted)'],
+      ['Net Present Value', 'Net Present Value'],
+      ['PPA CFD (Annually)', 'PPA CFD (Annually)'],
+      ['MW Sold CFD (Annually)', 'MW Sold CFD (Annually)'],
+    ],
+  },
+  // control for financial charts
+
   color_picker: {
     label: t('Fixed Color'),
     description: t('Use this to define a static color for all circles'),

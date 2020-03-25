@@ -210,6 +210,9 @@ class ControlPanelsContainer extends React.Component {
       if (viz_type === 'box_plot_run_comp' && section.label === 'Time') {
         return;
       }
+      if (viz_type === 'box_plot_fin' && section.label === 'Time') {
+        return;
+      }
       if (
         section.controlSetRows.some(rows =>
           rows.some(
@@ -221,7 +224,7 @@ class ControlPanelsContainer extends React.Component {
         )
       ) {
         // In Empower box plot, we need to hide default selects
-        if (viz_type === 'box_plot_run_comp' && section.label === 'Empower') {
+        if ((viz_type === 'box_plot_run_comp' || viz_type === 'box_plot_fin') && section.label === 'Empower') {
           const s1 = {
             ...section,
             controlSetRows: [
