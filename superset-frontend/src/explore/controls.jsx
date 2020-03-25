@@ -396,7 +396,7 @@ export const controls = {
   // control for financial charts
   fin_scenario_picker: {
     type: 'SelectControl',
-    multi: false,
+    multi: true,
     label: t('Scenario'),
     default: null,
     description: t('Select one scenario'),
@@ -418,7 +418,7 @@ export const controls = {
 
   fin_tech_picker: {
     type: 'SelectControl',
-    multi: false,
+    multi: true,
     label: t('Technology'),
     default: null,
     description: t('Select one technology'),
@@ -429,7 +429,7 @@ export const controls = {
 
   fin_period_picker: {
     type: 'SelectControl',
-    multi: false,
+    multi: true,
     label: t('Period'),
     default: null,
     description: t('Select one period'),
