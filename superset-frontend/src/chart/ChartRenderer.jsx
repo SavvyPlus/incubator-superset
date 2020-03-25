@@ -87,6 +87,10 @@ class ChartRenderer extends React.Component {
       return true;
     }
 
+    if (nextProps.vizType === 'box_plot_fin') {
+      return true;
+    }
+
     const resultsReady =
       nextProps.queryResponse &&
       ['success', 'rendered'].indexOf(nextProps.chartStatus) > -1 &&

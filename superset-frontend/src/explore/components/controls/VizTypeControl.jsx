@@ -183,6 +183,10 @@ export default class VizTypeControl extends React.PureComponent {
               // eslint-disable-next-line no-param-reassign
               entry.value.name = 'Spot-Rev-Gen BoxPlot';
             }
+            if (entry.key === 'box_plot_fin') {
+              // eslint-disable-next-line no-param-reassign
+              entry.value.name = 'Box Plot For Financial Analysis';
+            }
             return (
               <Col md={12 / IMAGE_PER_ROW} key={`grid-col-${entry.key}`}>
                 {this.renderItem(entry)}
