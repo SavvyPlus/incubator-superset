@@ -28,7 +28,7 @@ export default {
         ['adhoc_filters'],
         ['groupby'],
         ['whisker_options'],
-        
+
         ['fin_scenario_picker'],
         ['fin_firm_tech_picker'],
         ['fin_period_picker'],

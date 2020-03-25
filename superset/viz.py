@@ -1021,43 +1021,68 @@ class BoxPlotFinViz(BoxPlotViz):
 
     def query_obj(self):
         d = super().query_obj()
+        d['metrics'] = []
 
         if self.form_data['fin_scenario_picker']:
-            d['filter'].append({'col': 'Scenario', 'op': '==',
+            d['filter'].append({'col': 'Scenario', 'op': 'in',
                                 'val': self.form_data['fin_scenario_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Scenario',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Scenario'})
 
         if self.form_data['fin_firm_tech_picker']:
             d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
                                 'val': self.form_data['fin_firm_tech_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'FirmingTechnology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'FirmingTechnology'})
 
         if self.form_data['fin_period_picker']:
-            d['filter'].append({'col': 'Period', 'op': '==',
+            d['filter'].append({'col': 'Period', 'op': 'in',
                                 'val': self.form_data['fin_period_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Period',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Period'})
 
         if self.form_data['fin_tech_picker']:
-            d['filter'].append({'col': 'Technology', 'op': '==',
+            d['filter'].append({'col': 'Technology', 'op': 'in',
                                 'val': self.form_data['fin_tech_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Technology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Technology'})
+        # Select the percentitles for box plot to draw
+        d['filter'].append({
+            'col': 'Percentile',
+            'op': 'in',
+            'val': ['0', '0.25', '0.5', '0.75', '1']
+        })
 
         metric = self.form_data['fin_metric_picker']
         unit = self.form_data['fin_unit_picker']
 
         d_metric = generate_fin_metric(metric, unit)
-        d['metrics'] = [d_metric]
+        d['metrics'].append(d_metric)
 
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Scenario',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Scenario'})
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'FirmingTechnology',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'FirmingTechnology'})
         print(d)
         self.form_data['metrics'] = d['metrics']
         return d
@@ -1085,11 +1110,11 @@ class BoxPlotFinViz(BoxPlotViz):
     def get_data(self, df: pd.DataFrame) -> VizData:
         if len(df) == 0:
             raise Exception('No data is fetched. Please adjust your time range and conditions.')
-        print("hererer")
+
         form_data = self.form_data
         group_column = []
         for metric_dic in self.query_obj()['metrics']:
-            if metric_dic != 'count' and metric_dic['label'] != 'PPACFD':
+            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnually', 'MWSoldCFDAnnually', 'EBITDiscounted', 'NetPresentValue']:
                 group_column.append(metric_dic['label'])
         # # Drill down by percentile if not 100
         # if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
@@ -1144,8 +1169,11 @@ class BoxPlotFinViz(BoxPlotViz):
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
 
         # if group_column:
-        print(group_column)
-        df = df.groupby(group_column).agg(aggregate)
+        try:
+            df = df.groupby(group_column).agg(aggregate)
+        except ValueError as e:
+            if str(e) == "No group keys passed!":
+                raise ValueError("Please choose at least one of followings filters: Scenario, Firming Technology, Period or Technology.")
         # else:
         #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
