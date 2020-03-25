@@ -58,6 +58,8 @@ from superset.utils.core import (
     to_adhoc,
 )
 
+from superset.calculation.financial.metrics import generate_fin_metric
+
 if TYPE_CHECKING:
     from superset.connectors.base.models import BaseDatasource
 
@@ -1005,6 +1007,147 @@ class BoxPlotViz(NVD3Viz):
 
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
         df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        chart_data = self.to_series(df)
+        return chart_data
+
+
+class BoxPlotFinViz(BoxPlotViz):
+    """Box plot viz from ND3"""
+
+    viz_type = "box_plot_fin"
+    verbose_name = _("Box Plot For Financial Analysis")
+    sort_series = False
+    is_timeseries = False
+
+    def query_obj(self):
+        d = super().query_obj()
+
+        if self.form_data['fin_scenario_picker']:
+            d['filter'].append({'col': 'Scenario', 'op': '==',
+                                'val': self.form_data['fin_scenario_picker']})
+
+        if self.form_data['fin_firm_tech_picker']:
+            d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
+                                'val': self.form_data['fin_firm_tech_picker']})
+
+        if self.form_data['fin_period_picker']:
+            d['filter'].append({'col': 'Period', 'op': '==',
+                                'val': self.form_data['fin_period_picker']})
+
+        if self.form_data['fin_tech_picker']:
+            d['filter'].append({'col': 'Technology', 'op': '==',
+                                'val': self.form_data['fin_tech_picker']})
+
+        metric = self.form_data['fin_metric_picker']
+        unit = self.form_data['fin_unit_picker']
+
+        d_metric = generate_fin_metric(metric, unit)
+        d['metrics'] = [d_metric]
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Scenario',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Scenario'})
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'FirmingTechnology',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'FirmingTechnology'})
+        print(d)
+        self.form_data['metrics'] = d['metrics']
+        return d
+
+    # def to_series(self, df, classed="", title_suffix=""):
+    #     label_sep = " - "
+    #     chart_data = []
+    #     for index_value, row in zip(df.index, df.to_dict(orient="records")):
+    #         if isinstance(index_value, tuple):
+    #             index_value = label_sep.join(list(str(x) for x in index_value))
+    #         boxes = defaultdict(dict)
+    #         for (label, key), value in row.items():
+    #             if key == "nanmedian":
+    #                 key = "Q2"
+    #             boxes[label][key] = value
+    #         for label, box in boxes.items():
+    #             if len(self.query_obj().get("metrics")) > 1:
+    #                 # need to render data labels with metrics
+    #                 chart_label = label_sep.join([str(index_value), label])
+    #             else:
+    #                 chart_label = index_value
+    #             chart_data.append({"label": chart_label, "values": box})
+    #     return chart_data
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        if len(df) == 0:
+            raise Exception('No data is fetched. Please adjust your time range and conditions.')
+        print("hererer")
+        form_data = self.form_data
+        group_column = []
+        for metric_dic in self.query_obj()['metrics']:
+            if metric_dic != 'count' and metric_dic['label'] != 'PPACFD':
+                group_column.append(metric_dic['label'])
+        # # Drill down by percentile if not 100
+        # if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
+        #     df = self.filter_by_percentile(df, int(form_data['percentile_picker']), group_column)
+
+        # conform to NVD3 names
+        def Q1(series):  # need to be named functions - can't use lambdas
+            return np.nanpercentile(series, 25)
+
+        def Q3(series):
+            return np.nanpercentile(series, 75)
+
+        whisker_type = form_data.get("whisker_options")
+        if whisker_type == "Tukey":
+
+            def whisker_high(series):
+                upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
+                return series[series <= upper_outer_lim].max()
+
+            def whisker_low(series):
+                lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
+                return series[series >= lower_outer_lim].min()
+
+        elif whisker_type == "Min/max (no outliers)":
+
+            def whisker_high(series):
+                return series.max()
+
+            def whisker_low(series):
+                return series.min()
+
+        elif " percentiles" in whisker_type:  # type: ignore
+            low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
+                "/"
+            )
+
+            def whisker_high(series):
+                return np.nanpercentile(series, int(high))
+
+            def whisker_low(series):
+                return np.nanpercentile(series, int(low))
+
+        else:
+            raise ValueError("Unknown whisker type: {}".format(whisker_type))
+
+        def outliers(series):
+            above = series[series > whisker_high(series)]
+            below = series[series < whisker_low(series)]
+            # pandas sometimes doesn't like getting lists back here
+            return set(above.tolist() + below.tolist())
+
+        aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
+
+        # if group_column:
+        print(group_column)
+        df = df.groupby(group_column).agg(aggregate)
+        # else:
+        #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
 
