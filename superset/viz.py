@@ -1070,6 +1070,12 @@ class BoxPlotFinViz(BoxPlotViz):
                                  'hasCustomLabel': False,
                                  'fromFormData': True,
                                  'label': 'Technology'})
+        # Select the percentitles for box plot to draw
+        d['filter'].append({
+            'col': 'Percentile',
+            'op': 'in',
+            'val': ['0', '0.25', '0.5', '0.75', '1']
+        })
 
         metric = self.form_data['fin_metric_picker']
         unit = self.form_data['fin_unit_picker']
@@ -1163,7 +1169,11 @@ class BoxPlotFinViz(BoxPlotViz):
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
 
         # if group_column:
-        df = df.groupby(group_column).agg(aggregate)
+        try:
+            df = df.groupby(group_column).agg(aggregate)
+        except ValueError as e:
+            if str(e) == "No group keys passed!":
+                raise ValueError("Please choose at least one of followings filters: Scenario, Firming Technology, Period or Technology.")
         # else:
         #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)

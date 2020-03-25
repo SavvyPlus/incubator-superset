@@ -442,7 +442,8 @@ export const controls = {
     type: 'SelectControl',
     multi: false,
     label: t('Unit'),
-    default: '1',
+    default: '0',
+    validators: [v.nonEmpty],
     description: t('Select unit'),
     choices: [
       ['0', '$'],
@@ -454,7 +455,8 @@ export const controls = {
     type: 'SelectControl',
     multi: false,
     label: t('Metric'),
-    default: null,
+    default: 'PPACFD',
+    validators: [v.nonEmpty],
     description: t('Select metric'),
     choices: [
       ['PPACFD', 'PPA CFD'],
