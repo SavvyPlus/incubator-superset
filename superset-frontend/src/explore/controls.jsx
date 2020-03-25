@@ -396,7 +396,7 @@ export const controls = {
   // control for financial charts
   fin_scenario_picker: {
     type: 'SelectControl',
-    multi: false,
+    multi: true,
     label: t('Scenario'),
     default: null,
     description: t('Select one scenario'),
@@ -418,7 +418,7 @@ export const controls = {
 
   fin_tech_picker: {
     type: 'SelectControl',
-    multi: false,
+    multi: true,
     label: t('Technology'),
     default: null,
     description: t('Select one technology'),
@@ -429,7 +429,7 @@ export const controls = {
 
   fin_period_picker: {
     type: 'SelectControl',
-    multi: false,
+    multi: true,
     label: t('Period'),
     default: null,
     description: t('Select one period'),
@@ -442,11 +442,12 @@ export const controls = {
     type: 'SelectControl',
     multi: false,
     label: t('Unit'),
-    default: '1',
+    default: '0',
+    validators: [v.nonEmpty],
     description: t('Select unit'),
     choices: [
       ['0', '$'],
-      ['1', ' $/MWh'],
+      ['1', '$/MWh'],
     ],
   },
 
@@ -454,21 +455,22 @@ export const controls = {
     type: 'SelectControl',
     multi: false,
     label: t('Metric'),
-    default: null,
+    default: 'PPACFD',
+    validators: [v.nonEmpty],
     description: t('Select metric'),
     choices: [
-      ['PPA CFD', 'PPA CFD'],
-      ['MW Sold CFD', 'MW Sold CFD'],
-      ['Non-Firming Contribution Margin', 'Non-Firming Contribution Margin'],
-      ['Contribution Margin', 'Contribution Margin'],
-      ['Fixed O&M', 'Fixed O&M'],
+      ['PPACFD', 'PPA CFD'],
+      ['MWSoldCFD', 'MW Sold CFD'],
+      ['NonFirmingContributionMargin', 'Non-Firming Contribution Margin'],
+      ['ContributionMargin', 'Contribution Margin'],
+      ['FixedOM', 'Fixed O&M'],
       ['EBIT', 'EBIT'],
-      ['EBIT (Discounted)', 'EBIT (Discounted)'],
-      ['Capital Expenditure', 'Capital Expenditure'],
-      ['Terminal Value (Discounted)', 'Terminal Value (Discounted)'],
-      ['Net Present Value', 'Net Present Value'],
-      ['PPA CFD (Annually)', 'PPA CFD (Annually)'],
-      ['MW Sold CFD (Annually)', 'MW Sold CFD (Annually)'],
+      ['EBITDiscounted', 'EBIT (Discounted)'],
+      ['CapitalExpenditure', 'Capital Expenditure'],
+      ['TerminalValue', 'Terminal Value (Discounted)'],
+      ['NetPresentValue', 'Net Present Value'],
+      ['PPACFDAnnually', 'PPA CFD (Annually)'],
+      ['MWSoldCFDAnnually', 'MW Sold CFD (Annually)'],
     ],
   },
   // control for financial charts
