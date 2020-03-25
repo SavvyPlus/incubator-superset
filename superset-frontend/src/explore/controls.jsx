@@ -447,7 +447,7 @@ export const controls = {
     description: t('Select unit'),
     choices: [
       ['0', '$'],
-      ['1', ' $/MWh'],
+      ['1', '$/MWh'],
     ],
   },
 
