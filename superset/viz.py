@@ -1070,25 +1070,52 @@ class BoxPlotFinViz(BoxPlotViz):
         self.form_data['metrics'] = d['metrics']
         return d
 
-    # def to_series(self, df, classed="", title_suffix=""):
-    #     label_sep = " - "
-    #     chart_data = []
-    #     for index_value, row in zip(df.index, df.to_dict(orient="records")):
-    #         if isinstance(index_value, tuple):
-    #             index_value = label_sep.join(list(str(x) for x in index_value))
-    #         boxes = defaultdict(dict)
-    #         for (label, key), value in row.items():
-    #             if key == "nanmedian":
-    #                 key = "Q2"
-    #             boxes[label][key] = value
-    #         for label, box in boxes.items():
-    #             if len(self.query_obj().get("metrics")) > 1:
-    #                 # need to render data labels with metrics
-    #                 chart_label = label_sep.join([str(index_value), label])
-    #             else:
-    #                 chart_label = index_value
-    #             chart_data.append({"label": chart_label, "values": box})
-    #     return chart_data
+
+    def combine_static(self, df, static_df1, static_df2):
+        """This combine the matlab output df (8 columns) with the static dataframe"""
+        for index, row in static_df1.iterrows():
+            sub_df = df[(df['FirmingTechnology'] == row['FirmingTechnology']) & (df['Period'] == row['Year'])]
+            for sub_index, sub_row in sub_df.iterrows():
+                df.loc[sub_index, 'PPAEnergy'] = row['PPAEnergy']
+                df.loc[sub_index, 'PPACapacityMW'] = row['PPACapacityMW']
+                df.loc[sub_index, 'MWSoldQuantity'] = row['MWSoldQuantity']
+
+        for index, row in static_df2.iterrows():
+            sub_df = df[(df['Technology'] == row['Technology']) & (df['Period'] == row['Period'])]
+            for sub_index, sub_row in sub_df.iterrows():
+                for col, var in dict(row).items():
+                    if col not in ['Period', 'Technology']:
+                        df.loc[sub_index, col] = row[col]
+        return df
+
+    def post_calculation(self, table):
+        """This calculates the three annually data"""
+        table['EBIT'] = table['PPACFD'] + table['MWSoldCFD'] + \
+                        table['NonFirmingContributionMargin'] - table['FixedOM']
+        table['EBITDiscounted'] = table['EBIT']
+        table['PPACFDAnnually'] = table['PPACFD']
+        table['MWSoldCFDAnnually'] = table['MWSoldCFD']
+        for scenario in table['Scenario'].unique():
+            for tech in table['Technology'].unique():
+                # split into dataframe for years of one scenario and one tech
+                df_year_list = []
+                for period in table['Period'].unique():
+                    df_year_list.append(table[(table['Scenario'] == scenario) &
+                                              (table['Technology'] == tech) &
+                                              (table['Period'] == period)])
+
+                # pair every two years and calculates
+                for last_yr_df, cur_yr_df in zip(df_year_list[:-1], df_year_list[1:]):
+                    for (index_1, row_1), (index_2, row_2) in zip(last_yr_df.iterrows(), cur_yr_df.iterrows()):
+                        #  Here update the original table and the copy table, so next round the updated data is used
+                        table.loc[index_2, 'EBITDiscounted'] = cur_yr_df.loc[index_2, 'EBITDiscounted'] =\
+                            (row_2['EBIT'] - row_1['EBIT']) / (1 + row_2['DiscountRate']) + row_1['EBITDiscounted']
+                        table.loc[index_2, 'PPACFDAnnually'] = cur_yr_df.loc[index_2, 'PPACFDAnnually'] = \
+                            row_2['PPACFD'] - row_1['PPACFD']
+                        table.loc[index_2, 'MWSoldCFDAnnually'] = cur_yr_df.loc[index_2, 'MWSoldCFDAnnually'] =\
+                            row_2['MWSoldCFD'] - row_1['MWSoldCFD']
+        table = table.drop(columns=['EBIT'])
+        return table
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         if len(df) == 0:
