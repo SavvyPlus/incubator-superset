@@ -1058,6 +1058,7 @@ class BoxPlotFinViz(BoxPlotViz):
                              'hasCustomLabel': False,
                              'fromFormData': True,
                              'label': 'FirmingTechnology'})
+
         print(d)
         self.form_data['metrics'] = d['metrics']
         return d
@@ -1085,11 +1086,11 @@ class BoxPlotFinViz(BoxPlotViz):
     def get_data(self, df: pd.DataFrame) -> VizData:
         if len(df) == 0:
             raise Exception('No data is fetched. Please adjust your time range and conditions.')
-        print("hererer")
+
         form_data = self.form_data
         group_column = []
         for metric_dic in self.query_obj()['metrics']:
-            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue']:
+            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnually', 'MWSoldCFDAnnually', 'EBITDiscounted', 'NetPresentValue']:
                 group_column.append(metric_dic['label'])
         # # Drill down by percentile if not 100
         # if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:

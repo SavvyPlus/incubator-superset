@@ -53,7 +53,13 @@ def generate_fin_metric(metric, unit):
             d_metric['sqlExpression'] = '((PPACFD + MWSoldCFD + NonFirmingContributionMargin) - FixedOM) / (CapacityMW * CumulativeHours)'
         d_metric['label'] = metric
 
-    # ebit discount here
+    if metric == 'EBITDiscounted':
+        if unit == '0':
+            # static
+            d_metric['sqlExpression'] = 'EBITDiscounted'
+        else:
+            d_metric['sqlExpression'] = 'EBITDiscounted / (CapacityMW * CumulativeHours)'
+        d_metric['label'] = metric
 
     if metric == 'CapitalExpenditure':
         if unit == '0':
@@ -67,6 +73,27 @@ def generate_fin_metric(metric, unit):
             d_metric['sqlExpression'] = 'TerminalValue'
         else:
             d_metric['sqlExpression'] = 'TerminalValue / (CapacityMW * CumulativeHours)'
+        d_metric['label'] = metric
+
+    if metric == 'NetPresentValue':
+        if unit == '0':
+            d_metric['sqlExpression'] = 'EBITDiscounted - CapitalExpenditure + TerminalValue'
+        else:
+            d_metric['sqlExpression'] = '(EBITDiscounted - CapitalExpenditure + TerminalValue) / (CapacityMW * CumulativeHours)'
+        d_metric['label'] = metric
+
+    if metric == 'PPACFDAnnually':
+        if unit == '0':
+            d_metric['sqlExpression'] = 'PPACFDAnnual'
+        else:
+            d_metric['sqlExpression'] = '(PPACFDAnnual / PPAEnergy)'
+        d_metric['label'] = metric
+
+    if metric == 'MWSoldCFDAnnually':
+        if unit == '0':
+            d_metric['sqlExpression'] = 'MWSoldCFDAnnual'
+        else:
+            d_metric['sqlExpression'] = '(MWSoldCFDAnnual / (MWSoldQuantity * CumulativeHours))'
         d_metric['label'] = metric
 
     return d_metric
