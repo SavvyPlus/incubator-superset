@@ -59,6 +59,7 @@ from superset.utils.core import (
 )
 
 from superset.calculation.financial.metrics import generate_fin_metric
+from superset.calculation.financial.strategy_metrics import generate_default_metrics
 
 if TYPE_CHECKING:
     from superset.connectors.base.models import BaseDatasource
@@ -1023,6 +1024,30 @@ class BoxPlotFinViz(BoxPlotViz):
         d = super().query_obj()
         d['metrics'] = []
 
+        if self.form_data['fin_period_picker']:
+            d['filter'].append({'col': 'Period', 'op': 'in',
+                                'val': self.form_data['fin_period_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Period',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Period'})
+
+        if self.form_data['fin_tech_picker']:
+            d['filter'].append({'col': 'Technology', 'op': 'in',
+                                'val': self.form_data['fin_tech_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Technology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Technology'})
+
         if self.form_data['fin_scenario_picker']:
             d['filter'].append({'col': 'Scenario', 'op': 'in',
                                 'val': self.form_data['fin_scenario_picker']})
@@ -1047,29 +1072,6 @@ class BoxPlotFinViz(BoxPlotViz):
                                  'fromFormData': True,
                                  'label': 'FirmingTechnology'})
 
-        if self.form_data['fin_period_picker']:
-            d['filter'].append({'col': 'Period', 'op': 'in',
-                                'val': self.form_data['fin_period_picker']})
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Period',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Period'})
-
-        if self.form_data['fin_tech_picker']:
-            d['filter'].append({'col': 'Technology', 'op': 'in',
-                                'val': self.form_data['fin_tech_picker']})
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Technology',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Technology'})
         # Select the percentitles for box plot to draw
         d['filter'].append({
             'col': 'Percentile',
@@ -1090,10 +1092,31 @@ class BoxPlotFinViz(BoxPlotViz):
         d_metric = generate_fin_metric(metric, unit)
         d['metrics'].append(d_metric)
 
-        print(d)
-        self.form_data['metrics'] = d['metrics']
+        # print(d)
+        # self.form_data['metrics'] = d['metrics']
         return d
 
+    def to_series(self, df, classed="", title_suffix=""):
+        label_sep = " - "
+        chart_data = []
+        for index_value, row in zip(df.index, df.to_dict(orient="records")):
+            if isinstance(index_value, tuple):
+                index_value = label_sep.join(list(str(x) for x in index_value))
+            boxes = defaultdict(dict)
+            for (label, key), value in row.items():
+                if key == "nanmedian":
+                    key = "Q2"
+                boxes[label][key] = value
+            for label, box in boxes.items():
+                if len(self.form_data.get("metrics")) > 1:
+                    # need to render data labels with metrics
+                    # chart_label = label_sep.join([str(index_value), label])
+                    # hide metrics on the label
+                    chart_label = label_sep.join([str(index_value)])
+                else:
+                    chart_label = index_value
+                chart_data.append({"label": chart_label, "values": box})
+        return chart_data
 
     def combine_static(self, df, static_df1, static_df2):
         """This combine the matlab output df (8 columns) with the static dataframe"""
@@ -1148,7 +1171,7 @@ class BoxPlotFinViz(BoxPlotViz):
         form_data = self.form_data
         group_column = []
         for metric_dic in self.query_obj()['metrics']:
-            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnually', 'MWSoldCFDAnnually', 'EBITDiscounted', 'NetPresentValue']:
+            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnual', 'MWSoldCFDAnnual', 'EBITDiscounted', 'NetPresentValue']:
                 group_column.append(metric_dic['label'])
         # # Drill down by percentile if not 100
         # if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
@@ -1212,6 +1235,41 @@ class BoxPlotFinViz(BoxPlotViz):
         #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
+
+# class BoxPlotFinViz(BoxPlotViz):
+
+
+class BoxPlotFinStrViz(BoxPlotViz):
+    """tmp testing new chart"""
+    viz_type = "box_plot_fin_str"
+    verbose_name = _("Box Plot For Financial Strategy")
+    sort_series = False
+    is_timeseries = False
+
+    def query_obj(self):
+        d = super().query_obj()
+        d['metrics'] = []
+
+        if self.form_data['fin_period_picker']:
+            d['filter'].append({'col': 'Period', 'op': 'in',
+                                'val': self.form_data['fin_period_picker']})
+
+        if self.form_data['fin_tech_picker']:
+            d['filter'].append({'col': 'Technology', 'op': 'in',
+                                'val': self.form_data['fin_tech_picker']})
+
+        if self.form_data['fin_scenario_picker']:
+            d['filter'].append({'col': 'Scenario', 'op': 'in',
+                                'val': self.form_data['fin_scenario_picker']})
+
+        if self.form_data['fin_firm_tech_picker']:
+            d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
+                                'val': self.form_data['fin_firm_tech_picker']})
+
+        # metric = self.form_data['fin_metric_picker']
+        metrics = generate_default_metrics()
+        d['metrics'] = metrics
+        return d
 
 
 class BoxPlotVizRunComp(BoxPlotViz):
