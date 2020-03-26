@@ -244,6 +244,9 @@ class ChartRenderer extends React.Component {
     if (formData.viz_type === 'box_plot_run_comp') {
       fd.metrics = ['SpotPrice'];
     }
+    if (formData.viz_type === 'box_plot_fin') {
+      fd.metrics = [formData.fin_metric_picker];
+    }
 
     return (
       <>

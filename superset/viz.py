@@ -940,6 +940,7 @@ class BoxPlotViz(NVD3Viz):
             if isinstance(index_value, tuple):
                 index_value = label_sep.join(list(str(x) for x in index_value))
             boxes = defaultdict(dict)
+            print(row.items())
             for (label, key), value in row.items():
                 if key == "nanmedian":
                     key = "Q2"
@@ -1114,7 +1115,7 @@ class BoxPlotFinViz(BoxPlotViz):
         form_data = self.form_data
         group_column = []
         for metric_dic in self.query_obj()['metrics']:
-            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnually', 'MWSoldCFDAnnually', 'EBITDiscounted', 'NetPresentValue']:
+            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnual', 'MWSoldCFDAnnual', 'EBITDiscounted', 'NetPresentValue']:
                 group_column.append(metric_dic['label'])
         # # Drill down by percentile if not 100
         # if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
