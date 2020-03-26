@@ -1079,13 +1079,6 @@ class BoxPlotFinViz(BoxPlotViz):
             'val': ['0', '0.25', '0.5', '0.75', '1']
         })
 
-        # Select the percentiles for box plot to draw
-        d['filter'].append({
-            'col': 'Percentile',
-            'op': 'in',
-            'val': ['0','0.25','0.5','0.75','1']
-        })
-
         metric = self.form_data['fin_metric_picker']
         unit = self.form_data['fin_unit_picker']
 
@@ -1118,52 +1111,6 @@ class BoxPlotFinViz(BoxPlotViz):
                 chart_data.append({"label": chart_label, "values": box})
         return chart_data
 
-    def combine_static(self, df, static_df1, static_df2):
-        """This combine the matlab output df (8 columns) with the static dataframe"""
-        for index, row in static_df1.iterrows():
-            sub_df = df[(df['FirmingTechnology'] == row['FirmingTechnology']) & (df['Period'] == row['Year'])]
-            for sub_index, sub_row in sub_df.iterrows():
-                df.loc[sub_index, 'PPAEnergy'] = row['PPAEnergy']
-                df.loc[sub_index, 'PPACapacityMW'] = row['PPACapacityMW']
-                df.loc[sub_index, 'MWSoldQuantity'] = row['MWSoldQuantity']
-
-        for index, row in static_df2.iterrows():
-            sub_df = df[(df['Technology'] == row['Technology']) & (df['Period'] == row['Period'])]
-            for sub_index, sub_row in sub_df.iterrows():
-                for col, var in dict(row).items():
-                    if col not in ['Period', 'Technology']:
-                        df.loc[sub_index, col] = row[col]
-        return df
-
-    def post_calculation(self, table):
-        """This calculates the three annually data"""
-        table['EBIT'] = table['PPACFD'] + table['MWSoldCFD'] + \
-                        table['NonFirmingContributionMargin'] - table['FixedOM']
-        table['EBITDiscounted'] = table['EBIT']
-        table['PPACFDAnnually'] = table['PPACFD']
-        table['MWSoldCFDAnnually'] = table['MWSoldCFD']
-        for scenario in table['Scenario'].unique():
-            for tech in table['Technology'].unique():
-                # split into dataframe for years of one scenario and one tech
-                df_year_list = []
-                for period in table['Period'].unique():
-                    df_year_list.append(table[(table['Scenario'] == scenario) &
-                                              (table['Technology'] == tech) &
-                                              (table['Period'] == period)])
-
-                # pair every two years and calculates
-                for last_yr_df, cur_yr_df in zip(df_year_list[:-1], df_year_list[1:]):
-                    for (index_1, row_1), (index_2, row_2) in zip(last_yr_df.iterrows(), cur_yr_df.iterrows()):
-                        #  Here update the original table and the copy table, so next round the updated data is used
-                        table.loc[index_2, 'EBITDiscounted'] = cur_yr_df.loc[index_2, 'EBITDiscounted'] =\
-                            (row_2['EBIT'] - row_1['EBIT']) / (1 + row_2['DiscountRate']) + row_1['EBITDiscounted']
-                        table.loc[index_2, 'PPACFDAnnually'] = cur_yr_df.loc[index_2, 'PPACFDAnnually'] = \
-                            row_2['PPACFD'] - row_1['PPACFD']
-                        table.loc[index_2, 'MWSoldCFDAnnually'] = cur_yr_df.loc[index_2, 'MWSoldCFDAnnually'] =\
-                            row_2['MWSoldCFD'] - row_1['MWSoldCFD']
-        table = table.drop(columns=['EBIT'])
-        return table
-
     def get_data(self, df: pd.DataFrame) -> VizData:
         if len(df) == 0:
             raise Exception('No data is fetched. Please adjust your time range and conditions.')
@@ -1173,9 +1120,6 @@ class BoxPlotFinViz(BoxPlotViz):
         for metric_dic in self.query_obj()['metrics']:
             if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnual', 'MWSoldCFDAnnual', 'EBITDiscounted', 'NetPresentValue']:
                 group_column.append(metric_dic['label'])
-        # # Drill down by percentile if not 100
-        # if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
-        #     df = self.filter_by_percentile(df, int(form_data['percentile_picker']), group_column)
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
@@ -1250,26 +1194,190 @@ class BoxPlotFinStrViz(BoxPlotViz):
         d = super().query_obj()
         d['metrics'] = []
 
+        group_column = []
         if self.form_data['fin_period_picker']:
             d['filter'].append({'col': 'Period', 'op': 'in',
                                 'val': self.form_data['fin_period_picker']})
+            group_column.append('Period')
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Period',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Period'})
 
         if self.form_data['fin_tech_picker']:
             d['filter'].append({'col': 'Technology', 'op': 'in',
                                 'val': self.form_data['fin_tech_picker']})
+            group_column.append('Technology')
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Technology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Technology'})
 
         if self.form_data['fin_scenario_picker']:
             d['filter'].append({'col': 'Scenario', 'op': 'in',
                                 'val': self.form_data['fin_scenario_picker']})
+            group_column.append('Scenario')
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Scenario',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Scenario'})
 
         if self.form_data['fin_firm_tech_picker']:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'FirmingTechnology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'FirmingTechnology'})
             d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
                                 'val': self.form_data['fin_firm_tech_picker']})
+            group_column.append('FirmingTechnology')
+        # else:
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Percentile',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Percentile'})
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Strategy',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Strategy'})
+        group_column.append('Strategy')
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Metric',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Metric'})
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Value',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Value'})
 
         # metric = self.form_data['fin_metric_picker']
-        metrics = generate_default_metrics()
-        d['metrics'] = metrics
+        # metrics = generate_default_metrics()
+
+        if self.form_data['fin_str_metric_picker']:
+            d['filter'].append({'col': 'Metric', 'op': 'in',
+                                'val': self.form_data['fin_str_metric_picker']})
+            group_column.append('Metric')
+        self.form_data['group_column'] = group_column
         return d
+
+    def to_series(self, df, classed="", title_suffix=""):
+        label_sep = " - "
+        chart_data = []
+        for index_value, row in zip(df.index, df.to_dict(orient="records")):
+            if isinstance(index_value, tuple):
+                index_value = label_sep.join(list(str(x) for x in index_value))
+            boxes = defaultdict(dict)
+            for (label, key), value in row.items():
+                if key == "nanmedian":
+                    key = "Q2"
+                boxes[label][key] = value
+            for label, box in boxes.items():
+                if len(self.form_data.get("metrics")) > 1:
+                    # need to render data labels with metrics
+                    # chart_label = label_sep.join([str(index_value), label])
+                    # hide metrics on the label
+                    chart_label = label_sep.join([str(index_value)])
+                else:
+                    chart_label = index_value
+                chart_data.append({"label": chart_label, "values": box})
+        return chart_data
+
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        if len(df) == 0:
+            raise Exception('No data is fetched. Please adjust your time range and conditions.')
+
+        form_data = self.form_data
+        group_column = form_data['group_column']
+
+        # conform to NVD3 names
+        def Q1(series):  # need to be named functions - can't use lambdas
+            return np.nanpercentile(series, 25)
+
+        def Q3(series):
+            return np.nanpercentile(series, 75)
+
+        whisker_type = form_data.get("whisker_options")
+        if whisker_type == "Tukey":
+
+            def whisker_high(series):
+                upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
+                return series[series <= upper_outer_lim].max()
+
+            def whisker_low(series):
+                lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
+                return series[series >= lower_outer_lim].min()
+
+        elif whisker_type == "Min/max (no outliers)":
+
+            def whisker_high(series):
+                return series.max()
+
+            def whisker_low(series):
+                return series.min()
+
+        elif " percentiles" in whisker_type:  # type: ignore
+            low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
+                "/"
+            )
+
+            def whisker_high(series):
+                return np.nanpercentile(series, int(high))
+
+            def whisker_low(series):
+                return np.nanpercentile(series, int(low))
+
+        else:
+            raise ValueError("Unknown whisker type: {}".format(whisker_type))
+
+        def outliers(series):
+            above = series[series > whisker_high(series)]
+            below = series[series < whisker_low(series)]
+            # pandas sometimes doesn't like getting lists back here
+            return set(above.tolist() + below.tolist())
+
+        aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
+
+        # if group_column:
+        try:
+            df = df.groupby(group_column).agg(aggregate)
+        except ValueError as e:
+            if str(e) == "No group keys passed!":
+                raise ValueError("Please choose at least one of followings filters: Scenario, Firming Technology, Period or Technology.")
+        # else:
+        #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        chart_data = self.to_series(df)
+        return chart_data
 
 
 class BoxPlotVizRunComp(BoxPlotViz):
