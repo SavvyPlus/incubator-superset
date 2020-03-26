@@ -479,7 +479,7 @@ export const controls = {
     type: 'SelectControl',
     multi: true,
     label: t('Metric'),
-    default: 'PPA CFD',
+    default: null,
     validators: [v.nonEmpty],
     description: t('Select metric'),
     choices: [
@@ -489,6 +489,7 @@ export const controls = {
       ['EBITDiscounted', 'EBIT (Discounted)'],
       ['NetPresentValue', 'Net Present Value'],
       ['CapitalAdjustmentDiscounted', 'Capital Adjustment (Discounted)'],
+      ['AdjustedEBIT', 'Adjusted EBIT'],
     ],
   },
   // control for financial charts
