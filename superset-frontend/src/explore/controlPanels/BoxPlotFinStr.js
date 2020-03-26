@@ -16,27 +16,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { bindActionCreators } from 'redux';
-import { connect } from 'react-redux';
+import { t } from '@superset-ui/translation';
 
-import {
-  addDangerToast,
-  addInfoToast,
-  addSuccessToast,
-  addWarningToast,
-} from '../actions';
+export default {
+  controlPanelSections: [
+    {
+      label: t('Empower'),
+      expanded: true,
+      controlSetRows: [
+        ['metrics'],
+        ['adhoc_filters'],
+        ['groupby'],
+        ['whisker_options'],
 
-// To work properly the redux state must have a `messageToasts` subtree
-export default function withToasts(BaseComponent) {
-  return connect(null, dispatch =>
-    bindActionCreators(
-      {
-        addInfoToast,
-        addSuccessToast,
-        addWarningToast,
-        addDangerToast,
-      },
-      dispatch,
-    ),
-  )(BaseComponent);
-}
+        ['fin_scenario_picker'],
+        ['fin_firm_tech_picker'],
+        ['fin_period_picker'],
+        ['fin_str_metric_picker'],
+        // ['fin_unit_picker'],
+        ['fin_tech_picker']
+      ],
+    },
+    // {
+    //   label: t('Chart Options'),
+    //   expanded: true,
+    //   controlSetRows: [
+    //     ['color_scheme', 'label_colors'],
+    //     ['whisker_options', 'x_ticks_layout'],
+    //   ],
+    // },
+  ],
+};

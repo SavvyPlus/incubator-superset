@@ -97,3 +97,4 @@ def generate_fin_metric(metric, unit):
         d_metric['label'] = 'MWSoldCFDAnnual'
 
     return d_metric
+

@@ -21,7 +21,6 @@ import { snakeCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { SuperChart } from '@superset-ui/chart';
-import { Tooltip } from 'react-bootstrap';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
 
 const propTypes = {
@@ -62,11 +61,8 @@ const defaultProps = {
 class ChartRenderer extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {};
-
     this.hasQueryResponseChange = false;
 
-    this.setTooltip = this.setTooltip.bind(this);
     this.handleAddFilter = this.handleAddFilter.bind(this);
     this.handleRenderSuccess = this.handleRenderSuccess.bind(this);
     this.handleRenderFailure = this.handleRenderFailure.bind(this);
@@ -76,18 +72,21 @@ class ChartRenderer extends React.Component {
       onAddFilter: this.handleAddFilter,
       onError: this.handleRenderFailure,
       setControlValue: this.handleSetControlValue,
-      setTooltip: this.setTooltip,
       onFilterMenuOpen: this.props.onFilterMenuOpen,
       onFilterMenuClose: this.props.onFilterMenuClose,
     };
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps) {
     if (nextProps.vizType === 'box_plot_run_comp') {
       return true;
     }
 
     if (nextProps.vizType === 'box_plot_fin') {
+      return true;
+    }
+
+    if (nextProps.vizType === 'box_plot_fin_str') {
       return true;
     }
 
@@ -106,7 +105,6 @@ class ChartRenderer extends React.Component {
         nextProps.annotationData !== this.props.annotationData ||
         nextProps.height !== this.props.height ||
         nextProps.width !== this.props.width ||
-        nextState.tooltip !== this.state.tooltip ||
         nextProps.triggerRender ||
         nextProps.formData.color_scheme !== this.props.formData.color_scheme
       ) {
@@ -114,10 +112,6 @@ class ChartRenderer extends React.Component {
       }
     }
     return false;
-  }
-
-  setTooltip(tooltip) {
-    this.setState({ tooltip });
   }
 
   handleAddFilter(col, vals, merge = true, refresh = true) {
@@ -172,33 +166,6 @@ class ChartRenderer extends React.Component {
     }
   }
 
-  renderTooltip() {
-    const { tooltip } = this.state;
-    if (tooltip && tooltip.content) {
-      return (
-        <Tooltip
-          className="chart-tooltip"
-          id="chart-tooltip"
-          placement="right"
-          positionTop={tooltip.y + 30}
-          positionLeft={tooltip.x + 30}
-          arrowOffsetTop={10}
-        >
-          {typeof tooltip.content === 'string' ? (
-            <div // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{
-                __html: dompurify.sanitize(tooltip.content),
-              }}
-            />
-          ) : (
-            tooltip.content
-          )}
-        </Tooltip>
-      );
-    }
-    return null;
-  }
-
   render() {
     const {
       chartAlert,
@@ -249,25 +216,22 @@ class ChartRenderer extends React.Component {
     }
 
     return (
-      <>
-        {this.renderTooltip()}
-        <SuperChart
-          disableErrorBoundary
-          id={`chart-id-${chartId}`}
-          className={chartClassName}
-          chartType={vizType}
-          width={width}
-          height={height}
-          annotationData={annotationData}
-          datasource={datasource}
-          initialValues={initialValues}
-          formData={fd}
-          hooks={this.hooks}
-          queryData={queryResponse}
-          onRenderSuccess={this.handleRenderSuccess}
-          onRenderFailure={this.handleRenderFailure}
-        />
-      </>
+      <SuperChart
+        disableErrorBoundary
+        id={`chart-id-${chartId}`}
+        className={chartClassName}
+        chartType={vizType}
+        width={width}
+        height={height}
+        annotationData={annotationData}
+        datasource={datasource}
+        initialValues={initialValues}
+        formData={fd}
+        hooks={this.hooks}
+        queryData={queryResponse}
+        onRenderSuccess={this.handleRenderSuccess}
+        onRenderFailure={this.handleRenderFailure}
+      />
     );
   }
 }
