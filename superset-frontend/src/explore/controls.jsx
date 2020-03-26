@@ -360,7 +360,7 @@ export const controls = {
 
   cal_years: {
     type: 'SelectControl',
-    validators: [v.nonEmpty, v.noLongerThan10],
+    validators: [v.nonEmpty, v.noLongerThan20],
     freeForm: true,
     multi: true,
     default: ['2020'],
@@ -479,7 +479,7 @@ export const controls = {
     type: 'SelectControl',
     multi: true,
     label: t('Metric'),
-    default: 'PPA CFD',
+    default: ['ContributionMargin'],
     validators: [v.nonEmpty],
     description: t('Select metric'),
     choices: [
@@ -489,6 +489,7 @@ export const controls = {
       ['EBITDiscounted', 'EBIT (Discounted)'],
       ['NetPresentValue', 'Net Present Value'],
       ['CapitalAdjustmentDiscounted', 'Capital Adjustment (Discounted)'],
+      ['AdjustedEBIT', 'Adjusted EBIT'],
     ],
   },
   // control for financial charts
