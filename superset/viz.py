@@ -45,7 +45,7 @@ from geopy.point import Point
 from markdown import markdown
 from pandas.tseries.frequencies import to_offset
 
-from superset import app, cache, get_css_manifest_files, security_manager
+from superset import app, cache, get_manifest_files, security_manager
 from superset.constants import NULL_STRING
 from superset.exceptions import NullValueException, SpatialException
 from superset.models.helpers import QueryResult
@@ -791,7 +791,7 @@ class MarkupViz(BaseViz):
         code = self.form_data.get("code", "")
         if markup_type == "markdown":
             code = markdown(code)
-        return dict(html=code, theme_css=get_css_manifest_files("theme"))
+        return dict(html=code, theme_css=get_manifest_files("theme", "css"))
 
 
 class SeparatorViz(MarkupViz):
@@ -1021,22 +1021,61 @@ class BoxPlotFinViz(BoxPlotViz):
 
     def query_obj(self):
         d = super().query_obj()
+        d['metrics'] = []
 
         if self.form_data['fin_scenario_picker']:
-            d['filter'].append({'col': 'Scenario', 'op': '==',
+            d['filter'].append({'col': 'Scenario', 'op': 'in',
                                 'val': self.form_data['fin_scenario_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Scenario',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Scenario'})
 
         if self.form_data['fin_firm_tech_picker']:
             d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
                                 'val': self.form_data['fin_firm_tech_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'FirmingTechnology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'FirmingTechnology'})
 
         if self.form_data['fin_period_picker']:
-            d['filter'].append({'col': 'Period', 'op': '==',
+            d['filter'].append({'col': 'Period', 'op': 'in',
                                 'val': self.form_data['fin_period_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Period',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Period'})
 
         if self.form_data['fin_tech_picker']:
-            d['filter'].append({'col': 'Technology', 'op': '==',
+            d['filter'].append({'col': 'Technology', 'op': 'in',
                                 'val': self.form_data['fin_tech_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Technology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Technology'})
+        # Select the percentitles for box plot to draw
+        d['filter'].append({
+            'col': 'Percentile',
+            'op': 'in',
+            'val': ['0', '0.25', '0.5', '0.75', '1']
+        })
 
         # Select the percentiles for box plot to draw
         d['filter'].append({
@@ -1049,22 +1088,7 @@ class BoxPlotFinViz(BoxPlotViz):
         unit = self.form_data['fin_unit_picker']
 
         d_metric = generate_fin_metric(metric, unit)
-        d['metrics'] = [d_metric]
-
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Scenario',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Scenario'})
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'FirmingTechnology',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'FirmingTechnology'})
+        d['metrics'].append(d_metric)
 
         print(d)
         self.form_data['metrics'] = d['metrics']
@@ -1179,8 +1203,11 @@ class BoxPlotFinViz(BoxPlotViz):
         aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
 
         # if group_column:
-        print(group_column)
-        df = df.groupby(group_column).agg(aggregate)
+        try:
+            df = df.groupby(group_column).agg(aggregate)
+        except ValueError as e:
+            if str(e) == "No group keys passed!":
+                raise ValueError("Please choose at least one of followings filters: Scenario, Firming Technology, Period or Technology.")
         # else:
         #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
@@ -1489,8 +1516,8 @@ class BigNumberViz(BaseViz):
             index=DTTM_ALIAS,
             columns=[],
             values=self.metric_labels,
-            fill_value=0,
-            aggfunc=sum,
+            dropna=False,
+            aggfunc=np.min,  # looking for any (only) value, preserving `None`
         )
         df = self.apply_rolling(df)
         df[DTTM_ALIAS] = df.index
@@ -2036,12 +2063,15 @@ class SunburstViz(BaseViz):
     def get_data(self, df: pd.DataFrame) -> VizData:
         fd = self.form_data
         cols = fd.get("groupby") or []
+        cols.extend(["m1", "m2"])
         metric = utils.get_metric_name(fd.get("metric"))
         secondary_metric = utils.get_metric_name(fd.get("secondary_metric"))
         if metric == secondary_metric or secondary_metric is None:
             df.rename(columns={df.columns[-1]: "m1"}, inplace=True)
             df["m2"] = df["m1"]
-            cols.extend(["m1", "m2"])
+        else:
+            df.rename(columns={df.columns[-2]: "m1"}, inplace=True)
+            df.rename(columns={df.columns[-1]: "m2"}, inplace=True)
 
         # Re-order the columns as the query result set column ordering may differ from
         # that listed in the hierarchy.

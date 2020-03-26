@@ -22,9 +22,7 @@
 {% endblock %}
 
 {% block tail_js %}
-  {% with filename="welcome" %}
-    {% include "superset/partials/_script_tag.html" %}
-  {% endwith %}
+  {{ js_bundle("welcome") }}
   <!-- Intercom Tracking Code -->
   <script>
     window.intercomSettings = {
