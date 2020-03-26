@@ -940,7 +940,6 @@ class BoxPlotViz(NVD3Viz):
             if isinstance(index_value, tuple):
                 index_value = label_sep.join(list(str(x) for x in index_value))
             boxes = defaultdict(dict)
-            print(row.items())
             for (label, key), value in row.items():
                 if key == "nanmedian":
                     key = "Q2"
@@ -1088,25 +1087,27 @@ class BoxPlotFinViz(BoxPlotViz):
         self.form_data['metrics'] = d['metrics']
         return d
 
-    # def to_series(self, df, classed="", title_suffix=""):
-    #     label_sep = " - "
-    #     chart_data = []
-    #     for index_value, row in zip(df.index, df.to_dict(orient="records")):
-    #         if isinstance(index_value, tuple):
-    #             index_value = label_sep.join(list(str(x) for x in index_value))
-    #         boxes = defaultdict(dict)
-    #         for (label, key), value in row.items():
-    #             if key == "nanmedian":
-    #                 key = "Q2"
-    #             boxes[label][key] = value
-    #         for label, box in boxes.items():
-    #             if len(self.query_obj().get("metrics")) > 1:
-    #                 # need to render data labels with metrics
-    #                 chart_label = label_sep.join([str(index_value), label])
-    #             else:
-    #                 chart_label = index_value
-    #             chart_data.append({"label": chart_label, "values": box})
-    #     return chart_data
+    def to_series(self, df, classed="", title_suffix=""):
+        label_sep = " - "
+        chart_data = []
+        for index_value, row in zip(df.index, df.to_dict(orient="records")):
+            if isinstance(index_value, tuple):
+                index_value = label_sep.join(list(str(x) for x in index_value))
+            boxes = defaultdict(dict)
+            for (label, key), value in row.items():
+                if key == "nanmedian":
+                    key = "Q2"
+                boxes[label][key] = value
+            for label, box in boxes.items():
+                if len(self.form_data.get("metrics")) > 1:
+                    # need to render data labels with metrics
+                    # chart_label = label_sep.join([str(index_value), label])
+                    # hide metrics on the label
+                    chart_label = label_sep.join([str(index_value)])
+                else:
+                    chart_label = index_value
+                chart_data.append({"label": chart_label, "values": box})
+        return chart_data
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         if len(df) == 0:
