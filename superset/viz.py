@@ -59,6 +59,7 @@ from superset.utils.core import (
 )
 
 from superset.calculation.financial.metrics import generate_fin_metric
+from superset.calculation.financial.strategy_metrics import generate_default_metrics
 
 if TYPE_CHECKING:
     from superset.connectors.base.models import BaseDatasource
@@ -1084,8 +1085,8 @@ class BoxPlotFinViz(BoxPlotViz):
         d_metric = generate_fin_metric(metric, unit)
         d['metrics'].append(d_metric)
 
-        print(d)
-        self.form_data['metrics'] = d['metrics']
+        # print(d)
+        # self.form_data['metrics'] = d['metrics']
         return d
 
     def to_series(self, df, classed="", title_suffix=""):
@@ -1181,6 +1182,41 @@ class BoxPlotFinViz(BoxPlotViz):
         #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
         chart_data = self.to_series(df)
         return chart_data
+
+# class BoxPlotFinViz(BoxPlotViz):
+
+
+class BoxPlotFinStrViz(BoxPlotViz):
+    """tmp testing new chart"""
+    viz_type = "box_plot_fin_str"
+    verbose_name = _("Box Plot For Financial Strategy")
+    sort_series = False
+    is_timeseries = False
+
+    def query_obj(self):
+        d = super().query_obj()
+        d['metrics'] = []
+
+        if self.form_data['fin_period_picker']:
+            d['filter'].append({'col': 'Period', 'op': 'in',
+                                'val': self.form_data['fin_period_picker']})
+
+        if self.form_data['fin_tech_picker']:
+            d['filter'].append({'col': 'Technology', 'op': 'in',
+                                'val': self.form_data['fin_tech_picker']})
+
+        if self.form_data['fin_scenario_picker']:
+            d['filter'].append({'col': 'Scenario', 'op': 'in',
+                                'val': self.form_data['fin_scenario_picker']})
+
+        if self.form_data['fin_firm_tech_picker']:
+            d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
+                                'val': self.form_data['fin_firm_tech_picker']})
+
+        # metric = self.form_data['fin_metric_picker']
+        metrics = generate_default_metrics()
+        d['metrics'] = metrics
+        return d
 
 
 class BoxPlotVizRunComp(BoxPlotViz):

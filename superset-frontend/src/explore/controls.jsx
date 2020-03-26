@@ -473,6 +473,23 @@ export const controls = {
       ['MW Sold CFD (Annually)', 'MW Sold CFD (Annually)'],
     ],
   },
+
+  fin_str_metric_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Metric'),
+    default: 'PPA CFD',
+    validators: [v.nonEmpty],
+    description: t('Select metric'),
+    choices: [
+      ['Contribution Margin', 'Contribution Margin'],
+      ['Contribution Margin (Discounted)', 'Contribution Margin (Discounted)'],
+      ['EBIT', 'EBIT'],
+      ['EBIT (Discounted)', 'EBIT (Discounted)'],
+      ['Net Present Value', 'Net Present Value'],
+      ['Capital Adjustment (Discounted)', 'Capital Adjustment (Discounted)'],      
+    ],
+  },
   // control for financial charts
 
   color_picker: {
