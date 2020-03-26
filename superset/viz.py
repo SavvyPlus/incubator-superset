@@ -1087,25 +1087,27 @@ class BoxPlotFinViz(BoxPlotViz):
         self.form_data['metrics'] = d['metrics']
         return d
 
-    # def to_series(self, df, classed="", title_suffix=""):
-    #     label_sep = " - "
-    #     chart_data = []
-    #     for index_value, row in zip(df.index, df.to_dict(orient="records")):
-    #         if isinstance(index_value, tuple):
-    #             index_value = label_sep.join(list(str(x) for x in index_value))
-    #         boxes = defaultdict(dict)
-    #         for (label, key), value in row.items():
-    #             if key == "nanmedian":
-    #                 key = "Q2"
-    #             boxes[label][key] = value
-    #         for label, box in boxes.items():
-    #             if len(self.query_obj().get("metrics")) > 1:
-    #                 # need to render data labels with metrics
-    #                 chart_label = label_sep.join([str(index_value), label])
-    #             else:
-    #                 chart_label = index_value
-    #             chart_data.append({"label": chart_label, "values": box})
-    #     return chart_data
+    def to_series(self, df, classed="", title_suffix=""):
+        label_sep = " - "
+        chart_data = []
+        for index_value, row in zip(df.index, df.to_dict(orient="records")):
+            if isinstance(index_value, tuple):
+                index_value = label_sep.join(list(str(x) for x in index_value))
+            boxes = defaultdict(dict)
+            for (label, key), value in row.items():
+                if key == "nanmedian":
+                    key = "Q2"
+                boxes[label][key] = value
+            for label, box in boxes.items():
+                if len(self.form_data.get("metrics")) > 1:
+                    # need to render data labels with metrics
+                    # chart_label = label_sep.join([str(index_value), label])
+                    # hide metrics on the label
+                    chart_label = label_sep.join([str(index_value)])
+                else:
+                    chart_label = index_value
+                chart_data.append({"label": chart_label, "values": box})
+        return chart_data
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         if len(df) == 0:
@@ -1114,7 +1116,7 @@ class BoxPlotFinViz(BoxPlotViz):
         form_data = self.form_data
         group_column = []
         for metric_dic in self.query_obj()['metrics']:
-            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnually', 'MWSoldCFDAnnually', 'EBITDiscounted', 'NetPresentValue']:
+            if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnual', 'MWSoldCFDAnnual', 'EBITDiscounted', 'NetPresentValue']:
                 group_column.append(metric_dic['label'])
         # # Drill down by percentile if not 100
         # if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
