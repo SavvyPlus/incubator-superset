@@ -1023,6 +1023,30 @@ class BoxPlotFinViz(BoxPlotViz):
         d = super().query_obj()
         d['metrics'] = []
 
+        if self.form_data['fin_period_picker']:
+            d['filter'].append({'col': 'Period', 'op': 'in',
+                                'val': self.form_data['fin_period_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Period',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Period'})
+
+        if self.form_data['fin_tech_picker']:
+            d['filter'].append({'col': 'Technology', 'op': 'in',
+                                'val': self.form_data['fin_tech_picker']})
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Technology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Technology'})
+
         if self.form_data['fin_scenario_picker']:
             d['filter'].append({'col': 'Scenario', 'op': 'in',
                                 'val': self.form_data['fin_scenario_picker']})
@@ -1047,29 +1071,6 @@ class BoxPlotFinViz(BoxPlotViz):
                                  'fromFormData': True,
                                  'label': 'FirmingTechnology'})
 
-        if self.form_data['fin_period_picker']:
-            d['filter'].append({'col': 'Period', 'op': 'in',
-                                'val': self.form_data['fin_period_picker']})
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Period',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Period'})
-
-        if self.form_data['fin_tech_picker']:
-            d['filter'].append({'col': 'Technology', 'op': 'in',
-                                'val': self.form_data['fin_tech_picker']})
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Technology',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Technology'})
         # Select the percentitles for box plot to draw
         d['filter'].append({
             'col': 'Percentile',
