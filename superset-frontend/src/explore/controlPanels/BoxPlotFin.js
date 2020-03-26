@@ -34,7 +34,7 @@ export default {
         ['fin_period_picker'],
         ['fin_metric_picker'],
         ['fin_unit_picker'],
-        ['fin_tech_picker']
+        ['fin_tech_picker'],
       ],
     },
     // {

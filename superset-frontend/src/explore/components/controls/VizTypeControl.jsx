@@ -98,6 +98,8 @@ const DEFAULT_ORDER = [
   'iframe',
   'country_map',
   'box_plot_run_comp',
+  'box_plot_fin',
+  'box_plot_fin_str',
 ];
 
 const typesWithDefaultOrder = new Set(DEFAULT_ORDER);
@@ -173,7 +175,6 @@ export default class VizTypeControl extends React.PureComponent {
         registry.entries().filter(({ key }) => !typesWithDefaultOrder.has(key)),
       )
       .filter(entry => entry.value.name.toLowerCase().includes(filterString));
-
     const rows = [];
     for (let i = 0; i <= filteredTypes.length; i += IMAGE_PER_ROW) {
       rows.push(
@@ -186,6 +187,10 @@ export default class VizTypeControl extends React.PureComponent {
             if (entry.key === 'box_plot_fin') {
               // eslint-disable-next-line no-param-reassign
               entry.value.name = 'Box Plot For Financial Analysis';
+            }
+            if (entry.key === 'box_plot_fin_str') {
+              // eslint-disable-next-line no-param-reassign
+              entry.value.name = 'Box Plot For Financial Strategy';
             }
             return (
               <Col md={12 / IMAGE_PER_ROW} key={`grid-col-${entry.key}`}>
