@@ -479,7 +479,7 @@ export const controls = {
     type: 'SelectControl',
     multi: true,
     label: t('Metric'),
-    default: null,
+    default: ['ContributionMargin'],
     validators: [v.nonEmpty],
     description: t('Select metric'),
     choices: [
