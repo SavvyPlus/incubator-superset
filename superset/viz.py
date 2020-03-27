@@ -1393,6 +1393,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
     def query_obj(self) -> Dict[str, Any]:
         d = super(BoxPlotVizRunComp, self).query_obj()
         fd = self.form_data
+        group_column = []
         if 'data_type_picker' in fd.keys():
             if fd['data_type_picker'] == 'SpotPrice':
                 d['metrics'] = [{'expressionType': 'SQL',
@@ -1401,8 +1402,23 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                  'aggregate': None,
                                  'hasCustomLabel': False,
                                  'fromFormData': True,
-                                 'label': 'SpotPrice',
-                                 'optionName': 'metric_fk548mk5nw_h2fyj2n9w3o'}]
+                                 'label': 'SpotPrice'}]
+            elif fd['data_type_picker'] == 'LGCPrice':
+                d['metrics'] = [{'expressionType': 'SQL',
+                                 'sqlExpression': 'LGCPrice',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'LGCPrice'}]
+            elif fd['data_type_picker'] == 'ForwardPrice':
+                d['metrics'] = [{'expressionType': 'SQL',
+                                 'sqlExpression': 'ForwardPrice',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'ForwardPrice'}]
         # if len(d['metrics']) == 1:
         #     if 'count' in fd['metrics'] or 'SpotPrice' in fd['metrics']:
         #         raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
@@ -1417,6 +1433,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                          'label': period_type,
                                          'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
                                          'sqlExpression': period_type})
+                    group_column.append(period_type)
         if self.form_data['run_picker'] != [] and 'RunComb' not in list(metric['label'] for metric in d['metrics']):
             d['metrics'].append({'aggregate': None,
                                   'column': None,
@@ -1426,16 +1443,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                   'label': 'RunComb',
                                   'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
                                   'sqlExpression': 'RunComb'})
-        # if self.form_data['daylike_picker'] != [] and 'DayLike' not in list(metric['label'] for metric in d['metrics']):
-        #     d['metrics'].append({'aggregate': None,
-        #                           'column': None,
-        #                           'expressionType': 'SQL',
-        #                           'fromFormData': True,
-        #                           'hasCustomLabel': False,
-        #                           'label': 'DayLike',
-        #                           'optionName': 'metric_0lo5gnmglhew_liwkucr4sel',
-        #                           'sqlExpression': 'DayLike'})
-
+            group_column.append('RunComb')
         if self.form_data['run_picker']:
             # for scenario in self.form_data['run_picker']:
             d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
@@ -1448,7 +1456,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
         # if self.form_data['daylike_picker'] and self.form_data['daylike_picker'] != 'All':
         #     d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
 
-        self.form_data['metrics'] = d['metrics']
+        # self.form_data['metrics'] = d['metrics']
+        self.form_data['group_column'] = group_column
         return d
 
     def to_series(self, df, classed="", title_suffix=""):
@@ -1497,10 +1506,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         if len(df) == 0:
             raise Exception('No data is fetched. Please adjust your time range and conditions.')
         form_data = self.form_data
-        group_column = []
-        for metric_dic in self.query_obj()['metrics']:
-            if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
-                group_column.append(metric_dic['sqlExpression'])
+        group_column = form_data['group_column']
 
         # Drill down by percentile if not 100
         if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
