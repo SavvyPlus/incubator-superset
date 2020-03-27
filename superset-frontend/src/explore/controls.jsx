@@ -304,7 +304,9 @@ export const controls = {
     default: 'SpotPrice',
     description: t('Select one data type'),
     choices: [
-      ['SpotPrice', 'SpotPrice'],
+      ['SpotPrice', 'Spot Price'],
+      ['LGCPrice', 'LGC Price'],
+      ['ForwardPrice', 'Forward Price']
       // ['Generation', 'Generation'],
       // ['Revenue', 'Revenue'],
     ],
