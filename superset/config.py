@@ -809,6 +809,11 @@ SQLALCHEMY_EXAMPLES_URI = None
 # Typically these should not be allowed.
 PREVENT_UNSAFE_DB_CONNECTIONS = True
 
+# Path used to store SSL certificates that are generated when using custom certs.
+# Defaults to temporary directory.
+# Example: SSL_CERT_PATH = "/certs"
+SSL_CERT_PATH: Optional[str] = None
+
 # SIP-15 should be enabled for all new Superset deployments which ensures that the time
 # range endpoints adhere to [start, end). For existing deployments admins should provide
 # a dedicated period of time to allow chart producers to update their charts before
@@ -820,8 +825,8 @@ SIP_15_ENABLED = True
 SIP_15_GRACE_PERIOD_END: Optional[date] = None  # exclusive
 SIP_15_DEFAULT_TIME_RANGE_ENDPOINTS = ["unknown", "inclusive"]
 SIP_15_TOAST_MESSAGE = (
-    "Action Required: Preview then save your chart using the"
-    'new time range endpoints <a target="_blank" href="{url}"'
+    "Action Required: Preview then save your chart using the "
+    'new time range endpoints <a target="_blank" href="{url}" '
     'class="alert-link">here</a>.'
 )
 
