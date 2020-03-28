@@ -70,7 +70,6 @@ import {
 } from '../modules/utils';
 import * as v from './validators';
 import ColumnOption from '../components/ColumnOption';
-import OptionDescription from '../components/OptionDescription';
 import { DEFAULT_VIEWPORT } from '../explore/components/controls/ViewportControl';
 import { TIME_FILTER_LABELS } from './constants';
 
@@ -119,12 +118,6 @@ const timeColumnOption = {
       'account',
   ),
 };
-const sortAxisChoices = [
-  ['alpha_asc', 'Axis ascending'],
-  ['alpha_desc', 'Axis descending'],
-  ['value_asc', 'sum(value) ascending'],
-  ['value_desc', 'sum(value) descending'],
-];
 
 const groupByControl = {
   type: 'SelectControl',
@@ -197,7 +190,7 @@ const jsFunctionInfo = (
   </div>
 );
 
-function columnChoices(datasource) {
+export function columnChoices(datasource) {
   if (datasource && datasource.columns) {
     return datasource.columns
       .map(col => [col.column_name, col.verbose_name || col.column_name])
@@ -261,15 +254,6 @@ export const controls = {
     label: t('Visualization Type'),
     default: 'table',
     description: t('The type of visualization to display'),
-  },
-
-  percent_metrics: {
-    ...metrics,
-    multi: true,
-    default: [],
-    label: t('Percentage Metrics'),
-    validators: [],
-    description: t('Metrics for which percentage of total are to be displayed'),
   },
 
   y_axis_bounds: {
@@ -578,22 +562,6 @@ export const controls = {
     description: '',
   },
 
-  sort_x_axis: {
-    type: 'SelectControl',
-    label: t('Sort X Axis'),
-    choices: sortAxisChoices,
-    clearable: false,
-    default: 'alpha_asc',
-  },
-
-  sort_y_axis: {
-    type: 'SelectControl',
-    label: t('Sort Y Axis'),
-    choices: sortAxisChoices,
-    clearable: false,
-    default: 'alpha_asc',
-  },
-
   linear_color_scheme: {
     type: 'ColorSchemeControl',
     label: t('Linear Color Scheme'),
@@ -623,69 +591,6 @@ export const controls = {
     ),
   },
 
-  horizon_color_scale: {
-    type: 'SelectControl',
-    renderTrigger: true,
-    label: t('Value Domain'),
-    choices: [
-      ['series', 'series'],
-      ['overall', 'overall'],
-      ['change', 'change'],
-    ],
-    default: 'series',
-    description: t(
-      'series: Treat each series independently; overall: All series use the same scale; change: Show changes compared to the first data point in each series',
-    ),
-  },
-
-  canvas_image_rendering: {
-    type: 'SelectControl',
-    label: t('Rendering'),
-    renderTrigger: true,
-    choices: [
-      ['pixelated', 'pixelated (Sharp)'],
-      ['auto', 'auto (Smooth)'],
-    ],
-    default: 'pixelated',
-    description: t(
-      'image-rendering CSS attribute of the canvas object that ' +
-        'defines how the browser scales up the image',
-    ),
-  },
-
-  xscale_interval: {
-    type: 'SelectControl',
-    label: t('XScale Interval'),
-    renderTrigger: true,
-    choices: formatSelectOptionsForRange(1, 50),
-    default: '1',
-    clearable: false,
-    description: t(
-      'Number of steps to take between ticks when displaying the X scale',
-    ),
-  },
-
-  yscale_interval: {
-    type: 'SelectControl',
-    label: t('YScale Interval'),
-    choices: formatSelectOptionsForRange(1, 50),
-    default: '1',
-    clearable: false,
-    renderTrigger: true,
-    description: t(
-      'Number of steps to take between ticks when displaying the Y scale',
-    ),
-  },
-
-  include_time: {
-    type: 'CheckboxControl',
-    label: t('Include Time'),
-    description: t(
-      'Whether to include the time granularity as defined in the time section',
-    ),
-    default: false,
-  },
-
   autozoom: {
     type: 'CheckboxControl',
     label: t('Auto Zoom'),
@@ -696,35 +601,12 @@ export const controls = {
     ),
   },
 
-  show_perc: {
-    type: 'CheckboxControl',
-    label: t('Show percentage'),
-    renderTrigger: true,
-    description: t('Whether to include the percentage in the tooltip'),
-    default: true,
-  },
-
   bar_stacked: {
     type: 'CheckboxControl',
     label: t('Stacked Bars'),
     renderTrigger: true,
     default: false,
     description: null,
-  },
-
-  pivot_margins: {
-    type: 'CheckboxControl',
-    label: t('Show totals'),
-    renderTrigger: false,
-    default: true,
-    description: t('Display total row/column'),
-  },
-
-  transpose_pivot: {
-    type: 'CheckboxControl',
-    label: t('Transpose Pivot'),
-    default: false,
-    description: t('Swap Groups and Columns'),
   },
 
   show_markers: {
@@ -751,16 +633,6 @@ export const controls = {
     description: t('Sort bars by x labels.'),
   },
 
-  combine_metric: {
-    type: 'CheckboxControl',
-    label: t('Combine Metrics'),
-    default: false,
-    description: t(
-      'Display metrics side by side within each column, as ' +
-        'opposed to each column being displayed side by side for each metric.',
-    ),
-  },
-
   show_controls: {
     type: 'CheckboxControl',
     label: t('Extra Controls'),
@@ -785,14 +657,6 @@ export const controls = {
         'to columns and the width may overflow into an ' +
         'horizontal scroll.',
     ),
-  },
-
-  include_series: {
-    type: 'CheckboxControl',
-    label: t('Include Series'),
-    renderTrigger: true,
-    default: false,
-    description: t('Include series name as an axis'),
   },
 
   secondary_metric: {
@@ -1115,27 +979,6 @@ export const controls = {
     description: t('Link length in the force layout'),
   },
 
-  charge: {
-    type: 'SelectControl',
-    renderTrigger: true,
-    freeForm: true,
-    label: t('Charge'),
-    default: '-500',
-    choices: formatSelectOptions([
-      '-50',
-      '-75',
-      '-100',
-      '-150',
-      '-200',
-      '-250',
-      '-500',
-      '-1000',
-      '-2500',
-      '-5000',
-    ]),
-    description: t('Charge in the force layout'),
-  },
-
   granularity_sqla: {
     type: 'SelectControl',
     label: TIME_FILTER_LABELS.granularity_sqla,
@@ -1440,47 +1283,6 @@ export const controls = {
     description: t('Suffix to apply after the percentage display'),
   },
 
-  table_timestamp_format: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('Table Timestamp Format'),
-    default: '%Y-%m-%d %H:%M:%S',
-    renderTrigger: true,
-    validators: [v.nonEmpty],
-    clearable: false,
-    choices: D3_TIME_FORMAT_OPTIONS,
-    description: t('Timestamp Format'),
-  },
-
-  series_height: {
-    type: 'SelectControl',
-    renderTrigger: true,
-    freeForm: true,
-    label: t('Series Height'),
-    default: '25',
-    choices: formatSelectOptions([
-      '10',
-      '25',
-      '40',
-      '50',
-      '75',
-      '100',
-      '150',
-      '200',
-    ]),
-    description: t('Pixel height of each series'),
-  },
-
-  page_length: {
-    type: 'SelectControl',
-    freeForm: true,
-    renderTrigger: true,
-    label: t('Page Length'),
-    default: 0,
-    choices: formatSelectOptions([0, 10, 25, 40, 50, 75, 100, 150, 200]),
-    description: t('Rows per page, 0 means no pagination'),
-  },
-
   x_axis_format: {
     type: 'SelectControl',
     freeForm: true,
@@ -1753,44 +1555,12 @@ export const controls = {
     description: t('Check to include Time Origin dropdown'),
   },
 
-  show_datatable: {
-    type: 'CheckboxControl',
-    label: t('Data Table'),
-    default: false,
-    renderTrigger: true,
-    description: t('Whether to display the interactive data table'),
-  },
-
-  include_search: {
-    type: 'CheckboxControl',
-    label: t('Search Box'),
-    renderTrigger: true,
-    default: false,
-    description: t('Whether to include a client-side search box'),
-  },
-
   table_filter: {
     type: 'CheckboxControl',
     label: t('Emit Filter Events'),
     renderTrigger: true,
     default: false,
     description: t('Whether to apply filter when items are clicked'),
-  },
-
-  align_pn: {
-    type: 'CheckboxControl',
-    label: t('Align +/-'),
-    renderTrigger: true,
-    default: false,
-    description: t('Whether to align the background chart for +/- values'),
-  },
-
-  color_pn: {
-    type: 'CheckboxControl',
-    label: t('Color +/-'),
-    renderTrigger: true,
-    default: true,
-    description: t('Whether to color +/- values'),
   },
 
   show_legend: {
@@ -2025,29 +1795,6 @@ export const controls = {
     description: t('Base layer map style'),
   },
 
-  clustering_radius: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('Clustering Radius'),
-    default: '60',
-    choices: formatSelectOptions([
-      '0',
-      '20',
-      '40',
-      '60',
-      '80',
-      '100',
-      '200',
-      '500',
-      '1000',
-    ]),
-    description: t(
-      'The radius (in pixels) the algorithm uses to define a cluster. ' +
-        'Choose 0 to turn off clustering, but beware that a large ' +
-        'number of points (>1000) will cause lag.',
-    ),
-  },
-
   point_radius_fixed: {
     type: 'FixedOrMetricControl',
     label: t('Point Size'),
@@ -2056,30 +1803,6 @@ export const controls = {
     mapStateToProps: state => ({
       datasource: state.datasource,
     }),
-  },
-
-  point_radius: {
-    type: 'SelectControl',
-    label: t('Point Radius'),
-    default: 'Auto',
-    description: t(
-      'The radius of individual points (ones that are not in a cluster). ' +
-        'Either a numerical column or `Auto`, which scales the point based ' +
-        'on the largest cluster',
-    ),
-    mapStateToProps: state => ({
-      choices: formatSelectOptions(['Auto']).concat(
-        columnChoices(state.datasource),
-      ),
-    }),
-  },
-
-  point_radius_unit: {
-    type: 'SelectControl',
-    label: t('Point Radius Unit'),
-    default: 'Pixels',
-    choices: formatSelectOptions(['Pixels', 'Miles', 'Kilometers']),
-    description: t('The unit of measure for the specified point radius'),
   },
 
   point_unit: {
@@ -2140,55 +1863,6 @@ export const controls = {
     places: 8,
     // Viewport zoom shouldn't prompt user to re-run query
     dontRefreshOnChange: true,
-  },
-
-  viewport_latitude: {
-    type: 'TextControl',
-    label: t('Default latitude'),
-    renderTrigger: true,
-    default: 37.772123,
-    isFloat: true,
-    description: t('Latitude of default viewport'),
-    places: 8,
-    // Viewport latitude changes shouldn't prompt user to re-run query
-    dontRefreshOnChange: true,
-  },
-
-  viewport_longitude: {
-    type: 'TextControl',
-    label: t('Default longitude'),
-    renderTrigger: true,
-    default: -122.405293,
-    isFloat: true,
-    description: t('Longitude of default viewport'),
-    places: 8,
-    // Viewport longitude changes shouldn't prompt user to re-run query
-    dontRefreshOnChange: true,
-  },
-
-  render_while_dragging: {
-    type: 'CheckboxControl',
-    label: t('Live render'),
-    default: true,
-    description: t(
-      'Points and clusters will update as the viewport is being changed',
-    ),
-  },
-
-  mapbox_color: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('RGB Color'),
-    default: 'rgb(0, 122, 135)',
-    choices: [
-      ['rgb(0, 139, 139)', 'Dark Cyan'],
-      ['rgb(128, 0, 128)', 'Purple'],
-      ['rgb(255, 215, 0)', 'Gold'],
-      ['rgb(69, 69, 69)', 'Dim Gray'],
-      ['rgb(220, 20, 60)', 'Crimson'],
-      ['rgb(34, 139, 34)', 'Forest Green'],
-    ],
-    description: t('The color for points and clusters in RGB'),
   },
 
   color: {
@@ -2320,80 +1994,6 @@ export const controls = {
     controlName: 'TimeSeriesColumnControl',
   },
 
-  time_series_option: {
-    type: 'SelectControl',
-    label: t('Options'),
-    validators: [v.nonEmpty],
-    default: 'not_time',
-    valueKey: 'value',
-    options: [
-      {
-        label: t('Not Time Series'),
-        value: 'not_time',
-        description: t('Ignore time'),
-      },
-      {
-        label: t('Time Series'),
-        value: 'time_series',
-        description: t('Standard time series'),
-      },
-      {
-        label: t('Aggregate Mean'),
-        value: 'agg_mean',
-        description: t('Mean of values over specified period'),
-      },
-      {
-        label: t('Aggregate Sum'),
-        value: 'agg_sum',
-        description: t('Sum of values over specified period'),
-      },
-      {
-        label: t('Difference'),
-        value: 'point_diff',
-        description: t('Metric change in value from `since` to `until`'),
-      },
-      {
-        label: t('Percent Change'),
-        value: 'point_percent',
-        description: t(
-          'Metric percent change in value from `since` to `until`',
-        ),
-      },
-      {
-        label: t('Factor'),
-        value: 'point_factor',
-        description: t('Metric factor change from `since` to `until`'),
-      },
-      {
-        label: t('Advanced Analytics'),
-        value: 'adv_anal',
-        description: t('Use the Advanced Analytics options below'),
-      },
-    ],
-    optionRenderer: op => <OptionDescription option={op} />,
-    valueRenderer: op => <OptionDescription option={op} />,
-    description: t('Settings for time series'),
-  },
-
-  equal_date_size: {
-    type: 'CheckboxControl',
-    label: t('Equal Date Sizes'),
-    default: true,
-    renderTrigger: true,
-    description: t('Check to force date partitions to have the same height'),
-  },
-
-  partition_limit: {
-    type: 'TextControl',
-    label: t('Partition Limit'),
-    isInt: true,
-    default: '5',
-    description: t(
-      'The maximum number of subdivisions of each group; ' +
-        'lower values are pruned first',
-    ),
-  },
-
   min_radius: {
     type: 'TextControl',
     label: t('Minimum Radius'),
@@ -2417,17 +2017,6 @@ export const controls = {
     description: t(
       'Maxium radius size of the circle, in pixels. As the zoom level changes, this ' +
         'insures that the circle respects this maximum radius.',
-    ),
-  },
-
-  partition_threshold: {
-    type: 'TextControl',
-    label: t('Partition Threshold'),
-    isFloat: true,
-    default: '0.05',
-    description: t(
-      'Partitions whose height to parent height proportions are ' +
-        'below this value are pruned',
     ),
   },
 
