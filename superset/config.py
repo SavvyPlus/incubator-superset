@@ -133,9 +133,8 @@ SECRET_KEY = (
 
 # The SQLAlchemy connection string.
 # SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "superset.db")
-# SQLALCHEMY_DATABASE_URI = 'mysql://root:' + os.environ["TEST_MYSQL_PASSWORD"] + '@localhost:3306/model_reporting'
-SQLALCHEMY_DATABASE_URI = os.environ["SUPERSET_MYSQL"]
-# SQLALCHEMY_DATABASE_URI = 'postgresql://root:password@localhost/myapp'
+SQLALCHEMY_DATABASE_URI = 'mysql://root:' + os.environ["TEST_MYSQL_PASSWORD"] + '@localhost:3306/empower_test'
+# SQLALCHEMY_DATABASE_URI = os.environ["SUPERSET_MYSQL"]
 
 # In order to hook up a custom password store for all SQLACHEMY connections
 # implement a function that takes a single argument of type 'sqla.engine.url',
