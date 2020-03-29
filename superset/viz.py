@@ -1300,11 +1300,11 @@ class BoxPlotFinStrViz(BoxPlotViz):
         return d
 
     def to_series(self, df, classed="", title_suffix=""):
-        label_sep = " - "
+        label_sep = " "
         chart_data = []
         for index_value, row in zip(df.index, df.to_dict(orient="records")):
             if isinstance(index_value, tuple):
-                index_value = label_sep.join(list(str(x) for x in index_value))
+                index_value = label_sep.join(list(str(x) for x in index_value if x != 'Cal-37' and x != 'Wind' and x != 'BaseCase'))
             boxes = defaultdict(dict)
             for (label, key), value in row.items():
                 if key == "nanmedian":
@@ -1320,7 +1320,6 @@ class BoxPlotFinStrViz(BoxPlotViz):
                     chart_label = index_value
                 chart_data.append({"label": chart_label, "values": box})
         return chart_data
-
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         if len(df) == 0:
