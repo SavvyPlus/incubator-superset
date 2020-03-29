@@ -1210,9 +1210,9 @@ class BoxPlotFinStrViz(BoxPlotViz):
                                  'fromFormData': True,
                                  'label': 'Period'})
 
-        if self.form_data['fin_tech_picker']:
+        if self.form_data['fin_str_tech_picker']:
             d['filter'].append({'col': 'Technology', 'op': 'in',
-                                'val': self.form_data['fin_tech_picker']})
+                                'val': self.form_data['fin_str_tech_picker']})
             group_column.append('Technology')
         # else:
             d['metrics'].append({'expressionType': 'SQL',

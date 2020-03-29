@@ -405,10 +405,10 @@ export const controls = {
 
   fin_tech_picker: {
     type: 'SelectControl',
-    multi: false,
+    multi: true,
     label: t('Technology'),
     default: null,
-    description: t('Select one technology'),
+    description: t('Select multiple technologies'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.fin_techs),
     }),
@@ -472,7 +472,17 @@ export const controls = {
       choices: formatSelectOptions(state.fin_metric),
     }),
   },
-  // control for financial charts
+
+  fin_str_tech_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Technology'),
+    default: null,
+    description: t('Select one technology'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_techs),
+    }),
+  },
 
   color_picker: {
     label: t('Fixed Color'),
