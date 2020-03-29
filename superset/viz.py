@@ -1304,7 +1304,7 @@ class BoxPlotFinStrViz(BoxPlotViz):
         chart_data = []
         for index_value, row in zip(df.index, df.to_dict(orient="records")):
             if isinstance(index_value, tuple):
-                index_value = label_sep.join(list(str(x) for x in index_value if x != 'Cal-37' and x != 'Wind' and x != 'BaseCase'))
+                index_value = label_sep.join([index_value[-2], index_value[-1]])
             boxes = defaultdict(dict)
             for (label, key), value in row.items():
                 if key == "nanmedian":
