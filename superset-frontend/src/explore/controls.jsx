@@ -484,15 +484,9 @@ export const controls = {
     default: null,
     validators: [v.nonEmpty],
     description: t('Select metric'),
-    choices: [
-      ['ContributionMargin', 'Contribution Margin'],
-      ['ContributionMarginDiscounted', 'Contribution Margin (Discounted)'],
-      ['EBIT', 'EBIT'],
-      ['EBITDiscounted', 'EBIT (Discounted)'],
-      ['NetPresentValue', 'Net Present Value'],
-      ['CapitalAdjustmentDiscounted', 'Capital Adjustment (Discounted)'],
-      ['AdjustedEBIT', 'Adjusted EBIT'],
-    ],
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_metric),
+    }),
   },
   // control for financial charts
 
