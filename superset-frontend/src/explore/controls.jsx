@@ -290,7 +290,7 @@ export const controls = {
     choices: [
       ['SpotPrice', 'Spot Price'],
       ['LGCPrice', 'LGC Price'],
-      ['ForwardPrice', 'Forward Price']
+      ['ForwardPrice', 'Forward Price'],
       // ['Generation', 'Generation'],
       // ['Revenue', 'Revenue'],
     ],
@@ -465,8 +465,8 @@ export const controls = {
     type: 'SelectControl',
     multi: true,
     label: t('Metric'),
-    default: ['ContributionMargin'],
-    validators: [v.nonEmpty],
+    default: null,
+    validators: [v.nonEmpty, v.onlyContainsIRR],
     description: t('Select metric'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.fin_metric),

@@ -32,7 +32,7 @@ export default {
         ['fin_firm_tech_picker'],
         ['fin_period_picker'],
         ['fin_str_metric_picker'],
-        ['fin_tech_picker']
+        ['fin_tech_picker'],
       ],
     },
     // {
