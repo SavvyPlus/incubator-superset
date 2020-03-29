@@ -1289,6 +1289,13 @@ class BoxPlotFinStrViz(BoxPlotViz):
             d['filter'].append({'col': 'Metric', 'op': 'in',
                                 'val': self.form_data['fin_str_metric_picker']})
             group_column.append('Metric')
+
+        d['filter'].append({
+            'col': 'Percentile',
+            'op': 'in',
+            'val': ['0', '0.25', '0.5', '0.75', '1']
+        })
+
         self.form_data['group_column'] = group_column
         return d
 
