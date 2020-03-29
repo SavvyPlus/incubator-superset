@@ -28,12 +28,10 @@ export default {
         ['adhoc_filters'],
         ['groupby'],
         ['whisker_options'],
-
         ['fin_scenario_picker'],
         ['fin_firm_tech_picker'],
         ['fin_period_picker'],
         ['fin_str_metric_picker'],
-        // ['fin_unit_picker'],
         ['fin_tech_picker'],
       ],
     },

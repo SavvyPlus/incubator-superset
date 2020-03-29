@@ -67,6 +67,7 @@ from superset.connectors.connector_registry import ConnectorRegistry
 from superset.connectors.sqla.models import AnnotationDatasource
 from superset.constants import RouteMethod
 from superset.exceptions import (
+    CertificateException,
     DatabaseNotFound,
     SupersetException,
     SupersetSecurityException,
@@ -187,7 +188,7 @@ def check_datasource_perms(
     except SupersetException as e:
         raise SupersetSecurityException(str(e))
 
-    viz_obj = get_viz(
+    viz_obj = get_viz(  # type: ignore
         datasource_type=datasource_type,
         datasource_id=datasource_id,
         form_data=form_data,
@@ -576,27 +577,6 @@ class Superset(BaseSupersetView):
         session.commit()
         return redirect("/accessrequestsmodelview/list/")
 
-    def get_viz(
-        self,
-        slice_id=None,
-        form_data=None,
-        datasource_type=None,
-        datasource_id=None,
-        force=False,
-    ):
-        if slice_id:
-            slc = db.session.query(Slice).filter_by(id=slice_id).one()
-            return slc.get_viz()
-        else:
-            viz_type = form_data.get("viz_type", "table")
-            datasource = ConnectorRegistry.get_datasource(
-                datasource_type, datasource_id, db.session
-            )
-            viz_obj = viz.viz_types[viz_type](
-                datasource, form_data=form_data, force=force
-            )
-            return viz_obj
-
     @has_access
     @expose("/slice/<slice_id>/")
     def slice(self, slice_id):
@@ -928,6 +908,13 @@ class Superset(BaseSupersetView):
             result = engine.execute("SELECT DISTINCT Technology FROM {}".format(datasource.table_name))
             for row in result:
                 fin_techs.append(row[0])
+
+        fin_metric = []
+        if 'Metric' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT Metric FROM {}".format(datasource.table_name))
+            for row in result:
+                fin_metric.append(row[0])
         # end data for financial charts
 
         if has_scenario:
@@ -976,6 +963,7 @@ class Superset(BaseSupersetView):
             "fin_firm_techs": fin_firm_techs,
             "fin_periods": fin_periods,
             "fin_techs": fin_techs,
+            "fin_metric": fin_metric,
         }
         table_name = (
             datasource.table_name
@@ -1022,6 +1010,12 @@ class Superset(BaseSupersetView):
         )
         return json_success(payload)
 
+    @staticmethod
+    def remove_extra_filters(filters):
+        """Extra filters are ones inherited from the dashboard's temporary context
+        Those should not be saved when saving the chart"""
+        return [f for f in filters if not f.get("isExtra")]
+
     def save_or_overwrite_slice(
         self,
         args,
@@ -1042,6 +1036,10 @@ class Superset(BaseSupersetView):
             if "slice_id" in form_data:
                 form_data.pop("slice_id")  # don't save old slice_id
             slc = Slice(owners=[g.user] if g.user else [])
+
+        form_data["adhoc_filters"] = self.remove_extra_filters(
+            form_data.get("adhoc_filters", [])
+        )
 
         slc.params = json.dumps(form_data, indent=2, sort_keys=True)
         slc.datasource_name = datasource_name
@@ -1440,6 +1438,7 @@ class Superset(BaseSupersetView):
             # this is the database instance that will be tested
             database = models.Database(
                 # extras is sent as json, but required to be a string in the Database model
+                server_cert=request.json.get("server_cert"),
                 extra=json.dumps(request.json.get("extras", {})),
                 impersonate_user=request.json.get("impersonate_user"),
                 encrypted_extra=json.dumps(request.json.get("encrypted_extra", {})),
@@ -1453,6 +1452,17 @@ class Superset(BaseSupersetView):
             with closing(engine.connect()) as conn:
                 conn.scalar(select([1]))
                 return json_success('"OK"')
+        except CertificateException as e:
+            logger.info("Invalid certificate %s", e)
+            return json_error_response(
+                _(
+                    "Invalid certificate. "
+                    "Please make sure the certificate begins with\n"
+                    "-----BEGIN CERTIFICATE-----\n"
+                    "and ends with \n"
+                    "-----END CERTIFICATE-----"
+                )
+            )
         except NoSuchModuleError as e:
             logger.info("Invalid driver %s", e)
             driver_name = make_url(uri).drivername
@@ -2779,7 +2789,7 @@ class Superset(BaseSupersetView):
         )
 
     @staticmethod
-    def _get_sqllab_payload(user_id: int) -> Dict[str, Any]:
+    def _get_sqllab_tabs(user_id: int) -> Dict[str, Any]:
         # send list of tab state ids
         tabs_state = (
             db.session.query(TabState.id, TabState.label)
@@ -2819,8 +2829,6 @@ class Superset(BaseSupersetView):
             }
 
         return {
-            "defaultDbId": config["SQLLAB_DEFAULT_DBID"],
-            "common": common_bootstrap_payload(),
             "tab_state_ids": tabs_state,
             "active_tab": active_tab.to_dict() if active_tab else None,
             "databases": databases,
@@ -2828,10 +2836,21 @@ class Superset(BaseSupersetView):
         }
 
     @has_access
-    @expose("/sqllab")
+    @expose("/sqllab", methods=["GET", "POST"])
     def sqllab(self):
         """SQL Editor"""
-        payload = self._get_sqllab_payload(g.user.get_id())
+        payload = {
+            "defaultDbId": config["SQLLAB_DEFAULT_DBID"],
+            "common": common_bootstrap_payload(),
+            **self._get_sqllab_tabs(g.user.get_id()),
+        }
+
+        form_data = request.form.get("form_data")
+        if form_data:
+            try:
+                payload["requested_query"] = json.loads(form_data)
+            except json.JSONDecodeError:
+                pass
         bootstrap_data = json.dumps(
             payload, default=utils.pessimistic_json_iso_dttm_ser
         )
@@ -2839,19 +2858,6 @@ class Superset(BaseSupersetView):
         return self.render_template(
             "superset/basic.html", entry="sqllab", bootstrap_data=bootstrap_data
         )
-
-    @api
-    @handle_api_exception
-    @has_access_api
-    @expose("/slice_query/<slice_id>/")
-    def slice_query(self, slice_id):
-        """
-        This method exposes an API endpoint to
-        get the database query string for this slice
-        """
-        viz_obj = get_viz(slice_id)
-        security_manager.assert_viz_permission(viz_obj)
-        return self.get_query_string_response(viz_obj)
 
     @api
     @has_access_api
