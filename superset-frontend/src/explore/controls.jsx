@@ -405,7 +405,7 @@ export const controls = {
 
   fin_tech_picker: {
     type: 'SelectControl',
-    multi: true,
+    multi: false,
     label: t('Technology'),
     default: null,
     description: t('Select one technology'),
