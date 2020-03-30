@@ -1247,14 +1247,7 @@ class BoxPlotFinStrViz(BoxPlotViz):
             group_column.append('FirmingTechnology')
 
         if self.form_data['fin_strategy_picker']:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Strategy',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Strategy'})
-            d['filter'].append({'col': 'Strategy', 'op': '==',
+            d['filter'].append({'col': 'Strategy', 'op': 'in',
                                 'val': self.form_data['fin_strategy_picker']})
         # else:
 
