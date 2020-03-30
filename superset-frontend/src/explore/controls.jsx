@@ -438,6 +438,17 @@ export const controls = {
     ],
   },
 
+  fin_strategy_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Strategy'),
+    default: null,
+    description: t('Select Strategy'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.fin_strategy),
+    }),
+  },
+
   fin_metric_picker: {
     type: 'SelectControl',
     multi: false,
