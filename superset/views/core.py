@@ -917,7 +917,7 @@ class Superset(BaseSupersetView):
                 fin_metric.append(row[0])
 
         fin_strategy = []
-        if 'Metric' in datasource.column_names:
+        if 'Strategy' in datasource.column_names:
             engine = self.appbuilder.get_session.get_bind()
             result = engine.execute("SELECT DISTINCT Strategy FROM {}".format(datasource.table_name))
             for row in result:
