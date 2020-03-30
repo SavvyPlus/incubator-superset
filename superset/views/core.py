@@ -915,6 +915,13 @@ class Superset(BaseSupersetView):
             result = engine.execute("SELECT DISTINCT Metric FROM {}".format(datasource.table_name))
             for row in result:
                 fin_metric.append(row[0])
+
+        fin_strategy = []
+        if 'Metric' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT Strategy FROM {}".format(datasource.table_name))
+            for row in result:
+                fin_strategy.append(row[0])
         # end data for financial charts
 
         if has_scenario:
@@ -964,6 +971,7 @@ class Superset(BaseSupersetView):
             "fin_periods": fin_periods,
             "fin_techs": fin_techs,
             "fin_metric": fin_metric,
+            "fin_strategy": fin_strategy,
         }
         table_name = (
             datasource.table_name
