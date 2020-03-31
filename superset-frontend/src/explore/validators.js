@@ -64,9 +64,9 @@ export function noLongerThan20(v) {
   return false;
 }
 
-export function onlyContainsIRR(v) {
-  if (Array.isArray(v) && v.includes('IRR') && v.length > 1) {
-    return t('If IRR is chosen, then you cannot choose other metrics');
+export function onlyContainsROI(v) {
+  if (Array.isArray(v) && v.includes('ROI') && v.length > 1) {
+    return t('If ROI is chosen, then you cannot choose other metrics');
   }
   return false;
 }
