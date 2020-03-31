@@ -489,6 +489,7 @@ export const controls = {
     multi: false,
     label: t('Technology'),
     default: null,
+    validators: [v.nonEmpty],
     description: t('Select one technology'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.fin_techs),
