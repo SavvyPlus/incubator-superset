@@ -740,7 +740,7 @@ class CustomSecurityManager(SupersetSecurityManager):
                 team_subscription.plan = plan.id
                 team_subscription.stripe_sub_id = sub_resp['id']
                 team_subscription.remain_count = plan.num_request
-                user.trial_used = True if trial_days else False
+                user.trial_used = True if trial_days else user.trial_used
                 self.get_session.add(team_subscription)
             else:
                 old_sub = self.get_subscription(team_id=team.id)
