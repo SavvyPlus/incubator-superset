@@ -477,7 +477,7 @@ export const controls = {
     multi: true,
     label: t('Metric'),
     default: null,
-    validators: [v.nonEmpty, v.onlyContainsIRR],
+    validators: [v.nonEmpty, v.onlyContainsROI],
     description: t('Select metric'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.fin_metric),
