@@ -216,7 +216,7 @@ class ChartRenderer extends React.Component {
     }
     if (formData.viz_type === 'box_plot_fin_str') {
       if (formData.fin_str_metric_picker.includes('IRR')) {
-        fd.metrics = ['ROI'];
+        fd.metrics = ['%'];
       } else {
         fd.metrics = ['$'];
       }
