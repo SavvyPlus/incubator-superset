@@ -97,6 +97,12 @@ class ControlPanelsContainer extends React.Component {
 
   renderControl(name, config, lookupControlData) {
     const { actions, controls, exploreState, form_data: formData } = this.props;
+    const { visibility } = config;
+
+    // if visibility check says the config is not visible, don't render it
+    if (visibility && !visibility.call(config, this.props)) {
+      return null;
+    }
 
     // Looking to find mapStateToProps override for this viz type
     const controlPanelConfig =
