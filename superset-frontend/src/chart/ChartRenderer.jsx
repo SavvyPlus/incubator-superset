@@ -106,7 +106,8 @@ class ChartRenderer extends React.Component {
         nextProps.height !== this.props.height ||
         nextProps.width !== this.props.width ||
         nextProps.triggerRender ||
-        nextProps.formData.color_scheme !== this.props.formData.color_scheme
+        nextProps.formData.color_scheme !== this.props.formData.color_scheme ||
+        nextProps.cacheBusterProp !== this.props.cacheBusterProp
       ) {
         return true;
       }
@@ -225,6 +226,9 @@ class ChartRenderer extends React.Component {
     return (
       <SuperChart
         disableErrorBoundary
+        key={`${chartId}${
+          process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
+        }`}
         id={`chart-id-${chartId}`}
         className={chartClassName}
         chartType={vizType}

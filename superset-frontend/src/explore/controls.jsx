@@ -834,16 +834,6 @@ export const controls = {
     description: t('Whether to ignore locations that are null'),
   },
 
-  geojson: {
-    type: 'SelectControl',
-    label: t('GeoJson Column'),
-    validators: [v.nonEmpty],
-    description: t('Select the geojson column'),
-    mapStateToProps: state => ({
-      choices: columnChoices(state.datasource),
-    }),
-  },
-
   polygon: {
     type: 'SelectControl',
     label: t('Polygon Column'),
@@ -854,15 +844,6 @@ export const controls = {
     mapStateToProps: state => ({
       choices: columnChoices(state.datasource),
     }),
-  },
-
-  point_radius_scale: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('Point Radius Scale'),
-    validators: [v.integer],
-    default: null,
-    choices: formatSelectOptions([0, 100, 200, 300, 500]),
   },
 
   stroke_width: {
@@ -1041,36 +1022,11 @@ export const controls = {
     }),
   },
 
-  resample_rule: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('Rule'),
-    default: null,
-    choices: formatSelectOptions(['1T', '1H', '1D', '7D', '1M', '1AS']),
-    description: t('Pandas resample rule'),
-  },
-
-  resample_method: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('Method'),
-    default: null,
-    choices: formatSelectOptions([
-      'asfreq',
-      'bfill',
-      'ffill',
-      'median',
-      'mean',
-      'sum',
-    ]),
-    description: t('Pandas resample method'),
-  },
-
   time_range: {
     type: 'DateFilterControl',
     freeForm: true,
     label: TIME_FILTER_LABELS.time_range,
-    default: t('No filter'),
+    default: t('Last week'), // this value is translated, but the backend wouldn't understand a translated value?
     description: t(
       'The time range for the visualization. All relative times, e.g. "Last month", ' +
         '"Last 7 days", "now", etc. are evaluated on the server using the server\'s ' +
@@ -1082,6 +1038,24 @@ export const controls = {
     mapStateToProps: state => ({
       endpoints: state.form_data ? state.form_data.time_range_endpoints : null,
     }),
+  },
+
+  time_range_fixed: {
+    type: 'CheckboxControl',
+    label: t('Fix to selected Time Range'),
+    description: t(
+      'Fix the trend line to the full time range specified in case filtered results do not include the start or end dates',
+    ),
+    renderTrigger: true,
+    visibility(props) {
+      const {
+        time_range: timeRange,
+        viz_type: vizType,
+        show_trend_line: showTrendLine,
+      } = props.form_data;
+      // only display this option when a time range is selected
+      return timeRange && timeRange !== 'No filter';
+    },
   },
 
   max_bubble_size: {
@@ -1284,21 +1258,6 @@ export const controls = {
     default: '',
   },
 
-  compare_lag: {
-    type: 'TextControl',
-    label: t('Comparison Period Lag'),
-    isInt: true,
-    description: t(
-      'Based on granularity, number of time periods to compare against',
-    ),
-  },
-
-  compare_suffix: {
-    type: 'TextControl',
-    label: t('Comparison suffix'),
-    description: t('Suffix to apply after the percentage display'),
-  },
-
   x_axis_format: {
     type: 'SelectControl',
     freeForm: true,
@@ -1419,91 +1378,6 @@ export const controls = {
     ),
   },
 
-  js_agg_function: {
-    type: 'SelectControl',
-    label: t('Dynamic Aggregation Function'),
-    description: t('The function to use when aggregating points into groups'),
-    default: 'sum',
-    clearable: false,
-    renderTrigger: true,
-    choices: formatSelectOptions([
-      'sum',
-      'min',
-      'max',
-      'mean',
-      'median',
-      'count',
-      'variance',
-      'deviation',
-      'p1',
-      'p5',
-      'p95',
-      'p99',
-    ]),
-  },
-
-  header_font_size: {
-    type: 'SelectControl',
-    label: t('Header Font Size'),
-    renderTrigger: true,
-    clearable: false,
-    default: 0.3,
-    // Values represent the percentage of space a header should take
-    options: [
-      {
-        label: t('Tiny'),
-        value: 0.125,
-      },
-      {
-        label: t('Small'),
-        value: 0.2,
-      },
-      {
-        label: t('Normal'),
-        value: 0.3,
-      },
-      {
-        label: t('Large'),
-        value: 0.4,
-      },
-      {
-        label: t('Huge'),
-        value: 0.5,
-      },
-    ],
-  },
-
-  subheader_font_size: {
-    type: 'SelectControl',
-    label: t('Subheader Font Size'),
-    renderTrigger: true,
-    clearable: false,
-    default: 0.125,
-    // Values represent the percentage of space a subheader should take
-    options: [
-      {
-        label: t('Tiny'),
-        value: 0.125,
-      },
-      {
-        label: t('Small'),
-        value: 0.2,
-      },
-      {
-        label: t('Normal'),
-        value: 0.3,
-      },
-      {
-        label: t('Large'),
-        value: 0.4,
-      },
-      {
-        label: t('Huge'),
-        value: 0.5,
-      },
-    ],
-  },
-
   instant_filtering: {
     type: 'CheckboxControl',
     label: t('Instant Filtering'),
@@ -1595,35 +1469,6 @@ export const controls = {
     description: t('Send range filter events to other charts'),
   },
 
-  toggle_polygons: {
-    type: 'CheckboxControl',
-    label: t('Multiple filtering'),
-    renderTrigger: true,
-    default: true,
-    description: t('Allow sending multiple polygons as a filter event'),
-  },
-
-  num_buckets: {
-    type: 'SelectControl',
-    multi: false,
-    freeForm: true,
-    label: t('Number of buckets to group data'),
-    default: 5,
-    choices: formatSelectOptions([2, 3, 5, 10]),
-    description: t('How many buckets should the data be grouped in.'),
-    renderTrigger: true,
-  },
-
-  break_points: {
-    type: 'SelectControl',
-    multi: true,
-    freeForm: true,
-    label: t('Bucket break points'),
-    choices: formatSelectOptions([]),
-    description: t('List of n+1 values for bucketing metric into n buckets.'),
-    renderTrigger: true,
-  },
-
   show_labels: {
     type: 'CheckboxControl',
     label: t('Show Labels'),
@@ -1641,24 +1486,6 @@ export const controls = {
     renderTrigger: true,
     default: false,
     description: t('Whether to display the numerical values within the cells'),
-  },
-
-  show_trend_line: {
-    type: 'CheckboxControl',
-    label: t('Show Trend Line'),
-    renderTrigger: true,
-    default: true,
-    description: t('Whether to display the trend line'),
-  },
-
-  start_y_axis_at_zero: {
-    type: 'CheckboxControl',
-    label: t('Start y-axis at 0'),
-    renderTrigger: true,
-    default: true,
-    description: t(
-      'Start y-axis at zero. Uncheck to start y-axis at minimum value in the data.',
-    ),
   },
 
   x_axis_showminmax: {
@@ -1734,27 +1561,6 @@ export const controls = {
     description: t('Compute the contribution to the total'),
   },
 
-  time_compare: {
-    type: 'SelectControl',
-    multi: true,
-    freeForm: true,
-    label: t('Time Shift'),
-    choices: formatSelectOptions([
-      '1 day',
-      '1 week',
-      '28 days',
-      '30 days',
-      '52 weeks',
-      '1 year',
-    ]),
-    description: t(
-      'Overlay one or more timeseries from a ' +
-        'relative time period. Expects relative time deltas ' +
-        'in natural language (example:  24 hours, 7 days, ' +
-        '56 weeks, 365 days)',
-    ),
-  },
-
   comparison_type: {
     type: 'SelectControl',
     label: t('Calculation type'),
@@ -1770,12 +1576,6 @@ export const controls = {
         'absolute difference between the main time series and each time shift; ' +
         'as the percentage change; or as the ratio between series and time shifts.',
     ),
-  },
-
-  subheader: {
-    type: 'TextControl',
-    label: t('Subheader'),
-    description: t('Description text that shows up below your Big Number'),
   },
 
   mapbox_label: {
@@ -1821,22 +1621,6 @@ export const controls = {
     }),
   },
 
-  point_unit: {
-    type: 'SelectControl',
-    label: t('Point Unit'),
-    default: 'square_m',
-    clearable: false,
-    choices: [
-      ['square_m', 'Square meters'],
-      ['square_km', 'Square kilometers'],
-      ['square_miles', 'Square miles'],
-      ['radius_m', 'Radius in meters'],
-      ['radius_km', 'Radius in kilometers'],
-      ['radius_miles', 'Radius in miles'],
-    ],
-    description: t('The unit of measure for the specified point radius'),
-  },
-
   global_opacity: {
     type: 'TextControl',
     label: t('Opacity'),
@@ -1845,17 +1629,6 @@ export const controls = {
     description: t(
       'Opacity of all clusters, points, and labels. Between 0 and 1.',
     ),
-  },
-
-  opacity: {
-    type: 'SliderControl',
-    label: t('Opacity'),
-    default: 80,
-    step: 1,
-    min: 0,
-    max: 100,
-    renderTrigger: true,
-    description: t('Opacity, expects values between 0 and 100'),
   },
 
   viewport: {
@@ -2010,32 +1783,6 @@ export const controls = {
     controlName: 'TimeSeriesColumnControl',
   },
 
-  min_radius: {
-    type: 'TextControl',
-    label: t('Minimum Radius'),
-    isFloat: true,
-    validators: [v.nonEmpty],
-    renderTrigger: true,
-    default: 2,
-    description: t(
-      'Minimum radius size of the circle, in pixels. As the zoom level changes, this ' +
-        'insures that the circle respects this minimum radius.',
-    ),
-  },
-
-  max_radius: {
-    type: 'TextControl',
-    label: t('Maximum Radius'),
-    isFloat: true,
-    validators: [v.nonEmpty],
-    renderTrigger: true,
-    default: 250,
-    description: t(
-      'Maxium radius size of the circle, in pixels. As the zoom level changes, this ' +
-        'insures that the circle respects this maximum radius.',
-    ),
-  },
-
   line_column: {
     type: 'SelectControl',
     label: t('Lines column'),
@@ -2117,27 +1864,6 @@ export const controls = {
     type: 'CheckboxControl',
     label: t('Reverse Lat & Long'),
     default: false,
-  },
-
-  deck_slices: {
-    type: 'SelectAsyncControl',
-    multi: true,
-    label: t('deck.gl charts'),
-    validators: [v.nonEmpty],
-    default: [],
-    description: t(
-      'Pick a set of deck.gl charts to layer on top of one another',
-    ),
-    dataEndpoint:
-      '/sliceasync/api/read?_flt_0_viz_type=deck_&_flt_7_viz_type=deck_multi',
-    placeholder: t('Select charts'),
-    onAsyncErrorMessage: t('Error while fetching charts'),
-    mutator: data => {
-      if (!data || !data.result) {
-        return [];
-      }
-      return data.result.map(o => ({ value: o.id, label: o.slice_name }));
-    },
   },
 
   js_data_mutator: jsFunctionControl(

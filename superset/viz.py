@@ -335,7 +335,7 @@ class BaseViz:
             "druid_time_origin": form_data.get("druid_time_origin", ""),
             "having": form_data.get("having", ""),
             "having_druid": form_data.get("having_filters", []),
-            "time_grain_sqla": form_data.get("time_grain_sqla", ""),
+            "time_grain_sqla": form_data.get("time_grain_sqla"),
             "time_range_endpoints": form_data.get("time_range_endpoints"),
             "where": form_data.get("where", ""),
         }
@@ -490,6 +490,8 @@ class BaseViz:
             "form_data": self.form_data,
             "is_cached": self._any_cache_key is not None,
             "query": self.query,
+            "from_dttm": self.from_dttm,
+            "to_dttm": self.to_dttm,
             "status": self.status,
             "stacktrace": stacktrace,
             "rowcount": len(df.index) if df is not None else 0,
