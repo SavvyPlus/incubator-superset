@@ -208,9 +208,18 @@ class ChartRenderer extends React.Component {
         ? `superset-chart-${snakeCaseVizType}`
         : snakeCaseVizType;
 
+    // Change the Y-axis label for different charts
     const fd = { ...formData };
     if (formData.viz_type === 'box_plot_run_comp') {
-      fd.metrics = [formData.data_type_picker];
+      if (formData.data_type_picker === 'ForwardPrice') {
+        fd.metrics = ['Forward Price ($/MWh)'];
+      } else if (formData.data_type_picker === 'SpotPrice') {
+        fd.metrics = ['Spot Price ($/MWh)'];
+      } else if (formData.data_type_picker === 'LGCPrice') {
+        fd.metrics = ['LGC Forward Price ($/certificate)'];
+      } else {
+        fd.metrics = [formData.data_type_picker];
+      }
     }
     if (formData.viz_type === 'box_plot_fin') {
       fd.metrics = [formData.fin_metric_picker];
