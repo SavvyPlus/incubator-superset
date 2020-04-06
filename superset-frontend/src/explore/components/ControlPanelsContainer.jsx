@@ -97,6 +97,12 @@ class ControlPanelsContainer extends React.Component {
 
   renderControl(name, config, lookupControlData) {
     const { actions, controls, exploreState, form_data: formData } = this.props;
+    const { visibility } = config;
+
+    // if visibility check says the config is not visible, don't render it
+    if (visibility && !visibility.call(config, this.props)) {
+      return null;
+    }
 
     // Looking to find mapStateToProps override for this viz type
     const controlPanelConfig =
@@ -227,7 +233,12 @@ class ControlPanelsContainer extends React.Component {
         )
       ) {
         // In Empower box plot, we need to hide default selects
-        if ((viz_type === 'box_plot_run_comp' || viz_type === 'box_plot_fin' || viz_type === 'box_plot_fin_str') && section.label === 'Empower') {
+        if (
+          (viz_type === 'box_plot_run_comp' ||
+            viz_type === 'box_plot_fin' ||
+            viz_type === 'box_plot_fin_str') &&
+          section.label === 'Empower'
+        ) {
           const s1 = {
             ...section,
             controlSetRows: [

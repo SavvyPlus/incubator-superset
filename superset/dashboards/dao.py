@@ -15,9 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 import logging
-from typing import List
+from typing import List, Optional
 
-from flask_appbuilder.models.sqla.interface import SQLAInterface
 from sqlalchemy.exc import SQLAlchemyError
 
 from superset.dao.base import BaseDAO
@@ -33,13 +32,6 @@ class DashboardDAO(BaseDAO):
     base_filter = DashboardFilter
 
     @staticmethod
-    def find_by_ids(model_ids: List[int]) -> List[Dashboard]:
-        query = db.session.query(Dashboard).filter(Dashboard.id.in_(model_ids))
-        data_model = SQLAInterface(Dashboard, db.session)
-        query = DashboardFilter("id", data_model).apply(query, None)
-        return query.all()
-
-    @staticmethod
     def validate_slug_uniqueness(slug: str) -> bool:
         if not slug:
             return True
@@ -47,11 +39,13 @@ class DashboardDAO(BaseDAO):
         return not db.session.query(dashboard_query.exists()).scalar()
 
     @staticmethod
-    def validate_update_slug_uniqueness(dashboard_id: int, slug: str) -> bool:
-        dashboard_query = db.session.query(Dashboard).filter(
-            Dashboard.slug == slug, Dashboard.id != dashboard_id
-        )
-        return not db.session.query(dashboard_query.exists()).scalar()
+    def validate_update_slug_uniqueness(dashboard_id: int, slug: Optional[str]) -> bool:
+        if slug is not None:
+            dashboard_query = db.session.query(Dashboard).filter(
+                Dashboard.slug == slug, Dashboard.id != dashboard_id
+            )
+            return not db.session.query(dashboard_query.exists()).scalar()
+        return True
 
     @staticmethod
     def bulk_delete(models: List[Dashboard], commit=True):

@@ -33,7 +33,7 @@ export default {
         ['fin_strategy_picker'],
         ['fin_period_picker'],
         ['fin_str_metric_picker'],
-        ['fin_tech_picker']
+        ['fin_str_tech_picker'],
       ],
     },
     // {

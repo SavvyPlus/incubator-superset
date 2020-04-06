@@ -106,7 +106,8 @@ class ChartRenderer extends React.Component {
         nextProps.height !== this.props.height ||
         nextProps.width !== this.props.width ||
         nextProps.triggerRender ||
-        nextProps.formData.color_scheme !== this.props.formData.color_scheme
+        nextProps.formData.color_scheme !== this.props.formData.color_scheme ||
+        nextProps.cacheBusterProp !== this.props.cacheBusterProp
       ) {
         return true;
       }
@@ -207,17 +208,36 @@ class ChartRenderer extends React.Component {
         ? `superset-chart-${snakeCaseVizType}`
         : snakeCaseVizType;
 
+    // Change the Y-axis label for different charts
     const fd = { ...formData };
     if (formData.viz_type === 'box_plot_run_comp') {
-      fd.metrics = ['SpotPrice'];
+      if (formData.data_type_picker === 'ForwardPrice') {
+        fd.metrics = ['Forward Price ($/MWh)'];
+      } else if (formData.data_type_picker === 'SpotPrice') {
+        fd.metrics = ['Spot Price ($/MWh)'];
+      } else if (formData.data_type_picker === 'LGCPrice') {
+        fd.metrics = ['LGC Forward Price ($/certificate)'];
+      } else {
+        fd.metrics = [formData.data_type_picker];
+      }
     }
     if (formData.viz_type === 'box_plot_fin') {
       fd.metrics = [formData.fin_metric_picker];
+    }
+    if (formData.viz_type === 'box_plot_fin_str') {
+      if (formData.fin_str_metric_picker.includes('ROI')) {
+        fd.metrics = ['%'];
+      } else {
+        fd.metrics = ['$'];
+      }
     }
 
     return (
       <SuperChart
         disableErrorBoundary
+        key={`${chartId}${
+          process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
+        }`}
         id={`chart-id-${chartId}`}
         className={chartClassName}
         chartType={vizType}

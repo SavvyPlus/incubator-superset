@@ -50,7 +50,7 @@ class DashboardApiTests(SupersetTestCase, ApiOwnersTestCaseMixin):
     def insert_dashboard(
         self,
         dashboard_title: str,
-        slug: str,
+        slug: Optional[str],
         owners: List[int],
         slices: Optional[List[Slice]] = None,
         position_json: str = "",
@@ -379,7 +379,7 @@ class DashboardApiTests(SupersetTestCase, ApiOwnersTestCaseMixin):
         expected_response = {"message": "Forbidden"}
         self.assertEqual(response, expected_response)
 
-        # nothing is delete in bulk with a list of owned and not owned dashboards
+        # nothing is deleted in bulk with a list of owned and not owned dashboards
         arguments = [dashboard.id for dashboard in dashboards] + [owned_dashboard.id]
         uri = f"api/v1/dashboard/?q={prison.dumps(arguments)}"
         rv = self.client.delete(uri)
@@ -642,6 +642,19 @@ class DashboardApiTests(SupersetTestCase, ApiOwnersTestCaseMixin):
         response = json.loads(rv.data.decode("utf-8"))
         expected_response = {"message": {"slug": ["Must be unique"]}}
         self.assertEqual(response, expected_response)
+
+        db.session.delete(dashboard1)
+        db.session.delete(dashboard2)
+        db.session.commit()
+
+        dashboard1 = self.insert_dashboard("title1", None, [admin_id])
+        dashboard2 = self.insert_dashboard("title2", None, [admin_id])
+        self.login(username="admin")
+        # Accept empty slugs and don't validate them has unique
+        dashboard_data = {"dashboard_title": "title2_changed", "slug": ""}
+        uri = f"api/v1/dashboard/{dashboard2.id}"
+        rv = self.client.put(uri, json=dashboard_data)
+        self.assertEqual(rv.status_code, 200)
 
         db.session.delete(dashboard1)
         db.session.delete(dashboard2)

@@ -335,7 +335,7 @@ class BaseViz:
             "druid_time_origin": form_data.get("druid_time_origin", ""),
             "having": form_data.get("having", ""),
             "having_druid": form_data.get("having_filters", []),
-            "time_grain_sqla": form_data.get("time_grain_sqla", ""),
+            "time_grain_sqla": form_data.get("time_grain_sqla"),
             "time_range_endpoints": form_data.get("time_range_endpoints"),
             "where": form_data.get("where", ""),
         }
@@ -449,6 +449,8 @@ class BaseViz:
                 df = self.get_df(query_obj)
                 if self.status != utils.QueryStatus.FAILED:
                     stats_logger.incr("loaded_from_source")
+                    if not self.force:
+                        stats_logger.incr("loaded_from_source_without_force")
                     is_loaded = True
             except Exception as e:
                 logger.exception(e)
@@ -488,6 +490,8 @@ class BaseViz:
             "form_data": self.form_data,
             "is_cached": self._any_cache_key is not None,
             "query": self.query,
+            "from_dttm": self.from_dttm,
+            "to_dttm": self.to_dttm,
             "status": self.status,
             "stacktrace": stacktrace,
             "rowcount": len(df.index) if df is not None else 0,
@@ -1208,9 +1212,9 @@ class BoxPlotFinStrViz(BoxPlotViz):
                                  'fromFormData': True,
                                  'label': 'Period'})
 
-        if self.form_data['fin_tech_picker']:
+        if self.form_data['fin_str_tech_picker']:
             d['filter'].append({'col': 'Technology', 'op': 'in',
-                                'val': self.form_data['fin_tech_picker']})
+                                'val': self.form_data['fin_str_tech_picker']})
             group_column.append('Technology')
         # else:
             d['metrics'].append({'expressionType': 'SQL',
@@ -1302,11 +1306,11 @@ class BoxPlotFinStrViz(BoxPlotViz):
         return d
 
     def to_series(self, df, classed="", title_suffix=""):
-        label_sep = " - "
+        label_sep = " "
         chart_data = []
         for index_value, row in zip(df.index, df.to_dict(orient="records")):
             if isinstance(index_value, tuple):
-                index_value = label_sep.join(list(str(x) for x in index_value))
+                index_value = label_sep.join([index_value[2], index_value[-2], index_value[-1]])
             boxes = defaultdict(dict)
             for (label, key), value in row.items():
                 if key == "nanmedian":
@@ -1322,7 +1326,6 @@ class BoxPlotFinStrViz(BoxPlotViz):
                     chart_label = index_value
                 chart_data.append({"label": chart_label, "values": box})
         return chart_data
-
 
     def get_data(self, df: pd.DataFrame) -> VizData:
         if len(df) == 0:

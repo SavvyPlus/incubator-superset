@@ -104,7 +104,7 @@ VERSION_STRING = _try_json_readversion(VERSION_INFO_FILE) or _try_json_readversi
 VERSION_SHA_LENGTH = 8
 VERSION_SHA = _try_json_readsha(VERSION_INFO_FILE, VERSION_SHA_LENGTH)
 
-ROW_LIMIT = 50000
+ROW_LIMIT = 500000
 VIZ_ROW_LIMIT = 10000
 # max rows retrieved by filter select auto complete
 FILTER_SELECT_ROW_LIMIT = 10000
@@ -133,9 +133,8 @@ SECRET_KEY = (
 
 # The SQLAlchemy connection string.
 # SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "superset.db")
-# SQLALCHEMY_DATABASE_URI = 'mysql://root:' + os.environ["TEST_MYSQL_PASSWORD"] + '@localhost:3306/model_reporting'
+# SQLALCHEMY_DATABASE_URI = 'mysql://root:' + os.environ["TEST_MYSQL_PASSWORD"] + '@localhost:3306/empower_test'
 SQLALCHEMY_DATABASE_URI = os.environ["SUPERSET_MYSQL"]
-# SQLALCHEMY_DATABASE_URI = 'postgresql://root:password@localhost/myapp'
 
 # In order to hook up a custom password store for all SQLACHEMY connections
 # implement a function that takes a single argument of type 'sqla.engine.url',
@@ -810,6 +809,11 @@ SQLALCHEMY_EXAMPLES_URI = None
 # Typically these should not be allowed.
 PREVENT_UNSAFE_DB_CONNECTIONS = True
 
+# Path used to store SSL certificates that are generated when using custom certs.
+# Defaults to temporary directory.
+# Example: SSL_CERT_PATH = "/certs"
+SSL_CERT_PATH: Optional[str] = None
+
 # SIP-15 should be enabled for all new Superset deployments which ensures that the time
 # range endpoints adhere to [start, end). For existing deployments admins should provide
 # a dedicated period of time to allow chart producers to update their charts before
@@ -821,8 +825,8 @@ SIP_15_ENABLED = True
 SIP_15_GRACE_PERIOD_END: Optional[date] = None  # exclusive
 SIP_15_DEFAULT_TIME_RANGE_ENDPOINTS = ["unknown", "inclusive"]
 SIP_15_TOAST_MESSAGE = (
-    "Action Required: Preview then save your chart using the"
-    'new time range endpoints <a target="_blank" href="{url}"'
+    "Action Required: Preview then save your chart using the "
+    'new time range endpoints <a target="_blank" href="{url}" '
     'class="alert-link">here</a>.'
 )
 
