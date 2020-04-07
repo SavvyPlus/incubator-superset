@@ -21,6 +21,9 @@ import { snakeCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { SuperChart } from '@superset-ui/chart';
+import * as am4core from '@amcharts/amcharts4/core';
+import * as am4charts from '@amcharts/amcharts4/charts';
+import am4themes_animated from '@amcharts/amcharts4/themes/animated';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
 
 const propTypes = {
@@ -68,6 +71,8 @@ class ChartRenderer extends React.Component {
     this.handleRenderFailure = this.handleRenderFailure.bind(this);
     this.handleSetControlValue = this.handleSetControlValue.bind(this);
 
+    this.prepareBoxplotData = this.prepareBoxplotData.bind(this);
+
     this.hooks = {
       onAddFilter: this.handleAddFilter,
       onError: this.handleRenderFailure,
@@ -75,6 +80,69 @@ class ChartRenderer extends React.Component {
       onFilterMenuOpen: this.props.onFilterMenuOpen,
       onFilterMenuClose: this.props.onFilterMenuClose,
     };
+  }
+
+  componentDidMount() {
+    const chart = am4core.create(
+      `chart-id-${this.props.chartId}`,
+      am4charts.XYChart,
+    );
+    chart.paddingRight = 20;
+
+    const categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
+    categoryAxis.renderer.minGridDistance = 40;
+    categoryAxis.dataFields.category = 'label';
+    categoryAxis.renderer.grid.template.location = 0;
+
+    const valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    valueAxis.tooltip.disabled = true;
+
+    const series = chart.series.push(new am4charts.CandlestickSeries());
+    series.dataFields.categoryX = 'label';
+    series.dataFields.valueY = 'close';
+    series.dataFields.openValueY = 'open';
+    series.dataFields.lowValueY = 'low';
+    series.dataFields.highValueY = 'high';
+    series.simplifiedProcessing = true;
+    series.tooltipText =
+      'Open:${openValueY.value}\nLow:${lowValueY.value}\nHigh:${highValueY.value}\nClose:${valueY.value}\nMediana:{mediana}';
+    series.riseFromOpenState = undefined;
+    series.dropFromOpenState = undefined;
+
+    chart.cursor = new am4charts.XYCursor();
+
+    const medianaSeries = chart.series.push(new am4charts.StepLineSeries());
+    medianaSeries.noRisers = true;
+    medianaSeries.startLocation = 0.1;
+    medianaSeries.endLocation = 0.9;
+    medianaSeries.dataFields.valueY = 'mediana';
+    medianaSeries.dataFields.categoryX = 'label';
+    medianaSeries.strokeWidth = 2;
+    medianaSeries.stroke = am4core.color('#fff');
+
+    const topSeries = chart.series.push(new am4charts.StepLineSeries());
+    topSeries.noRisers = true;
+    topSeries.startLocation = 0.2;
+    topSeries.endLocation = 0.8;
+    topSeries.dataFields.valueY = 'high';
+    topSeries.dataFields.categoryX = 'label';
+    topSeries.stroke = chart.colors.getIndex(0);
+    topSeries.strokeWidth = 2;
+
+    const bottomSeries = chart.series.push(new am4charts.StepLineSeries());
+    bottomSeries.noRisers = true;
+    bottomSeries.startLocation = 0.2;
+    bottomSeries.endLocation = 0.8;
+    bottomSeries.dataFields.valueY = 'low';
+    bottomSeries.dataFields.categoryX = 'label';
+    bottomSeries.stroke = chart.colors.getIndex(0);
+    bottomSeries.strokeWidth = 2;
+
+    chart.scrollbarX = new am4core.Scrollbar();
+
+    chart.data = this.prepareBoxplotData(this.props.queryResponse.data);
+
+    this.chart = chart;
   }
 
   shouldComponentUpdate(nextProps) {
@@ -113,6 +181,93 @@ class ChartRenderer extends React.Component {
       }
     }
     return false;
+  }
+
+  componentDidUpdate(oldProps) {
+    if (oldProps.queryResponse !== this.props.queryResponse) {
+      const chart = am4core.create(
+        `chart-id-${this.props.chartId}`,
+        am4charts.XYChart,
+      );
+      chart.paddingRight = 20;
+
+      const categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
+      categoryAxis.renderer.minGridDistance = 40;
+      categoryAxis.dataFields.category = 'label';
+      categoryAxis.renderer.grid.template.location = 0;
+
+      const valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+      valueAxis.tooltip.disabled = true;
+
+      const series = chart.series.push(new am4charts.CandlestickSeries());
+      series.dataFields.categoryX = 'label';
+      series.dataFields.valueY = 'close';
+      series.dataFields.openValueY = 'open';
+      series.dataFields.lowValueY = 'low';
+      series.dataFields.highValueY = 'high';
+      series.simplifiedProcessing = true;
+      series.tooltipText =
+        'Open:${openValueY.value}\nLow:${lowValueY.value}\nHigh:${highValueY.value}\nClose:${valueY.value}\nMediana:{mediana}';
+      series.riseFromOpenState = undefined;
+      series.dropFromOpenState = undefined;
+
+      chart.cursor = new am4charts.XYCursor();
+
+      const medianaSeries = chart.series.push(new am4charts.StepLineSeries());
+      medianaSeries.noRisers = true;
+      medianaSeries.startLocation = 0.1;
+      medianaSeries.endLocation = 0.9;
+      medianaSeries.dataFields.valueY = 'mediana';
+      medianaSeries.dataFields.categoryX = 'label';
+      medianaSeries.strokeWidth = 2;
+      medianaSeries.stroke = am4core.color('#fff');
+
+      const topSeries = chart.series.push(new am4charts.StepLineSeries());
+      topSeries.noRisers = true;
+      topSeries.startLocation = 0.2;
+      topSeries.endLocation = 0.8;
+      topSeries.dataFields.valueY = 'high';
+      topSeries.dataFields.categoryX = 'label';
+      topSeries.stroke = chart.colors.getIndex(0);
+      topSeries.strokeWidth = 2;
+
+      const bottomSeries = chart.series.push(new am4charts.StepLineSeries());
+      bottomSeries.noRisers = true;
+      bottomSeries.startLocation = 0.2;
+      bottomSeries.endLocation = 0.8;
+      bottomSeries.dataFields.valueY = 'low';
+      bottomSeries.dataFields.categoryX = 'label';
+      bottomSeries.stroke = chart.colors.getIndex(0);
+      bottomSeries.strokeWidth = 2;
+
+      chart.scrollbarX = new am4core.Scrollbar();
+
+      chart.data = this.prepareBoxplotData(this.props.queryResponse.data);
+
+      this.chart = chart;
+    }
+  }
+
+  // componentWillUnmount() {
+  //   if (this.chart) {
+  //     this.chart.dispose();
+  //   }
+  // }
+
+  prepareBoxplotData(data) {
+    const boxData = [];
+    for (let i = 0; i < data.length; i++) {
+      const { values, label } = data[i];
+      boxData.push({
+        label,
+        open: values.Q3,
+        high: values.whisker_high,
+        low: values.whisker_low,
+        close: values.Q1,
+        mediana: values.Q2,
+      });
+    }
+    return boxData;
   }
 
   handleAddFilter(col, vals, merge = true, refresh = true) {
@@ -231,27 +386,35 @@ class ChartRenderer extends React.Component {
         fd.metrics = ['$'];
       }
     }
+    console.log(chartId);
 
     return (
-      <SuperChart
-        disableErrorBoundary
+      <div
         key={`${chartId}${
           process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
         }`}
         id={`chart-id-${chartId}`}
-        className={chartClassName}
-        chartType={vizType}
-        width={width}
-        height={height}
-        annotationData={annotationData}
-        datasource={datasource}
-        initialValues={initialValues}
-        formData={fd}
-        hooks={this.hooks}
-        queryData={queryResponse}
-        onRenderSuccess={this.handleRenderSuccess}
-        onRenderFailure={this.handleRenderFailure}
+        style={{ height: `${height}px`, width: `${width}px` }}
       />
+      // <SuperChart
+      //   disableErrorBoundary
+      //   key={`${chartId}${
+      //     process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
+      //   }`}
+      //   id={`chart-id-${chartId}`}
+      //   className={chartClassName}
+      //   chartType={vizType}
+      //   width={width}
+      //   height={height}
+      //   annotationData={annotationData}
+      //   datasource={datasource}
+      //   initialValues={initialValues}
+      //   formData={fd}
+      //   hooks={this.hooks}
+      //   queryData={queryResponse}
+      //   onRenderSuccess={this.handleRenderSuccess}
+      //   onRenderFailure={this.handleRenderFailure}
+      // />
     );
   }
 }
