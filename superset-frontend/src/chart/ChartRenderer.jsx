@@ -21,6 +21,7 @@ import { snakeCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { SuperChart } from '@superset-ui/chart';
+import ReactEcharts from 'echarts-for-react';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
 
 const propTypes = {
@@ -68,6 +69,9 @@ class ChartRenderer extends React.Component {
     this.handleRenderFailure = this.handleRenderFailure.bind(this);
     this.handleSetControlValue = this.handleSetControlValue.bind(this);
 
+    this.getOption = this.getOption.bind(this);
+    this.prepareBoxplotData = this.prepareBoxplotData.bind(this);
+
     this.hooks = {
       onAddFilter: this.handleAddFilter,
       onError: this.handleRenderFailure,
@@ -113,6 +117,114 @@ class ChartRenderer extends React.Component {
       }
     }
     return false;
+  }
+
+  getOption(queryResponse) {
+    const data = this.prepareBoxplotData(queryResponse.data);
+    return {
+      title: [
+        {
+          text: 'Michelson-Morley Experiment',
+          left: 'center',
+        },
+        {
+          text: 'upper: Q3 + 1.5 * IQR \nlower: Q1 - 1.5 * IQR',
+          borderColor: '#999',
+          borderWidth: 1,
+          textStyle: {
+            fontSize: 14,
+          },
+          left: '10%',
+          top: '90%',
+        },
+      ],
+      tooltip: {
+        trigger: 'item',
+        axisPointer: {
+          type: 'shadow',
+        },
+      },
+      toolbox: {
+        feature: {
+          saveAsImage: { title: 'Save as image' },
+        },
+      },
+      grid: {
+        left: '10%',
+        right: '10%',
+        bottom: '15%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: data.axisData,
+        boundaryGap: true,
+        nameGap: 30,
+        splitArea: {
+          show: false,
+        },
+        axisLabel: {
+          formatter: '{value}',
+          rotate: 45,
+        },
+        splitLine: {
+          show: false,
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: '$',
+        splitArea: {
+          show: true,
+        },
+      },
+      series: [
+        {
+          name: 'boxplot',
+          type: 'boxplot',
+          data: data.boxData,
+          tooltip: {
+            formatter(param) {
+              return [
+                param.name + ': ',
+                'Max: ' + param.data[5],
+                'Q3: ' + param.data[4],
+                'Median: ' + param.data[3],
+                'Q1: ' + param.data[2],
+                'Min: ' + param.data[1],
+              ].join('<br/>');
+            },
+          },
+        },
+        {
+          name: 'outlier',
+          type: 'scatter',
+          data: data.outliers,
+        },
+      ],
+    };
+  }
+
+  prepareBoxplotData(data) {
+    const boxData = [];
+    const outliers = [];
+    const axisData = [];
+    for (let i = 0; i < data.length; i++) {
+      const { values, label } = data[i];
+      boxData.push([
+        values.whisker_low,
+        values.Q1,
+        values.Q2,
+        values.Q3,
+        values.whisker_high,
+      ]);
+      axisData.push(label);
+    }
+    return {
+      boxData,
+      outliers,
+      axisData,
+    };
   }
 
   handleAddFilter(col, vals, merge = true, refresh = true) {
@@ -233,24 +345,32 @@ class ChartRenderer extends React.Component {
     }
 
     return (
-      <SuperChart
-        disableErrorBoundary
+      // <SuperChart
+      //   disableErrorBoundary
+      //   key={`${chartId}${
+      //     process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
+      //   }`}
+      //   id={`chart-id-${chartId}`}
+      //   className={chartClassName}
+      //   chartType={vizType}
+      //   width={width}
+      //   height={height}
+      //   annotationData={annotationData}
+      //   datasource={datasource}
+      //   initialValues={initialValues}
+      //   formData={fd}
+      //   hooks={this.hooks}
+      //   queryData={queryResponse}
+      //   onRenderSuccess={this.handleRenderSuccess}
+      //   onRenderFailure={this.handleRenderFailure}
+      // />
+      <ReactEcharts
         key={`${chartId}${
           process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
         }`}
-        id={`chart-id-${chartId}`}
+        option={this.getOption(queryResponse)}
+        style={{ height: `${height}px`, width: `${width}px` }}
         className={chartClassName}
-        chartType={vizType}
-        width={width}
-        height={height}
-        annotationData={annotationData}
-        datasource={datasource}
-        initialValues={initialValues}
-        formData={fd}
-        hooks={this.hooks}
-        queryData={queryResponse}
-        onRenderSuccess={this.handleRenderSuccess}
-        onRenderFailure={this.handleRenderFailure}
       />
     );
   }
