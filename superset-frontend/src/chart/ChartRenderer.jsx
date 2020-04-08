@@ -21,7 +21,12 @@ import { snakeCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { SuperChart } from '@superset-ui/chart';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
+import HighchartsMore from 'highcharts/highcharts-more';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
+
+HighchartsMore(Highcharts);
 
 const propTypes = {
   annotationData: PropTypes.object,
@@ -67,6 +72,8 @@ class ChartRenderer extends React.Component {
     this.handleRenderSuccess = this.handleRenderSuccess.bind(this);
     this.handleRenderFailure = this.handleRenderFailure.bind(this);
     this.handleSetControlValue = this.handleSetControlValue.bind(this);
+    this.getOption = this.getOption.bind(this);
+    this.prepareBoxplotData = this.prepareBoxplotData.bind(this);
 
     this.hooks = {
       onAddFilter: this.handleAddFilter,
@@ -113,6 +120,62 @@ class ChartRenderer extends React.Component {
       }
     }
     return false;
+  }
+
+  getOption(queryResponse, width, height) {
+    const data = this.prepareBoxplotData(queryResponse.data);
+    return {
+      chart: {
+        type: 'boxplot',
+        width,
+        height,
+      },
+
+      title: {
+        text: 'Highcharts Box Plot Example',
+      },
+
+      legend: {
+        enabled: false,
+      },
+
+      xAxis: {
+        categories: data.axisData,
+      },
+
+      yAxis: {
+        title: {
+          text: 'Observations',
+        },
+      },
+
+      series: [
+        {
+          name: 'Observations',
+          data: data.boxData,
+          tooltip: {
+            headerFormat: '<em>{point.key}</em><br/>',
+          },
+        },
+      ],
+    };
+  }
+
+  prepareBoxplotData(data) {
+    const boxData = [];
+    const axisData = [];
+    for (let i = 0; i < data.length; i++) {
+      const { values, label } = data[i];
+      boxData.push([
+        values.whisker_low,
+        values.Q1,
+        values.Q2,
+        values.Q3,
+        values.whisker_high,
+      ]);
+      axisData.push(label);
+    }
+    return { boxData, axisData };
   }
 
   handleAddFilter(col, vals, merge = true, refresh = true) {
@@ -233,25 +296,33 @@ class ChartRenderer extends React.Component {
     }
 
     return (
-      <SuperChart
-        disableErrorBoundary
+      <HighchartsReact
         key={`${chartId}${
           process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
         }`}
         id={`chart-id-${chartId}`}
-        className={chartClassName}
-        chartType={vizType}
-        width={width}
-        height={height}
-        annotationData={annotationData}
-        datasource={datasource}
-        initialValues={initialValues}
-        formData={fd}
-        hooks={this.hooks}
-        queryData={queryResponse}
-        onRenderSuccess={this.handleRenderSuccess}
-        onRenderFailure={this.handleRenderFailure}
+        highcharts={Highcharts}
+        options={this.getOption(queryResponse, width, height)}
       />
+      // <SuperChart
+      //   disableErrorBoundary
+      //   key={`${chartId}${
+      //     process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
+      //   }`}
+      //   id={`chart-id-${chartId}`}
+      //   className={chartClassName}
+      //   chartType={vizType}
+      //   width={width}
+      //   height={height}
+      //   annotationData={annotationData}
+      //   datasource={datasource}
+      //   initialValues={initialValues}
+      //   formData={fd}
+      //   hooks={this.hooks}
+      //   queryData={queryResponse}
+      //   onRenderSuccess={this.handleRenderSuccess}
+      //   onRenderFailure={this.handleRenderFailure}
+      // />
     );
   }
 }
