@@ -70,16 +70,15 @@ import {
 } from '../modules/utils';
 import * as v from './validators';
 import ColumnOption from '../components/ColumnOption';
-import { DEFAULT_VIEWPORT } from '../explore/components/controls/ViewportControl';
 import { TIME_FILTER_LABELS } from './constants';
 
 const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
 const sequentialSchemeRegistry = getSequentialSchemeRegistry();
 
-const PRIMARY_COLOR = { r: 0, g: 122, b: 135, a: 1 };
+export const PRIMARY_COLOR = { r: 0, g: 122, b: 135, a: 1 };
 
 // input choices & options
-const D3_FORMAT_OPTIONS = [
+export const D3_FORMAT_OPTIONS = [
   ['SMART_NUMBER', 'Adaptative formating'],
   ['.1s', '.1s (12345.432 => 10k)'],
   ['.3s', '.3s (12345.432 => 12.3k)'],
@@ -177,19 +176,6 @@ const metric = {
   default: props => mainMetric(props.savedMetrics),
 };
 
-const sandboxUrl =
-  'https://github.com/apache/incubator-superset/' +
-  'blob/master/superset-frontend/src/modules/sandbox.js';
-const jsFunctionInfo = (
-  <div>
-    {t(
-      'For more information about objects are in context in the scope of this function, refer to the',
-    )}
-    <a href={sandboxUrl}>{t(" source code of Superset's sandboxed parser")}.</a>
-    .
-  </div>
-);
-
 export function columnChoices(datasource) {
   if (datasource && datasource.columns) {
     return datasource.columns
@@ -199,38 +185,6 @@ export function columnChoices(datasource) {
       );
   }
   return [];
-}
-
-function jsFunctionControl(
-  label,
-  description,
-  extraDescr = null,
-  height = 100,
-  defaultText = '',
-) {
-  return {
-    type: 'TextAreaControl',
-    language: 'javascript',
-    label,
-    description,
-    height,
-    default: defaultText,
-    aboveEditorSection: (
-      <div>
-        <p>{description}</p>
-        <p>{jsFunctionInfo}</p>
-        {extraDescr}
-      </div>
-    ),
-    mapStateToProps: state => ({
-      warning: !state.common.conf.ENABLE_JAVASCRIPT_CONTROLS
-        ? t(
-            'This functionality is disabled in your environment for security reasons.',
-          )
-        : null,
-      readOnly: !state.common.conf.ENABLE_JAVASCRIPT_CONTROLS,
-    }),
-  };
 }
 
 export const controls = {
@@ -504,78 +458,11 @@ export const controls = {
     renderTrigger: true,
   },
 
-  target_color_picker: {
-    label: t('Target Color'),
-    description: t('Color of the target location'),
-    type: 'ColorPickerControl',
-    default: PRIMARY_COLOR,
-    renderTrigger: true,
-  },
-
-  legend_position: {
-    label: t('Legend Position'),
-    description: t('Choose the position of the legend'),
-    type: 'SelectControl',
-    clearable: false,
-    default: 'tr',
-    choices: [
-      [null, 'None'],
-      ['tl', 'Top left'],
-      ['tr', 'Top right'],
-      ['bl', 'Bottom left'],
-      ['br', 'Bottom right'],
-    ],
-    renderTrigger: true,
-  },
-
-  legend_format: {
-    label: t('Legend Format'),
-    description: t('Choose the format for legend values'),
-    type: 'SelectControl',
-    clearable: false,
-    default: D3_FORMAT_OPTIONS[0],
-    choices: D3_FORMAT_OPTIONS,
-    renderTrigger: true,
-  },
-
-  fill_color_picker: {
-    label: t('Fill Color'),
-    description: t(
-      ' Set the opacity to 0 if you do not want to override the color specified in the GeoJSON',
-    ),
-    type: 'ColorPickerControl',
-    default: PRIMARY_COLOR,
-    renderTrigger: true,
-  },
-
-  stroke_color_picker: {
-    label: t('Stroke Color'),
-    description: t(
-      ' Set the opacity to 0 if you do not want to override the color specified in the GeoJSON',
-    ),
-    type: 'ColorPickerControl',
-    default: PRIMARY_COLOR,
-    renderTrigger: true,
-  },
-
   metric_2: {
     ...metric,
     label: t('Right Axis Metric'),
     clearable: true,
     description: t('Choose a metric for right axis'),
-  },
-
-  stacked_style: {
-    type: 'SelectControl',
-    label: t('Stacked Style'),
-    renderTrigger: true,
-    choices: [
-      ['stack', 'stack'],
-      ['stream', 'stream'],
-      ['expand', 'expand'],
-    ],
-    default: 'stack',
-    description: '',
   },
 
   linear_color_scheme: {
@@ -604,16 +491,6 @@ export const controls = {
       'Color will be rendered based on a ratio ' +
         'of the cell against the sum of across this ' +
         'criteria',
-    ),
-  },
-
-  autozoom: {
-    type: 'CheckboxControl',
-    label: t('Auto Zoom'),
-    default: true,
-    renderTrigger: true,
-    description: t(
-      'When checked, the map will zoom to your data after each query',
     ),
   },
 
@@ -745,18 +622,12 @@ export const controls = {
   },
 
   groupby: groupByControl,
-  dimension: {
-    ...groupByControl,
-    label: t('Dimension'),
-    description: t('Select a dimension'),
-    multi: false,
-    default: null,
-  },
 
-  columns: Object.assign({}, groupByControl, {
+  columns: {
+    ...groupByControl,
     label: t('Columns'),
     description: t('One or many controls to pivot as columns'),
-  }),
+  },
 
   all_columns: {
     type: 'SelectControl',
@@ -773,36 +644,6 @@ export const controls = {
     }),
     commaChoosesOption: false,
     freeForm: true,
-  },
-
-  spatial: {
-    type: 'SpatialControl',
-    label: t('Longitude & Latitude'),
-    validators: [v.nonEmpty],
-    description: t('Point to your spatial columns'),
-    mapStateToProps: state => ({
-      choices: columnChoices(state.datasource),
-    }),
-  },
-
-  start_spatial: {
-    type: 'SpatialControl',
-    label: t('Start Longitude & Latitude'),
-    validators: [v.nonEmpty],
-    description: t('Point to your spatial columns'),
-    mapStateToProps: state => ({
-      choices: columnChoices(state.datasource),
-    }),
-  },
-
-  end_spatial: {
-    type: 'SpatialControl',
-    label: t('End Longitude & Latitude'),
-    validators: [v.nonEmpty],
-    description: t('Point to your spatial columns'),
-    mapStateToProps: state => ({
-      choices: columnChoices(state.datasource),
-    }),
   },
 
   longitude: {
@@ -827,13 +668,6 @@ export const controls = {
     }),
   },
 
-  filter_nulls: {
-    type: 'CheckboxControl',
-    label: t('Ignore null locations'),
-    default: true,
-    description: t('Whether to ignore locations that are null'),
-  },
-
   polygon: {
     type: 'SelectControl',
     label: t('Polygon Column'),
@@ -844,16 +678,6 @@ export const controls = {
     mapStateToProps: state => ({
       choices: columnChoices(state.datasource),
     }),
-  },
-
-  stroke_width: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: t('Stroke Width'),
-    validators: [v.integer],
-    default: null,
-    renderTrigger: true,
-    choices: formatSelectOptions([1, 2, 3, 4, 5]),
   },
 
   all_columns_x: {
@@ -1152,15 +976,6 @@ export const controls = {
     ),
   },
 
-  multiplier: {
-    type: 'TextControl',
-    label: t('Multiplier'),
-    isFloat: true,
-    renderTrigger: true,
-    default: 1,
-    description: t('Factor to multiply the metric by'),
-  },
-
   rolling_periods: {
     type: 'TextControl',
     label: t('Periods'),
@@ -1169,15 +984,6 @@ export const controls = {
       'Defines the size of the rolling window function, ' +
         'relative to the time granularity selected',
     ),
-  },
-
-  grid_size: {
-    type: 'TextControl',
-    label: t('Grid Size'),
-    renderTrigger: true,
-    default: 20,
-    isInt: true,
-    description: t('Defines the grid size in pixels'),
   },
 
   min_periods: {
@@ -1338,21 +1144,6 @@ export const controls = {
     description: t('Line interpolation as defined by d3.js'),
   },
 
-  pie_label_type: {
-    type: 'SelectControl',
-    label: t('Label Type'),
-    default: 'key',
-    renderTrigger: true,
-    choices: [
-      ['key', 'Category Name'],
-      ['value', 'Value'],
-      ['percent', 'Percentage'],
-      ['key_value', 'Category and Value'],
-      ['key_percent', 'Category and Percentage'],
-    ],
-    description: t('What should be shown on the label?'),
-  },
-
   code: {
     type: 'TextAreaControl',
     label: t('Code'),
@@ -1386,14 +1177,6 @@ export const controls = {
     description:
       'Whether to apply filters as they change, or wait for ' +
       'users to hit an [Apply] button',
-  },
-
-  extruded: {
-    type: 'CheckboxControl',
-    label: t('Extruded'),
-    renderTrigger: true,
-    default: true,
-    description: 'Whether to make the grid 3D',
   },
 
   show_brush: {
@@ -1522,36 +1305,12 @@ export const controls = {
     description: t('Use a log scale for the Y-axis'),
   },
 
-  x_log_scale: {
-    type: 'CheckboxControl',
-    label: t('X Log Scale'),
-    default: false,
-    renderTrigger: true,
-    description: t('Use a log scale for the X-axis'),
-  },
-
   log_scale: {
     type: 'CheckboxControl',
     label: t('Log Scale'),
     default: false,
     renderTrigger: true,
     description: t('Use a log scale'),
-  },
-
-  donut: {
-    type: 'CheckboxControl',
-    label: t('Donut'),
-    default: false,
-    renderTrigger: true,
-    description: t('Do you want a donut or a pie?'),
-  },
-
-  labels_outside: {
-    type: 'CheckboxControl',
-    label: t('Put labels outside'),
-    default: true,
-    renderTrigger: true,
-    description: t('Put the labels outside the pie?'),
   },
 
   contribution: {
@@ -1611,16 +1370,6 @@ export const controls = {
     description: t('Base layer map style'),
   },
 
-  point_radius_fixed: {
-    type: 'FixedOrMetricControl',
-    label: t('Point Size'),
-    default: { type: 'fix', value: 1000 },
-    description: t('Fixed point radius'),
-    mapStateToProps: state => ({
-      datasource: state.datasource,
-    }),
-  },
-
   global_opacity: {
     type: 'TextControl',
     label: t('Opacity'),
@@ -1629,17 +1378,6 @@ export const controls = {
     description: t(
       'Opacity of all clusters, points, and labels. Between 0 and 1.',
     ),
-  },
-
-  viewport: {
-    type: 'ViewportControl',
-    label: t('Viewport'),
-    renderTrigger: false,
-    description: t('Parameters related to the view and perspective on the map'),
-    // default is whole world mostly centered
-    default: DEFAULT_VIEWPORT,
-    // Viewport changes shouldn't prompt user to re-run query
-    dontRefreshOnChange: true,
   },
 
   viewport_zoom: {
@@ -1659,48 +1397,6 @@ export const controls = {
     label: t('Color'),
     default: PRIMARY_COLOR,
     description: t('Pick a color'),
-  },
-
-  ranges: {
-    type: 'TextControl',
-    label: t('Ranges'),
-    default: '',
-    description: t('Ranges to highlight with shading'),
-  },
-
-  range_labels: {
-    type: 'TextControl',
-    label: t('Range labels'),
-    default: '',
-    description: t('Labels for the ranges'),
-  },
-
-  markers: {
-    type: 'TextControl',
-    label: t('Markers'),
-    default: '',
-    description: t('List of values to mark with triangles'),
-  },
-
-  marker_labels: {
-    type: 'TextControl',
-    label: t('Marker labels'),
-    default: '',
-    description: t('Labels for the markers'),
-  },
-
-  marker_lines: {
-    type: 'TextControl',
-    label: t('Marker lines'),
-    default: '',
-    description: t('List of values to mark with lines'),
-  },
-
-  marker_line_labels: {
-    type: 'TextControl',
-    label: t('Marker line labels'),
-    default: '',
-    description: t('Labels for the marker lines'),
   },
 
   annotation_layers: {
@@ -1781,142 +1477,6 @@ export const controls = {
     label: t('Time Series Columns'),
     validators: [v.nonEmpty],
     controlName: 'TimeSeriesColumnControl',
-  },
-
-  line_column: {
-    type: 'SelectControl',
-    label: t('Lines column'),
-    default: null,
-    description: t('The database columns that contains lines information'),
-    mapStateToProps: state => ({
-      choices: columnChoices(state.datasource),
-    }),
-    validators: [v.nonEmpty],
-  },
-  line_type: {
-    type: 'SelectControl',
-    label: t('Lines encoding'),
-    clearable: false,
-    default: 'json',
-    description: t('The encoding format of the lines'),
-    choices: [
-      ['polyline', 'Polyline'],
-      ['json', 'JSON'],
-      ['geohash', 'geohash (square)'],
-    ],
-  },
-
-  line_width: {
-    type: 'TextControl',
-    label: t('Line width'),
-    renderTrigger: true,
-    isInt: true,
-    default: 10,
-    description: t('The width of the lines'),
-  },
-
-  line_charts: {
-    type: 'SelectAsyncControl',
-    multi: true,
-    label: t('Line charts'),
-    validators: [v.nonEmpty],
-    default: [],
-    description: t('Pick a set of line charts to layer on top of one another'),
-    dataEndpoint:
-      '/sliceasync/api/read?_flt_0_viz_type=line&_flt_7_viz_type=line_multi',
-    placeholder: t('Select charts'),
-    onAsyncErrorMessage: t('Error while fetching charts'),
-    mutator: data => {
-      if (!data || !data.result) {
-        return [];
-      }
-      return data.result.map(o => ({ value: o.id, label: o.slice_name }));
-    },
-  },
-
-  line_charts_2: {
-    type: 'SelectAsyncControl',
-    multi: true,
-    label: t('Right Axis chart(s)'),
-    validators: [],
-    default: [],
-    description: t('Choose one or more charts for right axis'),
-    dataEndpoint:
-      '/sliceasync/api/read?_flt_0_viz_type=line&_flt_7_viz_type=line_multi',
-    placeholder: t('Select charts'),
-    onAsyncErrorMessage: t('Error while fetching charts'),
-    mutator: data => {
-      if (!data || !data.result) {
-        return [];
-      }
-      return data.result.map(o => ({ value: o.id, label: o.slice_name }));
-    },
-  },
-
-  prefix_metric_with_slice_name: {
-    type: 'CheckboxControl',
-    label: t('Prefix metric name with slice name'),
-    default: false,
-    renderTrigger: true,
-  },
-
-  reverse_long_lat: {
-    type: 'CheckboxControl',
-    label: t('Reverse Lat & Long'),
-    default: false,
-  },
-
-  js_data_mutator: jsFunctionControl(
-    t('Javascript data interceptor'),
-    t(
-      'Define a javascript function that receives the data array used in the visualization ' +
-        'and is expected to return a modified version of that array. This can be used ' +
-        'to alter properties of the data, filter, or enrich the array.',
-    ),
-  ),
-
-  js_data: jsFunctionControl(
-    t('Javascript data mutator'),
-    t(
-      'Define a function that receives intercepts the data objects and can mutate it',
-    ),
-  ),
-
-  js_tooltip: jsFunctionControl(
-    t('Javascript tooltip generator'),
-    t(
-      'Define a function that receives the input and outputs the content for a tooltip',
-    ),
-  ),
-
-  js_onclick_href: jsFunctionControl(
-    t('Javascript onClick href'),
-    t('Define a function that returns a URL to navigate to when user clicks'),
-  ),
-
-  js_columns: {
-    ...groupByControl,
-    label: t('Extra data for JS'),
-    default: [],
-    description: t(
-      'List of extra columns made available in Javascript functions',
-    ),
-  },
-
-  stroked: {
-    type: 'CheckboxControl',
-    label: t('Stroked'),
-    renderTrigger: true,
-    description: t('Whether to display the stroke'),
-    default: false,
-  },
-
-  filled: {
-    type: 'CheckboxControl',
-    label: t('Filled'),
-    renderTrigger: true,
-    description: t('Whether to fill the objects'),
-    default: true,
   },
 
   filter_configs: {
