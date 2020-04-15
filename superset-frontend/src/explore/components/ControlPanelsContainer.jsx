@@ -75,11 +75,10 @@ class ControlPanelsContainer extends React.Component {
     }
     // Applying mapStateToProps if needed
     if (mapF) {
-      return Object.assign(
-        {},
-        control,
-        mapF(this.props.exploreState, control, this.props.actions),
-      );
+      return {
+        ...control,
+        ...mapF(this.props.exploreState, control, this.props.actions),
+      };
     }
     return control;
   }
@@ -222,7 +221,10 @@ class ControlPanelsContainer extends React.Component {
       if (viz_type === 'box_plot_fin_str' && section.label === 'Time') {
         return;
       }
+      // if at least one control in the secion is not `renderTrigger`
+      // or asks to be displayed at the Data tab
       if (
+        section.tabOverride === 'data' ||
         section.controlSetRows.some(rows =>
           rows.some(
             control =>

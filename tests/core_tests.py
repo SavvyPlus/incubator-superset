@@ -111,7 +111,7 @@ class CoreTests(SupersetTestCase):
         resp = self.client.get("/superset/slice/-1/")
         assert resp.status_code == 404
 
-    def _get_query_context_dict(self) -> Dict[str, Any]:
+    def _get_query_context(self) -> Dict[str, Any]:
         self.login(username="admin")
         slc = self.get_slice("Girl Name Cloud", db.session)
         return {
@@ -123,6 +123,45 @@ class CoreTests(SupersetTestCase):
                     "metrics": [{"label": "sum__num"}],
                     "filters": [],
                     "row_limit": 100,
+                }
+            ],
+        }
+
+    def _get_query_context_with_post_processing(self) -> Dict[str, Any]:
+        self.login(username="admin")
+        slc = self.get_slice("Girl Name Cloud", db.session)
+        return {
+            "datasource": {"id": slc.datasource_id, "type": slc.datasource_type},
+            "queries": [
+                {
+                    "granularity": "ds",
+                    "groupby": ["name", "state"],
+                    "metrics": [{"label": "sum__num"}],
+                    "filters": [],
+                    "row_limit": 100,
+                    "post_processing": [
+                        {
+                            "operation": "aggregate",
+                            "options": {
+                                "groupby": ["state"],
+                                "aggregates": {
+                                    "q1": {
+                                        "operator": "percentile",
+                                        "column": "sum__num",
+                                        "options": {"q": 25},
+                                    },
+                                    "median": {
+                                        "operator": "median",
+                                        "column": "sum__num",
+                                    },
+                                },
+                            },
+                        },
+                        {
+                            "operation": "sort",
+                            "options": {"columns": {"q1": False, "state": True},},
+                        },
+                    ],
                 }
             ],
         }
@@ -140,7 +179,7 @@ class CoreTests(SupersetTestCase):
         self.assertNotEqual(cache_key, viz.cache_key(qobj))
 
     def test_cache_key_changes_when_datasource_is_updated(self):
-        qc_dict = self._get_query_context_dict()
+        qc_dict = self._get_query_context()
 
         # construct baseline cache_key
         query_context = QueryContext(**qc_dict)
@@ -168,7 +207,7 @@ class CoreTests(SupersetTestCase):
         self.assertNotEqual(cache_key_original, cache_key_new)
 
     def test_query_context_time_range_endpoints(self):
-        query_context = QueryContext(**self._get_query_context_dict())
+        query_context = QueryContext(**self._get_query_context())
         query_object = query_context.queries[0]
         extras = query_object.to_dict()["extras"]
         self.assertTrue("time_range_endpoints" in extras)
@@ -217,10 +256,17 @@ class CoreTests(SupersetTestCase):
 
     def test_api_v1_query_endpoint(self):
         self.login(username="admin")
-        qc_dict = self._get_query_context_dict()
+        qc_dict = self._get_query_context()
         data = json.dumps(qc_dict)
         resp = json.loads(self.get_resp("/api/v1/query/", {"query_context": data}))
         self.assertEqual(resp[0]["rowcount"], 100)
+
+    def test_api_v1_query_endpoint_with_post_processing(self):
+        self.login(username="admin")
+        qc_dict = self._get_query_context_with_post_processing()
+        data = json.dumps(qc_dict)
+        resp = json.loads(self.get_resp("/api/v1/query/", {"query_context": data}))
+        self.assertEqual(resp[0]["rowcount"], 6)
 
     def test_old_slice_json_endpoint(self):
         self.login(username="admin")
@@ -667,6 +713,89 @@ class CoreTests(SupersetTestCase):
         sql = "SELECT '{{ datetime(2017, 1, 1).isoformat() }}' as test"
         data = self.run_sql(sql, "fdaklj3ws")
         self.assertEqual(data["data"][0]["test"], "2017-01-01T00:00:00")
+
+    @mock.patch("tests.superset_test_custom_template_processors.datetime")
+    def test_custom_process_template(self, mock_dt) -> None:
+        """Test macro defined in custom template processor works."""
+        mock_dt.utcnow = mock.Mock(return_value=datetime.datetime(1970, 1, 1))
+        db = mock.Mock()
+        db.backend = "presto"
+        tp = jinja_context.get_template_processor(database=db)
+
+        sql = "SELECT '$DATE()'"
+        rendered = tp.process_template(sql)
+        self.assertEqual("SELECT '{}'".format("1970-01-01"), rendered)
+
+        sql = "SELECT '$DATE(1, 2)'"
+        rendered = tp.process_template(sql)
+        self.assertEqual("SELECT '{}'".format("1970-01-02"), rendered)
+
+    def test_custom_get_template_kwarg(self):
+        """Test macro passed as kwargs when getting template processor
+        works in custom template processor."""
+        db = mock.Mock()
+        db.backend = "presto"
+        s = "$foo()"
+        tp = jinja_context.get_template_processor(database=db, foo=lambda: "bar")
+        rendered = tp.process_template(s)
+        self.assertEqual("bar", rendered)
+
+    def test_custom_template_kwarg(self) -> None:
+        """Test macro passed as kwargs when processing template
+        works in custom template processor."""
+        db = mock.Mock()
+        db.backend = "presto"
+        s = "$foo()"
+        tp = jinja_context.get_template_processor(database=db)
+        rendered = tp.process_template(s, foo=lambda: "bar")
+        self.assertEqual("bar", rendered)
+
+    def test_custom_template_processors_overwrite(self) -> None:
+        """Test template processor for presto gets overwritten by custom one."""
+        db = mock.Mock()
+        db.backend = "presto"
+        tp = jinja_context.get_template_processor(database=db)
+
+        sql = "SELECT '{{ datetime(2017, 1, 1).isoformat() }}'"
+        rendered = tp.process_template(sql)
+        self.assertEqual(sql, rendered)
+
+        sql = "SELECT '{{ DATE(1, 2) }}'"
+        rendered = tp.process_template(sql)
+        self.assertEqual(sql, rendered)
+
+    def test_custom_template_processors_ignored(self) -> None:
+        """Test custom template processor is ignored for a difference backend
+        database."""
+        maindb = utils.get_example_database()
+        sql = "SELECT '$DATE()'"
+        tp = jinja_context.get_template_processor(database=maindb)
+        rendered = tp.process_template(sql)
+        self.assertEqual(sql, rendered)
+
+    @mock.patch("tests.superset_test_custom_template_processors.datetime")
+    @mock.patch("superset.sql_lab.get_sql_results")
+    def test_custom_templated_sql_json(self, sql_lab_mock, mock_dt) -> None:
+        """Test sqllab receives macros expanded query."""
+        mock_dt.utcnow = mock.Mock(return_value=datetime.datetime(1970, 1, 1))
+        self.login("admin")
+        sql = "SELECT '$DATE()' as test"
+        resp = {
+            "status": utils.QueryStatus.SUCCESS,
+            "query": {"rows": 1},
+            "data": [{"test": "'1970-01-01'"}],
+        }
+        sql_lab_mock.return_value = resp
+
+        dbobj = self.create_fake_presto_db()
+        json_payload = dict(database_id=dbobj.id, sql=sql)
+        self.get_json_resp(
+            "/superset/sql_json/", raise_on_error=False, json_=json_payload
+        )
+        assert sql_lab_mock.called
+        self.assertEqual(sql_lab_mock.call_args[0][1], "SELECT '1970-01-01' as test")
+
+        self.delete_fake_presto_db()
 
     def test_fetch_datasource_metadata(self):
         self.login(username="admin")
