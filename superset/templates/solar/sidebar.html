@@ -117,23 +117,38 @@
 					<i class="ni ni-spaceship"></i><span>Roadmap</span>
 				</a>
 			</li>
-			<li>
-				<a {% if request.path == '/solarbiuserinfoeditview/form' or request.path == '/resetmypassword/form' %}class="s-sidebar__nav-link current_page_item"
-					{% else %}class="s-sidebar__nav-link"{% endif %} href="/solarbiuserinfoeditview/form">
-					<i class="fas fa-user"></i><span>{{_("My Profile")}}</span>
-				</a>
-			</li>
-			<li>
+            <li>
 				<a class="s-sidebar__nav-link">
-					<i class="fas fa-tools"></i><span onclick="Intercom('showNewMessage', 'Start a new conversation here!')">Support</span>
+					<i class="ni ni-palette"></i><span>Knowledge Base</span>
 				</a>
 			</li>
+            <li>
+				<a class="s-sidebar__nav-link">
+					<i class="ni ni-chart-pie-35"></i><span>Partners</span>
+				</a>
+			</li>
+{#			<li>#}
+{#				<a {% if request.path == '/solarbiuserinfoeditview/form' or request.path == '/resetmypassword/form' %}class="s-sidebar__nav-link current_page_item"#}
+{#					{% else %}class="s-sidebar__nav-link"{% endif %} href="/solarbiuserinfoeditview/form">#}
+{#					<i class="fas fa-user"></i><span>{{_("My Profile")}}</span>#}
+{#				</a>#}
+{#			</li>#}
+{#			<li>#}
+{#				<a class="s-sidebar__nav-link">#}
+{#					<i class="fas fa-tools"></i><span onclick="Intercom('showNewMessage', 'Start a new conversation here!')">Support</span>#}
+{#				</a>#}
+{#			</li>#}
 			<li>
 				<a class="s-sidebar__nav-link" href="{{appbuilder.get_url_for_logout}}">
 					<i class="fas fa-sign-out-alt"></i><span>Logout</span>
 				</a>
 			</li>
 		</ul>
+        <p class="s-sidebar__share-solarbi">
+            <a class="s-sidebar__nav-link">
+                <i style="color: #212529" class="ni ni-send text-dark"></i><span>Share SolarBI</span>
+            </a>
+        </p>
 
 {#		<div class="md-select">#}
 {#            <label for="ul-id">#}
@@ -198,7 +213,7 @@
 
 
 <script>
-    $(document).ready(function () {
+  $(document).ready(function () {
 
       $('form').bind("keypress", function(e) {
         if (e.keyCode === 13) {
@@ -261,5 +276,5 @@
         $('#team_name_existed_error').hide();
       });
 
-    });
+  });
 </script>

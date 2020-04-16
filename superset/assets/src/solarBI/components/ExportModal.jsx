@@ -166,7 +166,7 @@ const styles = tm => ({
     padding: 10,
     fontFamily: 'Montserrat',
     fontWeight: 'bold',
-    marginLeft: '15em',
+    marginLeft: '18em',
     backgroundColor: '#f5f5f5',
     ['@media (max-width:68em)']: { // eslint-disable-line no-useless-computed-key
       marginLeft: '4em',
