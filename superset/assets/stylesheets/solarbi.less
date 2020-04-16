@@ -62,110 +62,110 @@ input {
 .team-selector {
   position: relative;
 }
-.md-select {
-  transform: translateX(20px);
-  display: block;
-  margin: 50px 0 8px 0;
-  padding-bottom: 2px;
-  max-width: 180px;
-  font-family: "Montserrat";
-}
-@media (max-width: 68em) {
-  .md-select {
-    transform: translate(10px, 600px);
-  }
-}
-.md-select *,
-.md-select :after,
-.md-select :before {
-  box-sizing: border-box;
-}
-.md-select [type="button"] {
-  background: transparent;
-  color: white;
-  font-size: 1.2em;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  display: block;
-  line-height: 48px;
-  padding: 2px 0px 1px 15px;
-  position: relative;
-  text-align: left;
-  text-shadow: none;
-  min-width: 185px;
-  max-width: 190px;
-  z-index: 1;
-  outline: none;
-  overflow: hidden;
-}
-.md-select [type="button"]:focus,
-.md-select [type="button"]:hover {
-  // background: rgba(0, 0, 0, 0.1);
-  color: #f9ed32;
-}
-.md-select [type="button"]:after {
-  content: "\25be";
-  font-size: 20px;
-  float: right;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-.md-select ul[role="listbox"] {
-  background-color: white;
-  cursor: pointer;
-  list-style: none;
-  line-height: 26px;
-  overflow: hidden;
-  margin: 0;
-  max-height: 0;
-  position: absolute;
-  padding: 0;
-  transform: translateY(-50%);
-  transition: all 0.15s cubic-bezier(0.35, 0, 0.25, 1);
-  width: 100%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24) !important;
-}
-.md-select ul[role="listbox"] li {
-  display: none;
-  height: 48px;
-  margin: 0;
-  padding: 10px 16px 5px;
-  outline: none;
-  overflow: hidden;
-  color: black;
-}
-.md-select ul[role="listbox"] hr {
-  display: none;
-  margin: 5px 0;
-  background-color: #cccccc;
-}
-.md-select ul[role="listbox"] li:focus,
-.md-select ul[role="listbox"] li:hover,
-.md-select ul[role="listbox"] li.active {
-  background: rgba(0, 0, 0, 0.1);
-}
-.md-select.active ul {
-  max-height: 240px;
-  width: 185px;
-  overflow: auto;
-  padding: 8px 0;
-  z-index: 2;
-  transition: all 0.2s ease;
-  font-family: "Montserrat";
-  margin-bottom: 20px;
-  border-radius: 10px;
-}
-.md-select.active ul[role="listbox"] li {
-  display: inherit;
-}
-.md-select.active ul[role="listbox"] hr {
-  display: inherit;
-}
-.md-select .md-team-names {
-  max-height: 73px;
-  overflow: auto;
-}
+// .md-select {
+//   transform: translateX(20px);
+//   display: block;
+//   margin: 50px 0 8px 0;
+//   padding-bottom: 2px;
+//   max-width: 180px;
+//   font-family: "Montserrat";
+// }
+// @media (max-width: 68em) {
+//   .md-select {
+//     transform: translate(10px, 600px);
+//   }
+// }
+// .md-select *,
+// .md-select :after,
+// .md-select :before {
+//   box-sizing: border-box;
+// }
+// .md-select [type="button"] {
+//   background: transparent;
+//   color: white;
+//   font-size: 1.2em;
+//   font-weight: 500;
+//   border: none;
+//   cursor: pointer;
+//   display: block;
+//   line-height: 48px;
+//   padding: 2px 0px 1px 15px;
+//   position: relative;
+//   text-align: left;
+//   text-shadow: none;
+//   min-width: 185px;
+//   max-width: 190px;
+//   z-index: 1;
+//   outline: none;
+//   overflow: hidden;
+// }
+// .md-select [type="button"]:focus,
+// .md-select [type="button"]:hover {
+//   // background: rgba(0, 0, 0, 0.1);
+//   color: #f9ed32;
+// }
+// .md-select [type="button"]:after {
+//   content: "\25be";
+//   font-size: 20px;
+//   float: right;
+//   padding-left: 5px;
+//   padding-right: 5px;
+// }
+// .md-select ul[role="listbox"] {
+//   background-color: white;
+//   cursor: pointer;
+//   list-style: none;
+//   line-height: 26px;
+//   overflow: hidden;
+//   margin: 0;
+//   max-height: 0;
+//   position: absolute;
+//   padding: 0;
+//   transform: translateY(-50%);
+//   transition: all 0.15s cubic-bezier(0.35, 0, 0.25, 1);
+//   width: 100%;
+//   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24) !important;
+// }
+// .md-select ul[role="listbox"] li {
+//   display: none;
+//   height: 48px;
+//   margin: 0;
+//   padding: 10px 16px 5px;
+//   outline: none;
+//   overflow: hidden;
+//   color: black;
+// }
+// .md-select ul[role="listbox"] hr {
+//   display: none;
+//   margin: 5px 0;
+//   background-color: #cccccc;
+// }
+// .md-select ul[role="listbox"] li:focus,
+// .md-select ul[role="listbox"] li:hover,
+// .md-select ul[role="listbox"] li.active {
+//   background: rgba(0, 0, 0, 0.1);
+// }
+// .md-select.active ul {
+//   max-height: 240px;
+//   width: 185px;
+//   overflow: auto;
+//   padding: 8px 0;
+//   z-index: 2;
+//   transition: all 0.2s ease;
+//   font-family: "Montserrat";
+//   margin-bottom: 20px;
+//   border-radius: 10px;
+// }
+// .md-select.active ul[role="listbox"] li {
+//   display: inherit;
+// }
+// .md-select.active ul[role="listbox"] hr {
+//   display: inherit;
+// }
+// .md-select .md-team-names {
+//   max-height: 73px;
+//   overflow: auto;
+// }
 #current_team_name {
   white-space: nowrap;
   width: 145px;
@@ -1111,7 +1111,6 @@ input {
   top: 4em;
   left: 0;
   margin: 0;
-  padding: 0 25px;
   width: 18em;
 }
 
@@ -1147,9 +1146,9 @@ input {
 }
 .s-sidebar__share-solarbi {
   position: relative;
-  padding-left: 30px;
-  top: 20em;
-  width: 100%;
+  top: 70em;
+  width: 255px;
+  padding-left: 25px;
   font-family: Montserrat, sans-serif;
   background-color: #f6f9fc;
 }
@@ -1248,6 +1247,8 @@ input {
 
   .s-sidebar__nav ul {
     position: absolute;
+    padding: 0 5px;
+    margin-top: 3em;
   }
 
   .s-sidebar__nav ul li {
@@ -1266,6 +1267,11 @@ input {
   .s-sidebar__trigger:hover + .s-sidebar__nav,
   .s-sidebar__trigger:focus + .s-sidebar__nav {
     width: 18em;
+  }
+
+  .s-sidebar__share-solarbi {
+    top: 70em;
+    padding-left: 0;
   }
 }
 
@@ -1297,6 +1303,7 @@ input {
 
   .s-sidebar__nav ul {
     position: initial;
+    padding: 0 25px;
   }
 
   .sidebar-title {
@@ -1307,6 +1314,11 @@ input {
 
   .s-sidebar__nav ul {
     top: 1.3em;
+  }
+
+  .s-sidebar__share-solarbi {
+    top: 20em;
+    padding-left: 25px;
   }
 }
 
