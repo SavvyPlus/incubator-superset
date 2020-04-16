@@ -24,16 +24,11 @@
 {% set current_user_role = appbuilder.sm.get_role_in_team(current_user, session['team_id']).name %}
 {% set team_ids = appbuilder.sm.get_teams_for_user(current_user.id) %}
 <link href="{{url_for('static',filename='assets/stylesheets/solarbi.less')}}?v=3.2" rel="stylesheet">
+<link href="{{url_for('static',filename='assets/stylesheets/nucleo/css/nucleo.css')}}" rel="stylesheet" type="text/css">
 
 
 <!-- Sidebar -->
 <div class="s-layout__sidebar">
-
-	{#    <div class="alert-top">#}
-	{#        {% block messages %}#}
-	{#          {% include 'superset/flash_wrapper.html' %}#}
-	{#        {% endblock %}#}
-	{#    </div>#}
 	<a class="s-sidebar__trigger" href="#0">
 		<i class="fa fa-bars"></i>
 	</a>
@@ -43,36 +38,54 @@
 			<img class="sidebar-solarbi-sun" src="/static/assets/images/solarbi_auth_sun.png" alt="solar sun">
 			<h4 class="sidebar-solarbi-text">SolarBI<span class="alpha-logo">Alpha</span></h4>
 		</div>
-		<ul id="bar-list" style="font-family: Montserrat,sans-serif; font-weight: 500">
+
+		<ul id="bar-list" style="font-family: Montserrat,sans-serif">
+            <li>
+                <select id="select_team" class="form-control">
+                    {% for id, team in team_ids %}
+						{% if team == session['team_name'] %}
+                            <option id="{{ id }}" selected="selected">{{team}}</option>
+                        {% else %}
+                            <option id="{{ id }}">{{team}}</option>
+						{% endif %}
+					{% endfor %}
+                    <option>+ New Team</option>
+                </select>
+            </li>
+            <hr>
+        	<li>
+				<a {% if request.path == '/solar/demo' %}class="s-sidebar__nav-link current_page_item"
+					{% else %}class="s-sidebar__nav-link" {% endif %} href="{{ url_for('SolarBIModelView.demo') }}">
+					<i style="color: #5e72e4" class="fas fa-atom"></i><span >Dashboard</span>
+				</a>
+			</li>
 			<li>
 				<a {% if request.path == '/solar/add' %}class="s-sidebar__nav-link current_page_item"
 					{% else %}class="s-sidebar__nav-link" {% endif %} href="{{ url_for('SolarBIModelView.add') }}">
-					<i class="fas fa-atom"></i><span>Get Started</span>
+					<i style="color: #ffd600" class="fab fa-searchengin"></i><span>Search</span>
 				</a>
 			</li>
-			<li>
-				<a {% if request.path == '/solar/demo' %}class="s-sidebar__nav-link current_page_item"
-					{% else %}class="s-sidebar__nav-link" {% endif %} href="{{ url_for('SolarBIModelView.demo') }}">
-					<i class="fas fa-chart-bar"></i><span>Demo</span>
-				</a>
-			</li>
-			{#        <li>#}
-			{#           <a {% if request.path == '/solar/add' %}class="s-sidebar__nav-link current_page_item" {% else %}class="s-sidebar__nav-link"{% endif %}#}
-			{#              href="{{ url_for('SolarBIModelAddView.add') }}">#}
-			{#             <i class="fas fa-chart-bar"></i><span>Demo</span>#}
-			{#           </a>#}
-			{#        </li>#}
+{#			<li>#}
+{#				<a {% if request.path == '/solar/demo' %}class="s-sidebar__nav-link current_page_item"#}
+{#					{% else %}class="s-sidebar__nav-link" {% endif %} href="{{ url_for('SolarBIModelView.demo') }}">#}
+{#					<i class="fas fa-chart-bar"></i><span >Demo</span>#}
+{#				</a>#}
+{#			</li>#}
 			<li>
 				<a {% if request.path == '/solar/list' or request.path[:15] == '/superset/solar' %}class="s-sidebar__nav-link current_page_item"
 					{% else %}class="s-sidebar__nav-link" {% endif %} href="{{ url_for('SolarBIModelView.list') }}">
-					<i class="fas fa-desktop"></i><span>My Data</span>
+					<i style="color: #2dce89" class="fas fa-table"></i><span>Data Results</span>
+				</a>
+			</li>
+            <li>
+				<a class="s-sidebar__nav-link">
+					<i style="color: #11cdef" class="fas fa-briefcase"></i><span>Business Cases</span>
 				</a>
 			</li>
 			{% if current_user_role == 'team_owner' %}
 			<li>
 				<a {% if request.path == '/solar/my-team' %}class="s-sidebar__nav-link current_page_item"
-					{% else %}class="s-sidebar__nav-link" {% endif %}
-					href="{{ url_for('SolarBIRegisterInvitationUserDBView.invitation') }}">
+					{% else %}class="s-sidebar__nav-link" {% endif %} href="{{ url_for('SolarBIRegisterInvitationUserDBView.invitation') }}">
 					<i class="fas fa-users"></i><span>Team</span>
 				</a>
 			</li>
@@ -85,14 +98,24 @@
 				</a>
 			</li>
 			{% endif %}
-			<li>
-				<a class="s-sidebar__nav-link nav-link-disabled" style="cursor: not-allowed">
-					<i class="fas fa-terminal"></i><span>API</span>
-						<span class="badge badge-info coming-soon">Coming Soon</span>
+            <li>
+				<a {% if request.path == '/solarbiuserinfoeditview/form' or request.path == '/resetmypassword/form' %}class="s-sidebar__nav-link current_page_item"
+					{% else %}class="s-sidebar__nav-link"{% endif %} href="/solarbiuserinfoeditview/form">
+					<i style="color: black" class="far fa-user"></i><span>{{_("Profile")}}</span>
 				</a>
 			</li>
-			<li>
-				<hr />
+{#			<li>#}
+{#				<a class="s-sidebar__nav-link nav-link-disabled" style="cursor: not-allowed">#}
+{#					<i class="fas fa-terminal"></i><span>API</span>#}
+{#						<span class="badge badge-info coming-soon">Coming Soon</span>#}
+{#				</a>#}
+{#			</li>#}
+            <hr>
+            <p class="doc-text">DOCUMENTATION</p>
+            <li>
+				<a class="s-sidebar__nav-link">
+					<i class="ni ni-spaceship"></i><span>Roadmap</span>
+				</a>
 			</li>
 			<li>
 				<a {% if request.path == '/solarbiuserinfoeditview/form' or request.path == '/resetmypassword/form' %}class="s-sidebar__nav-link current_page_item"
@@ -102,7 +125,6 @@
 			</li>
 			<li>
 				<a class="s-sidebar__nav-link">
-{#					href="mailto:contact@solarbi.com.au?subject=I want to get support on SolarBI">#}
 					<i class="fas fa-tools"></i><span onclick="Intercom('showNewMessage', 'Start a new conversation here!')">Support</span>
 				</a>
 			</li>
@@ -112,36 +134,37 @@
 				</a>
 			</li>
 		</ul>
-		<div class="md-select">
-			<label for="ul-id">
-        <button type="button" class="ng-binding">
-          <span id="current_team_name" class="ng-binding"><i style="width: 2em" class="fas fa-user-cog"></i>{{ session['team_name'] }}</span>
-        </button>
-      </label>
-			<ul role="listbox" id="ul-id" class="md-whiteframe-z1" name="ul-id">
-				<li role="option" id="{{ session['team_id'] }}" class="ng-binding ng-scope active" tabindex="-1" aria-selected="true">
-					<span class="checkmark">
-						<div class="checkmark_stem"></div>
-						<div class="checkmark_kick"></div>
-					</span>
-					{{ session['team_name'] }}
-				</li>
-				<hr />
-				<div class="md-team-names">
-					{% for id, team in team_ids %}
-						{% if team != session['team_name'] %}
-							<li role="option" id="{{id}}" class="ng-binding ng-scope" tabindex="-1" aria-selected="true">
-								{{team}}
-							</li>
-						{% endif %}
-					{% endfor %}
-				</div>
-				<hr />
-				<li data-toggle="modal" data-target="#addNewTeam" role="option" id="{{ session['team_id'] }}" class="ng-binding ng-scope" tabindex="-1" aria-selected="true">
-					<span><i style="margin-right: 13px; color: #177BB9;" class="fas fa-plus"></i>New team</span>
-				</li>
-			</ul>
-		</div>
+
+{#		<div class="md-select">#}
+{#            <label for="ul-id">#}
+{#                <button type="button" class="ng-binding">#}
+{#                  <span id="current_team_name" class="ng-binding"><i style="width: 2em" class="fas fa-user-cog"></i>{{ session['team_name'] }}</span>#}
+{#                </button>#}
+{#            </label>#}
+{#			<ul role="listbox" id="ul-id" class="md-whiteframe-z1" name="ul-id">#}
+{#				<li role="option" id="{{ session['team_id'] }}" class="ng-binding ng-scope active" tabindex="-1" aria-selected="true">#}
+{#					<span class="checkmark">#}
+{#						<div class="checkmark_stem"></div>#}
+{#						<div class="checkmark_kick"></div>#}
+{#					</span>#}
+{#					{{ session['team_name'] }}#}
+{#				</li>#}
+{#				<hr />#}
+{#				<div class="md-team-names">#}
+{#					{% for id, team in team_ids %}#}
+{#						{% if team != session['team_name'] %}#}
+{#							<li role="option" id="{{id}}" class="ng-binding ng-scope" tabindex="-1" aria-selected="true">#}
+{#								{{team}}#}
+{#							</li>#}
+{#						{% endif %}#}
+{#					{% endfor %}#}
+{#				</div>#}
+{#				<hr />#}
+{#				<li data-toggle="modal" data-target="#addNewTeam" role="option" id="{{ session['team_id'] }}" class="ng-binding ng-scope" tabindex="-1" aria-selected="true">#}
+{#					<span><i style="margin-right: 13px; color: #177BB9;" class="fas fa-plus"></i>New team</span>#}
+{#				</li>#}
+{#			</ul>#}
+{#		</div>#}
 	</nav>
 </div>
 
@@ -175,76 +198,68 @@
 
 
 <script>
-	$(document).ready(function () {
-	  $('form').bind("keypress", function(e) {
-      if (e.keyCode === 13) {
-        e.preventDefault();
-        return false;
-      }
+    $(document).ready(function () {
+
+      $('form').bind("keypress", function(e) {
+        if (e.keyCode === 13) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      $('#select_team').change(function(){
+        const val = $(this).val();
+        const prevTeam = '{{ session['team_name'] }}';
+        if (val === '+ New Team') {
+          $('#addNewTeam').modal('show');
+          $(this).val(prevTeam);
+        } else {
+          const teamId = $(this).find('option:selected').attr('id');
+          window.location.href = '/solar/switch_team/' + teamId;
+        }
+      });
+
+      $('#addTeamBtn').click(function() {
+        $(this).prop('disabled',true);
+        $('#team_name_error').hide();
+        $('#team_name_empty').hide();
+        $('#team_name_existed_error').hide();
+        let team_name = $('#teamName').val();
+        if (team_name === '') {
+            return $('#team_name_empty').show();
+        }
+        if (team_name.length > 13) {
+            return $('#team_name_error').show();
+        }
+        let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+        $.ajax({
+            type : "POST",
+            url : "{{ url_for('SolarBIRegisterInvitationUserDBView.create_team') }}",
+            data: JSON.stringify({team_name: team_name}),
+            contentType: 'application/json;charset=UTF-8',
+            success: function(data) {
+                if (data.redirect) {
+                    window.location.replace(data.redirect)
+                } else {
+                    $('#team_name_existed_error').show();
+                }
+                {#console.log('success')#}
+            }
+        });
+      });
+
+      $('#addNewTeam').on('hidden.bs.modal', function () {
+        $('#teamName').val('');
+        $('#team_name_error').hide();
+        $('#team_name_existed_error').hide();
+      });
+
     });
-
-
-		$('.md-select').on('click', function () {
-			$(this).toggleClass('active')
-		});
-
-		$(document).click(function(event){
-			if (!$(event.target).hasClass('ng-binding')) {
-				$(".md-select").removeClass("active");
-			}
-		});
-
-		$('.md-select ul li').not(":last").on('click', function () {
-			var v = $(this).text();
-			$('.md-select ul li').not($(this)).removeClass('active');
-			$(this).addClass('active');
-			$('.md-select label button').text(v);
-			{#console.log('solar/switch_team/' + $(this)[0].id)#}
-			window.location.href = '/solar/switch_team/' + $(this)[0].id;
-		});
-
-
-		$('#addTeamBtn').click(function() {
-		  $(this).prop('disabled',true);
-			$('#team_name_error').hide();
-			$('#team_name_empty').hide();
-			$('#team_name_existed_error').hide();
-			let team_name = $('#teamName').val();
-			if (team_name === '') {
-				return $('#team_name_empty').show();
-			}
-			if (team_name.length > 13) {
-				return $('#team_name_error').show();
-			}
-			let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-			$.ajaxSetup({
-				beforeSend: function(xhr, settings) {
-					if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-						xhr.setRequestHeader("X-CSRFToken", csrf_token);
-					}
-				}
-			});
-			$.ajax({
-				type : "POST",
-				url : "{{ url_for('SolarBIRegisterInvitationUserDBView.create_team') }}",
-				data: JSON.stringify({team_name: team_name}),
-				contentType: 'application/json;charset=UTF-8',
-				success: function(data) {
-					if (data.redirect) {
-						window.location.replace(data.redirect)
-					} else {
-						$('#team_name_existed_error').show();
-					}
-					{#console.log('success')#}
-				}
-			});
-		});
-
-		$('#addNewTeam').on('hidden.bs.modal', function () {
-		   $('#teamName').val('');
-		   $('#team_name_error').hide();
-		   $('#team_name_existed_error').hide()
-		});
-
-	});
 </script>
