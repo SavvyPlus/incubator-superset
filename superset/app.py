@@ -161,6 +161,7 @@ class SupersetAppInitializer:
         from superset.views.database.api import DatabaseRestApi
         from superset.views.database.views import DatabaseView, CsvToDatabaseView
         from superset.views.datasource import Datasource
+        from superset.views.simulation.views import UploadAssumptionView
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
         from superset.views.schedules import (
@@ -273,6 +274,7 @@ class SupersetAppInitializer:
         appbuilder.add_view_no_menu(Api)
         appbuilder.add_view_no_menu(CssTemplateAsyncModelView)
         appbuilder.add_view_no_menu(CsvToDatabaseView)
+        appbuilder.add_view_no_menu(UploadAssumptionView)
         appbuilder.add_view_no_menu(Dashboard)
         appbuilder.add_view_no_menu(DashboardModelViewAsync)
         appbuilder.add_view_no_menu(Datasource)
@@ -338,6 +340,17 @@ class SupersetAppInitializer:
             icon="fa-upload",
             category="Sources",
             category_label=__("Sources"),
+            category_icon="fa-wrench",
+        )
+
+        # Upload assumption file
+        appbuilder.add_link(
+            "Upload assumtion file",
+            label="Upload Assumption excel",
+            href="/upload_assumption_file/form",
+            icon="fa-upload",
+            category="Simulation",
+            category_label="Simulation",
             category_icon="fa-wrench",
         )
 
