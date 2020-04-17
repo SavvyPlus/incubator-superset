@@ -426,7 +426,7 @@ export class MapView extends React.Component {
                             {!this.state.solar_new ?
                               <p
                                 style={{
-                                  fontFamily: 'Montserrat',
+                                  fontFamily: 'Open Sans, sans-serif',
                                   fontSize: 23,
                                   fontWeight: 500,
                                   textAlign: 'center',
@@ -438,7 +438,7 @@ export class MapView extends React.Component {
                             }
                             <p
                               style={{
-                                fontFamily: 'Montserrat',
+                                fontFamily: 'Open Sans, sans-serif',
                                 fontSize: 21,
                                 textAlign: 'center',
                                 color: '024067',

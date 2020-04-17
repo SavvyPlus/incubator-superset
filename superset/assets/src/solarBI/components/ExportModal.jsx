@@ -64,7 +64,7 @@ const propTypes = {
 const theme = createMuiTheme({
   typography: {
     useNextVariants: true,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
   },
   palette: {
     primary: {
@@ -79,7 +79,7 @@ const theme = createMuiTheme({
 
 const styles = tm => ({
   addressText: {
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
     fontSize: 21,
     textAlign: 'center',
     color: '024067',
@@ -105,7 +105,7 @@ const styles = tm => ({
     backgroundColor: '#0063B0',
     border: 'none',
     fontSize: 16,
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Open Sans, sans-serif',
     fontWeight: 'bold',
     '&:hover': {
       color: 'white',
@@ -164,7 +164,7 @@ const styles = tm => ({
   },
   dialog: {
     padding: 10,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
     fontWeight: 'bold',
     marginLeft: '18em',
     backgroundColor: '#f5f5f5',
@@ -207,7 +207,7 @@ const styles = tm => ({
   formControlLabel: {
     fontSize: '1rem',
     color: '#0063B0',
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
     fontWeight: 500,
   },
   helperText: {
@@ -269,7 +269,7 @@ const styles = tm => ({
     fontSize: '16px',
   },
   textInput: {
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
     fontSize: '16px',
     fontWeight: 500,
     // backgroundColor: '#EEEFF0',

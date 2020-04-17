@@ -134,7 +134,7 @@
       {
         style: {
           position: 'absolute', left: '47%', top: '50%',
-          fontSize: 16, fontFamily: 'Montserrat, sans-serif', fontWeight: 'bold',
+          fontSize: 16, fontFamily: 'Open Sans, sans-serif', fontWeight: 'bold',
         }
       },
       'Loading...'

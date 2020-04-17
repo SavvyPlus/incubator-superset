@@ -76,7 +76,7 @@ const styles = tm => ({
     margin: 'auto',
     marginTop: -10,
     width: 180,
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Open Sans, sans-serif',
     fontSize: 16,
     color: '#0063B0',
     cursor: 'pointer',
@@ -91,7 +91,7 @@ const styles = tm => ({
     backgroundColor: '#0063B0',
     border: 'none',
     fontSize: 16,
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Open Sans, sans-serif',
     fontWeight: 'bold',
     '&:hover': {
       color: 'white',
@@ -180,7 +180,7 @@ class LocationSearchBox extends React.Component {
             inputProps={{
               style: {
                 fontSize: 18,
-                fontFamily: 'Montserrat, sans-serif',
+                fontFamily: 'Open Sans, sans-serif',
                 paddingLeft: 10,
               },
             }}
