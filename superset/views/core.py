@@ -54,7 +54,7 @@ import pandas as pd
 import simplejson as json
 from sqlalchemy import and_, or_, select
 from werkzeug.routing import BaseConverter
-from ..solar.forms import SolarBIListWidget
+from ..solar.forms import SolarBIListWidget, SolarBIDashboardListWidget
 from ..solar.models import Plan, TeamSubscription, Team, StripeEvent
 from ..solar.utils import set_session_team, get_session_team, log_to_mp, get_athena_query, send_sendgrid_email
 from superset import (
@@ -1250,6 +1250,199 @@ appbuilder.add_view(
     icon='fa-save',
     category='Billing',
     category_label=__('Billing'),
+    category_icon='fa-sun-o',
+)
+
+
+class SolarBIDashboardView(ModelView):
+    route_base = '/solarbidashboard'
+    datamodel = SQLAInterface(models.SolarBISlice)
+    base_filters = [['viz_type', FilterEqual, 'solarBI'],
+                    ['team_id', FilterEqualFunction, get_team_id]]
+    # ['created_by', FilterEqualFunction, get_user]]
+    # base_permissions = ['can_list', 'can_show', 'can_add', 'can_delete', 'can_edit']
+
+    search_columns = (
+        'slice_name', 'description', 'owners',
+    )
+    list_columns = [
+        'slice_link', 'creator', 'modified', 'view_slice_name', 'view_slice_link',
+        'slice_query_id',
+        'slice_download_link', 'slice_id', 'changed_by_name'
+    ]
+    edit_columns = [
+        "slice_name",
+        "description",
+        "viz_type",
+        "owners",
+        "params",
+        "cache_timeout",
+    ]
+
+    order_columns = ['modified']
+
+    filters_not_for_admin = {}
+
+    list_template = 'solar/my_dashboard.html',
+    list_title = 'My Dashboard - SolarBI'
+    list_widget = SolarBIDashboardListWidget
+
+    @expose('/my-dashboard')
+    @has_access
+    def mydashboard(self):
+
+        for team_role in g.user.team_role:
+            role = team_role.role
+            if role.name == 'Admin':
+                self.remove_filters_for_role(role.name)
+                break
+            else:
+                self.add_filters_for_role(role.name)
+        widgets = self._list()
+        return self.render_template(self.list_template,
+                                    title=self.list_title,
+                                    widgets=widgets)
+
+    def _get_list_widget(
+            self,
+            filters,
+            actions=None,
+            order_column="",
+            order_direction="",
+            page=None,
+            page_size=None,
+            widgets=None,
+            **args
+    ):
+        """ get joined base filter and current active filter for query """
+        # pylint: disable=unpacking-non-sequence
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column, order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count, lst = self.datamodel.query(
+            joined_filters,
+            order_column,
+            order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        pks = self.datamodel.get_keys(lst)
+
+        # serialize composite pks
+        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+
+        all_object_keys = []
+        try:
+            all_object_keys = self.list_object_key('colin-query-test',
+                                                   'TID' + str(get_session_team(
+                                                       self.appbuilder.sm, g.user.id)[
+                                                                   0]) + '/')
+        except Exception:
+            pass
+
+        obj_keys = []
+        avail_object_keys = []
+        if all_object_keys:
+            avail_object_keys = [key for key in all_object_keys if key.endswith('.csv')]
+            obj_keys = [key.split('/')[2].replace('.csv', '') for key in
+                        avail_object_keys]
+
+        widgets["list"] = self.list_widget(
+            appbuilder=self.appbuilder,
+            session_team=get_session_team(self.appbuilder.sm, g.user.id),
+            avail_object_keys=avail_object_keys,
+            obj_keys=obj_keys,
+            label_columns=self.label_columns,
+            include_columns=self.list_columns,
+            value_columns=self.datamodel.get_values(lst, self.list_columns),
+            order_columns=self.order_columns,
+            formatters_columns=self.formatters_columns,
+            page=page,
+            page_size=page_size,
+            count=count,
+            pks=pks,
+            actions=actions,
+            filters=filters,
+            modelview_name=self.__class__.__name__,
+        )
+        return widgets
+
+    def list_object_key(self, bucket, prefix):
+        AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+        AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+        session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        client = session.client('s3', region_name='ap-southeast-2')
+        key_list = []
+        response = client.list_objects_v2(
+            Bucket=bucket,
+            Prefix=prefix
+        )
+        contents = None
+        try:
+            contents = response['Contents']
+        except:
+            pass
+
+        is_truncated = response['IsTruncated']
+        for content in contents:
+            try:
+                key_list.append(content['Key'])
+            except:
+                pass
+
+        if is_truncated:
+            cont_token = response['NextContinuationToken']
+        while is_truncated:
+            response = client.list_objects_v2(
+                Bucket=bucket,
+                Prefix=prefix,
+                ContinuationToken=cont_token
+            )
+            contents = response['Contents']
+            is_truncated = response['IsTruncated']
+            for content in contents:
+                key_list.append(content['Key'])
+            if is_truncated:
+                cont_token = response['NextContinuationToken']
+        return sorted(key_list)
+
+    def remove_filters_for_role(self, role_name):
+        if role_name == 'Admin':
+            self.remove_filter('created_by')
+
+    def add_filters_for_role(self, role_name):
+        if role_name != 'Admin':
+            self.add_filters('created_by')
+
+    def add_filters(self, filter_name):
+        for f in self.filters_not_for_admin:
+            if f.column_name == filter_name:
+                self._base_filters.filters.append(f)
+                self._base_filters.values.append(self.filters_not_for_admin[f])
+                del self.filters_not_for_admin[f]
+                break
+
+    def remove_filter(self, filter_name):
+        for f in self._base_filters.filters:
+            if f.column_name == filter_name:
+                index_filter = self._base_filters.filters.index(f)
+                value = self._base_filters.values[index_filter]
+                self.filters_not_for_admin[f] = value
+                self._base_filters.filters.remove(f)
+                self._base_filters.values.remove(value)
+
+
+appbuilder.add_view(
+    SolarBIDashboardView,
+    'Dashboard',
+    label=__('Dashboard'),
+    icon='fa-save',
+    category='Dashboard',
+    category_label=__('Dashboard'),
     category_icon='fa-sun-o',
 )
 
