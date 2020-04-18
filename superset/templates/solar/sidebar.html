@@ -35,15 +35,16 @@
     <div class="scrollbar-inner">
         <!-- Brand -->
         <div class="sidenav-header  align-items-center">
-            <a class="navbar-brand" href="javascript:void(0)">
-                <img src="" class="navbar-brand-img" alt="...">
+            <a class="navbar-brand" href="/">
+                <img class="sidebar-solarbi-sun" src="/static/assets/images/solarbi_auth_sun.png" alt="solar sun">
+			    <h4 class="sidebar-solarbi-text">SolarBI<span class="alpha-logo">Alpha</span></h4>
             </a>
         </div>
         <div class="navbar-inner">
             <!-- Collapse -->
             <div class="collapse navbar-collapse" id="sidenav-collapse-main">
                 <!-- Workspace Selection -->
-                               <select id="select_team" class="form-control">
+                <select id="select_team" class="form-control">
                     {% for id, team in team_ids %}
 						{% if team == session['team_name'] %}
                             <option id="{{ id }}" selected="selected">{{team}}</option>
@@ -61,19 +62,25 @@
                 <!-- Nav items -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('SolarBIDashboardView.mydashboard') }}">
+                        <a {% if request.path == '/solarbidashboard/my-dashboard' %}
+                             class="nav-link active" {% else %} class="nav-link" {% endif %}
+                           href="{{ url_for('SolarBIDashboardView.mydashboard') }}">
                             <i class="ni ni-atom text-primary"></i>
                             <span class="nav-link-text">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link " href="search.html">
+                        <a {% if request.path == '/solar/add' %}
+                             class="nav-link active" {% else %} class="nav-link" {% endif %}
+                           href="{{ url_for('SolarBIModelView.add') }}">
                             <i class="fab fa-searchengin text-yellow"></i>
                             <span class="nav-link-text">Search</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="data.html">
+                        <a {% if request.path == '/solar/list' %}
+                             class="nav-link active" {% else %} class="nav-link" {% endif %}
+                           href="{{ url_for('SolarBIModelView.list') }}">
                             <i class="fas fa-table text-success"></i>
                             <span class="nav-link-text">Data Results</span>
                         </a>
@@ -85,7 +92,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="profile.html">
+                        <a {% if request.path == '/solarbiuserinfoeditview/form' %}
+                             class="nav-link active" {% else %} class="nav-link" {% endif %}
+                           href="/solarbiuserinfoeditview/form">
                             <i class="far fa-user text-darker"></i>
                             <span class="nav-link-text">Profile</span>
                         </a>
@@ -135,6 +144,7 @@
     </div>
 </nav>
 <!-- Side Nav End -->
+
 {#<div class="s-layout__sidebar">#}
 {#	<a class="s-sidebar__trigger" href="#0">#}
 {#		<i class="fa fa-bars"></i>#}

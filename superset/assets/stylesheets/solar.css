@@ -22155,7 +22155,7 @@ textarea[resize='horizontal']
 
 @media (min-width: 1200px)
 {
-    .navbar-vertical.navbar-expand-xl.fixed-left + .modal + script + .main-content
+    .navbar-vertical.navbar-expand-xl.fixed-left + .main-content
     {
         margin-left: 250px;
     }
@@ -22225,7 +22225,7 @@ textarea[resize='horizontal']
 .sidenav .navbar-brand,
 .sidenav .navbar-heading
 {
-    padding: 1.5rem;
+    padding: 0.5rem;
 }
 
 .sidenav-header
@@ -22233,6 +22233,36 @@ textarea[resize='horizontal']
     height: 78px;
 
     text-align: center;
+}
+
+.sidebar-solarbi-sun {
+    margin-top: 10px;
+    width: 15px;
+    height: 15px;
+    position: relative;
+    top: 5px;
+    left: 9px;
+  }
+.sidebar-solarbi-text 
+{
+    font-size: 25px;
+    font-weight: bold;
+    color: #d7df23;
+    margin: 5px;
+    font-family: Open Sans, sans-serif;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+.sidebar-solarbi-text .alpha-logo 
+{
+    background-color: #d7df23;
+    color: white;
+    font-size: 15px;
+    border-radius: 20px;
+    padding: 2px 10px;
+    display: inline-block;
+    transform: translateY(-3px);
+    letter-spacing: 2;
 }
 
 .g-sidenav-show .sidenav .navbar-brand,
