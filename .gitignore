@@ -35,7 +35,8 @@ build
 app.db
 apache_superset.egg-info/
 changelog.sh
-dist
+#dist
+superset/assets/dist
 dump.rdb
 env
 venv*
@@ -87,6 +88,3 @@ apache-superset-*.tar.gz*
 # Translation binaries
 messages.mo
 .serverless/serverless-flask.zip
-
-
-!dropzone/dist
