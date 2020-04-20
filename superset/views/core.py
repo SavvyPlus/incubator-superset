@@ -22,6 +22,7 @@ from dateutil.relativedelta import relativedelta
 import logging
 import re
 import time
+import itertools
 import requests
 import boto3
 from typing import Dict, List  # noqa: F401
@@ -111,6 +112,7 @@ from .utils import (
     get_datasource_info,
     get_form_data,
     get_viz,
+    format_datetime,
     get_user_teams,
 )
 
@@ -1267,8 +1269,7 @@ class SolarBIDashboardView(ModelView):
     )
     list_columns = [
         'slice_link', 'creator', 'modified', 'view_slice_name', 'view_slice_link',
-        'slice_query_id',
-        'slice_download_link', 'slice_id', 'changed_by_name'
+        'slice_query_id', 'slice_download_link', 'slice_id', 'changed_by_name'
     ]
     edit_columns = [
         "slice_name",
@@ -1350,14 +1351,42 @@ class SolarBIDashboardView(ModelView):
             obj_keys = [key.split('/')[2].replace('.csv', '') for key in
                         avail_object_keys]
 
+        # Get current session team
+        session_team = get_session_team(self.appbuilder.sm, g.user.id)
+
+        # Get remaining advance requests in this billing period
+        subscription = self.appbuilder.sm.get_subscription(team_id=session_team[0])
+        remain_advanced_searches = subscription.remain_count
+        # Get the total number of advance requests in the history
+        value_generator = self.datamodel.get_values(lst, self.list_columns)
+        history_advance_count = len([item['slice_query_id'] for item in value_generator
+                                    if item['slice_query_id'] != 'None'])
+        # Get the number of team members
+        cur_team = self.appbuilder.sm.find_team(team_id=session_team[0])
+        awaiting_emails = self.appbuilder.sm.get_awaiting_emails(cur_team)
+        team_users = self.appbuilder.sm.get_team_members(cur_team.id)
+        team_users_count = len(cur_team.users)
+        # Get the number of new team members who joined in this week
+        new_team_users_count = self.appbuilder.sm.get_new_team_users_count(session_team[0])
+        # Get the current plan name
+        plan_name = self.appbuilder.get_session.query(Plan).filter_by(id=subscription.plan).first().plan_name
+
         widgets["list"] = self.list_widget(
             appbuilder=self.appbuilder,
-            session_team=get_session_team(self.appbuilder.sm, g.user.id),
+            session_team=session_team,
             avail_object_keys=avail_object_keys,
             obj_keys=obj_keys,
+            remain_advanced_searches=remain_advanced_searches,
+            history_advance_count=history_advance_count,
+            team_users_count=team_users_count,
+            new_team_users_count=new_team_users_count,
+            plan_name=plan_name,
+            format_datetime=format_datetime,
+            awaiting_emails=awaiting_emails,
+            team_users=team_users,
             label_columns=self.label_columns,
             include_columns=self.list_columns,
-            value_columns=self.datamodel.get_values(lst, self.list_columns),
+            value_columns=itertools.islice(self.datamodel.get_values(lst, self.list_columns), 5),
             order_columns=self.order_columns,
             formatters_columns=self.formatters_columns,
             page=page,

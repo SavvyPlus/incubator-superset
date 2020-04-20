@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=C,R,W
+from datetime import datetime
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 from urllib import parse
@@ -204,3 +205,7 @@ def get_user_teams(user):
     for team_role in user.team_role:
         team_id_list.append(team_role.team.id)
     return team_id_list
+
+
+def format_datetime(value, dt_format='%Y-%m-%d'):
+    return datetime.strptime(value, dt_format).strftime('%d/%m/%Y')

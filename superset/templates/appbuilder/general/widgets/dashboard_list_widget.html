@@ -23,7 +23,7 @@
 {% set download_prefix = "https://colin-query-test.s3-ap-southeast-2.amazonaws.com/" %}
 
 {% block begin_title %}
-       <nav class="navbar navbar-top navbar-expand navbar-dark bg-primary border-bottom">
+    <nav class="navbar navbar-top navbar-expand navbar-dark bg-primary border-bottom">
         <div class="container-fluid">
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <!-- Navbar links -->
@@ -122,9 +122,9 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link pr-0" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <div class="media align-items-center">
-                  <span class="avatar avatar-sm rounded-circle">
-                    <img alt="Image placeholder" src="/static/assets/images/team-4.jpg">
-                  </span>
+                                <span class="avatar avatar-sm rounded-circle">
+                                   <img alt="Image placeholder" src="/static/assets/images/team-4.jpg">
+                                </span>
                                 <div class="media-body  ml-2  d-none d-lg-block">
                                     <span class="mb-0 text-sm  font-weight-bold">John Snow</span>
                                 </div>
@@ -157,121 +157,532 @@
             </div>
         </div>
     </nav>
-
+    <!-- End Top nav -->
 {% endblock %}
 
-{% block begin_content scoped %}
-    <div class="list-cards-wrapper">
+{% block header %}
+    <div class="header bg-primary pb-6">
+        <div class="container-fluid">
+            <div class="header-body">
+                <div class="row align-items-center py-4">
+                    <div class="col-lg-6 col-7">
+                        <h6 class="h2 text-white d-inline-block mb-0"></h6>
+                        <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                                <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
+                                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="col-lg-6 col-5 text-right">
+                        <a href="{{ url_for('SolarBIModelView.add') }}" class="btn btn-md btn-neutral">New Search</a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-3 col-md-6" >
+                        <div class="card card-stats">
+
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-muted mb-0">Advance Request</h5>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="text-uppercase">
+                                            <span class="h2 font-weight-bold mb-0">{{ history_advance_count }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-3 mb-0 text-sm">
+                                    <span class="text-blue mr-2">{{ remain_advanced_searches }}</span>
+                                    <span class="text-nowrap">Left this month</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card card-stats">
+                            <!-- Card body -->
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-muted mb-0">Team Members</h5>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="text-uppercase">
+                                            <span class="h2 font-weight-bold mb-0">
+                                                {{ team_users_count }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-3 mb-0 text-sm">
+                                    <span class="text-success mr-2"><i class="fa fa-arrow-up"></i>{{ new_team_users_count }}</span>
+                                    <span class="text-nowrap">New Members</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card card-stats">
+                            <!-- Card body -->
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-muted mb-0">Business Cases</h5>
+
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="text-uppercase">
+                                            <span class="h2 font-weight-bold mb-0">5</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-3 mb-0 text-sm">
+                                    <span class="text-blue mr-2"> 2</span>
+                                    <span class="text-nowrap">Left this month</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6" >
+                        <div class="card-deck">
+                            <div class="card bg-gradient-default">
+                                <div class="card-body" style="text-align: center">
+                                    <div class="mb-2">
+                                        <span class="h2 text-white align-content-center" >Your are in {{ plan_name }} Plan </span>
+                                    </div>
+                                    <button class="btn btn-sm btn-block btn-neutral">Upgrade</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
-{% block begin_loop_header scoped %}
-    <p>NMSL</p>
+{% block begin_tables %}
+    <div class="container-fluid mt--6">
 {% endblock %}
 
-{% block begin_loop_values %}
-    {% for item in value_columns %}
-        <div class="list-card">
-            {% set formatter = formatters_columns.get(value) %}
-            {% if 'None' in item['slice_query_id'] %}
-                <a data-href={{ "/solar/delete/"+item['slice_id'] }} type="button" class="delete-btn" data-toggle="modal" data-target="#deleteData"><i class="far fa-trash-alt"></i></a>
-                <div class="list-container">
-                    <div class="ribbon saved-ribbon-top-right"><span>saved</span></div>
-                    {% if formatter %}
-                        {{ formatter(item['view_slice_name']) }}
+{% block table_row_1 %}
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header border-0">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h3 class="mb-0">Latest Search</h3>
+                        </div>
+                        <div class="col text-right">
+                            <a href="data.html" class="btn btn-sm btn-primary">See all</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    {% if count > 0 %}
+                        <table class="table align-items-center table-flush">
+                            <thead class="thead-light">
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">Date Range</th>
+                                <th scope="col">Resolution</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for item in value_columns %}
+                                {% if 'None' in item['slice_query_id'] %}
+                                    <tr>
+                                        <th scope="row">
+                                            {{ item['view_slice_name'][3: -4] }}
+                                        </th>
+                                        <td>
+                                            N/A
+                                        </td>
+                                        <td>
+                                            N/A
+                                        </td>
+                                        <td>
+                                            <i href="" class="fas fa-search text-cyan" data-toggle="tooltip" data-placement="top" title="Saved Search"></i>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    {% set info = item['view_slice_name'].split('_') %}
+                                    <tr>
+                                        <th scope="row">
+                                            {{ info[0][3:] }}
+                                        </th>
+                                        <td>
+                                            {{ format_datetime(info[1]) }} - {{ format_datetime(info[2]) }}
+                                        </td>
+                                        <td>
+                                            {{ info[4][:-4].capitalize() }}
+                                        </td>
+                                        <td>
+                                        {% if item['slice_query_id'] in obj_keys %}
+                                            <i class="ni ni-cloud-download-95 text-success " data-toggle="tooltip" data-placement="top" title="completed"></i>
+                                        {% else %}
+                                            <i class="ni ni-sound-wave text-gray-dark" data-toggle="tooltip" data-placement="top" title="in progress"></i>
+                                        {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                            </tbody>
+                        </table>
                     {% else %}
-                        {{ item['view_slice_name'] }}
+                        <p class="empty-saved-data">{{_("Your team has not saved or requested any data yet")}}</p>
                     {% endif %}
-                    <hr style="border-bottom: 1px solid #C7C9CB; width: 80px; margin: -10px auto 10px;">
-                    {% if is_team_owner %}
-                        <h6>Owner: {{ item['changed_by_name'] }}</h6>
-                    {% endif %}
-                    <i class="fas fa-chart-pie my-data-pie"></i>
-                    {{ item['view_slice_link'] }}
                 </div>
-            {% else %}
-                <div class="ribbon ribbon-top-right"><span>paid</span></div>
-                <div class="download-container">
-                {% if formatter %}
-                    {{ formatter(item['view_slice_name']) }}
-                {% else %}
-                   {% set info = item['view_slice_name'].split('_') %}
-                   <table>
-                      {% if not is_team_owner %}
-                          <div style="margin-top: 20px"></div>
-                      {% endif %}
-                      <tr>
-                        <td>Address</td>
-                        <td><div>{{ info[0][3:] }}</div></td>
-                      </tr>
-                      <tr>
-                        <td>Start Date</td>
-                        <td>{{ info[1] }}</td>
-                      </tr>
-                      <tr>
-                        <td>End Date</td>
-                        <td>{{ info[2] }}</td>
-                      </tr>
-{#                      <tr>#}
-{#                        <td>Type</td>#}
-{#                        <td>{{ info[3] }}</td>#}
-{#                      </tr>#}
-                      <tr>
-                        <td>Resolution</td>
-                        <td>{{ info[4][:-4] }}</td>
-                      </tr>
-                      {% if is_team_owner %}
-                          <tr>
-                            <td>Owner</td>
-                            <td>{{ item['changed_by_name'] }}</td>
-                          </tr>
-                      {% endif %}
-                      <tr>
-                        <td>Status</td>
-                          {% if item['slice_query_id'] in obj_keys %}
-                             <td>
-                             {% for aok in avail_object_keys %}
-                                 {% if item['slice_query_id'] in aok %}
-                                    Completed
-                                    <span class="download-link" onclick="download1('{{ download_prefix + aok }}')">
-                                      <i class="fas fa-arrow-circle-down"></i>
-                                    </span>
-                                 {% endif %}
-                             {% endfor %}
-                             </td>
-                          {% else %}
-                              <td>Still running</td>
-                          {% endif %}
-                      </tr>
-                    </table>
-                {% endif %}
-                </div>
-            {% endif %}
+            </div>
         </div>
-    {% endfor %}
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header border-0">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h3 class="mb-0">Latest Busines Cases</h3>
+                        </div>
+                        <div class="col text-right">
+                            <a href="business.html" class="btn btn-sm btn-primary">See all</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <!-- Projects table -->
+                    <table class="table align-items-center table-flush">
+                        <thead class="thead-light">
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Completed Date</th>
+                            <th scope="col">Modules</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <th scope="row">
+                                Solar Farm
+                            </th>
+                            <td>
+                                1/1/2017
+                            </td>
+                            <td>
+                                Basic Simple Case<br>
+                                PV Solar <br>
 
-    <div class="modal fade" id="deleteData" tabindex="-1" role="dialog" aria-labelledby="deleteDataTitle" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="deleteDataTitle">Delete Saved Data</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            Are you sure to delete this saved data?
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn delete-close-btn" data-dismiss="modal">Close</button>
-            <a id="deleteButton" type="button" class="btn btn-danger">Delete</a>
-          </div>
+
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                Solar Farm
+                            </th>
+                            <td>
+                                1/1/2017
+                            </td>
+                            <td>
+                                Basic Simple Case<br>
+                                PV Solar <br>
+
+
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                Solar Farm
+                            </th>
+                            <td>
+                                1/1/2017
+                            </td>
+                            <td>
+                                Basic Simple Case<br>
+                                PV Solar <br>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-      </div>
+    </div>
+{% endblock %}
+
+{% block table_row_2 %}
+    <div class="row">
+        <div class="col-xl-4">
+            <!-- Members list group card -->
+            <div class="card">
+                <!-- Card header -->
+                <div class="card-header border-0">
+                    <!-- Title -->
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="mb-0">Team members</h5>
+                        </div>
+                        <div class="col text-right">
+{#                          <a class="btn btn-sm btn-primary" href="#">Send Invitation</a>#}
+                            <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modal-form">Send Invitation</button>
+
+                            <div class="modal fade" id="modal-form" tabindex="-1" role="dialog" aria-labelledby="modal-form" aria-hidden="true">
+                                <div class="modal-dialog modal- modal-dialog-centered modal-sm" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-body p-0">
+                                            <div class="card bg-secondary border-0 mb-0">
+
+                                            <div class="card-body px-lg-5 py-lg-5">
+                                                <div class="text-center text-muted mb-4">
+                                                    <small>Or sign in with credentials</small>
+                                                </div>
+                                                <form role="form">
+                                                    <div class="form-group mb-3">
+                                                        <div class="input-group input-group-merge input-group-alternative">
+                                                          <div class="input-group-prepend">
+                                                            <span class="input-group-text"><i class="ni ni-email-83"></i></span>
+                                                          </div>
+                                                          <input class="form-control" placeholder="Email" type="email">
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-center">
+                                                        <button type="button" class="btn btn-primary my-4">Send</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                          </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
+
+
+                        </div>
+                    </div>
+                </div>
+                <!-- Card body -->
+                <div class="card-body">
+                    <!-- List group -->
+                    <ul class="list-group list-group-flush list my--3">
+                        {% for email, role in team_users %}
+                            <li class="list-group-item px-0">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <!-- Avatar -->
+                                        <a href="#" class="avatar rounded-circle">
+                                            <img alt="Image placeholder" src="">
+                                        </a>
+                                    </div>
+                                    <div class="col ml--2">
+                                        <h4 class="mb-0">{{ email }}</h4>
+                                        <span class="text-success">●</span>
+                                        <small>Accepted Invitation</small>
+                                    </div>
+                                    <div class="col-auto">
+                                        {% if role != 'Admin' %}
+                                            <button type="button" class="btn btn-sm btn-danger ">Remove</button>
+                                         {% else %}
+                                            <div class="col-auto">Admin</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+
+                        {% for email, valid in awaiting_emails %}
+                            <li class="list-group-item px-0">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <!-- Avatar -->
+                                        <a href="#" class="avatar rounded-circle">
+                                            <img alt="Image placeholder" src="">
+                                        </a>
+                                    </div>
+                                    <div class="col ml--2">
+                                        <h4 class="mb-0">{{ email }}</h4>
+                                        {% if valid %}
+                                            <span class="text-warning">●</span>
+                                            <small>Pending</small>
+                                        {% else %}
+                                            <span class="text-danger">●</span>
+                                            <small>Expired</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button" class="btn btn-sm btn-neutral delete-invitation">Cancel</button>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button" class="btn btn-sm btn-primary resend-email">Resend</button>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+
+                        <li class="list-group-item px-0">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <!-- Avatar -->
+                                    <a href="#" class="avatar rounded-circle">
+                                        <img alt="Image placeholder" src="">
+                                    </a>
+                                </div>
+                                <div class="col ml--2">
+                                    <h4 class="mb-0">
+                                        <a href="#">John Michael</a>
+                                    </h4>
+                                    <span class="text-success">●</span>
+                                    <small>Accepted Invitation</small>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm btn-danger ">Remove</button>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item px-0">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <!-- Avatar -->
+                                    <a href="#" class="avatar rounded-circle">
+                                        <img alt="Image placeholder" src="">
+                                    </a>
+                                </div>
+                                <div class="col ml--2">
+                                    <h4 class="mb-0">
+                                        <a href="#!">Alex Smith</a>
+                                    </h4>
+                                    <span class="text-warning">●</span>
+                                    <small>Pending</small>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm btn-neutral">Cancel</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm btn-primary">Resend</button>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item px-0">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <!-- Avatar -->
+                                    <a href="#" class="avatar rounded-circle">
+                                        <img alt="Image placeholder" src="../../assets/img/theme/team-3.jpg">
+                                    </a>
+                                </div>
+                                <div class="col ml--2">
+                                    <h4 class="mb-0">
+                                        <a href="#!">Samantha Ivy</a>
+                                    </h4>
+                                    <span class="text-danger">●</span>
+                                    <small>Expired</small>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm btn-neutral">Cancel</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm btn-primary">Resend</button>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <!-- Image-Text card -->
+            <div class="card">
+                <!-- Card image -->
+                <img class="card-img-top" src="../assets/img/theme/img-1-1000x900.jpg" alt="Image placeholder">
+                <!-- Card body -->
+                <div class="card-body">
+                    <h5 class="h2 card-title mb-0">Get started with SolarBI</h5>
+                    <small class="text-muted">by John Snow on Oct 29th at 10:23 AM</small>
+                    <p class="card-text mt-4">Why are we good at what we do</p>
+                    <a href="#!" class="btn btn-link px-0">View article</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card widget-calendar">
+                <!-- Card header -->
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <!-- Title -->
+                            <h5 class="h3 mb-0">Australian Heat Map</h5>
+                        </div>
+                        <div class="col-4 text-right">
+
+                        </div>
+                    </div>
+                </div>
+                <!-- Card body -->
+                <div class="card-body">
+                    <!-- Vector map -->
+                    <div class="vector-map vector-map-sm" data-toggle="vectormap" data-map="world_mill"></div>
+                    <!-- List group -->
+                    <ul class="list-group list-group-flush list my--3">
+                        <li class="list-group-item px-0">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+
+
+                                </div>
+                                <div class="col">
+                                    <small>State:</small>
+                                    <h5 class="mb-0">VIC</h5>
+                                </div>
+                                <div class="col">
+                                    <small>Year:</small>
+                                    <h5 class="mb-0">2018</h5>
+                                </div>
+                                <div class="col">
+                                    <small>Sum:</small>
+                                    <h5 class="mb-0">1900 Wm2</h5>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li class="list-group-item px-0">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                </div>
+                                <div class="col">
+                                    <small>State:</small>
+                                    <h5 class="mb-0">VIC</h5>
+                                </div>
+                                <div class="col">
+                                    <small>Year:</small>
+                                    <h5 class="mb-0">2018</h5>
+                                </div>
+                                <div class="col">
+                                    <small>Sum:</small>
+                                    <h5 class="mb-0">1900 Wm2</h5>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_tables %}
     </div>
 {% endblock %}
 
 
 {% block tail_js %}
+    <script src="/static/assets/stylesheets/vendor/jquery/dist/jquery.min.js"></script>
     <script>
         function download1(link) {
             const a = document.createElement('a');
@@ -283,66 +694,53 @@
         }
     </script>
     <script>
-        $(document).ready(function(){
-            $('#deleteData').on('shown.bs.modal',function(e){
-                $(this).find('#deleteButton').attr('href', ($(e.relatedTarget).attr("data-href")));
-            });
-
-
-            $("#searchInput").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                if ($('input:radio[name="selector"]:checked').val() === 'all') {
-                    $(".list-card").filter(function() {
-                        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                    });
-                } else if ($('input:radio[name="selector"]:checked').val() === 'saved') {
-                    $(".list-card").filter(function() {
-                        $(this).toggle(
-                            $(this).text().toLowerCase().indexOf(value) > -1 && $(this).find('span').text().toLowerCase().indexOf('saved') > -1
-                        )
-                    });
-                } else {
-                    $(".list-card").filter(function() {
-                        $(this).toggle(
-                            $(this).text().toLowerCase().indexOf(value) > -1 && $(this).find('span').text().toLowerCase().indexOf('paid') > -1
-                        )
-                    });
+        $('.resend-email').click(function() {
+            let selected_email = $(this).parent().prev().prev().children(':first').html();
+            let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+            $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin-right: 17px; margin-left: 20px;\">");
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
                 }
-
             });
-
-          $(".list-card > div > p").each(function() {
-              var el= $(this);
-              var textLength = el.html().length;
-              if (textLength <= 17) {
-                  el.css('font-size', '1.5em');
-              } else if (textLength > 17 && textLength <= 25) {
-                  el.css('font-size', '1.3em');
-              } else if (textLength > 25) {
-                  el.css('font-size', '1.0em');
-              }
-          });
+            $.ajax({
+                type : "POST",
+                url : "{{ url_for('SolarBIRegisterInvitationUserDBView.resend_email') }}",
+                data: JSON.stringify({selected_email: selected_email}),
+                contentType: 'application/json;charset=UTF-8',
+                success: function(data) {
+                    if (data.redirect) {
+                        window.location.replace(data.redirect)
+                    }
+                    console.log('success')
+                }
+            });
         });
 
-        $('input:radio[name="selector"]').change(function() {
-            $('#searchInput').val('');
-            if ($(this).val() === 'all') {
-                $(".list-card").show()
-            } else if ($(this).val() === 'saved') {
-                $(".list-card").filter(function() {
-                    $(this).toggle($(this).find('span').text().toLowerCase().indexOf('saved') > -1)
-                });
-            } else if ($(this).val() === 'paid') {
-                $(".list-card").filter(function() {
-                    $(this).toggle($(this).find('span').text().toLowerCase().indexOf('paid') > -1)
-                });
-            }
+        $('.delete-invitation').click(function() {
+            let selected_email = $(this).parent().prev().children(':first').html();
+            let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type : "POST",
+                url : "{{ url_for('SolarBIRegisterInvitationUserDBView.delete_invitation') }}",
+                data: JSON.stringify({selected_email: selected_email}),
+                contentType: 'application/json;charset=UTF-8',
+                success: function(data) {
+                    if (data.redirect) {
+                        window.location.replace(data.redirect)
+                    }
+                    console.log('success')
+                }
+            });
         });
-
     </script>
-{% endblock %}
-
-{% block end_content scoped %}
-{#    </table>#}
-    </div>
 {% endblock %}

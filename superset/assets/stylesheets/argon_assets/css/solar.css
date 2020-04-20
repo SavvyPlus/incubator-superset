@@ -871,7 +871,7 @@ pre code
 
 .space
 {
-    padding-top: 100px;in
+    padding-top: 100px;
 }
 
 .row
@@ -2682,6 +2682,9 @@ pre code
     width: 100%;
 
     -webkit-overflow-scrolling: touch;
+}
+.table-responsive .empty-saved-data {
+    padding: 1.25rem 1.5rem
 }
 .table-responsive > .table-bordered
 {

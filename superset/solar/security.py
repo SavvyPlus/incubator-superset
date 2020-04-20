@@ -583,6 +583,12 @@ class CustomSecurityManager(SupersetSecurityManager):
                         email_role.append((user.email, 'User'))
         return email_role
 
+    def get_new_team_users_count(self, team_id):
+        team = self.find_team(team_id=team_id)
+        one_week_early = datetime.datetime.now() - datetime.timedelta(days=7)
+        new_team_users = [user for user in team.users if user.created_on >= one_week_early]
+        return len(new_team_users)
+
     def get_session_team(self, user_id):
         team = self.get_session.query(Team).filter_by(id=get_session_team(self, user_id)[0]).first()
         return team
@@ -642,8 +648,6 @@ class CustomSecurityManager(SupersetSecurityManager):
                 try:
                     self.get_session.add(invited_user)
                     self.get_session.commit()
-
-
 
                 except Exception as e:
                     self.get_session.rollback()

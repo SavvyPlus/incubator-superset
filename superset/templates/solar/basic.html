@@ -35,6 +35,10 @@
 {#      <link rel="stylesheet" type="text/css" href="/static/appbuilder/css/font-awesome.min.css">#}
       <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/nucleo/css/nucleo.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/@fortawesome/fontawesome-free/css/all.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/css/solar.css')}}?v=3.2" rel="stylesheet">
 
       {% for entry in get_unloaded_chunks(css_manifest('theme'), loaded_chunks) %}
         <link rel="stylesheet" type="text/css" href="{{ entry }}" />
@@ -113,32 +117,32 @@
     </div>
 
     <div class="modal fade" id="addNewTeam" tabindex="-1" role="dialog" aria-labelledby="addNewTeamTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-	<div style="font-family: Open Sans, sans-serif" class="modal-content">
-	  <div class="modal-header">
-		<h5 class="add-new-team-title modal-title" id="addNewTeamTitle">Create New Team</h5>
-		<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-		  <span aria-hidden="true">&times;</span>
-		</button>
-	  </div>
-	  <div class="modal-body">
-		<form>
-		  <div class="form-group">
-			<label for="recipient-name" class="col-form-label">Team Name:</label>
-			<input type="text" class="form-control" id="teamName">
-			  <p id="team_name_empty" style="display: none; color: #f44336;">* Team name cannot be empty</p>
-			<p id="team_name_error" style="display: none; color: #f44336;">* Team name length cannot be longer than 13</p>
-			<p id="team_name_existed_error" style="display: none; color: #f44336;">* Team name already exists</p>
-		  </div>
-		</form>
-	  </div>
-	  <div class="modal-footer">
-		<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-		<button id="addTeamBtn" type="button" class="btn create-new-team-btn">Create</button>
-	  </div>
-	</div>
-  </div>
-</div>
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div style="font-family: Open Sans, sans-serif" class="modal-content">
+          <div class="modal-header">
+            <h5 class="add-new-team-title modal-title" id="addNewTeamTitle">Create New Team</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group">
+                <label for="recipient-name" class="col-form-label">Team Name:</label>
+                <input type="text" class="form-control" id="teamName">
+                  <p id="team_name_empty" style="display: none; color: #f44336;">* Team name cannot be empty</p>
+                <p id="team_name_error" style="display: none; color: #f44336;">* Team name length cannot be longer than 13</p>
+                <p id="team_name_existed_error" style="display: none; color: #f44336;">* Team name already exists</p>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button id="addTeamBtn" type="button" class="btn create-new-team-btn">Create</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     {% block tail_js %}
       <script src="https://js.stripe.com/v3/"></script>
@@ -166,13 +170,15 @@
       <script>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/ruplq61n';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();</script>
 
 {#      <script src="{{url_for('appbuilder.static',filename='js/jquery-latest.js')}}"></script>#}
-      <script src="/static/assets/stylesheets/vendor/jquery/dist/jquery.min.js"></script>
-      <script src="{{url_for('appbuilder.static',filename='js/bootstrap.min.js')}}"></script>
-      <script src="/static/assets/stylesheets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-      <script src="/static/assets/stylesheets/vendor/js-cookie/js.cookie.js"></script>
-      <script src="/static/assets/stylesheets/vendor/jquery.scrollbar/jquery.scrollbar.min.js"></script>
-      <script src="/static/assets/stylesheets/vendor/jquery-scroll-lock/dist/jquery-scrollLock.min.js"></script>
-      <script src="/static/assets/stylesheets/js/argon.js?v=1.2.0"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
+{#      <script src="{{url_for('appbuilder.static',filename='js/bootstrap.min.js')}}"></script>#}
+      <script src="/static/assets/stylesheets/argon_assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/js-cookie/js.cookie.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/jquery.scrollbar/jquery.scrollbar.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/jquery-scroll-lock/dist/jquery-scrollLock.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/js/argon.js?v=1.2.0"></script>
       <script>
         $(document).ready(function () {
 

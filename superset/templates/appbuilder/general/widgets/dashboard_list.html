@@ -25,22 +25,42 @@
 {% set actions = actions | get_actions_on_list(modelview_name) %}
 
 
-    {% block begin_title %}
-    {% endblock %}
-    {% if count > 0 %}
-        {% block begin_content scoped %}
-        {% endblock %}
+{% block begin_title %}
+{% endblock %}
 
-        {% block begin_loop_header scoped %}
-        {% endblock %}
+{% block header %}
+{% endblock %}
 
-        {% block begin_loop_values %}
-        {% endblock %}
+{% block begin_tables %}
+{% endblock %}
 
-        {% block tail_js %}
-        {% endblock %}
+{% block table_row_1 %}
+{% endblock %}
 
-    {% else %}
-        <p class="empty-saved">{{_("NMSL")}}</p>
-    {% endif %}
+{% block table_row_2 %}
+{% endblock %}
+
+{% block end_tables %}
+{% endblock %}
+
+{% block tail_js %}
+{% endblock %}
+{#{% if count > 0 %}#}
+{#    {% block begin_content scoped %}#}
+{#    {% endblock %}#}
+{##}
+{#    {% block begin_loop_header scoped %}#}
+{#    {% endblock %}#}
+{##}
+{#    {% block begin_loop_values %}#}
+{#    {% endblock %}#}
+{##}
+{#    {% block end_content scoped %}#}
+{#    {% endblock %}#}
+{##}
+{#    {% block tail_js %}#}
+{#    {% endblock %}#}
+{#{% else %}#}
+{#    <p class="empty-saved">{{_("NMSL")}}</p>#}
+{#{% endif %}#}
 

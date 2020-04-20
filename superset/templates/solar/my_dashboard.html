@@ -24,7 +24,7 @@
 {% set app_icon_width = appbuilder.app.config.get('APP_ICON_WIDTH', 126) %}
 
 {% block solar_content %}
-    <div class="main-content">
+    <div class="main-content" id="panel">
         <div class="list-alert-top">
             {% block messages %}
               {% include 'superset/flash_wrapper.html' %}

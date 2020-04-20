@@ -784,7 +784,7 @@ class SupersetSecurityManager(SecurityManager):
             connection.execute(
                 permission_table.insert().values(name=permission_name),
             )
-            connection.execute(permission_table.insert().values(name=permission_name))
+            # connection.execute(permission_table.insert().values(name=permission_name))
             permission = self.find_permission(permission_name)
         if not view_menu:
             view_menu_table = self.viewmenu_model.__table__  # pylint: disable=no-member
