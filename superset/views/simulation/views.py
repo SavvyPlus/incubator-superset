@@ -26,11 +26,12 @@ from flask_babel import lazy_gettext as _
 from superset import app, db
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
-from superset.models.slice import Slice
+from superset.models.simulation import Assumption
 from superset.utils import core as utils
 from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
 from .forms import UploadAssumptionForm
+from .assumption_process import process_assumptions
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
     chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
@@ -55,20 +56,36 @@ class UploadAssumptionView(SimpleFormView):
         path = tempfile.NamedTemporaryFile(
             dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
         ).name
-        form.excel_file_file.data.filename = path
-
+        form.excel_file.data.filename = path
+        name = form.name.data
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
-            upload_stream_write(form.csv_file.data, path)
+            upload_stream_write(form.excel_file.data, path)
+            process_assumptions(path, name)
+            message = 'Upload success'
+            assumption_file = db.session.query(Assumption).filter_by(name=form.name.data)
+            if not assumption_file:
+                assumption_file = Assumption()
+                assumption_file.name = form.name.data
+                assumption_file.s3_path = "s3://{}".format(form.name.data)
+                db.session.add(assumption_file)
+            db.session.commit()
         except Exception as e:
+            db.session.rollback()
             message = str(e)
+
+        flash(message, 'error')
 
         os.remove(path)
 
         # message = 'Upload success'
-        flash(message, 'info')
-        return redirect('/')
 
+        return redirect('/upload_assumption_file/form')
+
+class AssumptionModelView(SupersetModelView):
+    route_base = "/assuptionmodelview"
+    datamodel = SQLAInterface(Assumption)
+    include_route_methods = {RouteMethod.LIST, RouteMethod.EDIT, RouteMethod.DELETE, RouteMethod.INFO, RouteMethod.SHOW}
 
 
 

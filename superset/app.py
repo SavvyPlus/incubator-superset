@@ -161,7 +161,7 @@ class SupersetAppInitializer:
         from superset.views.database.api import DatabaseRestApi
         from superset.views.database.views import DatabaseView, CsvToDatabaseView
         from superset.views.datasource import Datasource
-        from superset.views.simulation.views import UploadAssumptionView
+        from superset.views.simulation.views import UploadAssumptionView, AssumptionModelView
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
         from superset.views.schedules import (
@@ -240,6 +240,15 @@ class SupersetAppInitializer:
             icon="fa-dashboard",
             category="",
             category_icon="",
+        )
+        # Assumption
+        appbuilder.add_view(
+            AssumptionModelView,
+            "Assumptions",
+            label=__("Assumptions"),
+            icon="fa-dashboard",
+            category="Simulation",
+            category_icon="fa-wrench",
         )
         appbuilder.add_view(
             CssTemplateModelView,

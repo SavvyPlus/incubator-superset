@@ -39,3 +39,10 @@ class Simulation(
     __tablename__ = "simulation"
     id = Column(Integer, primary_key=True)
 
+class Assumption(
+    Model
+):
+    __tablename__ = "assumption"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200))
+    s3_path = Column(String(500))

@@ -5,7 +5,7 @@ weather_history_end = "2018-12-31"
 start_date_str = "2017-01-01"
 # end_date_str = "2019-12-31"
 end_date_str = "2018-12-31"
-sim_start_date_str = "2017-01-01"
+sim_start_date_str = "2019-01-01"
 sim_end_date_str = "2028-01-01"
 base_station_name = 'MELBOURNE AIRPORT'
 base_state = 'VIC1'
@@ -31,6 +31,10 @@ sheet_generation_closure = 'Retirement'
 sheet_demand_growth = 'Demand_Growth'
 sheet_project_list = 'NewFormat'
 sheet_project_proxy = 'Project_Proxy'
+sheet_new_power_stations = "New_Power_Stations"
+sheet_strategic_behaviour = "Strategic_Behaviour"
+sheet_floor_price = "LGC_Floor_Price"
+sheet_renewable_proportion = "Renewable_Proportion"
 
 # MSSQL data source
 # db_host = "AWS2-SVR-DB-002"
@@ -59,7 +63,7 @@ db_pass_mysql = "Elecmms_2020"
 db_schema_ElecMMS3 = "ElecMMS3"
 
 # S3 data folders:
-bucket_inputs = "007-spot-price-forecast-physical"
+bucket_inputs = "	007-spot-price-forecast-physical"
 rooftop_pv_path = 'historical-generation/{}/rooftop-pv'  # state
 public_holiday_path = 'public_holiday/{}.pickle'  # state
 wind_solar_path = 'historical-generation/{}/{}/{}'  # state, wind/solar, duid
