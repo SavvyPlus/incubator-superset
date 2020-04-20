@@ -87,3 +87,6 @@ apache-superset-*.tar.gz*
 # Translation binaries
 messages.mo
 .serverless/serverless-flask.zip
+
+
+!stylesheets/argon_assets
