@@ -89,4 +89,4 @@ messages.mo
 .serverless/serverless-flask.zip
 
 
-!stylesheets/argon_assets
+!dropzone/dist
