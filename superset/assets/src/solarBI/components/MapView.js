@@ -26,6 +26,7 @@ import { createMuiTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
+import Search from './Search';
 import SolarStepper from './SolarStepper';
 import LocationSearchBox from './LocationSearchBox';
 import DemoBox from './DemoBox';
@@ -225,25 +226,6 @@ export class MapView extends React.Component {
     };
   }
 
-  // getCSVURL() {
-  //   const formData = this.getFormData();
-  //   const uri = new URI('/');
-  //   const directory =
-  //     '/superset/explore_json/' +
-  //     formData.datasource_type +
-  //     '/' +
-  //     formData.datasource_id +
-  //     '/';
-  //   const search = uri.search(true);
-  //   search.form_data = JSON.stringify(formData);
-  //   search.standalone = 'true';
-  //   search.csv = 'true';
-  //   const part_uri = uri
-  //     .directory(directory)
-  //     .search(search)
-  //     .toString();
-  //   return window.location.origin + part_uri + `&height=${this.state.height}`;
-  // }
   requestData() {
     const formData = this.getFormData();
     this.props.fetchSolarData(formData, false, 60, '');
@@ -276,10 +258,6 @@ export class MapView extends React.Component {
   toggleSaveModal() {
     this.setState({ showSaveModal: !this.state.showSaveModal });
   }
-
-  // toggleExportModal() {
-  //   this.setState({ showExportModal: !this.state.showExportModal });
-  // }
 
 
   render() {
@@ -391,20 +369,26 @@ export class MapView extends React.Component {
             </div>
           )}
           {this.state.searching && entry !== 'welcome' && entry !== 'demo' && (
-            <Grid>
-              <div className="solar-stepper">
-                <SolarStepper activeStep={0} />
-              </div>
-              <Row className="show-grid">
-                <Col xs={10} xsOffset={1} md={10} mdOffset={1}>
-                  <LocationSearchBox
-                    address={this.state.address}
-                    onPlaceChanged={place => this.onPlaceChanged(place)}
-                  />
-                  <DemoBox />
-                </Col>
-              </Row>
-            </Grid>
+            <React.Fragment>
+              <Search
+                address={this.state.address}
+                onPlaceChanged={place => this.onPlaceChanged(place)}
+              />
+              <Grid>
+                <div className="solar-stepper">
+                  <SolarStepper activeStep={0} />
+                </div>
+                <Row className="show-grid">
+                  <Col xs={10} xsOffset={1} md={10} mdOffset={1}>
+                    <LocationSearchBox
+                      address={this.state.address}
+                      onPlaceChanged={place => this.onPlaceChanged(place)}
+                    />
+                    <DemoBox />
+                  </Col>
+                </Row>
+              </Grid>
+            </React.Fragment>
           )}
           {this.state.showingMap && (
             <React.Fragment>
