@@ -22,144 +22,6 @@
 {% set is_team_owner = appbuilder.sm.get_role_in_team(g.user, session_team[0]).name == 'team_owner' %}
 {% set download_prefix = "https://colin-query-test.s3-ap-southeast-2.amazonaws.com/" %}
 
-{% block begin_title %}
-    <nav class="navbar navbar-top navbar-expand navbar-dark bg-primary border-bottom">
-        <div class="container-fluid">
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <!-- Navbar links -->
-                <ul class="navbar-nav align-items-center  ml-md-auto ">
-                    <li class="nav-item d-xl-none">
-                        <!-- Sidenav toggler -->
-                        <div class="pr-3 sidenav-toggler sidenav-toggler-dark" data-action="sidenav-pin" data-target="#sidenav-main">
-                            <div class="sidenav-toggler-inner">
-                                <i class="sidenav-toggler-line"></i>
-                                <i class="sidenav-toggler-line"></i>
-                                <i class="sidenav-toggler-line"></i>
-                            </div>
-                        </div>
-                    </li>
-                    <li class="nav-item d-sm-none">
-                        <a class="nav-link" href="#" data-action="search-show" data-target="#navbar-search-main">
-                            <i class="ni ni-zoom-split-in"></i>
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="ni ni-bell-55"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-xl  dropdown-menu-right  py-0 overflow-hidden">
-                            <!-- Dropdown header -->
-                            <div class="px-3 py-3">
-                                <h6 class="text-sm text-muted m-0">You have <strong class="text-primary">3</strong> notifications.</h6>
-                            </div>
-                            <!-- List group -->
-                            <div class="list-group list-group-flush">
-                                <a href="#" class="list-group-item list-group-item-action">
-                                    <div class="row align-items-center">
-                                        <div class="col-auto">
-                                            <!-- Icon and Link -->
-                                            <i class="ni ni-check-bold text-primary avatar rounded-circle"></i>
-                                        </div>
-                                        <div class="col ml--2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h4 class="mb-0 text-sm">Data Team</h4>
-                                                </div>
-                                                <div class="text-right text-muted">
-                                                    <small>2 hrs ago</small>
-                                                </div>
-                                            </div>
-                                            <p class="text-sm mb-0"> 24 Bristol Road is ready!</p>
-                                        </div>
-                                    </div>
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action">
-                                    <div class="row align-items-center">
-                                        <div class="col-auto">
-                                            <!-- Icon and Link -->
-                                            <i class="ni ni-check-bold text-primary avatar rounded-circle"></i>
-                                        </div>
-                                        <div class="col ml--2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h4 class="mb-0 text-sm">Data Team</h4>
-                                                </div>
-                                                <div class="text-right text-muted">
-                                                    <small>3 hrs ago</small>
-                                                </div>
-                                            </div>
-                                            <p class="text-sm mb-0">838 Collins treet data is ready </p>
-                                        </div>
-                                    </div>
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action">
-                                    <div class="row align-items-center">
-                                        <div class="col-auto">
-                                            <!-- Avatar -->
-                                            <img alt="Image placeholder" src="/static/assets/images/team-3.jpg" class="avatar rounded-circle">
-                                        </div>
-                                        <div class="col ml--2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h4 class="mb-0 text-sm">John Snow</h4>
-                                                </div>
-                                                <div class="text-right text-muted">
-                                                    <small>5 hrs ago</small>
-                                                </div>
-                                            </div>
-                                            <p class="text-sm mb-0">Shared a search with you</p>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                            <!-- View all -->
-                            <a href="#" class="dropdown-item text-center text-primary font-weight-bold py-3">View all</a>
-                        </div>
-                    </li>
-
-                </ul>
-                <ul class="navbar-nav align-items-center  ml-auto ml-md-0 ">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link pr-0" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <div class="media align-items-center">
-                                <span class="avatar avatar-sm rounded-circle">
-                                   <img alt="Image placeholder" src="/static/assets/images/team-4.jpg">
-                                </span>
-                                <div class="media-body  ml-2  d-none d-lg-block">
-                                    <span class="mb-0 text-sm  font-weight-bold">John Snow</span>
-                                </div>
-                            </div>
-                        </a>
-                        <div class="dropdown-menu  dropdown-menu-right ">
-                            <div class="dropdown-header noti-title">
-                                <h6 class="text-overflow m-0">Welcome!</h6>
-                            </div>
-                            <a href="/solarbiuserinfoeditview/form" class="dropdown-item">
-                                <i class="ni ni-single-02"></i>
-                                <span>My profile</span>
-                            </a>
-                            <a href="#" class="dropdown-item">
-                                <i class="ni ni-settings-gear-65"></i>
-                                <span>Settings</span>
-                            </a>
-                            <a href="#" class="dropdown-item">
-                                <i class="ni ni-support-16"></i>
-                                <span>Support</span>
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="{{appbuilder.get_url_for_logout}}" class="dropdown-item">
-                                <i class="ni ni-user-run"></i>
-                                <span>Logout</span>
-                            </a>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    <!-- End Top nav -->
-{% endblock %}
-
 {% block header %}
     <div class="header bg-primary pb-6">
         <div class="container-fluid">
@@ -428,41 +290,34 @@
                         <div class="col text-right">
 {#                          <a class="btn btn-sm btn-primary" href="#">Send Invitation</a>#}
                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modal-form">Send Invitation</button>
-
                             <div class="modal fade" id="modal-form" tabindex="-1" role="dialog" aria-labelledby="modal-form" aria-hidden="true">
                                 <div class="modal-dialog modal- modal-dialog-centered modal-sm" role="document">
                                     <div class="modal-content">
                                         <div class="modal-body p-0">
                                             <div class="card bg-secondary border-0 mb-0">
-
-                                            <div class="card-body px-lg-5 py-lg-5">
-                                                <div class="text-center text-muted mb-4">
-                                                    <small>Or sign in with credentials</small>
-                                                </div>
-                                                <form role="form">
-                                                    <div class="form-group mb-3">
-                                                        <div class="input-group input-group-merge input-group-alternative">
-                                                          <div class="input-group-prepend">
-                                                            <span class="input-group-text"><i class="ni ni-email-83"></i></span>
-                                                          </div>
-                                                          <input class="form-control" placeholder="Email" type="email">
+                                                <div class="card-body px-lg-5 py-lg-5">
+                                                    <div class="text-center text-muted mb-4">
+                                                        <small>Please enter the recipient email</small>
+                                                    </div>
+                                                    <form role="form">
+                                                        <div class="form-group mb-3">
+                                                            <div class="input-group input-group-merge input-group-alternative">
+                                                              <div class="input-group-prepend">
+                                                                <span class="input-group-text"><i class="ni ni-email-83"></i></span>
+                                                              </div>
+                                                              <input class="form-control recipient-email" placeholder="Email" type="email">
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="text-center">
-                                                        <button type="button" class="btn btn-primary my-4">Send</button>
-                                                    </div>
-                                                </form>
-                                            </div>
+                                                        <div class="text-center">
+                                                            <button type="button" class="btn btn-primary my-4 send-invitation">Send</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
                                           </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-
-
-
-
 
                         </div>
                     </div>
@@ -682,64 +537,91 @@
 
 
 {% block tail_js %}
-    <script src="/static/assets/stylesheets/vendor/jquery/dist/jquery.min.js"></script>
-    <script>
-        function download1(link) {
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = link;
+    <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
+{#    <script>#}
+{#        function download1(link) {#}
+{#            const a = document.createElement('a');#}
+{#            a.style.display = 'none';#}
+{#            a.href = link;#}
             {#document.body.appendChild(a);#}
-            a.click();
-            a.remove();
-        }
-    </script>
+{#            a.click();#}
+{#            a.remove();#}
+{#        }#}
+{#    </script>#}
     <script>
-        $('.resend-email').click(function() {
-            let selected_email = $(this).parent().prev().prev().children(':first').html();
-            let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-            $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin-right: 17px; margin-left: 20px;\">");
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+        $(document).ready(function () {
+            $('.send-invitation').click(function () {
+                let selected_email = $(".recipient-email").val();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
                     }
-                }
-            });
-            $.ajax({
-                type : "POST",
-                url : "{{ url_for('SolarBIRegisterInvitationUserDBView.resend_email') }}",
-                data: JSON.stringify({selected_email: selected_email}),
-                contentType: 'application/json;charset=UTF-8',
-                success: function(data) {
-                    if (data.redirect) {
-                        window.location.replace(data.redirect)
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.send_invitation') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
                     }
-                    console.log('success')
-                }
+                });
             });
-        });
 
-        $('.delete-invitation').click(function() {
-            let selected_email = $(this).parent().prev().children(':first').html();
-            let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+            $('.resend-email').click(function () {
+                let selected_email = $(this).parent().prev().prev().children(':first').html();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 28px; margin: 0 15.5px;\">");
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
                     }
-                }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.resend_email') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
+                    }
+                });
             });
-            $.ajax({
-                type : "POST",
-                url : "{{ url_for('SolarBIRegisterInvitationUserDBView.delete_invitation') }}",
-                data: JSON.stringify({selected_email: selected_email}),
-                contentType: 'application/json;charset=UTF-8',
-                success: function(data) {
-                    if (data.redirect) {
-                        window.location.replace(data.redirect)
+
+            $('.delete-invitation').click(function () {
+                let selected_email = $(this).parent().prev().children(':first').html();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
                     }
-                    console.log('success')
-                }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.delete_invitation') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
+                    }
+                });
             });
         });
     </script>
