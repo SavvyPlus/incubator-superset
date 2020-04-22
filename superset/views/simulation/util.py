@@ -22,6 +22,9 @@ def read_pickle_from_s3(bucket, path):
 
 def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
+
+    # TODO DEBUG do not write to s3
+    bucket = "empower-simulation"
     client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
 

@@ -63,7 +63,8 @@ db_pass_mysql = "Elecmms_2020"
 db_schema_ElecMMS3 = "ElecMMS3"
 
 # S3 data folders:
-bucket_inputs = "	007-spot-price-forecast-physical"
+bucket_inputs = "007-spot-price-forecast-physical"
+bucket_test = "empower-simulation"
 rooftop_pv_path = 'historical-generation/{}/rooftop-pv'  # state
 public_holiday_path = 'public_holiday/{}.pickle'  # state
 wind_solar_path = 'historical-generation/{}/{}/{}'  # state, wind/solar, duid
@@ -122,4 +123,4 @@ nem_price_s3_pickle_path = 'result-spot-price-simulation-lp/{}/{}/SUMMARY.pickle
 nem_price_stats_s3_pickle_path = 'result-spot-price-simulation-lp/{}/{}/nem_price_stats.pickle'  # sim_tag, sim_index
 nem_price_distribution_s3_pickle_path = 'result-spot-price-simulation-lp/{}/{}/nem_price_distribution.pickle'  # sim_tag, sim_index
 
-simulation_tag = 'Run_126'
+simulation_tag = 'Run_131'

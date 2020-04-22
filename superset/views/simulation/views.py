@@ -16,6 +16,7 @@
 # under the License.
 
 import json
+import threading
 import os
 import tempfile
 from flask import flash, redirect
@@ -26,7 +27,7 @@ from flask_babel import lazy_gettext as _
 from superset import app, db
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
-from superset.models.simulation import Assumption
+from superset.models.simulation import Assumption, Simulation
 from superset.utils import core as utils
 from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
@@ -50,7 +51,6 @@ class UploadAssumptionView(SimpleFormView):
 
     def form_post(self, form):
         print('uploaded success')
-
         excel_filename = form.excel_file.data.filename
         extension = os.path.splitext(excel_filename)[1].lower()
         path = tempfile.NamedTemporaryFile(
@@ -61,26 +61,41 @@ class UploadAssumptionView(SimpleFormView):
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.excel_file.data, path)
-            process_assumptions(path, name)
-            message = 'Upload success'
-            assumption_file = db.session.query(Assumption).filter_by(name=form.name.data)
+            thread = threading.Thread(target=self.handle_assumption_process, args=(path, name))
+            thread.start()
+            assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
             if not assumption_file:
                 assumption_file = Assumption()
-                assumption_file.name = form.name.data
-                assumption_file.s3_path = "s3://{}".format(form.name.data)
+                assumption_file.name = name
+                assumption_file.s3_path = "s3://{}".format(name)
                 db.session.add(assumption_file)
+            assumption_file.status = "Processing"
             db.session.commit()
+            message = "Upload success"
+            style = 'info'
         except Exception as e:
-            db.session.rollback()
-            message = str(e)
-
-        flash(message, 'error')
-
+            message = "Upload failed:" + str(e)
+            style = 'danger'
         os.remove(path)
-
+        flash(message, style)
         # message = 'Upload success'
 
         return redirect('/upload_assumption_file/form')
+
+    def handle_assumption_process(self, path, name):
+        assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+        try:
+            process_assumptions(path, name)
+            assumption_file.status = "Uploaded"
+            db.session.merge(assumption_file)
+            db.session.commit()
+        except Exception as e:
+            assumption_file.status = "Error"
+            assumption_file.status_detail = str(e)
+            db.session.merge(assumption_file)
+            db.session.commit()
+            print(e)
+
 
 class AssumptionModelView(SupersetModelView):
     route_base = "/assuptionmodelview"
@@ -92,5 +107,7 @@ class AssumptionModelView(SupersetModelView):
 class SimulationModelView(
     SupersetModelView
 ):
-    route_base = "/simulation"
+    route_base = "/simulationmodelview"
+    datamodel = SQLAInterface(Simulation)
+    include_route_methods = RouteMethod.CRUD_SET
 
