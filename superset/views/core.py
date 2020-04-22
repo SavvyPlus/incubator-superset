@@ -649,6 +649,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             'name': i.data['slice_name'],
             'address': i.data['form_data']['spatial_address']['address'],
             'updateDate': i.changed_on.strftime("%m/%d/%Y"),
+            'slice_url': i.slice_url,
         } for i in lst if i.query_id is None]
 
         entry_point = 'solarBI'
@@ -4292,6 +4293,7 @@ class Superset(BaseSupersetView):
             'remain_days': remain_days,
             'plan_id': subscription.plan,
             'can_trial': can_trial,
+            'saved_queries': [],
         }
         table_name = datasource.table_name \
             if datasource_type == 'table' \

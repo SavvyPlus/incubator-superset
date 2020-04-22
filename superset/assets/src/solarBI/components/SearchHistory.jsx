@@ -24,6 +24,7 @@ function SearchHistory({ solarBI }) {
           color: '#8898aa',
         },
       }}
+      onRowClick={(_event, rowData) => { window.location.href = rowData.slice_url; }}
     />
   );
 }
