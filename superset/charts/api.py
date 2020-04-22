@@ -17,7 +17,8 @@
 import logging
 from typing import Any
 
-from flask import g, request, Response
+import simplejson
+from flask import g, make_response, request, Response
 from flask_appbuilder.api import expose, protect, rison, safe
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import ngettext
@@ -35,15 +36,20 @@ from superset.charts.commands.exceptions import (
     ChartUpdateFailedError,
 )
 from superset.charts.commands.update import UpdateChartCommand
-from superset.charts.filters import ChartFilter
+from superset.charts.filters import ChartFilter, ChartNameOrDescriptionFilter
 from superset.charts.schemas import (
     ChartPostSchema,
     ChartPutSchema,
     get_delete_ids_schema,
 )
+from superset.common.query_context import QueryContext
 from superset.constants import RouteMethod
+from superset.exceptions import SupersetSecurityException
+from superset.extensions import event_logger, security_manager
 from superset.models.slice import Slice
-from superset.views.base_api import BaseSupersetModelRestApi
+from superset.utils.core import json_int_dttm_ser
+from superset.views.base_api import BaseSupersetModelRestApi, RelatedFieldFilter
+from superset.views.filters import FilterRelatedOwners
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +64,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
         RouteMethod.EXPORT,
         RouteMethod.RELATED,
         "bulk_delete",  # not using RouteMethod since locally defined
+        "data",
     }
     class_permission_name = "SliceModelView"
     show_columns = [
@@ -65,6 +72,8 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "description",
         "owners.id",
         "owners.username",
+        "owners.first_name",
+        "owners.last_name",
         "dashboards.id",
         "dashboards.dashboard_title",
         "viz_type",
@@ -102,6 +111,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
     )
     base_order = ("changed_on", "desc")
     base_filters = [["id", ChartFilter, lambda: []]]
+    search_filters = {"slice_name": [ChartNameOrDescriptionFilter]}
 
     # Will just affect _info endpoint
     edit_columns = ["slice_name"]
@@ -116,7 +126,9 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "slices": ("slice_name", "asc"),
         "owners": ("first_name", "asc"),
     }
-    filter_rel_fields_field = {"owners": "first_name"}
+    related_field_filters = {
+        "owners": RelatedFieldFilter("first_name", FilterRelatedOwners)
+    }
     allowed_rel_fields = {"owners"}
 
     @expose("/", methods=["POST"])
@@ -165,11 +177,11 @@ class ChartRestApi(BaseSupersetModelRestApi):
         try:
             new_model = CreateChartCommand(g.user, item.data).run()
             return self.response(201, id=new_model.id, result=item.data)
-        except ChartInvalidError as e:
-            return self.response_422(message=e.normalized_messages())
-        except ChartCreateFailedError as e:
-            logger.error(f"Error creating model {self.__class__.__name__}: {e}")
-            return self.response_422(message=str(e))
+        except ChartInvalidError as ex:
+            return self.response_422(message=ex.normalized_messages())
+        except ChartCreateFailedError as ex:
+            logger.error(f"Error creating model {self.__class__.__name__}: {ex}")
+            return self.response_422(message=str(ex))
 
     @expose("/<pk>", methods=["PUT"])
     @protect()
@@ -232,11 +244,11 @@ class ChartRestApi(BaseSupersetModelRestApi):
             return self.response_404()
         except ChartForbiddenError:
             return self.response_403()
-        except ChartInvalidError as e:
-            return self.response_422(message=e.normalized_messages())
-        except ChartUpdateFailedError as e:
-            logger.error(f"Error updating model {self.__class__.__name__}: {e}")
-            return self.response_422(message=str(e))
+        except ChartInvalidError as ex:
+            return self.response_422(message=ex.normalized_messages())
+        except ChartUpdateFailedError as ex:
+            logger.error(f"Error updating model {self.__class__.__name__}: {ex}")
+            return self.response_422(message=str(ex))
 
     @expose("/<pk>", methods=["DELETE"])
     @protect()
@@ -280,9 +292,9 @@ class ChartRestApi(BaseSupersetModelRestApi):
             return self.response_404()
         except ChartForbiddenError:
             return self.response_403()
-        except ChartDeleteFailedError as e:
-            logger.error(f"Error deleting model {self.__class__.__name__}: {e}")
-            return self.response_422(message=str(e))
+        except ChartDeleteFailedError as ex:
+            logger.error(f"Error deleting model {self.__class__.__name__}: {ex}")
+            return self.response_422(message=str(ex))
 
     @expose("/", methods=["DELETE"])
     @protect()
@@ -341,5 +353,114 @@ class ChartRestApi(BaseSupersetModelRestApi):
             return self.response_404()
         except ChartForbiddenError:
             return self.response_403()
-        except ChartBulkDeleteFailedError as e:
-            return self.response_422(message=str(e))
+        except ChartBulkDeleteFailedError as ex:
+            return self.response_422(message=str(ex))
+
+    @expose("/data", methods=["POST"])
+    @event_logger.log_this
+    @protect()
+    @safe
+    def data(self) -> Response:
+        """
+        Takes a query context constructed in the client and returns payload
+        data response for the given query.
+        ---
+        post:
+          description: >-
+            Takes a query context constructed in the client and returns payload data
+            response for the given query.
+          requestBody:
+            description: Query context schema
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    datasource:
+                      type: object
+                      description: The datasource where the query will run
+                      properties:
+                        id:
+                          type: integer
+                        type:
+                          type: string
+                    queries:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          granularity:
+                            type: string
+                          groupby:
+                            type: array
+                            items:
+                              type: string
+                          metrics:
+                            type: array
+                            items:
+                              type: object
+                          filters:
+                            type: array
+                            items:
+                              type: string
+                          row_limit:
+                            type: integer
+          responses:
+            200:
+              description: Query result
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cache_key:
+                          type: string
+                        cached_dttm:
+                          type: string
+                        cache_timeout:
+                          type: integer
+                        error:
+                          type: string
+                        is_cached:
+                          type: boolean
+                        query:
+                          type: string
+                        status:
+                          type: string
+                        stacktrace:
+                          type: string
+                        rowcount:
+                          type: integer
+                        data:
+                          type: array
+                          items:
+                            type: object
+            400:
+              $ref: '#/components/responses/400'
+            401:
+              $ref: '#/components/responses/401'
+            404:
+              $ref: '#/components/responses/404'
+            500:
+              $ref: '#/components/responses/500'
+        """
+        if not request.is_json:
+            return self.response_400(message="Request is not JSON")
+        try:
+            query_context = QueryContext(**request.json)
+        except KeyError:
+            return self.response_400(message="Request is incorrect")
+        try:
+            security_manager.assert_query_context_permission(query_context)
+        except SupersetSecurityException:
+            return self.response_401()
+        payload_json = query_context.get_payload()
+        response_data = simplejson.dumps(
+            payload_json, default=json_int_dttm_ser, ignore_nan=True
+        )
+        resp = make_response(response_data, 200)
+        resp.headers["Content-Type"] = "application/json; charset=utf-8"
+        return resp
