@@ -97,22 +97,22 @@
     {% endif %}
 
     <!-- Modal for misc messages / alerts  -->
-    <div class="misc-modal modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="creddisspan">
-            </button>
-            <h4 class="modal-title"></h4>
-          </div>
-          <div class="modal-body">
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
+{#    <div class="misc-modal modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">#}
+{#      <div class="modal-dialog" role="document">#}
+{#        <div class="modal-content">#}
+{#          <div class="modal-header">#}
+{#            <button type="button" class="creddisspan">#}
+{#            </button>#}
+{#            <h4 class="modal-title"></h4>#}
+{#          </div>#}
+{#          <div class="modal-body">#}
+{#          </div>#}
+{#          <div class="modal-footer">#}
+{#            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>#}
+{#          </div>#}
+{#        </div>#}
+{#      </div>#}
+{#    </div>#}
 
     <div class="modal fade" id="addNewTeam" tabindex="-1" role="dialog" aria-labelledby="addNewTeamTitle" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered" role="document">
@@ -136,7 +136,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button id="addTeamBtn" type="button" class="btn create-new-team-btn">Create</button>
+            <button id="addTeamBtn" type="button" class="btn btn-primary create-new-team-btn">Create</button>
           </div>
         </div>
       </div>
@@ -187,17 +187,17 @@
             }
           });
 
-          $('#select_team').change(function(){
-            const val = $(this).val();
-            const prevTeam = '{{ session['team_name'] }}';
-            if (val === '+ New Team') {
-              $('#addNewTeam').modal('show');
-              $(this).val(prevTeam);
-            } else {
-              const teamId = $(this).find('option:selected').attr('id');
-              window.location.href = '/solar/switch_team/' + teamId;
-            }
-          });
+          {#$('#select_team').change(function(){#}
+          {#  const val = $(this).val();#}
+          {#  const prevTeam = '{{ session['team_name'] }}';#}
+          {#  if (val === '+ New Team') {#}
+          {#    $('#addNewTeam').modal('show');#}
+          {#    $(this).val(prevTeam);#}
+          {#  } else {#}
+          {#    const teamId = $(this).find('option:selected').attr('id');#}
+          {#    window.location.href = '/solar/switch_team/' + teamId;#}
+          {#  }#}
+          {#});#}
 
           $('#addTeamBtn').click(function() {
             $(this).prop('disabled',true);

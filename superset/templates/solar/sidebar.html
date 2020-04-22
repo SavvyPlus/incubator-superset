@@ -49,29 +49,46 @@
         </div>
         <div class="navbar-inner">
             <!-- Collapse -->
-{#            <div class="dropdown">#}
-{#                <button class="btn btn-secondary dropdown-toggle" type="button"#}
-{#                        id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"#}
-{#                        aria-expanded="false">#}
-{#                    Dropdown button#}
-{#                </button>#}
-{#                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">#}
-{#                    <a class="dropdown-item" href="#">Action</a>#}
-{#                    <a class="dropdown-item" href="#">Another action</a>#}
-{#                    <a class="dropdown-item" href="#">Something else here</a>#}
-{#                </div>#}
-{#            </div>#}
             <div class="collapse navbar-collapse" id="sidenav-collapse-main">
-                <select id="select_team" class="form-control">
-                    {% for id, team in team_ids %}
-                        {% if team == session['team_name'] %}
-                            <option id="{{ id }}" selected="selected">{{ team }}</option>
-                        {% else %}
-                            <option id="{{ id }}">{{ team }}</option>
-                        {% endif %}
-                    {% endfor %}
-                    <option>+ New Team</option>
-                </select>
+{#                <select id="select_team" class="form-control">#}
+{#                    {% for id, team in team_ids %}#}
+{#                        {% if team == session['team_name'] %}#}
+{#                            <option id="{{ id }}" selected="selected">{{ team }}</option>#}
+{#                        {% else %}#}
+{#                            <option id="{{ id }}">{{ team }}</option>#}
+{#                        {% endif %}#}
+{#                    {% endfor %}#}
+{#                    <option>+ New Team</option>#}
+{#                </select>#}
+                <hr class="my-3">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <!-- Workspace Selection -->
+                        <div class="dropdown">
+                            <a class="nav-link " type="button"
+                               id="dropdownMenuButton" data-toggle="dropdown"
+                               aria-haspopup="true"
+                               aria-expanded="false">
+                                <i class="fas fa-check"></i>
+                                <span class="nav-link-text">{{ session['team_name'] }}</span>
+                                <i class="fas fa-chevron-down" style="padding-left: 5%"></i>
+                            </a>
+                            <div style="position: absolute; padding-left: 50px; z-index: 9">
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" >
+                                    {% for id, team in team_ids %}
+                                        {% if team != session['team_name'] %}
+                                            <a class="dropdown-item" href={{ "/solar/switch_team/" + id|string }}>{{ team }}</a>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <!-- Divider -->
+                                    <hr class="my-3">
+                                    <button class="dropdown-item text-success" data-toggle="modal" data-target="#addNewTeam">+ New Team</button>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+
                 <!-- Divider -->
                 <hr class="my-3">
                 <!-- Nav items -->
@@ -125,7 +142,7 @@
                 <hr class="my-3">
                 <!-- Heading -->
                 <h6 class="navbar-heading p-0 text-muted">
-                    <span class="docs-normal">Documentation</span>
+                    <span class="docs-normal">MAIN MENU</span>
                 </h6>
 
 

@@ -18330,3 +18330,5 @@ input.datetimepicker[data-color="yellow"] + .bootstrap-datetimepicker-widget {
   z-index: 9999;
   left: 15%;
   top: 0; }
+.empty-saved-data {
+  margin-left: 25px; }
