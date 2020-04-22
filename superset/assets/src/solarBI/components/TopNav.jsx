@@ -82,7 +82,7 @@ function TopNav() {
 
                         <img
                           alt="placeholder"
-                          src="../assets/img/theme/team-3.jpg"
+                          src="/static/assets/images/team-3.jpg"
                           className="avatar rounded-circle"
                         />
                       </div>
@@ -119,7 +119,7 @@ function TopNav() {
               >
                 <div className="media align-items-center">
                   <span className="avatar avatar-sm rounded-circle">
-                    <img alt="placeholder" src="../assets/img/theme/team-4.jpg" />
+                    <img alt="placeholder" src="/static/assets/images/team-4.jpg" />
                   </span>
                   <div className="media-body  ml-2  d-none d-lg-block">
                     <span className="mb-0 text-sm  font-weight-bold">John Snow</span>

@@ -28,8 +28,8 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Search from './Search';
 import SolarStepper from './SolarStepper';
-import LocationSearchBox from './LocationSearchBox';
-import DemoBox from './DemoBox';
+// import LocationSearchBox from './LocationSearchBox';
+// import DemoBox from './DemoBox';
 import { Map, Marker, Circle, InfoWindow, GoogleApiWrapper } from '../../visualizations/SolarBI/google_maps_react';
 import { fetchSolarData } from '../actions/solarActions';
 import SaveModal from './SaveModal';
@@ -45,6 +45,7 @@ import Loading from './Loading';
 const theme = createMuiTheme({
   typography: {
     useNextVariants: true,
+    fontFamily: 'Open Sans, sans-serif',
   },
   palette: {
     primary: {
@@ -176,12 +177,13 @@ export class MapView extends React.Component {
     if (gotodash) {
       window.location = '/solar/list';
     } else {
-      this.setState({
-        searching: true,
-        showingMap: false,
-        can_save: false,
-        can_export: false,
-      });
+      window.location = '/solar/add';
+      // this.setState({
+      //   searching: true,
+      //   showingMap: false,
+      //   can_save: false,
+      //   can_export: false,
+      // });
     }
   }
 
@@ -374,7 +376,7 @@ export class MapView extends React.Component {
                 address={this.state.address}
                 onPlaceChanged={place => this.onPlaceChanged(place)}
               />
-              <Grid>
+              {/* <Grid>
                 <div className="solar-stepper">
                   <SolarStepper activeStep={0} />
                 </div>
@@ -387,7 +389,7 @@ export class MapView extends React.Component {
                     <DemoBox />
                   </Col>
                 </Row>
-              </Grid>
+              </Grid> */}
             </React.Fragment>
           )}
           {this.state.showingMap && (

@@ -93,6 +93,8 @@ function Search({ address, onPlaceChanged }) {
             </div>
           </div>
         </div>
+      </div>
+      <div className="container-fluid mt--0" style={{ marginTop: 50 }}>
         <div className="row">
           <div className="col-xl-12 mt--3">
             <div className="card-header ">
@@ -102,7 +104,6 @@ function Search({ address, onPlaceChanged }) {
             </div>
           </div>
         </div>
-
       </div>
     </React.Fragment>
   );

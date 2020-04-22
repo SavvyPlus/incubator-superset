@@ -637,6 +637,20 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
                 # Remove credit card to force update cc for next time
                 team.stripe_pm_id = None
 
+        # Get the saved queries
+        _, lst = self.datamodel.query(
+            self._filters.get_joined_filters(self._base_filters),
+            "",
+            "",
+            page=None,
+            page_size=10,
+        )
+        saved_queries = [{
+            'name': i.data['slice_name'],
+            'address': i.data['form_data']['spatial_address']['address'],
+            'updateDate': i.changed_on.strftime("%m/%d/%Y"),
+        } for i in lst if i.query_id is None]
+
         entry_point = 'solarBI'
 
         datasource_id = self.get_solar_datasource()
@@ -650,6 +664,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             'common': BaseSupersetView().common_bootstrap_payload(),
             'datasource_id': datasource_id,
             'datasource_type': 'table',
+            'saved_queries': saved_queries,
             'remain_count': subscription.remain_count,
             'plan_id': subscription.plan,
             'remain_days': remain_days,
