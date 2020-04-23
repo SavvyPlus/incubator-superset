@@ -1,4 +1,4 @@
-from .util import extract_xlsx, read_from_s3, write_pickle_to_s3
+from .util import read_excel, read_from_s3, write_pickle_to_s3
 import pandas as pd
 # from spot_price_simulation_lp.s3_utils import write_pickle_to_s3
 import datetime
@@ -16,7 +16,7 @@ def read_file_sheet(filename, sheet_name):
         :param sheet_name: the sheet name of target assumption
         :return:
         """
-    df = extract_xlsx(filename, sheet_name)
+    df = read_excel(filename, sheet_name=sheet_name)
     return df
 
 
@@ -53,9 +53,8 @@ def pv_assumption(filename):
         """
     pv_forecast_df = read_file_sheet(filename, sheet_pv_forecast)
     pv_history_df = read_file_sheet(filename, sheet_pv_history)
-
-    pv_forecast_df = rename_header_with_top_row(pv_forecast_df)
-    pv_history_df = rename_header_with_top_row(pv_history_df)
+    # pv_forecast_df = rename_header_with_top_row(pv_forecast_df)
+    # pv_history_df = rename_header_with_top_row(pv_history_df)
     return pv_forecast_df, pv_history_df
 
 

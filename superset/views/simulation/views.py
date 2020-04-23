@@ -16,7 +16,8 @@
 # under the License.
 
 import json
-import threading
+import traceback
+import logging
 import os
 import tempfile
 from flask import flash, redirect
@@ -77,6 +78,7 @@ class UploadAssumptionView(SimpleFormView):
             message = "Upload success"
             style = 'info'
         except Exception as e:
+            traceback.print_exc()
             db.session.rollback()
             message = "Upload failed:" + str(e)
             style = 'danger'

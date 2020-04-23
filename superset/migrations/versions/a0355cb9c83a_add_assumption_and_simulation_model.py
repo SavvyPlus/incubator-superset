@@ -43,6 +43,7 @@ def upgrade():
     )
     op.create_table('simulation',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('run_id', sa.String(length=20), nullable=True),
     sa.Column('name', sa.String(length=200), nullable=True),
     sa.Column('status', sa.String(length=10), nullable=True),
     sa.Column('status_detail', sa.String(length=500), nullable=True),

@@ -58,7 +58,6 @@ def update_existing_generation_pickle(state, ref_start, ref_end, version):
 #     total_demand_dic = get_df_map(total_demand_df, ref_start, ref_end)
 #     write_pickle_to_s3(total_demand_dic, bucket_inputs, total_demand_adjusted_s3_pickle_path.format(version, state))
 
-
 def update_pv_data_and_assumption_pickle(file_path, assumptions_version):
     pv_data = dict()
     pv_history = dict()
@@ -84,27 +83,24 @@ def update_pv_data_and_assumption_pickle(file_path, assumptions_version):
     write_pickle_to_s3(pv_history, bucket_inputs, pv_history_s3_new_pickle_path.format(assumptions_version))
     write_pickle_to_s3(pv_forecast, bucket_inputs, pv_forecast_s3_new_pickle_path.format(assumptions_version))
 
-
 def update_new_projects_pickle(filename, assumptions_version):
-    project = pd.read_excel(filename, sheet_name='NewFormat')
+    project = read_excel(filename, sheet_name='NewFormat')
     project_list = project.to_dict('record')
     for project_dic in project_list:
         project_dic['StartDate'] = project_dic['StartDate'].date()
         project_dic['EndDate'] = project_dic['EndDate'].date()
     write_pickle_to_s3(project_list, bucket_inputs, new_projects_pickle_path.format(assumptions_version))
 
-
 def update_retirement_pickle(filename, assumptions_version):
-    retirement = pd.read_excel(filename, sheet_name='Retirement', usecols='A:G', nrows=279)
+    retirement = read_excel(filename, sheet_name='Retirement', usecols='A:G', nrows=279)
     retirement_list = retirement.to_dict('record')
     for retirement_dic in retirement_list:
         retirement_dic['Closure Date'] = retirement_dic['Closure Date'].date()
         retirement_dic['Back To Service Date'] = retirement_dic['Back To Service Date'].date()
     write_pickle_to_s3(retirement_list, bucket_inputs, retirement_s3_pickle_path.format(assumptions_version))
 
-
 def update_demand_growth_pickle(filename, assumptions_version):
-    growth_rate = pd.read_excel(filename, sheet_name='Demand_Growth', usecols='A:D', nrows=155)
+    growth_rate = read_excel(filename, sheet_name='Demand_Growth', usecols='A:D', nrows=155)
     # print(growth_rate)
     growth_rate = growth_rate.to_dict('record')
 
@@ -117,9 +113,8 @@ def update_demand_growth_pickle(filename, assumptions_version):
 
     write_pickle_to_s3(growth_rate_dic, bucket_inputs, demand_growth_rate_s3_pickle_path.format(assumptions_version))
 
-
 def update_renewable_prop(filename, assumptions_version):
-    renewable_prop = pd.read_excel(filename, sheet_name='Renewable_Proportion')
+    renewable_prop = read_excel(filename, sheet_name='Renewable_Proportion')
     renewable_prop = renewable_prop.to_dict('record')
     renewable_prop_dic = {}
     for state in states:
@@ -142,7 +137,7 @@ def prepare_proxy(filename, assumptions_version):
 
 
 # def update_small_battery(filename, assumptions_version):
-#     battery_capacity = pd.read_excel(filename, sheet_name='Behind_The_Meter_Battery')
+#     battery_capacity = read_excel(filename, sheet_name='Behind_The_Meter_Battery')
 #     battery_capacity = battery_capacity.to_dict('record')
 #     battery_capacity_dic = {}
 #     for state in states:

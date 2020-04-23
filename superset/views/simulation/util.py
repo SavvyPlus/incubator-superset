@@ -10,6 +10,8 @@ import numpy as np
 import boto3
 import pickle
 
+from .simulation_config import states
+
 
 fs = s3fs.S3FileSystem()
 client = boto3.client('s3')
@@ -48,6 +50,8 @@ def read_from_s3(bucket, path):
     return df
 
 
+
+
 def write_to_s3(data, bucket, path):
     bucket_uri = f's3://{bucket}/{path}'
     data_df = pd.DataFrame(np.array(data))
@@ -65,31 +69,6 @@ def write_to_s3_pandas_without_partition(data_df, bucket, path):
     bucket_uri = f's3://{bucket}/{path}'
     table = pa.Table.from_pandas(df=data_df, preserve_index=False)
     pq.write_to_dataset(table, root_path=bucket_uri, filesystem=fs)
-
-
-def extract_xlsx(file_name, sheet_name, data_from=None, data_to=None):
-    book = openpyxl.load_workbook(file_name, data_only=True)
-    if sheet_name and sheet_name != '':
-        sheet = book[sheet_name]
-    else:
-        sheet = book.active
-    results = []
-    if data_from is not None:
-        for i in sheet[data_from:data_to]:
-            result = []
-            for j in i:
-                result.append(j.value)
-            results.append(result)
-        df = pd.DataFrame(results)
-    else:
-        for i in sheet:
-            result = []
-            for j in i:
-                result.append(j.value)
-            results.append(result)
-        df = pd.DataFrame(results)
-    return df
-
 
 def datestr2date(dstr):
     """
@@ -134,3 +113,19 @@ def timearray2timestamp(dtime):
     :rtype: int
     """
     return int(time.mktime(dtime))
+
+def df_state_error_checker(f):
+    def wrap(*args, **kwargs):
+        result = f(*args, **kwargs)
+        if "State" in result.columns:
+            for index,row in result.iterrows():
+                if row['State'] not in states:
+                    raise Exception("State Error in sheet {}: {}".format(kwargs['sheet_name'], row['State']))
+        return result
+    return wrap
+
+
+@df_state_error_checker
+def read_excel(*args, **kwargs):
+    df = pd.read_excel(*args, **kwargs)
+    return df
