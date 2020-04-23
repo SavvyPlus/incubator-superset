@@ -41,7 +41,7 @@ export default function Loading({ size }) {
         marginTop: 200,
         position: 'absolute',
         left: '47%',
-        top: '50%',
+        top: '300px',
         transform: 'translate(-50%, -50%)',
       }}
     />

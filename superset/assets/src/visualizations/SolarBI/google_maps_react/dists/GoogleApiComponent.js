@@ -133,7 +133,7 @@
       'div',
       {
         style: {
-          position: 'absolute', left: '47%', top: '50%',
+          position: 'absolute', left: '47%', top: '300px',
           fontSize: 16, fontFamily: 'Open Sans, sans-serif', fontWeight: 'bold',
         }
       },
