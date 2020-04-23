@@ -428,11 +428,11 @@ class SolarBIRegisterInvitationUserDBView(RegisterUserDBView):
                 for existed_user in team.users:
                     if existed_user.email == user_email:
                         flash(as_unicode('User already in the team'), 'danger')
-                        return jsonify(dict(redirect='/solarbidashboard/my-dashboard'))
+                        return jsonify(dict(redirect='/solar/dashboard'))
 
                 if self.appbuilder.sm.get_registered_user(user_email):
                     flash(as_unicode('You have already send invitation to the user'), 'danger')
-                    return jsonify(dict(redirect='/solarbidashboard/my-dashboard'))
+                    return jsonify(dict(redirect='/solar/dashboard'))
 
                 reg_user, existed = self.appbuilder.sm.add_invite_register_user(email=user_email, team=team,
                                                                                 role=role_id, inviter=user_id)
@@ -442,17 +442,17 @@ class SolarBIRegisterInvitationUserDBView(RegisterUserDBView):
                             flash(as_unicode('Invitation sent to %s' % user_email), 'info')
                         else:
                             flash(as_unicode('%s is an existed user. Added to your team' % user_email), 'info')
-                        return jsonify(dict(redirect='/solarbidashboard/my-dashboard'))
+                        return jsonify(dict(redirect='/solar/dashboard'))
                     else:
                         self.appbuilder.sm.delete_invited_user(user_email=user_email)
                         flash(as_unicode('Cannot send invitation to user'), 'danger')
-                        return jsonify(dict(redirect='/solarbidashboard/my-dashboard'))
+                        return jsonify(dict(redirect='/solar/dashboard'))
             except Exception as e:
                 flash(as_unicode(e), 'danger')
-                return jsonify(dict(redirect='/solarbidashboard/my-dashboard'))
+                return jsonify(dict(redirect='/solar/dashboard'))
         else:
             flash(as_unicode('Invalid email'), 'danger')
-            return jsonify(dict(redirect='/solarbidashboard/my-dashboard'))
+            return jsonify(dict(redirect='/solar/dashboard'))
 
     @expose('/resend-email', methods=['POST'])
     def resend_email(self):
