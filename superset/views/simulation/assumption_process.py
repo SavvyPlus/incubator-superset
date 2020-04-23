@@ -4,7 +4,7 @@ from .util import *
 from .simulation_config import start_date_str, end_date_str, sim_start_date_str, sim_end_date_str, \
     states, bucket_inputs, rooftop_pv_path, existing_generation_path, existing_generation_s3_pickle_path, \
     pv_data_s3_pickle_path, pv_forecast_s3_new_pickle_path, pv_history_s3_new_pickle_path, new_projects_pickle_path, \
-    retirement_s3_pickle_path, demand_growth_rate_s3_pickle_path, renewable_proportion_s3_pickle_path
+    retirement_s3_pickle_path, demand_growth_rate_s3_pickle_path, renewable_proportion_s3_pickle_path, excel_path, bucket_test
     # projects_gen_data_s3_pickle_path, small_battery_capacity_s3_pickle_path
 import time
 import datetime
@@ -65,7 +65,7 @@ def update_pv_data_and_assumption_pickle(file_path, assumptions_version):
     pv_forecast = dict()
     for current_state in states:
         start_time = time.time()
-        print(current_state)
+        # print(current_state)
         ref_start_date = datestr2date(start_date_str)
         ref_end_date = datestr2date(end_date_str)
         sim_start_date = datestr2date(sim_start_date_str)
@@ -77,9 +77,9 @@ def update_pv_data_and_assumption_pickle(file_path, assumptions_version):
                                                                     ref_start_date, ref_end_date)
         pv_history[current_state] = pv_assumption_data[0]
         pv_forecast[current_state] = pv_assumption_data[1]
-        pv_data_state = process_pv_data(current_state, ref_start_date, ref_end_date)
-        pv_data[current_state] = pv_data_state
-        print(time.time() - start_time)
+        # pv_data_state = process_pv_data(current_state, ref_start_date, ref_end_date)
+        # pv_data[current_state] = pv_data_state
+        # print(time.time() - start_time)
     write_pickle_to_s3(pv_data, bucket_inputs, pv_data_s3_pickle_path.format(assumptions_version))
     write_pickle_to_s3(pv_history, bucket_inputs, pv_history_s3_new_pickle_path.format(assumptions_version))
     write_pickle_to_s3(pv_forecast, bucket_inputs, pv_forecast_s3_new_pickle_path.format(assumptions_version))
@@ -105,7 +105,7 @@ def update_retirement_pickle(filename, assumptions_version):
 
 def update_demand_growth_pickle(filename, assumptions_version):
     growth_rate = pd.read_excel(filename, sheet_name='Demand_Growth', usecols='A:D', nrows=155)
-    print(growth_rate)
+    # print(growth_rate)
     growth_rate = growth_rate.to_dict('record')
 
     growth_rate_dic = {}
@@ -137,7 +137,8 @@ def prepare_proxy(filename, assumptions_version):
     ref_end_date = datestr2date(end_date_str)
     project_assumption = projects_wind_solar_assumption(filename)
     proxy_info = proxy_assumption(filename)
-    process_wind_solar_data(project_assumption, proxy_info, ref_start_date, ref_end_date, assumptions_version)
+    # TODO dont upload data, only check
+    # process_wind_solar_data(project_assumption, proxy_info, ref_start_date, ref_end_date, assumptions_version)
 
 
 # def update_small_battery(filename, assumptions_version):
@@ -159,13 +160,7 @@ def process_assumptions(file_path, assumptions_version):
     update_retirement_pickle(file_path, assumptions_version)
     update_demand_growth_pickle(file_path, assumptions_version)
     update_renewable_prop(file_path, assumptions_version)
-    prepare_proxy(file_path, assumptions_version)
+    # prepare_proxy(file_path, assumptions_version)
     # update_small_battery(file_path, assumptions_version)
-
-
-if __name__ == '__main__':
-    # file = '../input/Run_116.xlsx'
-    file = '../Assumption_Run_130.xlsx'
-    v = 'Run_130'
-    # d = read_pickle_from_s3(bucket_inputs, projects_gen_data_s3_pickle_path.format(v, datetime.date(2017, 1, 10)))
-    process_assumptions(file, v)
+    put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version))
+    return get_obg_s3_url(bucket_test, excel_path.format(assumptions_version))

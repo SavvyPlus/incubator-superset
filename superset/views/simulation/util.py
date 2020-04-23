@@ -25,8 +25,15 @@ def write_pickle_to_s3(data, bucket, path):
 
     # TODO DEBUG do not write to s3
     bucket = "empower-simulation"
-    client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
+    # client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
+def put_file_to_s3(filename, bucket, key):
+    with open(filename, "rb") as f:
+        response = client.upload_fileobj(f, bucket, key)
+    return response
+
+def get_obg_s3_url(bucket, key):
+    return "https://{}.s3-ap-southeast-2.amazonaws.com/{}".format(bucket, key)
 
 def put_object_to_s3(binary_data, bucket, key):
     client.put_object(Body=binary_data,

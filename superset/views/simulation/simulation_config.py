@@ -96,6 +96,9 @@ all_plants_from_csv_info_path = 'nem-pricing-v2/source_information/all_plants_fr
 all_units_info_in_DUDETAIL_path = 'nem-pricing-v2/source_information/all_units_info_in_DUDETAIL.pickle'  # date
 all_units_list_in_offerbands_path = 'nem-pricing-v2/source_information/all_units_list_in_offerbands.pickle'  # date
 
+# S3 assumption excel path
+excel_path = 'assumption-excel/{}.xlsx'
+
 # S3 pickle cache path
 reference_date_s3_pickle_path = 'reference_date/test_2017to2027/{}.pickle'  # index
 

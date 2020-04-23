@@ -39,7 +39,6 @@ simulation_assumption = Table(
     Column("id", Integer, primary_key=True),
     Column("simulation_id", Integer, ForeignKey("simulation.id")),
     Column("assumption_id", Integer, ForeignKey("assumption.id")),
-    UniqueConstraint("simulation_id", "assumption_id"),
 )
 
 class Assumption(
