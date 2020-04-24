@@ -1,7 +1,5 @@
 from datetime import datetime, date
 import time
-import pandas as pd
-import openpyxl
 import s3fs
 import pyarrow as pa
 import pyarrow.parquet as pq
