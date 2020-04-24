@@ -90,6 +90,8 @@ stripe==2.37.2
 PyAthenaJDBC==2.0.5
 mysqlclient==1.4.6
 Cython==0.29.14
+s3fs==0.4.2
+boto3==1.4.7
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
