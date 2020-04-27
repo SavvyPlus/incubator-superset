@@ -15,10 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=C,R,W
+import os
+from datetime import datetime
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 from urllib import parse
 
+import boto3
 from flask import request, session
 import simplejson as json
 
@@ -204,3 +207,48 @@ def get_user_teams(user):
     for team_role in user.team_role:
         team_id_list.append(team_role.team.id)
     return team_id_list
+
+
+def format_datetime(value, dt_format='%Y-%m-%d'):
+    return datetime.strptime(value, dt_format).strftime('%d/%m/%Y')
+
+
+def list_object_key(bucket, prefix):
+    AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+    AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+    session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    client = session.client('s3', region_name='ap-southeast-2')
+    key_list = []
+    response = client.list_objects_v2(
+        Bucket=bucket,
+        Prefix=prefix
+    )
+    contents = None
+    try:
+        contents = response['Contents']
+    except:
+        pass
+
+    is_truncated = response['IsTruncated']
+    for content in contents:
+        try:
+            key_list.append(content['Key'])
+        except:
+            pass
+
+    if is_truncated:
+        cont_token = response['NextContinuationToken']
+    while is_truncated:
+        response = client.list_objects_v2(
+            Bucket=bucket,
+            Prefix=prefix,
+            ContinuationToken=cont_token
+        )
+        contents = response['Contents']
+        is_truncated = response['IsTruncated']
+        for content in contents:
+            key_list.append(content['Key'])
+        if is_truncated:
+            cont_token = response['NextContinuationToken']
+    return sorted(key_list)

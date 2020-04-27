@@ -415,6 +415,45 @@ class SolarBIRegisterInvitationUserDBView(RegisterUserDBView):
             flash(as_unicode('Unable to create team'), 'danger')
             return jsonify(dict(redirect='/solar/my-team'))
 
+    @expose('/send-invitation', methods=['POST'])
+    def send_invitation(self):
+        user_email = request.json['selected_email']
+        role_id = self.appbuilder.sm.find_solar_default_role_id().id
+
+        if user_email:
+            user_id = g.user.id
+            try:
+                team = self.appbuilder.sm.find_team(team_id=get_session_team(self.appbuilder.sm, user_id)[0])
+                # Check if the invited user is already in the team
+                for existed_user in team.users:
+                    if existed_user.email == user_email:
+                        flash(as_unicode('User already in the team'), 'danger')
+                        return jsonify(dict(redirect='/solar/dashboard'))
+
+                if self.appbuilder.sm.get_registered_user(user_email):
+                    flash(as_unicode('You have already send invitation to the user'), 'danger')
+                    return jsonify(dict(redirect='/solar/dashboard'))
+
+                reg_user, existed = self.appbuilder.sm.add_invite_register_user(email=user_email, team=team,
+                                                                                role=role_id, inviter=user_id)
+                if reg_user:
+                    if self.send_sg_email(reg_user, existed):
+                        if not existed:
+                            flash(as_unicode('Invitation sent to %s' % user_email), 'info')
+                        else:
+                            flash(as_unicode('%s is an existed user. Added to your team' % user_email), 'info')
+                        return jsonify(dict(redirect='/solar/dashboard'))
+                    else:
+                        self.appbuilder.sm.delete_invited_user(user_email=user_email)
+                        flash(as_unicode('Cannot send invitation to user'), 'danger')
+                        return jsonify(dict(redirect='/solar/dashboard'))
+            except Exception as e:
+                flash(as_unicode(e), 'danger')
+                return jsonify(dict(redirect='/solar/dashboard'))
+        else:
+            flash(as_unicode('Invalid email'), 'danger')
+            return jsonify(dict(redirect='/solar/dashboard'))
+
     @expose('/resend-email', methods=['POST'])
     def resend_email(self):
         user_email = request.json['selected_email']

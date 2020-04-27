@@ -112,6 +112,8 @@ OWNER_PERMISSIONS_VIEWS = [
     ('can_invitation', 'SolarBIRegisterInvitationUserDBView'),
     ('can_invitation_post', 'SolarBIRegisterInvitationUserDBView'),
     ('can_billing', 'SolarBIBillingView'),
+    ('can_dashboard', 'SolarBIModelView'),
+    # ('can_mydashboard', 'SolarBIDashboardView'),
 ]
 OWNER_PERMISSIONS_COMMON = ['can_show', 'can_list', 'can_delete', 'can_add']
 OWNER_PERMISSIONS_VIEW = ['SolarBIModelAddView', 'SolarBIModelWelcomeView',
@@ -201,7 +203,7 @@ class CustomSecurityManager(SupersetSecurityManager):
 
         if user.roles[0].name == 'Admin':
             return True
-
+            
         team_id, team_name = get_session_team(self, user.id)
         team_roles = user.team_role
         db_role_ids = list()
@@ -582,6 +584,12 @@ class CustomSecurityManager(SupersetSecurityManager):
                         email_role.append((user.email, 'User'))
         return email_role
 
+    def get_new_team_users_count(self, team_id):
+        team = self.find_team(team_id=team_id)
+        one_week_early = datetime.datetime.now() - datetime.timedelta(days=7)
+        new_team_users = [user for user in team.users if user.created_on >= one_week_early]
+        return len(new_team_users)
+
     def get_session_team(self, user_id):
         team = self.get_session.query(Team).filter_by(id=get_session_team(self, user_id)[0]).first()
         return team
@@ -641,8 +649,6 @@ class CustomSecurityManager(SupersetSecurityManager):
                 try:
                     self.get_session.add(invited_user)
                     self.get_session.commit()
-
-
 
                 except Exception as e:
                     self.get_session.rollback()
@@ -740,7 +746,7 @@ class CustomSecurityManager(SupersetSecurityManager):
                 team_subscription.plan = plan.id
                 team_subscription.stripe_sub_id = sub_resp['id']
                 team_subscription.remain_count = plan.num_request
-                user.trial_used = True if trial_days else False
+                user.trial_used = True if trial_days else user.trial_used
                 self.get_session.add(team_subscription)
             else:
                 old_sub = self.get_subscription(team_id=team.id)

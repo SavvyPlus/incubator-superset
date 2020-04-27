@@ -49,7 +49,7 @@ const useStyles = makeStyles({
   title: {
     width: 150,
     margin: '10 auto',
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
   },
   helperText: {
     width: 130,

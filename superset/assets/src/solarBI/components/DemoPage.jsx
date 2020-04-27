@@ -74,7 +74,7 @@ const styles = tm => ({
     backgroundColor: '#0063B0',
     border: 'none',
     fontSize: 16,
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Open Sans, sans-serif',
     fontWeight: 'bold',
     '&:hover': {
       color: 'white',
@@ -86,7 +86,7 @@ const styles = tm => ({
     minHeight: 290,
     height: 290,
     borderRadius: 12,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
   },
   cardInitial: {
     marginTop: 160,
@@ -100,7 +100,7 @@ const styles = tm => ({
     minHeight: 400,
     height: 400,
     borderRadius: 12,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
   },
   chartCardContent: {
     padding: 0,
@@ -127,7 +127,7 @@ const styles = tm => ({
   },
   tab: {
     fontSize: 18,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
     fontWeight: 'bold',
     minWidth: 50,
     width: 120, // a number of your choice
@@ -147,7 +147,7 @@ const styles = tm => ({
   text: {
     color: '#0063B0',
     fontSize: 16,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
     fontWeight: 500,
 
   },

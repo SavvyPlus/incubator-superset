@@ -59,7 +59,7 @@ const styles = tm => ({
     minHeight: 290,
     height: 290,
     borderRadius: 12,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
   },
   cardInitial: {
     marginTop: 160,
@@ -67,7 +67,7 @@ const styles = tm => ({
     minHeight: 290,
     height: 530,
     borderRadius: 12,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
   },
   contentFlex: {
     display: 'flex',
@@ -101,7 +101,7 @@ const styles = tm => ({
     margin: 'auto',
     marginTop: -10,
     width: 180,
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Open Sans, sans-serif',
     fontSize: 16,
     color: '#0063B0',
   },

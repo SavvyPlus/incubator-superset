@@ -266,7 +266,7 @@ CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24
 CACHE_CONFIG = {'CACHE_TYPE': 'redis',
                 'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
                 'CACHE_KEY_PREFIX': 'superset_results',
-                'CACHE_REDIS_URL': 'redis://localhost:6379/0'}
+                'CACHE_REDIS_URL': os.environ['REDIS_URL']}
 TABLE_NAMES_CACHE_CONFIG = {'CACHE_TYPE': 'null'}
 # CORS Options
 ENABLE_CORS = False

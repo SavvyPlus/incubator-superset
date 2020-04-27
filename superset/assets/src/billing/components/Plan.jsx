@@ -90,7 +90,7 @@ function Plan({ billing, changePlanConnect }) {
         <strong className="free-credits">Remaining Free Credit: ${(billing.balance * -1 / 100).toFixed(2)}</strong>
       </div>
 
-      <StripeProvider apiKey="pk_live_ZZHStm71rvqmg8a9bPTw9lYL00iYtMq89h">
+      <StripeProvider apiKey="pk_test_2CT1LvA7viLp1j7yCHJ2MezU00xXxxnRdM">
         <Elements>
           <AddCreditCard
             planId={planId}

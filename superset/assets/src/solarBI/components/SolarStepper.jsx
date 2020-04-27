@@ -17,11 +17,11 @@ const useStyles = makeStyles({
     },
     '& svg text': {
       fontSize: 15,
-      fontFamily: 'Montserrat',
+      fontFamily: 'Open Sans, sans-serif',
     },
     '& span': {
       fontSize: 15,
-      fontFamily: 'Montserrat',
+      fontFamily: 'Open Sans, sans-serif',
     },
   },
   stepper: {

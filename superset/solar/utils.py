@@ -15,14 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=C,R,W
+import os
 import json
+import re
 
 from flask import session, redirect
 from mixpanel import Mixpanel
 from sendgrid.helpers.mail import Mail
 from sendgrid import SendGridAPIClient
 import logging as log
-import os
 
 mp = Mixpanel('8b85dcbb1c5f693a3b045b24fca1e787')
 mp_prefix = os.getenv('SUPERSET_ENV')
