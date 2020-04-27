@@ -472,7 +472,7 @@
                     <div class="row align-items-center">
                         <div class="col-8">
                             <!-- Title -->
-                            <h5 class="h3 mb-0">Australian Heat Map</h5>
+                            <h5 class="h3 mb-0">Australia per State</h5>
                         </div>
                         <div class="col-4 text-right">
 
@@ -482,7 +482,8 @@
                 <!-- Card body -->
                 <div class="card-body">
                     <!-- Vector map -->
-                    <div class="vector-map vector-map-sm" data-toggle="vectormap" data-map="world_mill"></div>
+{#                    <div class="vector-map vector-map-sm" data-toggle="vectormap" data-map="world_mill"></div>#}
+                    <div id="map" class="vector-map vector-map-sm"></div>
                     <!-- List group -->
                     <ul class="list-group list-group-flush list my--3">
                         <li class="list-group-item px-0">
@@ -550,6 +551,47 @@
 {#    </script>#}
     <script>
         $(document).ready(function () {
+            const solarData = {
+                'AU-VIC': 234.46,
+                'AU-NSW': 292.15,
+                'AU-QLD': 332.39,
+                'AU-NT': 335.51,
+                'AU-WA': 309.93,
+                'AU-SA': 306.66,
+                'AU-TAS': 176.25,
+                'AU-ACT': 292.15
+            };
+
+            new jvm.Map({
+                map: 'au_merc',
+                container: $('#map'),
+                backgroundColor: 'white',
+                regionStyle: {
+                    initial: {
+                        fill: '#d2d7dc',
+                    }
+                },
+                regionLabelStyle: {
+                    initial: {
+                        fill: '#5e72e4'
+                    },
+                    hover: {
+                        fill: 'black'
+                    },
+                },
+                onRegionTipShow: function(e, el, code){
+                  el.html(el.html()+': ' + solarData[code] + 'W/m²');
+                },
+                labels: {
+                    regions: {
+                        render: function () {
+                            return null;
+                        },
+                    }
+                }
+            });
+
+
             $('.send-invitation').click(function () {
                 let selected_email = $(".recipient-email").val();
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
