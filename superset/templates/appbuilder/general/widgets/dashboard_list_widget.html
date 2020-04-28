@@ -21,6 +21,8 @@
 
 {% set is_team_owner = appbuilder.sm.get_role_in_team(g.user, session_team[0]).name == 'team_owner' %}
 {% set download_prefix = "https://colin-query-test.s3-ap-southeast-2.amazonaws.com/" %}
+{% set avg_per_state = [('VIC', 234.46), ('NSW', 292.15), ('QLD', 332.39), ('NT', 335.51),
+                        ('WA', 309.93), ('SA', 306.66), ('TAS', 176.25), ('ACT', 292.15)] %}
 
 {% block header %}
     <div class="header bg-primary pb-6">
@@ -486,45 +488,26 @@
                     <div id="map" class="vector-map vector-map-sm"></div>
                     <!-- List group -->
                     <ul class="list-group list-group-flush list my--3">
-                        <li class="list-group-item px-0">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-
-
+                        {% for item in avg_per_state %}
+                            <li class="list-group-item px-0">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                    </div>
+                                    <div class="col">
+                                        <small>State:</small>
+                                        <h5 class="mb-0">{{ item[0] }}</h5>
+                                    </div>
+                                    <div class="col">
+                                        <small>Year:</small>
+                                        <h5 class="mb-0">2018</h5>
+                                    </div>
+                                    <div class="col">
+                                        <small>Avg:</small>
+                                        <h5 class="mb-0">{{ item[1]|string }} W/m2</h5>
+                                    </div>
                                 </div>
-                                <div class="col">
-                                    <small>State:</small>
-                                    <h5 class="mb-0">VIC</h5>
-                                </div>
-                                <div class="col">
-                                    <small>Year:</small>
-                                    <h5 class="mb-0">2018</h5>
-                                </div>
-                                <div class="col">
-                                    <small>Sum:</small>
-                                    <h5 class="mb-0">1900 Wm2</h5>
-                                </div>
-                            </div>
-                        </li>
-
-                        <li class="list-group-item px-0">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-                                </div>
-                                <div class="col">
-                                    <small>State:</small>
-                                    <h5 class="mb-0">VIC</h5>
-                                </div>
-                                <div class="col">
-                                    <small>Year:</small>
-                                    <h5 class="mb-0">2018</h5>
-                                </div>
-                                <div class="col">
-                                    <small>Sum:</small>
-                                    <h5 class="mb-0">1900 Wm2</h5>
-                                </div>
-                            </div>
-                        </li>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>

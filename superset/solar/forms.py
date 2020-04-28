@@ -161,6 +161,10 @@ class SolarBIDashboardListWidget(FormWidget):
     template = 'appbuilder/general/widgets/dashboard_list_widget.html'
 
 
+class SolarBIProfileWidget(FormWidget):
+    template = 'appbuilder/general/widgets/profile_widget.html'
+
+
 class SolarBIListWidget(FormWidget):
     template = 'appbuilder/general/widgets/saved_list_widget.html'
 

@@ -38,6 +38,7 @@
       <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/nucleo/css/nucleo.css')}}" rel="stylesheet">
       <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/@fortawesome/fontawesome-free/css/all.min.css')}}" rel="stylesheet">
       <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/jvectormap-next/jquery-jvectormap.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/animate.css/animate.min.css')}}" rel="stylesheet">
       <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/css/solarbi.css')}}?v=3.2" rel="stylesheet">
 
       {% for entry in get_unloaded_chunks(css_manifest('theme'), loaded_chunks) %}
@@ -176,9 +177,6 @@
       <script src="/static/assets/stylesheets/argon_assets/vendor/jquery-scroll-lock/dist/jquery-scrollLock.min.js"></script>
       <script src="/static/assets/stylesheets/argon_assets/vendor/jvectormap-next/jquery-jvectormap.min.js"></script>
       <script src="/static/assets/stylesheets/argon_assets/js/vendor/jvectormap/jquery-jvectormap-au-merc.js"></script>
-
-
-      <script src="/static/assets/stylesheets/argon_assets/vendor/bootstrap-notify/bootstrap-notify.min.js"></script>
       <script src="/static/assets/stylesheets/argon_assets/js/argon.js?v=1.2.0"></script>
       <script>
         $(document).ready(function () {

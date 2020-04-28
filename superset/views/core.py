@@ -56,7 +56,7 @@ import pandas as pd
 import simplejson as json
 from sqlalchemy import and_, or_, select
 from werkzeug.routing import BaseConverter
-from ..solar.forms import SolarBIListWidget, SolarBIDashboardListWidget
+from ..solar.forms import SolarBIListWidget, SolarBIDashboardListWidget, SolarBIProfileWidget
 from ..solar.models import Plan, TeamSubscription, Team, StripeEvent
 from ..solar.utils import set_session_team, get_session_team, log_to_mp, get_athena_query, send_sendgrid_email
 from superset import (
@@ -432,7 +432,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
                     ['team_id', FilterEqualFunction, get_team_id]]
                     # ['created_by', FilterEqualFunction, get_user]]
     base_permissions = ['can_list', 'can_show', 'can_add', 'can_delete', 'can_edit',
-                        'can_dashboard']
+                        'can_dashboard', 'can_profile']
 
     search_columns = (
         'slice_name', 'description', 'owners',
@@ -461,6 +461,10 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
     dashboard_template = 'solar/my_dashboard.html',
     dashboard_title = 'My Dashboard - SolarBI'
     dashboard_widget = SolarBIDashboardListWidget
+
+    profile_template = 'solar/my_profile.html',
+    profile_title = 'My Profile -SolarBI'
+    profile_widget = SolarBIProfileWidget
 
     @expose('/dashboard')
     @has_access
@@ -576,6 +580,111 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             team_users_count=team_users_count,
             new_team_users_count=new_team_users_count,
             plan_name=plan_name,
+            format_datetime=format_datetime,
+            awaiting_emails=awaiting_emails,
+            team_users=team_users,
+            label_columns=self.label_columns,
+            include_columns=self.list_columns,
+            value_columns=itertools.islice(self.datamodel.get_values(lst, self.list_columns), 5),
+            order_columns=self.order_columns,
+            formatters_columns=self.formatters_columns,
+            page=page,
+            page_size=page_size,
+            count=count,
+            pks=pks,
+            actions=actions,
+            filters=filters,
+            modelview_name=self.__class__.__name__,
+        )
+        return widgets
+
+    @expose('/profile')
+    @has_access
+    def profile(self):
+
+        for team_role in g.user.team_role:
+            role = team_role.role
+            if role.name == 'Admin':
+                self.remove_filters_for_role(role.name)
+                break
+            else:
+                self.add_filters_for_role(role.name)
+        widgets = self._profile()
+        return self.render_template(self.profile_template,
+                                    title=self.profile_title,
+                                    widgets=widgets)
+
+    def _profile(self):
+        if get_order_args().get(self.__class__.__name__):
+            order_column, order_direction = get_order_args().get(
+                self.__class__.__name__
+            )
+        else:
+            order_column, order_direction = "", ""
+        page = get_page_args().get(self.__class__.__name__)
+        page_size = get_page_size_args().get(self.__class__.__name__)
+        get_filter_args(self._filters)
+        widgets = self._get_profile_widget(
+            filters=self._filters,
+            order_column=order_column,
+            order_direction=order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        form = self.search_form.refresh()
+        self.update_redirect()
+        return self._get_search_widget(form=form, widgets=widgets)
+
+    def _get_profile_widget(
+            self,
+            filters,
+            actions=None,
+            order_column="",
+            order_direction="",
+            page=None,
+            page_size=None,
+            widgets=None,
+            **args
+    ):
+        """ get joined base filter and current active filter for query """
+        # pylint: disable=unpacking-non-sequence
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column, order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count, lst = self.datamodel.query(
+            joined_filters,
+            order_column,
+            order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        pks = self.datamodel.get_keys(lst)
+
+        # serialize composite pks
+        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+
+        # Get current session team
+        session_team = get_session_team(self.appbuilder.sm, g.user.id)
+
+        # Get remaining advance requests in this billing period
+        subscription = self.appbuilder.sm.get_subscription(team_id=session_team[0])
+
+        # Get the number of team members
+        cur_team = self.appbuilder.sm.find_team(team_id=session_team[0])
+        awaiting_emails = self.appbuilder.sm.get_awaiting_emails(cur_team)
+        team_users = self.appbuilder.sm.get_team_members(cur_team.id)
+        team_users_count = len(cur_team.users)
+        # Get current user info
+        user_info = self.appbuilder.sm.get_user_by_id(g.user.id)
+
+        widgets["profile"] = self.profile_widget(
+            appbuilder=self.appbuilder,
+            session_team=session_team,
+            user_info=user_info,
+            team_users_count=team_users_count,
             format_datetime=format_datetime,
             awaiting_emails=awaiting_emails,
             team_users=team_users,

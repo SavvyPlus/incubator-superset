@@ -113,6 +113,7 @@ OWNER_PERMISSIONS_VIEWS = [
     ('can_invitation_post', 'SolarBIRegisterInvitationUserDBView'),
     ('can_billing', 'SolarBIBillingView'),
     ('can_dashboard', 'SolarBIModelView'),
+    ('can_profile', 'SolarBIModelView'),
     # ('can_mydashboard', 'SolarBIDashboardView'),
 ]
 OWNER_PERMISSIONS_COMMON = ['can_show', 'can_list', 'can_delete', 'can_add']
