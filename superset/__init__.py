@@ -25,6 +25,8 @@ from superset.extensions import (
     cache_manager,
     db,
     event_logger,
+    simulation_logger,
+    celery_app,
     feature_flag_manager,
     jinja_context_manager,
     manifest_processor,

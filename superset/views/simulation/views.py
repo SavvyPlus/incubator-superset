@@ -26,7 +26,7 @@ from flask_appbuilder import expose, has_access, SimpleFormView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
-from superset import app, db, event_logger
+from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
 from superset.models.simulation import Assumption, Simulation
@@ -46,12 +46,30 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
                 break
             file_description.write(chunk)
 
+# Not used yet
+@celery_app.task
+def handle_assumption_process(path, name):
+    assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+    try:
+        process_assumptions(path, name)
+        assumption_file.status = "Uploaded"
+        db.session.merge(assumption_file)
+        db.session.commit()
+        print('process finished')
+    except Exception as e:
+        assumption_file.status = "Error"
+        assumption_file.status_detail = str(e)
+        db.session.merge(assumption_file)
+        db.session.commit()
+        print(e)
+
 class UploadAssumptionView(SimpleFormView):
     route_base = '/upload_assumption_file'
     form = UploadAssumptionForm
     form_template = "appbuilder/general/model/edit.html"
     form_title = "Upload assumption excel template"
 
+    @simulation_logger.log_simulation('upload_assumption')
     def form_post(self, form):
         print('uploaded success')
         import time
@@ -66,13 +84,14 @@ class UploadAssumptionView(SimpleFormView):
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.excel_file.data, path)
-            download_link = process_assumptions(path, name)
+            # download_link = process_assumptions(path, name)
+            handle_assumption_process.apply_async(args=[path, name])
             assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
             if not assumption_file:
                 assumption_file = Assumption()
             assumption_file.name = name
-            assumption_file.status = "Success"
-            assumption_file.download_link = download_link
+            assumption_file.status = "Processing"
+            # assumption_file.download_link = download_link
             db.session.merge(assumption_file)
             db.session.commit()
             message = "Upload success"
@@ -82,27 +101,13 @@ class UploadAssumptionView(SimpleFormView):
             db.session.rollback()
             message = "Upload failed:" + str(e)
             style = 'danger'
+
         os.remove(path)
         flash(message, style)
         flash("Time used:{}".format(time.time() - time1), 'info')
         # message = 'Upload success'
 
         return redirect('/upload_assumption_file/form')
-
-    # Not used yet
-    def handle_assumption_process(self, path, name):
-        assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
-        try:
-            process_assumptions(path, name)
-            # assumption_file.status = "Uploaded"
-            # db.session.merge(assumption_file)
-            # db.session.commit()
-        except Exception as e:
-            # assumption_file.status = "Error"
-            # assumption_file.status_detail = str(e)
-            # db.session.merge(assumption_file)
-            # db.session.commit()
-            print(e)
 
 
 class AssumptionListWidget(ListWidget):

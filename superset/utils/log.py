@@ -159,3 +159,36 @@ class DBEventLogger(AbstractEventLogger):
         sesh = current_app.appbuilder.get_session
         sesh.bulk_save_objects(logs)
         sesh.commit()
+
+class SimulationLogger(AbstractEventLogger):
+
+    def log_simulation(self, action_name):
+
+        def wrap(f):
+            @functools.wraps(f)
+            def wrapped(*args, **kwargs):
+                from superset.models.simulation import SimulationLog
+                user_id = None
+                if g.user:
+                    user_id = g.user.get_id()
+                value = f(*args, **kwargs)
+                print(action_name)
+                # self.log(
+                #     user_id,
+                #     f.__name__,
+                #     records=records,
+                #     dashboard_id=dashboard_id,
+                #     slice_id=slice_id,
+                #     duration_ms=duration_ms,
+                #     referrer=referrer,
+                # )
+                return value
+
+            return wrapped
+        return wrap
+
+    def log(self):
+        pass
+
+def get_simulation_logger():
+    return SimulationLogger()
