@@ -21,11 +21,12 @@ import logging
 import os
 import tempfile
 from flask import flash, redirect
+from flask_appbuilder.widgets import ListWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
-from superset import app, db
+from superset import app, db, event_logger
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
 from superset.models.simulation import Assumption, Simulation
@@ -70,7 +71,6 @@ class UploadAssumptionView(SimpleFormView):
             if not assumption_file:
                 assumption_file = Assumption()
             assumption_file.name = name
-            assumption_file.s3_path = "s3://{}".format(name)
             assumption_file.status = "Success"
             assumption_file.download_link = download_link
             db.session.merge(assumption_file)
@@ -105,13 +105,19 @@ class UploadAssumptionView(SimpleFormView):
             print(e)
 
 
+class AssumptionListWidget(ListWidget):
+    template = 'empower/widgets/list_assumption.html'
+
 class AssumptionModelView(SupersetModelView):
     route_base = "/assuptionmodelview"
     datamodel = SQLAInterface(Assumption)
     include_route_methods = {RouteMethod.LIST, RouteMethod.EDIT, RouteMethod.DELETE, RouteMethod.INFO, RouteMethod.SHOW}
+    formatters_columns = {'download_link': lambda x: '<button type="button">Download</>'}
+    list_widget = AssumptionListWidget
 
-    list_columns = ['name', 'status', 'status_detail']
-    label_columns = {'name':'Name','status':'Status','status_detail':'Status Detail'}
+    order_columns = ['name']
+    list_columns = ['name', 'status', 'status_detail', 'download_link']
+    label_columns = {'name':'Name','status':'Status','status_detail':'Status Detail', 'download_link':'Download'}
 
 
 

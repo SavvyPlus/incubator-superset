@@ -47,13 +47,13 @@ class Assumption(
     __tablename__ = "assumption"
     id = Column(Integer, primary_key=True)
     name = Column(String(200))
-    s3_path = Column(String(500))
     status = Column(String(10))
     status_detail = Column(String(500))
     download_link = Column(String(200))
 
     def __repr__(self):
         return self.name
+
 
 class Simulation(
     Model
@@ -62,6 +62,11 @@ class Simulation(
     id = Column(Integer, primary_key=True)
     run_id = Column(String(20))
     name = Column(String(200))
+    description = Column(String(200))
     assumption = relationship("Assumption", secondary=simulation_assumption, backref="simulation")
+    run_no = Column(Integer)
     status = Column(String(10))
     status_detail = Column(String(500))
+
+    def __repr__(self):
+        return self.name
