@@ -1,0 +1,972 @@
+{#
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+#}
+{% extends 'appbuilder/general/widgets/profile.html' %}
+{% import 'appbuilder/general/lib.html' as lib %}
+
+{% set is_team_owner = appbuilder.sm.get_role_in_team(g.user, session_team[0]).name == 'team_owner' %}
+
+{% block header %}
+    <div class="header pb-6 d-flex align-items-center"
+         style="min-height: 500px; background-size: cover; background-position: center top;">
+        <!-- Mask -->
+        <span class="mask bg-gradient-default opacity-8"></span>
+        <!-- Header container -->
+        <div class="container-fluid d-flex align-items-center">
+            <div class="row">
+                <div class="col-lg-7 col-md-10">
+                    <h1 class="display-2 text-white">Hello User</h1>
+                    <p class="text-white mt-0 mb-5">This is your profile page. You can see
+                        the You details,
+                        invite people to your team and adjust settings</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid mt--6">
+        <div class="row">
+            <div class="col-xl-4 order-xl-2">
+                <div class="card bg-gradient-primary">
+                    <!-- Card body -->
+                    <div class="card-body">
+                        <div class="row justify-content-between align-items-center">
+                            <div class="col">
+                                <img src="../assets/img/icons/cards/visa.png"
+                                     alt="Image placeholder">
+                            </div>
+                            <button type="button" class="btn btn-outline-info"
+                                    data-toggle="modal" data-target="#ccmodal">Update
+                            </button>
+                            <div class="modal fade" id="ccmodal" tabindex="-1"
+                                 role="dialog" aria-labelledby="ccmodalLabel"
+                                 aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered"
+                                     role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-body">
+                                            <button type="button" class="close"
+                                                    data-dismiss="modal"
+                                                    aria-label="Close">
+                                                <span aria-hidden="true">×</span>
+                                            </button>
+
+                                            <div class="row justify-content-between align-items-center">
+                                                <div class="col">
+                                                    <img src="../assets/img/icons/cards/mastercard.png"
+                                                         alt="Image placeholder">
+                                                </div>
+
+                                            </div>
+                                            <div class="mt-4">
+                                                <form role="form" class="form-primary">
+                                                    <div class="form-group">
+                                                        <div class="input-group input-group-alternative mb-3">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text"><i
+                                                                        class="ni ni-single-02"></i></span>
+                                                            </div>
+                                                            <input class="form-control"
+                                                                   placeholder="Name on card"
+                                                                   type="text">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <div class="input-group input-group-alternative mb-3">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text"><i
+                                                                        class="ni ni-credit-card"></i></span>
+                                                            </div>
+                                                            <input class="form-control"
+                                                                   placeholder="Card number"
+                                                                   type="text">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <div class="form-group">
+                                                                <div class="input-group input-group-alternative mb-3">
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text"><i
+                                                                                class="ni ni-calendar-grid-58"></i></span>
+                                                                    </div>
+                                                                    <input class="form-control"
+                                                                           placeholder="MM/YY"
+                                                                           type="text">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="form-group">
+                                                                <div class="input-group input-group-alternative">
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text"><i
+                                                                                class="ni ni-lock-circle-open"></i></span>
+                                                                    </div>
+                                                                    <input class="form-control"
+                                                                           placeholder="CCV"
+                                                                           type="text">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button"
+                                                            class="btn btn-block btn-info">
+                                                        Update new card
+                                                    </button>
+                                                </form>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge badge-lg badge-success">Active</span>
+                            </div>
+                        </div>
+                        <div class="my-4">
+                <span class="h6 surtitle text-light">
+                  Card number
+                </span>
+                            <div class="card-serial-number h1 text-white">
+                                <div>xxx</div>
+                                <div>xxxx</div>
+                                <div>xxx</div>
+                                <div>6682</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <span class="h6 surtitle text-light">Name</span>
+                                <span class="d-block h3 text-white">John Snow</span>
+                            </div>
+                            <div class="col">
+                                <span class="h6 surtitle text-light">Expiry date</span>
+                                <span class="d-block h3 text-white">11/23</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Progress track -->
+                <div class="card">
+                    <!-- Card header -->
+                    <div class="card-header border-0">
+                        <!-- Title -->
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h5 class="mb-0">Team members</h5>
+                            </div>
+                            <div class="col-lg-6 col-5 text-right">
+                                <a href="#" class="btn btn-sm btn-primary"
+                                   data-toggle="modal" data-target="#invitemodal">Team
+                                    Invitation</a>
+                                <!-- Modal -->
+                                <div class="modal fade" id="invitemodal" tabindex="-1"
+                                     role="dialog" aria-labelledby="invitemodallabel"
+                                     aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered"
+                                         role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title"
+                                                    id="exampleModalLabel">Team
+                                                    Invitation</h5>
+                                                <button type="button" class="close"
+                                                        data-dismiss="modal"
+                                                        aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row py-3 align-items-center">
+                                                    <div class="col-md-12">
+                                                        <div class="form-group">
+                                                            <div class="input-group input-group-merge">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text"><i
+                                                                            class="fas fa-envelope"></i></span>
+                                                                </div>
+                                                                <input class="form-control"
+                                                                       placeholder="Email address"
+                                                                       type="email">
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col"
+                                                                     style="padding-top: 10px">
+                                                                    <span href="#"
+                                                                          class="btn btn-link px-0"><i
+                                                                            class="fas fa-plus-circle"></i> Add another</span>
+                                                                    or
+                                                                    <span class="btn btn-link px-0">add many at once</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button"
+                                                        class="btn btn-secondary"
+                                                        data-dismiss="modal">Back
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-primary">Send
+                                                    Invitation
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card body -->
+                    <div class="card-body">
+                        <!-- List group -->
+                        <ul class="list-group list-group-flush list my--3">
+                            <li class="list-group-item px-0">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <!-- Avatar -->
+                                        <a href="#" class="avatar rounded-circle">
+                                            <img alt="Image placeholder" src="">
+                                        </a>
+                                    </div>
+                                    <div class="col ml--2">
+                                        <h4 class="mb-0">
+                                            <a href="#">John Michael</a>
+                                        </h4>
+                                        <span class="text-success">●</span>
+                                        <small>Accepted Invitation</small>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button"
+                                                class="btn btn-sm btn-danger"
+                                                data-toggle="modal" data-target="#remove">
+                                            Remove
+                                        </button>
+                                        <!-- Modal -->
+                                        <div class="modal fade" id="remove" tabindex="-1"
+                                             role="dialog" aria-labelledby="remove"
+                                             aria-hidden="true">
+                                            <div class="modal-dialog modal-danger modal-dialog-centered modal-"
+                                                 role="document">
+                                                <div class="modal-content bg-gradient-danger">
+
+                                                    <div class="modal-header">
+
+                                                        <button type="button"
+                                                                class="close"
+                                                                data-dismiss="modal"
+                                                                aria-label="Close">
+                                                            <span aria-hidden="true">×</span>
+                                                        </button>
+                                                    </div>
+
+                                                    <div class="modal-body">
+
+                                                        <div class="py-3 text-center">
+                                                            <i class="ni ni-bell-55 ni-3x"></i>
+                                                            <h4 class="heading mt-4">You
+                                                                are about to remove a team
+                                                                member!</h4>
+                                                            <p>This cannot be undone, are
+                                                                you sure ?</p>
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div class="modal-footer">
+                                                        <button type="button"
+                                                                class="btn btn-white">
+                                                            Yeah, I'm sure
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn btn-link text-white ml-auto"
+                                                                data-dismiss="modal">Oh
+                                                            let me think about it
+                                                        </button>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="list-group-item px-0">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <!-- Avatar -->
+                                        <a href="#" class="avatar rounded-circle">
+                                            <img alt="Image placeholder" src="">
+                                        </a>
+                                    </div>
+                                    <div class="col ml--2">
+                                        <h4 class="mb-0">
+                                            <a href="#!">Alex Smith</a>
+                                        </h4>
+                                        <span class="text-warning">●</span>
+                                        <small>Pending</small>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button"
+                                                class="btn btn-sm btn-neutral">Cancel
+                                        </button>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary">Resend
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="list-group-item px-0">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <!-- Avatar -->
+                                        <a href="#" class="avatar rounded-circle">
+                                            <img alt="Image placeholder"
+                                                 src="../../assets/img/theme/team-3.jpg">
+                                        </a>
+                                    </div>
+                                    <div class="col ml--2">
+                                        <h4 class="mb-0">
+                                            <a href="#!">Samantha Ivy</a>
+                                        </h4>
+                                        <span class="text-danger">●</span>
+                                        <small>Expired</small>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button"
+                                                class="btn btn-sm btn-neutral">Cancel
+                                        </button>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary">Resend
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-xl-8 order-xl-1">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="nav-wrapper">
+                            <ul class="nav nav-pills nav-fill flex-column flex-md-row"
+                                id="tabs-icons-text" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link mb-sm-3 mb-md-0 active"
+                                       id="tabs-icons-text-1-tab" data-toggle="tab"
+                                       href="#tabs-icons-text-1" role="tab"
+                                       aria-controls="tabs-icons-text-1"
+                                       aria-selected="true"><i
+                                            class="ni ni-single-02  mr-2"></i>Profile</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link mb-sm-3 mb-md-0"
+                                       id="tabs-icons-text-2-tab" data-toggle="tab"
+                                       href="#tabs-icons-text-2" role="tab"
+                                       aria-controls="tabs-icons-text-2"
+                                       aria-selected="false"><i
+                                            class="ni ni-diamond mr-2"></i>Workspace</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link mb-sm-3 mb-md-0"
+                                       id="tabs-icons-text-3-tab" data-toggle="tab"
+                                       href="#tabs-icons-text-3" role="tab"
+                                       aria-controls="tabs-icons-text-3"
+                                       aria-selected="false"><i
+                                            class="ni ni-diamond mr-2"></i>Settings</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card shadow">
+                    <div class="card-body">
+                        <div class="tab-content" id="myTabContent">
+                            <div class="tab-pane fade show active" id="tabs-icons-text-1"
+                                 role="tabpanel"
+                                 aria-labelledby="tabs-icons-text-1-tab">
+                                <form>
+                                    <h6 class="heading-small text-muted mb-4">User
+                                        information</h6>
+                                    <div class="pl-lg-4">
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-username">Username</label>
+                                                    <input type="text"
+                                                           id="input-username "
+                                                           class="form-control"
+                                                           placeholder="Username"
+                                                           value="lucky.jesse">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-email">Email
+                                                        address</label>
+                                                    <input type="email" id="input-email"
+                                                           class="form-control"
+                                                           placeholder="jesse@example.com">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-first-name">First
+                                                        name</label>
+                                                    <input type="text"
+                                                           id="input-first-name"
+                                                           class="form-control"
+                                                           placeholder="First name"
+                                                           value="Lucky">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-last-name">Last
+                                                        name</label>
+                                                    <input type="text"
+                                                           id="input-last-name"
+                                                           class="form-control"
+                                                           placeholder="Last name"
+                                                           value="Jesse">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-4"/>
+                                    <!-- Address -->
+                                    <h6 class="heading-small text-muted mb-4">Contact
+                                        information</h6>
+                                    <div class="pl-lg-4">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-address">Address</label>
+                                                    <input id="input-address"
+                                                           class="form-control"
+                                                           placeholder="Home Address"
+                                                           value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09"
+                                                           type="text">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-city">City</label>
+                                                    <input type="text" id="input-city"
+                                                           class="form-control"
+                                                           placeholder="City"
+                                                           value="New York">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-country">Country</label>
+                                                    <input type="text" id="input-country"
+                                                           class="form-control"
+                                                           placeholder="Country"
+                                                           value="United States">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-country">Postal
+                                                        code</label>
+                                                    <input type="number"
+                                                           id="input-postal-code"
+                                                           class="form-control"
+                                                           placeholder="Postal code">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-4"/>
+                                    <!-- Description -->
+                                    <h6 class="heading-small text-muted mb-4">About
+                                        me</h6>
+                                    <div class="pl-lg-4">
+                                        <div class="form-group">
+                                            <label class="form-control-label">About
+                                                Me</label>
+                                            <textarea rows="4" class="form-control"
+                                                      placeholder="A few words about you ...">A beautiful premium dashboard for Bootstrap 4.</textarea>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-icon btn-primary" type="button"
+                                            style="float: right"
+                                            data-toggle="notify" data-placement="top"
+                                            data-align="center"
+                                            data-type="success" data-icon="ni ni-bell-55">
+                                        <span class="btn-inner--icon"><i
+                                                class="far fa-save"></i></span>
+                                        <span class="btn-inner--text">Save changes</span>
+                                    </button>
+                                </form>
+
+
+                            </div>
+                            <div class="tab-pane fade" id="tabs-icons-text-2"
+                                 role="tabpanel"
+                                 aria-labelledby="tabs-icons-text-2-tab">
+                                <form>
+                                    <h6 class="heading-small text-muted mb-4">Team
+                                        Information</h6>
+                                    <div class="pl-lg-4">
+
+                                        <div class="row" style="padding-top: 10px">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-team">Team
+                                                        name</label>
+                                                    <input type="text"
+                                                           id="input-username "
+                                                           class="form-control"
+                                                           placeholder="Username"
+                                                           value="My Team">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-business">Business
+                                                        name</label>
+                                                    <input type="email" id="input-email"
+                                                           class="form-control"
+                                                           placeholder="My Business">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-email">Website</label>
+                                                    <input type="text" id="input-website"
+                                                           class="form-control"
+                                                           placeholder="www.xxx.com"
+                                                           value="www.xxx.com">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-last-name">Billing
+                                                        Email</label>
+                                                    <input type="text"
+                                                           id="input-last-name"
+                                                           class="form-control"
+                                                           placeholder="jesse@example.com"
+                                                           value="jesse@example.com">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-4"/>
+                                    <!-- Address -->
+                                    <h6 class="heading-small text-muted mb-4">Contact
+                                        information</h6>
+                                    <div class="pl-lg-4">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-address">Address</label>
+                                                    <input id="input-address"
+                                                           class="form-control"
+                                                           placeholder="Home Address"
+                                                           value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09"
+                                                           type="text">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-city">City</label>
+                                                    <input type="text" id="input-city"
+                                                           class="form-control"
+                                                           placeholder="City"
+                                                           value="New York">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-country">Country</label>
+                                                    <input type="text" id="input-country"
+                                                           class="form-control"
+                                                           placeholder="Country"
+                                                           value="United States">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-country">Postal
+                                                        code</label>
+                                                    <input type="number"
+                                                           id="input-postal-code"
+                                                           class="form-control"
+                                                           placeholder="Postal code">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-4"/>
+                                    <!-- Description -->
+
+                                </form>
+                                <button class="btn btn-icon btn-primary" type="button"
+                                        style="float: right"
+                                        data-toggle="notify" data-placement="top"
+                                        data-align="center"
+                                        data-type="success" data-icon="ni ni-bell-55">
+                                    <span class="btn-inner--icon"><i
+                                            class="far fa-save"></i></span>
+                                    <span class="btn-inner--text">Save changes</span>
+                                </button>
+                            </div>
+                            <div class="tab-pane fade" id="tabs-icons-text-3"
+                                 role="tabpanel"
+                                 aria-labelledby="tabs-icons-text-3-tab">
+                                <div class="row">
+                                    <div class="col">
+
+
+                                        <div class="card">
+                                            <!-- Card header -->
+                                            <div class="card-header">
+                                                <h3 class="mb-0">Billing History</h3>
+
+                                            </div>
+                                            <div class="table-responsive py-4">
+                                                <div id="datatable-buttons_wrapper"
+                                                     class="dataTables_wrapper dt-bootstrap4">
+                                                    <div class="dt-buttons btn-group flex-wrap">
+                                                        <button class="btn buttons-copy buttons-html5 btn-sm btn-default"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                type="button">
+                                                            <span>Copy</span></button>
+                                                        <button class="btn buttons-print btn-sm btn-default"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                type="button">
+                                                            <span>Print</span></button>
+                                                    </div>
+                                                    <div id="datatable-buttons_filter"
+                                                         class="dataTables_filter"><label>Search:<input
+                                                            type="search"
+                                                            class="form-control form-control-sm"
+                                                            placeholder=""
+                                                            aria-controls="datatable-buttons"></label>
+                                                    </div>
+                                                    <table class="table table-flush dataTable"
+                                                           id="datatable-buttons"
+                                                           role="grid"
+                                                           aria-describedby="datatable-buttons_info">
+                                                        <thead class="thead-light">
+                                                        <tr role="row">
+                                                            <th class="sorting_asc"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                rowspan="1"
+                                                                colspan="1"
+                                                                aria-sort="ascending"
+                                                                aria-label="Name: activate to sort column descending"
+                                                                style="width: 227px;">
+                                                                Invoice #
+                                                            </th>
+                                                            <th class="sorting"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                rowspan="1"
+                                                                colspan="1"
+                                                                aria-label="Position: activate to sort column ascending"
+                                                                style="width: 345px;">Plan
+                                                            </th>
+                                                            <th class="sorting"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                rowspan="1"
+                                                                colspan="1"
+                                                                aria-label="Office: activate to sort column ascending"
+                                                                style="width: 173px;">
+                                                                Issued Date
+                                                            </th>
+                                                            <th class="sorting"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                rowspan="1"
+                                                                colspan="1"
+                                                                aria-label="Age: activate to sort column ascending"
+                                                                style="width: 81px;">
+                                                                Subscription Cost
+                                                            </th>
+                                                            <th class="sorting"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                rowspan="1"
+                                                                colspan="1"
+                                                                aria-label="Start date: activate to sort column ascending"
+                                                                style="width: 161px;">
+                                                                Business Cases Cost
+                                                            </th>
+                                                            <th class="sorting"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                rowspan="1"
+                                                                colspan="1"
+                                                                aria-label="Start date: activate to sort column ascending"
+                                                                style="width: 161px;">
+                                                                Status
+                                                            </th>
+                                                            <th class="sorting"
+                                                                tabindex="0"
+                                                                aria-controls="datatable-buttons"
+                                                                rowspan="1"
+                                                                colspan="1"
+                                                                aria-label="Start date: activate to sort column ascending"
+                                                                style="width: 161px;">
+                                                                Download
+                                                            </th>
+
+                                                        </tr>
+                                                        </thead>
+                                                        <tfoot>
+                                                        <tr>
+                                                            <th rowspan="1" colspan="1">
+                                                                Invoice #
+                                                            </th>
+                                                            <th rowspan="1" colspan="1">
+                                                                Plan
+                                                            </th>
+                                                            <th rowspan="1" colspan="1">
+                                                                Issued Date
+                                                            </th>
+                                                            <th rowspan="1" colspan="1">
+                                                                Subscription Cost
+                                                            </th>
+                                                            <th rowspan="1" colspan="1">
+                                                                Business Case Cost
+                                                            </th>
+                                                            <th rowspan="1" colspan="1">
+                                                                Status
+                                                            </th>
+                                                            <th rowspan="1" colspan="1">
+                                                                Download
+                                                            </th>
+
+                                                        </tr>
+                                                        </tfoot>
+                                                        <tbody>
+
+
+                                                        <tr role="row" class="odd">
+                                                            <td class="sorting_1">March
+                                                                2020 3450
+                                                            </td>
+                                                            <td>Starter</td>
+                                                            <td>12/01/2020</td>
+                                                            <td>$29</td>
+                                                            <td>$599</td>
+                                                            <td>Paid</td>
+                                                            <td>
+                                                                <i class="ni ni-cloud-download-95"></i>
+                                                            </td>
+                                                        </tr>
+                                                        <tr role="row" class="even">
+                                                            <td class="sorting_1">March
+                                                                2020 3451
+                                                            </td>
+                                                            <td>Starter</td>
+                                                            <td>12/01/2020</td>
+                                                            <td>$29</td>
+                                                            <td>$599</td>
+                                                            <td>Paid</td>
+                                                            <td>
+                                                                <i class="ni ni-cloud-download-95"></i>
+                                                            </td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                    <div class="dataTables_info"
+                                                         id="datatable-buttons_info"
+                                                         role="status" aria-live="polite">
+                                                        Showing 1 to 10 of 57 entries
+                                                    </div>
+                                                    <div class="dataTables_paginate paging_simple_numbers"
+                                                         id="datatable-buttons_paginate">
+                                                        <ul class="pagination">
+                                                            <li class="paginate_button page-item previous disabled"
+                                                                id="datatable-buttons_previous">
+                                                                <a href="#"
+                                                                   aria-controls="datatable-buttons"
+                                                                   data-dt-idx="0"
+                                                                   tabindex="0"
+                                                                   class="page-link"><i
+                                                                        class="fas fa-angle-left"></i></a>
+                                                            </li>
+                                                            <li class="paginate_button page-item active">
+                                                                <a href="#"
+                                                                   aria-controls="datatable-buttons"
+                                                                   data-dt-idx="1"
+                                                                   tabindex="0"
+                                                                   class="page-link">1</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-icon btn-primary" type="button"
+                                        style="float: right"
+                                        data-toggle="notify" data-placement="top"
+                                        data-align="center"
+                                        data-type="success" data-icon="ni ni-bell-55">
+                                    <span class="btn-inner--icon"><i
+                                            class="far fa-save"></i></span>
+                                    <span class="btn-inner--text">Save changes</span>
+                                </button>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block tail_js %}
+    <script src="/static/assets/stylesheets/argon_assets/vendor/sweetalert2/dist/sweetalert2.min.js"></script>
+    <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            $('.send-invitation').click(function () {
+                let selected_email = $(".recipient-email").val();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.send_invitation') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
+                    }
+                });
+            });
+
+            $('.resend-email').click(function () {
+                let selected_email = $(this).parent().prev().prev().children(':first').html();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 28px; margin: 0 15.5px;\">");
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.resend_email') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
+                    }
+                });
+            });
+
+            $('.delete-invitation').click(function () {
+                let selected_email = $(this).parent().prev().children(':first').html();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.delete_invitation') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -24,23 +24,25 @@
 {% import 'appbuilder/general/lib.html' as lib %}
 
 {% block content %}
-{{ lib.panel_begin(title) }}
+    {{ lib.panel_begin(title) }}
 
-{% if related_views is defined %}
-    <ul class="nav nav-tabs">
-    <li class="active"><a href="#Home" data-toggle="tab">{{ _("Detail") }}</a> </li>
-        {% for view in related_views %}
-        <li><a href="#{{view.__class__.__name__}}" data-toggle="tab">{{view.title}}</a></li>
-        {% endfor %}
+    {% if related_views is defined %}
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="#Home" data-toggle="tab">{{ _("Detail") }}</a>
+            </li>
+            {% for view in related_views %}
+                <li><a href="#{{ view.__class__.__name__ }}"
+                       data-toggle="tab">{{ view.title }}</a></li>
+            {% endfor %}
         </ul>
 
         <div class="tab-content">
         {% for view in related_views %}
-        <div id="{{view.__class__.__name__}}" class="tab-pane">
-        {{ widgets.get('related_views')[loop.index - 1]()|safe }}
-    </div>
-    {% endfor %}
-{% endif %}
+            <div id="{{ view.__class__.__name__ }}" class="tab-pane">
+                {{ widgets.get('related_views')[loop.index - 1]()|safe }}
+            </div>
+        {% endfor %}
+    {% endif %}
 
 {% if g.user.roles[0].name == 'Admin' %}
     {% block edit_form %}
@@ -54,7 +56,7 @@
         <div class="s-layout__content">
             <div class="list-alert-top">
                 {% block messages %}
-                  {% include 'superset/flash_wrapper.html' %}
+                    {% include 'superset/flash_wrapper.html' %}
                 {% endblock %}
             </div>
             <div class="user-info-card">
@@ -66,11 +68,11 @@
     {% endblock %}
 {% endif %}
 
-    {% if related_views is defined %} </div> {% endif %}
+{% if related_views is defined %} </div> {% endif %}
 
-{{ lib.panel_end() }}
+    {{ lib.panel_end() }}
 {% endblock %}
 
 {% block add_tail_js %}
-    <script src="{{url_for('appbuilder.static',filename='js/ab_keep_tab.js')}}"></script>
+    <script src="{{ url_for('appbuilder.static',filename='js/ab_keep_tab.js') }}"></script>
 {% endblock %}
