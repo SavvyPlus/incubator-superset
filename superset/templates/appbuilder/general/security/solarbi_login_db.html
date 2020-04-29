@@ -26,7 +26,7 @@
               {% include 'superset/flash_wrapper.html' %}
             {% endblock %}
         </div>
-        <img class="solarbi-sun" src="/static/assets/images/solarbi_auth_sun.png" alt="solar sun">
+        <img class="solarbi-sun" src="{{ static_url('assets/images', 'solarbi_auth_sun.png') }}" alt="solar sun">
         <form class="form" action="" method="post" name="login">
             {{form.hidden_tag()}}
             <h4 class="solarbi-text">SOLARBI<span class="alpha-logo">Alpha</span></h4>
@@ -50,8 +50,7 @@
                     {% if appbuilder.sm.auth_user_registration %}
                         <a href="{{appbuilder.sm.get_url_for_registeruser}}" class="signup-btn" data-toggle="tooltip" rel="tooltip"
                         title="{{_('If you are not already a user, please sign up')}}">
-{#                            {{ ab_test('signup_btn_text', 'Register', 'Sign up')}}#}
-                            Sign up
+                            {{ _('Register')}}
                         </a>
                     {% endif %}
                 </div>

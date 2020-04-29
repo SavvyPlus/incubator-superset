@@ -21,7 +21,7 @@ from datetime import timedelta
 from flask_appbuilder import Model
 from flask_appbuilder.security.sqla.models import User
 from sqlalchemy import (
-    Boolean, Column, DateTime, Integer, Float, String, UniqueConstraint, ForeignKey, Sequence, Table)
+    Boolean, Column, DateTime, Integer, Float, String, UniqueConstraint, ForeignKey, Sequence, Table, Text)
 from sqlalchemy.orm import relationship
 
 metadata = Model.metadata  # pylint: disable=no-member
@@ -120,6 +120,12 @@ class SolarBIUser(User):
     email_confirm = Column(Boolean, default=False)
     team_role = relationship('TeamRole', secondary=assoc_teamrole_user, backref='user')
     trial_used = Column(Boolean, default=False)
+    address = Column(Text)
+    city = Column(Text)
+    country = Column(Text)
+    postal_code = Column(Text)
+    about_me = Column(Text)
+
     __table_args__ = {'extend_existing': True}
 
 
