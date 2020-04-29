@@ -40,6 +40,7 @@ from flask import (
     Response,
     url_for,
     session,
+    jsonify,
 )
 from flask_appbuilder import expose
 from flask_appbuilder.actions import action
@@ -668,25 +669,56 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
 
         # Get current session team
         session_team = get_session_team(self.appbuilder.sm, g.user.id)
-
         # Get remaining advance requests in this billing period
-        subscription = self.appbuilder.sm.get_subscription(team_id=session_team[0])
-
+        # subscription = self.appbuilder.sm.get_subscription(team_id=session_team[0])
         # Get the number of team members
         cur_team = self.appbuilder.sm.find_team(team_id=session_team[0])
         awaiting_emails = self.appbuilder.sm.get_awaiting_emails(cur_team)
         team_users = self.appbuilder.sm.get_team_members(cur_team.id)
-        team_users_count = len(cur_team.users)
         # Get current user info
         user_info = self.appbuilder.sm.get_user_by_id(g.user.id)
+        # Get billing info
+        cus_obj = stripe.Customer.retrieve(cur_team.stripe_user_id)
+        cus_name = cus_obj.name
+        cus_email = cus_obj.email
+        cus_address = cus_obj.address
+        cus_invoices = list({'invoice_id': invoice['id'],
+                             'plan_name': self.appbuilder.sm.get_plan_name_by_stripe_id(invoice['lines']['data'][0]['plan']['id']),
+                             'date': datetime.utcfromtimestamp(invoice['created']).strftime("%d/%m/%Y"),
+                             'status': invoice['status'].capitalize(),
+                             'total': '$' + str(invoice['total'] / 100),
+                             'link': invoice['invoice_pdf']} for invoice in stripe.Invoice.list(customer=cus_obj['id']))
+
+        card_info = None
+        card_has_expired = False
+        card_expire_soon = False
+        name_on_card = 'Unknown'
+        if stripe.PaymentMethod.list(customer=cur_team.stripe_user_id, type='card')['data']:
+            credit_card = stripe.PaymentMethod.list(customer=cur_team.stripe_user_id, type='card')['data'][0]
+            card_info = credit_card['card']
+            name_on_card = credit_card['billing_details']['name']
+            one_month_later = str(date.today() + relativedelta(months=1))[:-3]
+            card_expire_date = str(card_info['exp_year']) + '-' + ('0' + str(card_info['exp_month']))[-2:]
+            if str(date.today())[:-3] > card_expire_date:
+                card_has_expired = True
+            elif one_month_later >= card_expire_date:
+                card_expire_soon = True
 
         widgets["profile"] = self.profile_widget(
             appbuilder=self.appbuilder,
+            cur_team=cur_team,
+            awaiting_emails=awaiting_emails,
             session_team=session_team,
             user_info=user_info,
-            team_users_count=team_users_count,
+            cus_name=cus_name,
+            cus_email=cus_email,
+            cus_address=cus_address,
+            cus_invoices=cus_invoices,
+            card_info=card_info,
+            name_on_card=name_on_card,
+            card_has_expired=card_has_expired,
+            card_expire_soon=card_expire_soon,
             format_datetime=format_datetime,
-            awaiting_emails=awaiting_emails,
             team_users=team_users,
             label_columns=self.label_columns,
             include_columns=self.list_columns,
@@ -1126,6 +1158,16 @@ class SolarBIBillingView(ModelView):
                                             'line1': form_data['line1'], 'line2': form_data['line2']})
 
         return json_success(json.dumps({'msg': 'Successfully changed billing detail!'}))
+
+    @expose('/update-card-info', methods=['POST'])
+    def update_card_info(self):
+        pm_id = request.json['pm_id']
+        if self.update_ccard(pm_id, get_team_id()):
+            flash('Credit card updated successful', 'info')
+            return jsonify(dict(redirect='/solar/profile'))
+        else:
+            flash('Card update failed. Please try again later.', 'danger')
+            return jsonify(dict(redirect='/solar/profile'))
 
     @api
     @handle_api_exception

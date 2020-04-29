@@ -49,11 +49,31 @@
                     <div class="card-body">
                         <div class="row justify-content-between align-items-center">
                             <div class="col">
-                                <img src="../assets/img/icons/cards/visa.png"
-                                     alt="Image placeholder">
+                                {% if card_info.brand == 'visa' %}
+                                    <img style="width: 48px"
+                                         src="/static/assets/images/visa_icon.png"
+                                         alt="Visa">
+                                {% elif card_info.brand == 'mastercard' %}
+                                    <img style="width: 48px"
+                                         src="/static/assets/images/master_icon.png"
+                                         alt="Mastercard">
+                                {% elif card_info.brand == 'amex' %}
+                                    <img style="width: 48px"
+                                         src="/static/assets/images/amex_icon.png"
+                                         alt="Mastercard">
+                                {% elif card_info.brand == 'jcb' %}
+                                    <img style="width: 48px"
+                                         src="/static/assets/images/jcb_icon.png"
+                                         alt="JCB">
+                                {% endif %}
                             </div>
                             <button type="button" class="btn btn-outline-info"
-                                    data-toggle="modal" data-target="#ccmodal">Update
+                                    data-toggle="modal" data-target="#ccmodal">
+                                {% if card_info %}
+                                    Update
+                                {% else %}
+                                    Add New Card
+                                {% endif %}
                             </button>
                             <div class="modal fade" id="ccmodal" tabindex="-1"
                                  role="dialog" aria-labelledby="ccmodalLabel"
@@ -67,103 +87,81 @@
                                                     aria-label="Close">
                                                 <span aria-hidden="true">×</span>
                                             </button>
-
-                                            <div class="row justify-content-between align-items-center">
-                                                <div class="col">
-                                                    <img src="../assets/img/icons/cards/mastercard.png"
-                                                         alt="Image placeholder">
-                                                </div>
-
-                                            </div>
                                             <div class="mt-4">
-                                                <form role="form" class="form-primary">
+                                                <form role="form">
                                                     <div class="form-group">
                                                         <div class="input-group input-group-alternative mb-3">
                                                             <div class="input-group-prepend">
                                                                 <span class="input-group-text"><i
                                                                         class="ni ni-single-02"></i></span>
                                                             </div>
-                                                            <input class="form-control"
+                                                            <input id="name_on_card"
+                                                                   class="form-control"
                                                                    placeholder="Name on card"
                                                                    type="text">
                                                         </div>
                                                     </div>
-                                                    <div class="form-group">
+                                                    <div class="form-group"
+                                                         action="/charge" method="post">
                                                         <div class="input-group input-group-alternative mb-3">
-                                                            <div class="input-group-prepend">
-                                                                <span class="input-group-text"><i
-                                                                        class="ni ni-credit-card"></i></span>
-                                                            </div>
-                                                            <input class="form-control"
-                                                                   placeholder="Card number"
-                                                                   type="text">
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-6">
-                                                            <div class="form-group">
-                                                                <div class="input-group input-group-alternative mb-3">
-                                                                    <div class="input-group-prepend">
-                                                                        <span class="input-group-text"><i
-                                                                                class="ni ni-calendar-grid-58"></i></span>
-                                                                    </div>
-                                                                    <input class="form-control"
-                                                                           placeholder="MM/YY"
-                                                                           type="text">
-                                                                </div>
+                                                            <div id="card-element">
+                                                                <!-- A Stripe Element will be inserted here. -->
                                                             </div>
                                                         </div>
-                                                        <div class="col-6">
-                                                            <div class="form-group">
-                                                                <div class="input-group input-group-alternative">
-                                                                    <div class="input-group-prepend">
-                                                                        <span class="input-group-text"><i
-                                                                                class="ni ni-lock-circle-open"></i></span>
-                                                                    </div>
-                                                                    <input class="form-control"
-                                                                           placeholder="CCV"
-                                                                           type="text">
-                                                                </div>
-                                                            </div>
-                                                        </div>
+
+                                                        <div id="card-errors"
+                                                             style="color: #f5365c"
+                                                             role="alert"></div>
                                                     </div>
                                                     <button type="button"
-                                                            class="btn btn-block btn-info">
+                                                            class="update-card btn btn-block btn-info">
                                                         Update new card
                                                     </button>
                                                 </form>
-
                                             </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-auto">
-                                <span class="badge badge-lg badge-success">Active</span>
-                            </div>
+                            {% if card_info %}
+                                <div class="col-auto">
+                                    {% if card_expire_soon %}
+                                        <span class="badge badge-lg badge-warning">Expire Soon</span>
+                                    {% elif card_has_expired %}
+                                        <span class="badge badge-lg badge-danger">Expired</span>
+                                    {% else %}
+                                        <span class="badge badge-lg badge-success">Active</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         </div>
-                        <div class="my-4">
-                <span class="h6 surtitle text-light">
-                  Card number
-                </span>
-                            <div class="card-serial-number h1 text-white">
-                                <div>xxx</div>
-                                <div>xxxx</div>
-                                <div>xxx</div>
-                                <div>6682</div>
+                        {% if card_info %}
+                            <div class="my-4">
+                                <span class="h6 surtitle text-light">
+                                  Card number
+                                </span>
+                                <div class="card-serial-number h1 text-white">
+                                    <div>xxxx</div>
+                                    <div>xxxx</div>
+                                    <div>xxxx</div>
+                                    <div>{{ card_info.last4 }}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col">
-                                <span class="h6 surtitle text-light">Name</span>
-                                <span class="d-block h3 text-white">John Snow</span>
+                            <div class="row">
+                                <div class="col">
+                                    <span class="h6 surtitle text-light">Name</span>
+                                    <span class="d-block h3 text-white">{{ name_on_card }}</span>
+                                </div>
+                                <div class="col">
+                                    <span class="h6 surtitle text-light">Expiry date</span>
+                                    <span class="d-block h3 text-white">
+                                        {{ ('0' + card_info.exp_month|string)[-2:] }}/{{ (card_info.exp_year|string)[-2:] }}
+                                    </span>
+                                </div>
                             </div>
-                            <div class="col">
-                                <span class="h6 surtitle text-light">Expiry date</span>
-                                <span class="d-block h3 text-white">11/23</span>
-                            </div>
-                        </div>
+                        {% else %}
+                            <h2 style="color: white">No credit card provided</h2>
+                        {% endif %}
                     </div>
                 </div>
                 <!-- Progress track -->
@@ -175,69 +173,51 @@
                             <div class="col">
                                 <h5 class="mb-0">Team members</h5>
                             </div>
-                            <div class="col-lg-6 col-5 text-right">
-                                <a href="#" class="btn btn-sm btn-primary"
-                                   data-toggle="modal" data-target="#invitemodal">Team
-                                    Invitation</a>
-                                <!-- Modal -->
-                                <div class="modal fade" id="invitemodal" tabindex="-1"
-                                     role="dialog" aria-labelledby="invitemodallabel"
+                            <div class="col text-right">
+                                {#                          <a class="btn btn-sm btn-primary" href="#">Send Invitation</a>#}
+                                <button type="button" class="btn btn-sm btn-primary"
+                                        data-toggle="modal" data-target="#modal-form">Send
+                                    Invitation
+                                </button>
+                                <div class="modal fade" id="modal-form" tabindex="-1"
+                                     role="dialog" aria-labelledby="modal-form"
                                      aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered"
+                                    <div class="modal-dialog modal- modal-dialog-centered modal-sm"
                                          role="document">
                                         <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title"
-                                                    id="exampleModalLabel">Team
-                                                    Invitation</h5>
-                                                <button type="button" class="close"
-                                                        data-dismiss="modal"
-                                                        aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="row py-3 align-items-center">
-                                                    <div class="col-md-12">
-                                                        <div class="form-group">
-                                                            <div class="input-group input-group-merge">
-                                                                <div class="input-group-prepend">
-                                                                    <span class="input-group-text"><i
-                                                                            class="fas fa-envelope"></i></span>
-                                                                </div>
-                                                                <input class="form-control"
-                                                                       placeholder="Email address"
-                                                                       type="email">
-                                                            </div>
-                                                            <div class="row">
-                                                                <div class="col"
-                                                                     style="padding-top: 10px">
-                                                                    <span href="#"
-                                                                          class="btn btn-link px-0"><i
-                                                                            class="fas fa-plus-circle"></i> Add another</span>
-                                                                    or
-                                                                    <span class="btn btn-link px-0">add many at once</span>
-                                                                </div>
-                                                            </div>
+                                            <div class="modal-body p-0">
+                                                <div class="card bg-secondary border-0 mb-0">
+                                                    <div class="card-body px-lg-5 py-lg-5">
+                                                        <div class="text-center text-muted mb-4">
+                                                            <small>Please enter the
+                                                                recipient email</small>
                                                         </div>
+                                                        <form role="form">
+                                                            <div class="form-group mb-3">
+                                                                <div class="input-group input-group-merge input-group-alternative">
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text"><i
+                                                                                class="ni ni-email-83"></i></span>
+                                                                    </div>
+                                                                    <input class="form-control recipient-email"
+                                                                           placeholder="Email"
+                                                                           type="email">
+                                                                </div>
+                                                            </div>
+                                                            <div class="text-center">
+                                                                <button type="button"
+                                                                        class="btn btn-primary my-4 send-invitation">
+                                                                    Send
+                                                                </button>
+                                                            </div>
+                                                        </form>
                                                     </div>
-
                                                 </div>
-
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button"
-                                                        class="btn btn-secondary"
-                                                        data-dismiss="modal">Back
-                                                </button>
-                                                <button type="button"
-                                                        class="btn btn-primary">Send
-                                                    Invitation
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -245,137 +225,125 @@
                     <div class="card-body">
                         <!-- List group -->
                         <ul class="list-group list-group-flush list my--3">
-                            <li class="list-group-item px-0">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <!-- Avatar -->
-                                        <a href="#" class="avatar rounded-circle">
-                                            <img alt="Image placeholder" src="">
-                                        </a>
-                                    </div>
-                                    <div class="col ml--2">
-                                        <h4 class="mb-0">
-                                            <a href="#">John Michael</a>
-                                        </h4>
-                                        <span class="text-success">●</span>
-                                        <small>Accepted Invitation</small>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button type="button"
-                                                class="btn btn-sm btn-danger"
-                                                data-toggle="modal" data-target="#remove">
-                                            Remove
-                                        </button>
-                                        <!-- Modal -->
-                                        <div class="modal fade" id="remove" tabindex="-1"
-                                             role="dialog" aria-labelledby="remove"
-                                             aria-hidden="true">
-                                            <div class="modal-dialog modal-danger modal-dialog-centered modal-"
-                                                 role="document">
-                                                <div class="modal-content bg-gradient-danger">
-
-                                                    <div class="modal-header">
-
-                                                        <button type="button"
-                                                                class="close"
-                                                                data-dismiss="modal"
-                                                                aria-label="Close">
-                                                            <span aria-hidden="true">×</span>
-                                                        </button>
-                                                    </div>
-
-                                                    <div class="modal-body">
-
-                                                        <div class="py-3 text-center">
-                                                            <i class="ni ni-bell-55 ni-3x"></i>
-                                                            <h4 class="heading mt-4">You
-                                                                are about to remove a team
-                                                                member!</h4>
-                                                            <p>This cannot be undone, are
-                                                                you sure ?</p>
-                                                        </div>
-
-                                                    </div>
-
-                                                    <div class="modal-footer">
-                                                        <button type="button"
-                                                                class="btn btn-white">
-                                                            Yeah, I'm sure
-                                                        </button>
-                                                        <button type="button"
-                                                                class="btn btn-link text-white ml-auto"
-                                                                data-dismiss="modal">Oh
-                                                            let me think about it
-                                                        </button>
-                                                    </div>
-
-                                                </div>
-                                            </div>
+                            {% for email, role in team_users %}
+                                <li class="list-group-item px-0">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <!-- Avatar -->
+                                            <a href="#" class="avatar rounded-circle">
+                                                <img alt="Image placeholder" src="">
+                                            </a>
                                         </div>
+                                        <div class="col ml--2">
+                                            <h4 class="mb-0">{{ email }}</h4>
+                                            <span class="text-success">●</span>
+                                            <small>Accepted Invitation</small>
+                                        </div>
+                                        <div class="col-auto">
+                                            {% if role != 'Admin' %}
+                                                <button type="button"
+                                                        class="btn btn-sm btn-danger"
+                                                        data-toggle="modal"
+                                                        data-target="#remove">
+                                                    Remove
+                                                </button>
+                                                <!-- Modal -->
+                                                <div class="modal fade" id="remove"
+                                                     tabindex="-1"
+                                                     role="dialog"
+                                                     aria-labelledby="remove"
+                                                     aria-hidden="true">
+                                                    <div class="modal-dialog modal-danger modal-dialog-centered modal-"
+                                                         role="document">
+                                                        <div class="modal-content bg-gradient-danger">
 
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="list-group-item px-0">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <!-- Avatar -->
-                                        <a href="#" class="avatar rounded-circle">
-                                            <img alt="Image placeholder" src="">
-                                        </a>
-                                    </div>
-                                    <div class="col ml--2">
-                                        <h4 class="mb-0">
-                                            <a href="#!">Alex Smith</a>
-                                        </h4>
-                                        <span class="text-warning">●</span>
-                                        <small>Pending</small>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button type="button"
-                                                class="btn btn-sm btn-neutral">Cancel
-                                        </button>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button type="button"
-                                                class="btn btn-sm btn-primary">Resend
-                                        </button>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="list-group-item px-0">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <!-- Avatar -->
-                                        <a href="#" class="avatar rounded-circle">
-                                            <img alt="Image placeholder"
-                                                 src="../../assets/img/theme/team-3.jpg">
-                                        </a>
-                                    </div>
-                                    <div class="col ml--2">
-                                        <h4 class="mb-0">
-                                            <a href="#!">Samantha Ivy</a>
-                                        </h4>
-                                        <span class="text-danger">●</span>
-                                        <small>Expired</small>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button type="button"
-                                                class="btn btn-sm btn-neutral">Cancel
-                                        </button>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button type="button"
-                                                class="btn btn-sm btn-primary">Resend
-                                        </button>
-                                    </div>
-                                </div>
-                            </li>
+                                                            <div class="modal-header">
 
+                                                                <button type="button"
+                                                                        class="close"
+                                                                        data-dismiss="modal"
+                                                                        aria-label="Close">
+                                                                    <span aria-hidden="true">×</span>
+                                                                </button>
+                                                            </div>
+
+                                                            <div class="modal-body">
+
+                                                                <div class="py-3 text-center">
+                                                                    <i class="ni ni-bell-55 ni-3x"></i>
+                                                                    <h4 class="heading mt-4">
+                                                                        You
+                                                                        are about to
+                                                                        remove a team
+                                                                        member!</h4>
+                                                                    <p>This cannot be
+                                                                        undone, are
+                                                                        you sure ?</p>
+                                                                </div>
+
+                                                            </div>
+
+                                                            <div class="modal-footer">
+                                                                <button type="button"
+                                                                        class="btn btn-white">
+                                                                    Yeah, I'm sure
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="btn btn-link text-white ml-auto"
+                                                                        data-dismiss="modal">
+                                                                    Oh
+                                                                    let me think about it
+                                                                </button>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <div class="col-auto">Admin</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+
+                            {% for email, valid in awaiting_emails %}
+                                <li class="list-group-item px-0">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <!-- Avatar -->
+                                            <a href="#" class="avatar rounded-circle">
+                                                <img alt="Image placeholder" src="">
+                                            </a>
+                                        </div>
+                                        <div class="col ml--2">
+                                            <h4 class="mb-0">{{ email }}</h4>
+                                            {% if valid %}
+                                                <span class="text-warning">●</span>
+                                                <small>Pending</small>
+                                            {% else %}
+                                                <span class="text-danger">●</span>
+                                                <small>Expired</small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-auto">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-neutral delete-invitation">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                        <div class="col-auto">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-primary resend-email">
+                                                Resend
+                                            </button>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
                         </ul>
                     </div>
                 </div>
-
             </div>
             <div class="col-xl-8 order-xl-1">
                 <div class="row">
@@ -430,7 +398,7 @@
                                                            id="input-username "
                                                            class="form-control"
                                                            placeholder="Username"
-                                                           value="lucky.jesse">
+                                                           value="{{ user_info.username }}">
                                                 </div>
                                             </div>
                                             <div class="col-lg-6">
@@ -440,7 +408,8 @@
                                                         address</label>
                                                     <input type="email" id="input-email"
                                                            class="form-control"
-                                                           placeholder="jesse@example.com">
+                                                           placeholder="jesse@example.com"
+                                                           value="{{ user_info.email }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -454,7 +423,7 @@
                                                            id="input-first-name"
                                                            class="form-control"
                                                            placeholder="First name"
-                                                           value="Lucky">
+                                                           value="{{ user_info.first_name }}">
                                                 </div>
                                             </div>
                                             <div class="col-lg-6">
@@ -466,7 +435,7 @@
                                                            id="input-last-name"
                                                            class="form-control"
                                                            placeholder="Last name"
-                                                           value="Jesse">
+                                                           value="{{ user_info.last_name }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -566,7 +535,7 @@
                                                            id="input-username "
                                                            class="form-control"
                                                            placeholder="Username"
-                                                           value="My Team">
+                                                           value={{ cur_team.team_name }}>
                                                 </div>
                                             </div>
                                             <div class="col-lg-6">
@@ -594,8 +563,9 @@
                                             <div class="col-lg-6">
                                                 <div class="form-group">
                                                     <label class="form-control-label"
-                                                           for="input-last-name">Billing
-                                                        Email</label>
+                                                           for="input-last-name">
+                                                        Team Email
+                                                    </label>
                                                     <input type="text"
                                                            id="input-last-name"
                                                            class="form-control"
@@ -607,8 +577,9 @@
                                     </div>
                                     <hr class="my-4"/>
                                     <!-- Address -->
-                                    <h6 class="heading-small text-muted mb-4">Contact
-                                        information</h6>
+                                    <h6 class="heading-small text-muted mb-4">
+                                        Billing Information
+                                    </h6>
                                     <div class="pl-lg-4">
                                         <div class="row">
                                             <div class="col-md-12">
@@ -618,41 +589,56 @@
                                                     <input id="input-address"
                                                            class="form-control"
                                                            placeholder="Home Address"
-                                                           value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09"
+                                                           value="{{ cus_address.line1 }}"
                                                            type="text">
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-lg-4">
+                                            <div class="col-lg-3">
                                                 <div class="form-group">
                                                     <label class="form-control-label"
                                                            for="input-city">City</label>
                                                     <input type="text" id="input-city"
                                                            class="form-control"
                                                            placeholder="City"
-                                                           value="New York">
+                                                           value="{{ cus_address.city }}">
                                                 </div>
                                             </div>
-                                            <div class="col-lg-4">
+                                            <div class="col-lg-3">
                                                 <div class="form-group">
                                                     <label class="form-control-label"
                                                            for="input-country">Country</label>
-                                                    <input type="text" id="input-country"
-                                                           class="form-control"
-                                                           placeholder="Country"
-                                                           value="United States">
+                                                    <select class="form-control crs-country"
+                                                            data-region-id="region_select"
+                                                            data-value="shortcode"
+                                                            data-default-value="{{ cus_address.country }}"
+                                                            id="country_select">
+                                                    </select>
                                                 </div>
                                             </div>
-                                            <div class="col-lg-4">
+                                            <div class="col-lg-3">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="input-country">
+                                                        State
+                                                    </label>
+                                                    <select class="form-control region-selector"
+                                                            id="region_select"
+                                                            data-value="shortcode"
+                                                            data-default-value="{{ cus_address.state }}">
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3">
                                                 <div class="form-group">
                                                     <label class="form-control-label"
                                                            for="input-country">Postal
                                                         code</label>
-                                                    <input type="number"
+                                                    <input type="text"
                                                            id="input-postal-code"
                                                            class="form-control"
-                                                           placeholder="Postal code">
+                                                           placeholder="{{ cus_address.postal_code }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -676,192 +662,53 @@
                                  aria-labelledby="tabs-icons-text-3-tab">
                                 <div class="row">
                                     <div class="col">
-
-
                                         <div class="card">
                                             <!-- Card header -->
                                             <div class="card-header">
                                                 <h3 class="mb-0">Billing History</h3>
-
                                             </div>
                                             <div class="table-responsive py-4">
-                                                <div id="datatable-buttons_wrapper"
-                                                     class="dataTables_wrapper dt-bootstrap4">
-                                                    <div class="dt-buttons btn-group flex-wrap">
-                                                        <button class="btn buttons-copy buttons-html5 btn-sm btn-default"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                type="button">
-                                                            <span>Copy</span></button>
-                                                        <button class="btn buttons-print btn-sm btn-default"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                type="button">
-                                                            <span>Print</span></button>
-                                                    </div>
-                                                    <div id="datatable-buttons_filter"
-                                                         class="dataTables_filter"><label>Search:<input
-                                                            type="search"
-                                                            class="form-control form-control-sm"
-                                                            placeholder=""
-                                                            aria-controls="datatable-buttons"></label>
-                                                    </div>
-                                                    <table class="table table-flush dataTable"
-                                                           id="datatable-buttons"
-                                                           role="grid"
-                                                           aria-describedby="datatable-buttons_info">
-                                                        <thead class="thead-light">
-                                                        <tr role="row">
-                                                            <th class="sorting_asc"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                rowspan="1"
-                                                                colspan="1"
-                                                                aria-sort="ascending"
-                                                                aria-label="Name: activate to sort column descending"
-                                                                style="width: 227px;">
-                                                                Invoice #
-                                                            </th>
-                                                            <th class="sorting"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                rowspan="1"
-                                                                colspan="1"
-                                                                aria-label="Position: activate to sort column ascending"
-                                                                style="width: 345px;">Plan
-                                                            </th>
-                                                            <th class="sorting"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                rowspan="1"
-                                                                colspan="1"
-                                                                aria-label="Office: activate to sort column ascending"
-                                                                style="width: 173px;">
-                                                                Issued Date
-                                                            </th>
-                                                            <th class="sorting"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                rowspan="1"
-                                                                colspan="1"
-                                                                aria-label="Age: activate to sort column ascending"
-                                                                style="width: 81px;">
-                                                                Subscription Cost
-                                                            </th>
-                                                            <th class="sorting"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                rowspan="1"
-                                                                colspan="1"
-                                                                aria-label="Start date: activate to sort column ascending"
-                                                                style="width: 161px;">
-                                                                Business Cases Cost
-                                                            </th>
-                                                            <th class="sorting"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                rowspan="1"
-                                                                colspan="1"
-                                                                aria-label="Start date: activate to sort column ascending"
-                                                                style="width: 161px;">
-                                                                Status
-                                                            </th>
-                                                            <th class="sorting"
-                                                                tabindex="0"
-                                                                aria-controls="datatable-buttons"
-                                                                rowspan="1"
-                                                                colspan="1"
-                                                                aria-label="Start date: activate to sort column ascending"
-                                                                style="width: 161px;">
-                                                                Download
-                                                            </th>
-
-                                                        </tr>
-                                                        </thead>
-                                                        <tfoot>
+                                                <table class="table table-flush"
+                                                       id="datatable-buttons">
+                                                    <thead class="thead-light">
+                                                    <tr>
+                                                        <th>Invoice#</th>
+                                                        <th>Plan</th>
+                                                        <th>Issued Date</th>
+                                                        <th>Subscription Cost</th>
+                                                        <th>Business Cases Cost</th>
+                                                        <th>Status</th>
+                                                        <th>Download</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tfoot>
+                                                    <tr>
+                                                        <th>Invoice#</th>
+                                                        <th>Plan</th>
+                                                        <th>Issued Date</th>
+                                                        <th>Subscription Cost</th>
+                                                        <th>Business Cases Cost</th>
+                                                        <th>Status</th>
+                                                        <th>Download</th>
+                                                    </tr>
+                                                    </tfoot>
+                                                    <tbody>
+                                                    {% for invoice in cus_invoices %}
                                                         <tr>
-                                                            <th rowspan="1" colspan="1">
-                                                                Invoice #
-                                                            </th>
-                                                            <th rowspan="1" colspan="1">
-                                                                Plan
-                                                            </th>
-                                                            <th rowspan="1" colspan="1">
-                                                                Issued Date
-                                                            </th>
-                                                            <th rowspan="1" colspan="1">
-                                                                Subscription Cost
-                                                            </th>
-                                                            <th rowspan="1" colspan="1">
-                                                                Business Case Cost
-                                                            </th>
-                                                            <th rowspan="1" colspan="1">
-                                                                Status
-                                                            </th>
-                                                            <th rowspan="1" colspan="1">
-                                                                Download
-                                                            </th>
-
-                                                        </tr>
-                                                        </tfoot>
-                                                        <tbody>
-
-
-                                                        <tr role="row" class="odd">
-                                                            <td class="sorting_1">March
-                                                                2020 3450
-                                                            </td>
-                                                            <td>Starter</td>
-                                                            <td>12/01/2020</td>
-                                                            <td>$29</td>
+                                                            <td>{{ invoice['invoice_id'] }}</td>
+                                                            <td>{{ invoice['plan_name'] }}</td>
+                                                            <td>{{ invoice['date'] }}</td>
                                                             <td>$599</td>
-                                                            <td>Paid</td>
+                                                            <td>{{ invoice['status'] }}</td>
+                                                            <td>{{ invoice['total'] }}</td>
                                                             <td>
-                                                                <i class="ni ni-cloud-download-95"></i>
+                                                                <a href="{{ invoice['link'] }}"><i
+                                                                        class="ni ni-cloud-download-95"></i></a>
                                                             </td>
                                                         </tr>
-                                                        <tr role="row" class="even">
-                                                            <td class="sorting_1">March
-                                                                2020 3451
-                                                            </td>
-                                                            <td>Starter</td>
-                                                            <td>12/01/2020</td>
-                                                            <td>$29</td>
-                                                            <td>$599</td>
-                                                            <td>Paid</td>
-                                                            <td>
-                                                                <i class="ni ni-cloud-download-95"></i>
-                                                            </td>
-                                                        </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <div class="dataTables_info"
-                                                         id="datatable-buttons_info"
-                                                         role="status" aria-live="polite">
-                                                        Showing 1 to 10 of 57 entries
-                                                    </div>
-                                                    <div class="dataTables_paginate paging_simple_numbers"
-                                                         id="datatable-buttons_paginate">
-                                                        <ul class="pagination">
-                                                            <li class="paginate_button page-item previous disabled"
-                                                                id="datatable-buttons_previous">
-                                                                <a href="#"
-                                                                   aria-controls="datatable-buttons"
-                                                                   data-dt-idx="0"
-                                                                   tabindex="0"
-                                                                   class="page-link"><i
-                                                                        class="fas fa-angle-left"></i></a>
-                                                            </li>
-                                                            <li class="paginate_button page-item active">
-                                                                <a href="#"
-                                                                   aria-controls="datatable-buttons"
-                                                                   data-dt-idx="1"
-                                                                   tabindex="0"
-                                                                   class="page-link">1</a>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
@@ -889,10 +736,74 @@
 
 
 {% block tail_js %}
-    <script src="/static/assets/stylesheets/argon_assets/vendor/sweetalert2/dist/sweetalert2.min.js"></script>
     <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
+    <script src="/static/assets/stylesheets/js/jquery.crs.min.js"></script>
     <script>
         $(document).ready(function () {
+            const stripe = Stripe('pk_test_2CT1LvA7viLp1j7yCHJ2MezU00xXxxnRdM');
+            const elements = stripe.elements();
+            const style = {
+                base: {
+                    color: '#32325d',
+                    fontFamily: '"Open Sans, sans-serif',
+                    letterSpacing: 'normal',
+                    fontSize: '0.875rem',
+                    '::placeholder': {
+                        color: '#aab7c4'
+                    }
+                },
+                invalid: {
+                    color: '#f5365c',
+                    iconColor: '#f5365c'
+                }
+            };
+            const card = elements.create('card', {style: style});
+            card.mount('#card-element');
+            card.addEventListener('change', function (event) {
+                const displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+
+            $('.update-card').click(function () {
+                const name_on_card = $("#name_on_card").val();
+                if (name_on_card === null || name_on_card.length === 0) {
+                    return $("#card-errors").html('Name on card cannot be empty');
+                }
+                stripe.createToken(card, {name: name_on_card}).then(function (result) {
+                    if (result.error) {
+                        // Inform the user if there was an error.
+                        $("#card-errors").html(result.error.message);
+                    } else {
+                        // Send the token to your server.
+                        let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                        $(".update-card").replaceWith("<div style=\"text-align: center\"><img src=\"/static/assets/images/loading.gif\" style=\"width: 43px;\"></div>");
+                        $.ajaxSetup({
+                            beforeSend: function (xhr, settings) {
+                                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                                }
+                            }
+                        });
+                        $.ajax({
+                            type: "POST",
+                            url: "{{ url_for('SolarBIBillingView.update_card_info') }}",
+                            data: JSON.stringify({pm_id: result.token.id}),
+                            contentType: 'application/json;charset=UTF-8',
+                            success: function (data) {
+                                if (data.redirect) {
+                                    window.location.replace(data.redirect)
+                                }
+                                console.log('success')
+                            }
+                        });
+                    }
+                });
+            });
+
 
             $('.send-invitation').click(function () {
                 let selected_email = $(".recipient-email").val();

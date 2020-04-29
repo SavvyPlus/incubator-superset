@@ -39,6 +39,9 @@
       <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/@fortawesome/fontawesome-free/css/all.min.css')}}" rel="stylesheet">
       <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/jvectormap-next/jquery-jvectormap.css')}}" rel="stylesheet">
       <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/animate.css/animate.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-select-bs4/css/select.bootstrap4.min.css')}}" rel="stylesheet">
       <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/css/solarbi.css')}}?v=3.2" rel="stylesheet">
 
       {% for entry in get_unloaded_chunks(css_manifest('theme'), loaded_chunks) %}
@@ -177,6 +180,14 @@
       <script src="/static/assets/stylesheets/argon_assets/vendor/jquery-scroll-lock/dist/jquery-scrollLock.min.js"></script>
       <script src="/static/assets/stylesheets/argon_assets/vendor/jvectormap-next/jquery-jvectormap.min.js"></script>
       <script src="/static/assets/stylesheets/argon_assets/js/vendor/jvectormap/jquery-jvectormap-au-merc.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons/js/buttons.html5.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons/js/buttons.flash.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons/js/buttons.print.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-select/js/dataTables.select.min.js"></script>
       <script src="/static/assets/stylesheets/argon_assets/js/argon.js?v=1.2.0"></script>
       <script>
         $(document).ready(function () {

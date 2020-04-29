@@ -793,3 +793,8 @@ class CustomSecurityManager(SupersetSecurityManager):
                 self.create_stripe_user_and_sub(user[0], team, credit=-cus_obj['balance'], plan_id=1, recover=True)
             else:
                 self.create_stripe_user_and_sub(user[0], team, plan_id=1, recover=True)
+
+    def get_plan_name_by_stripe_id(self, stripe_id):
+        plan = self.get_session.query(Plan).filter_by(stripe_id=stripe_id).first()
+        return plan.plan_name
+
