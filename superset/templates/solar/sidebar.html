@@ -81,7 +81,9 @@
                                         {% endif %}
                                     {% endfor %}
                                     <!-- Divider -->
-                                    <hr class="my-3">
+                                    {% if team_ids|length > 1 %}
+                                        <hr class="my-3">
+                                    {% endif %}
                                     <button class="dropdown-item text-success" data-toggle="modal" data-target="#addNewTeam">+ New Team</button>
                                 </div>
                             </div>

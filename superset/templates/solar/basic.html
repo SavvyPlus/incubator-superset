@@ -198,18 +198,6 @@
             }
           });
 
-          {#$('#select_team').change(function(){#}
-          {#  const val = $(this).val();#}
-          {#  const prevTeam = '{{ session['team_name'] }}';#}
-          {#  if (val === '+ New Team') {#}
-          {#    $('#addNewTeam').modal('show');#}
-          {#    $(this).val(prevTeam);#}
-          {#  } else {#}
-          {#    const teamId = $(this).find('option:selected').attr('id');#}
-          {#    window.location.href = '/solar/switch_team/' + teamId;#}
-          {#  }#}
-          {#});#}
-
           $('#addTeamBtn').click(function() {
             $(this).prop('disabled',true);
             $('#team_name_error').hide();

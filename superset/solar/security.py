@@ -457,6 +457,18 @@ class CustomSecurityManager(SupersetSecurityManager):
             self.get_session.rollback()
             return False
 
+    # def delete_team_member(self):
+    #     try:
+    #         user = self.find_user(username=register_user.username)
+    #         if user:
+    #             self.get_session.delete(user)
+    #             self.get_session.commit()
+    #         return True
+    #     except Exception as e:
+    #         logging.error(str(e))
+    #         self.get_session.rollback()
+    #         return False
+
     # def delete_team(self, team):
     #     from superset.models.core import Database
     #     from superset.connectors.sqla.models import SqlaTable

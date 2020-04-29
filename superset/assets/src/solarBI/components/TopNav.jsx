@@ -143,7 +143,7 @@ function TopNav() {
                   <span>Support</span>
                 </a>
                 <div className="dropdown-divider" />
-                <a href="#" className="dropdown-item">
+                <a href="/logout" className="dropdown-item">
                   <i className="ni ni-user-run" />
                   <span>Logout</span>
                 </a>
