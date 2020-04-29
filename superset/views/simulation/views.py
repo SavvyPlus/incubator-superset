@@ -20,16 +20,17 @@ import traceback
 import logging
 import os
 import tempfile
-from flask import flash, redirect
+from flask import flash, redirect, g, request
 from flask_appbuilder.widgets import ListWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
+from flask_appbuilder.urltools import get_filter_args
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
 from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
-from superset.models.simulation import Assumption, Simulation
+from superset.models.simulation import Assumption, Simulation, SimulationLog
 from superset.utils import core as utils
 from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
@@ -46,13 +47,12 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
                 break
             file_description.write(chunk)
 
-# Not used yet
 @celery_app.task
 def handle_assumption_process(path, name):
     assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
     try:
         process_assumptions(path, name)
-        assumption_file.status = "Uploaded"
+        assumption_file.status = "Success"
         db.session.merge(assumption_file)
         db.session.commit()
         print('process finished')
@@ -62,6 +62,8 @@ def handle_assumption_process(path, name):
         db.session.merge(assumption_file)
         db.session.commit()
         print(e)
+    finally:
+        os.remove(path)
 
 class UploadAssumptionView(SimpleFormView):
     route_base = '/upload_assumption_file'
@@ -69,7 +71,7 @@ class UploadAssumptionView(SimpleFormView):
     form_template = "appbuilder/general/model/edit.html"
     form_title = "Upload assumption excel template"
 
-    @simulation_logger.log_simulation('upload_assumption')
+    @simulation_logger.log_simulation('upload assumption')
     def form_post(self, form):
         print('uploaded success')
         import time
@@ -79,8 +81,11 @@ class UploadAssumptionView(SimpleFormView):
         path = tempfile.NamedTemporaryFile(
             dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
         ).name
+
         form.excel_file.data.filename = path
         name = form.name.data
+        g.action_object = name
+        g.action_object_type = 'Assumption'
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.excel_file.data, path)
@@ -96,13 +101,16 @@ class UploadAssumptionView(SimpleFormView):
             db.session.commit()
             message = "Upload success"
             style = 'info'
+            g.result = 'Success'
+            g.detail = None
         except Exception as e:
             traceback.print_exc()
             db.session.rollback()
             message = "Upload failed:" + str(e)
             style = 'danger'
-
-        os.remove(path)
+            g.result = 'Failed'
+            g.detail = message
+        # os.remove(path)
         flash(message, style)
         flash("Time used:{}".format(time.time() - time1), 'info')
         # message = 'Upload success'
@@ -132,5 +140,59 @@ class SimulationModelView(
     route_base = "/simulationmodelview"
     datamodel = SQLAInterface(Simulation)
     include_route_methods = RouteMethod.CRUD_SET
+
+    list_columns = ['run_id', 'name','assumption', 'status']
+
+
+    def _add(self):
+        is_valid_form = True
+        get_filter_args(self._filters)
+        exclude_cols = self._filters.get_relation_cols()
+        form = self.add_form.refresh()
+        if request.method == "POST":
+            if form.validate():
+
+                # Calling add simulation
+                self.add_simulation(form, exclude_cols)
+            else:
+                is_valid_form = False
+        if is_valid_form:
+            self.update_redirect()
+        return self._get_add_widget(form=form, exclude_cols=exclude_cols)
+
+    @simulation_logger.log_simulation('create simulation')
+    def add_simulation(self, form, exclude_cols):
+        self._fill_form_exclude_cols(exclude_cols, form)
+
+        item = self.datamodel.obj()
+        try:
+            form.populate_obj(item)
+
+            g.action_object = item.name
+            g.action_object_type = 'Simulation'
+            g.result = 'Failed'
+            g.detail = None
+        except Exception as e:
+            flash(str(e), "danger")
+            g.detail = str(e)
+        else:
+            if self.datamodel.add(item):
+                g.result = 'Success'
+                g.detail = None
+            flash(*self.datamodel.message)
+        finally:
+            return None
+
+
+
+
+class SimulationLogModelView(SupersetModelView):
+    route_base = "/simulationlog"
+    datamodel = SQLAInterface(SimulationLog)
+    include_route_methods = {RouteMethod.LIST, RouteMethod.SHOW, RouteMethod.INFO}
+
+    list_columns = ['user', 'action', 'action_object', 'dttm', 'result']
+    order_columns = ['user', 'action_object', 'action_object_type','dttm']
+
 
 

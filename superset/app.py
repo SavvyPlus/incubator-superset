@@ -166,6 +166,7 @@ class SupersetAppInitializer:
             UploadAssumptionView,
             AssumptionModelView,
             SimulationModelView,
+            SimulationLogModelView,
         )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
@@ -262,7 +263,13 @@ class SupersetAppInitializer:
             label=__("Simulations"),
             icon="fa-dashboard",
             category="Simulation",
-            category_icon="fa-wrench",
+        )
+        appbuilder.add_view(
+            SimulationLogModelView,
+            'Simulation Logs',
+            label=__("Simulation Logs"),
+            icon="fa-list-ol",
+            category="Simulation",
         )
         appbuilder.add_separator("Simulation")
         appbuilder.add_view(
