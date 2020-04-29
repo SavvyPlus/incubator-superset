@@ -20,10 +20,10 @@ import traceback
 import logging
 import os
 import tempfile
-from flask import flash, redirect, g, request
+from flask import flash, redirect, g, request, abort
 from flask_appbuilder.widgets import ListWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
-from flask_appbuilder.urltools import get_filter_args
+from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
@@ -48,20 +48,26 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
             file_description.write(chunk)
 
 @celery_app.task
+@simulation_logger.log_simulation(action_name='process assumption')
 def handle_assumption_process(path, name):
+    g.user = None
+    g.action_object = name
+    g.action_object_type = 'Assumption'
     assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
     try:
         process_assumptions(path, name)
         assumption_file.status = "Success"
         db.session.merge(assumption_file)
         db.session.commit()
-        print('process finished')
+        g.result = 'Success'
+        g.detail = None
     except Exception as e:
         assumption_file.status = "Error"
         assumption_file.status_detail = str(e)
         db.session.merge(assumption_file)
         db.session.commit()
-        print(e)
+        g.result = 'Failed'
+        g.detail = str(e)
     finally:
         os.remove(path)
 
@@ -71,9 +77,8 @@ class UploadAssumptionView(SimpleFormView):
     form_template = "appbuilder/general/model/edit.html"
     form_title = "Upload assumption excel template"
 
-    @simulation_logger.log_simulation('upload assumption')
+    @simulation_logger.log_simulation(action_name='upload assumption')
     def form_post(self, form):
-        print('uploaded success')
         import time
         time1 = time.time()
         excel_filename = form.excel_file.data.filename
@@ -121,6 +126,107 @@ class UploadAssumptionView(SimpleFormView):
 class AssumptionListWidget(ListWidget):
     template = 'empower/widgets/list_assumption.html'
 
+
+class EmpowerModelView(SupersetModelView):
+    """
+    The base model view for empower, with modified workflow of crud.
+
+    """
+    def _add(self):
+        is_valid_form = True
+        get_filter_args(self._filters)
+        exclude_cols = self._filters.get_relation_cols()
+        form = self.add_form.refresh()
+        if request.method == "POST":
+            if form.validate():
+                # Calling add simulation
+                self.add_item(form, exclude_cols)
+            else:
+                is_valid_form = False
+        if is_valid_form:
+            self.update_redirect()
+        return self._get_add_widget(form=form, exclude_cols=exclude_cols)
+
+    def add_item(self, form, exclude_cols):
+        self.process_form(form, True)
+        item = self.datamodel.obj()
+
+        try:
+            form.populate_obj(item)
+            self.pre_add(item)
+        except Exception as e:
+            flash(str(e), "danger")
+        else:
+            if self.datamodel.add(item):
+                self.post_add(item)
+            flash(*self.datamodel.message)
+        finally:
+            return None
+
+
+    def _edit(self, pk):
+        """
+            Edit function logic, override to implement different logic
+            returns Edit widget and related list or None
+        """
+        is_valid_form = True
+        pages = get_page_args()
+        page_sizes = get_page_size_args()
+        orders = get_order_args()
+        get_filter_args(self._filters)
+        exclude_cols = self._filters.get_relation_cols()
+
+        item = self.datamodel.get(pk, self._base_filters)
+        if not item:
+            abort(404)
+        # convert pk to correct type, if pk is non string type.
+        pk = self.datamodel.get_pk_value(item)
+
+        if request.method == "POST":
+            form = self.edit_form.refresh(request.form)
+            # fill the form with the suppressed cols, generated from exclude_cols
+            self._fill_form_exclude_cols(exclude_cols, form)
+            # trick to pass unique validation
+            form._id = pk
+            if form.validate():
+                self.edit_item(form, item)
+            else:
+                is_valid_form = False
+        else:
+            # Only force form refresh for select cascade events
+            form = self.edit_form.refresh(obj=item)
+            # Perform additional actions to pre-fill the edit form.
+            self.prefill_form(form, pk)
+
+        widgets = self._get_edit_widget(form=form, exclude_cols=exclude_cols)
+        widgets = self._get_related_views_widgets(
+            item,
+            filters={},
+            orders=orders,
+            pages=pages,
+            page_sizes=page_sizes,
+            widgets=widgets,
+        )
+        if is_valid_form:
+            self.update_redirect()
+        return widgets
+
+    def edit_item(self, form, item):
+        self.process_form(form, False)
+
+        try:
+            form.populate_obj(item)
+            self.pre_update(item)
+        except Exception as e:
+            flash(str(e), "danger")
+        else:
+            if self.datamodel.edit(item):
+                self.post_update(item)
+            flash(*self.datamodel.message)
+        finally:
+            return None
+
+
 class AssumptionModelView(SupersetModelView):
     route_base = "/assuptionmodelview"
     datamodel = SQLAInterface(Assumption)
@@ -133,9 +239,8 @@ class AssumptionModelView(SupersetModelView):
     label_columns = {'name':'Name','status':'Status','status_detail':'Status Detail', 'download_link':'Download'}
 
 
-
 class SimulationModelView(
-    SupersetModelView
+    EmpowerModelView
 ):
     route_base = "/simulationmodelview"
     datamodel = SQLAInterface(Simulation)
@@ -143,25 +248,8 @@ class SimulationModelView(
 
     list_columns = ['run_id', 'name','assumption', 'status']
 
-
-    def _add(self):
-        is_valid_form = True
-        get_filter_args(self._filters)
-        exclude_cols = self._filters.get_relation_cols()
-        form = self.add_form.refresh()
-        if request.method == "POST":
-            if form.validate():
-
-                # Calling add simulation
-                self.add_simulation(form, exclude_cols)
-            else:
-                is_valid_form = False
-        if is_valid_form:
-            self.update_redirect()
-        return self._get_add_widget(form=form, exclude_cols=exclude_cols)
-
-    @simulation_logger.log_simulation('create simulation')
-    def add_simulation(self, form, exclude_cols):
+    @simulation_logger.log_simulation(action_name='create simulation')
+    def add_item(self, form, exclude_cols):
         self._fill_form_exclude_cols(exclude_cols, form)
 
         item = self.datamodel.obj()
@@ -179,11 +267,28 @@ class SimulationModelView(
             if self.datamodel.add(item):
                 g.result = 'Success'
                 g.detail = None
+
+            flash(*self.datamodel.message)
+
+    @simulation_logger.log_simulation(action_name='update simulation')
+    def edit_item(self, form, item):
+        g.action_object = item.name
+        g.action_object_type = 'Simulation'
+        g.result = 'Failed'
+        g.detail = None
+        try:
+            form.populate_obj(item)
+            self.pre_update(item)
+        except Exception as e:
+            g.detail = str(e)
+            flash(str(e), "danger")
+        else:
+            if self.datamodel.edit(item):
+                g.result = 'Success'
+                g.detail = None
             flash(*self.datamodel.message)
         finally:
             return None
-
-
 
 
 class SimulationLogModelView(SupersetModelView):

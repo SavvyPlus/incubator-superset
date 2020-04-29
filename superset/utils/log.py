@@ -162,18 +162,17 @@ class DBEventLogger(AbstractEventLogger):
 
 class SimulationLogger(AbstractEventLogger):
 
-    def log_simulation(self, action_name):
+    def log_simulation(self, action_name=None):
 
         def wrap(f):
             @functools.wraps(f)
             def wrapped(*args, **kwargs):
-
                 user_id = None
+
+                value = f(*args, **kwargs)
                 dttm = datetime.now()
                 if g.user:
                     user_id = g.user.get_id()
-                value = f(*args, **kwargs)
-                # print(request)
                 action_object = action_object_type = result = detail = None
                 if g.action_object:
                     action_object = g.action_object
@@ -182,7 +181,6 @@ class SimulationLogger(AbstractEventLogger):
                     result = g.result
                 if g.detail:
                     detail = g.detail
-
                 self.log(user_id=user_id, action=action_name,
                                      action_object=action_object,
                                      action_object_type=action_object_type,

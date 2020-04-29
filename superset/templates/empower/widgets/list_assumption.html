@@ -57,7 +57,7 @@
                 {% endif %}
                 {% for value in include_columns %}
                     {% if value == "download_link" %}
-                        <td><button onclick="location.href='{{ item[value] }}'" class="btn btn-primary">Download</button></td>
+                        <td><button onclick="location.href='{{ item[value] }}'" class="btn btn-primary btn-sm">Download</button></td>
                     {% else %}
                         {% set formatter = formatters_columns.get(value) %}
                         {% if formatter %}

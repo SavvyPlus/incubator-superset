@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, DateTime
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -59,6 +59,8 @@ class Simulation(
     assumption_id = Column(Integer, ForeignKey("assumption.id"))
     assumption = relationship("Assumption", foreign_keys=[assumption_id])
     run_no = Column(Integer)
+    start_date = Column(Date)
+    end_date = Column(Date)
     status = Column(String(10))
     status_detail = Column(String(500))
 
