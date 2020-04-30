@@ -25,7 +25,7 @@ def write_pickle_to_s3(data, bucket, path):
 
     # TODO DEBUG do not write to s3
     bucket = "empower-simulation"
-    # client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
+    client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
 def put_file_to_s3(filename, bucket, key):
     with open(filename, "rb") as f:

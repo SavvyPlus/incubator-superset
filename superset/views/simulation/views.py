@@ -53,15 +53,17 @@ def handle_assumption_process(path, name):
     g.user = None
     g.action_object = name
     g.action_object_type = 'Assumption'
-    assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
     try:
-        process_assumptions(path, name)
+        obj_url = process_assumptions(path, name)
+        assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
         assumption_file.status = "Success"
+        assumption_file.download_link = obj_url
         db.session.merge(assumption_file)
         db.session.commit()
         g.result = 'Success'
         g.detail = None
     except Exception as e:
+        assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
         assumption_file.status = "Error"
         assumption_file.status_detail = str(e)
         db.session.merge(assumption_file)
@@ -231,7 +233,6 @@ class AssumptionModelView(SupersetModelView):
     route_base = "/assuptionmodelview"
     datamodel = SQLAInterface(Assumption)
     include_route_methods = {RouteMethod.LIST, RouteMethod.EDIT, RouteMethod.DELETE, RouteMethod.INFO, RouteMethod.SHOW}
-    formatters_columns = {'download_link': lambda x: '<button type="button">Download</>'}
     list_widget = AssumptionListWidget
 
     order_columns = ['name']
@@ -299,5 +300,6 @@ class SimulationLogModelView(SupersetModelView):
     list_columns = ['user', 'action', 'action_object', 'dttm', 'result']
     order_columns = ['user', 'action_object', 'action_object_type','dttm']
 
+    base_order = ('dttm', 'desc')
 
 

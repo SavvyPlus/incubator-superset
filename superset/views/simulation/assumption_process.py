@@ -133,7 +133,7 @@ def prepare_proxy(filename, assumptions_version):
     project_assumption = projects_wind_solar_assumption(filename)
     proxy_info = proxy_assumption(filename)
     # TODO dont upload data, only check
-    # process_wind_solar_data(project_assumption, proxy_info, ref_start_date, ref_end_date, assumptions_version)
+    process_wind_solar_data(project_assumption, proxy_info, ref_start_date, ref_end_date, assumptions_version)
 
 
 # def update_small_battery(filename, assumptions_version):
@@ -155,7 +155,7 @@ def process_assumptions(file_path, assumptions_version):
     update_retirement_pickle(file_path, assumptions_version)
     update_demand_growth_pickle(file_path, assumptions_version)
     update_renewable_prop(file_path, assumptions_version)
-    # prepare_proxy(file_path, assumptions_version)
+    prepare_proxy(file_path, assumptions_version)
     # update_small_battery(file_path, assumptions_version)
     put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version))
     return get_obg_s3_url(bucket_test, excel_path.format(assumptions_version))
