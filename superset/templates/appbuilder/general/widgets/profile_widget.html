@@ -46,7 +46,8 @@
 {% block content %}
     <div class="container-fluid mt--6">
         <div class="row">
-            <div class="col-xl-4 order-xl-2">
+            {% if is_team_owner %}
+                <div class="col-xl-4 order-xl-2">
                 <div class="card bg-gradient-primary">
                     <!-- Card body -->
                     <div class="card-body">
@@ -248,11 +249,11 @@
                                                 <button type="button"
                                                         class="btn btn-sm btn-danger"
                                                         data-toggle="modal"
-                                                        data-target="#remove">
+                                                        data-target="#remove-member">
                                                     Remove
                                                 </button>
                                                 <!-- Modal -->
-                                                <div class="modal fade" id="remove"
+                                                <div class="modal fade" id="remove-member"
                                                      tabindex="-1"
                                                      role="dialog"
                                                      aria-labelledby="remove"
@@ -349,6 +350,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
             <div class="col-xl-8 order-xl-1">
                 <div class="row">
                     <div class="col-lg-6">
@@ -363,22 +365,24 @@
                                        aria-selected="true"><i
                                             class="ni ni-single-02  mr-2"></i>Profile</a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link mb-sm-3 mb-md-0"
-                                       id="tabs-icons-text-2-tab" data-toggle="tab"
-                                       href="#tabs-icons-text-2" role="tab"
-                                       aria-controls="tabs-icons-text-2"
-                                       aria-selected="false"><i
-                                            class="ni ni-diamond mr-2"></i>Workspace</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link mb-sm-3 mb-md-0"
-                                       id="tabs-icons-text-3-tab" data-toggle="tab"
-                                       href="#tabs-icons-text-3" role="tab"
-                                       aria-controls="tabs-icons-text-3"
-                                       aria-selected="false"><i
-                                            class="ni ni-diamond mr-2"></i>Settings</a>
-                                </li>
+                                {% if is_team_owner %}
+                                    <li class="nav-item">
+                                        <a class="nav-link mb-sm-3 mb-md-0"
+                                           id="tabs-icons-text-2-tab" data-toggle="tab"
+                                           href="#tabs-icons-text-2" role="tab"
+                                           aria-controls="tabs-icons-text-2"
+                                           aria-selected="false"><i
+                                                class="ni ni-diamond mr-2"></i>Workspace</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link mb-sm-3 mb-md-0"
+                                           id="tabs-icons-text-3-tab" data-toggle="tab"
+                                           href="#tabs-icons-text-3" role="tab"
+                                           aria-controls="tabs-icons-text-3"
+                                           aria-selected="false"><i
+                                                class="ni ni-diamond mr-2"></i>Settings</a>
+                                    </li>
+                                {% endif %}
                             </ul>
                         </div>
                     </div>
@@ -547,239 +551,239 @@
                                     </button>
                                 </form>
                             </div>
+                            {% if is_team_owner %}
+                                <div class="tab-pane fade" id="tabs-icons-text-2"
+                                     role="tabpanel"
+                                     aria-labelledby="tabs-icons-text-2-tab">
+                                    <form>
+                                        <h6 class="heading-small text-muted mb-4">Team
+                                            Information</h6>
+                                        <div class="pl-lg-4">
 
-                            <div class="tab-pane fade" id="tabs-icons-text-2"
-                                 role="tabpanel"
-                                 aria-labelledby="tabs-icons-text-2-tab">
-                                <form>
-                                    <h6 class="heading-small text-muted mb-4">Team
-                                        Information</h6>
-                                    <div class="pl-lg-4">
-
-                                        <div class="row" style="padding-top: 10px">
-                                            <div class="col-lg-6">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="team_name">Team
-                                                        name</label>
-                                                    <input type="text"
-                                                           id="team_name"
-                                                           class="form-control"
-                                                           placeholder="Team name"
-                                                           value={{ cur_team.team_name }}>
-                                                    <div class="invalid-feedback">
-                                                        Team name required
+                                            <div class="row" style="padding-top: 10px">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="team_name">Team
+                                                            name</label>
+                                                        <input type="text"
+                                                               id="team_name"
+                                                               class="form-control"
+                                                               placeholder="Team name"
+                                                               value={{ cur_team.team_name }}>
+                                                        <div class="invalid-feedback">
+                                                            Team name required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="business_name">Business
+                                                            name</label>
+                                                        <input type="email" id="business_name"
+                                                               class="form-control"
+                                                               placeholder="Business name"
+                                                               value="{{ cur_team.business_name or '' }}">
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-lg-6">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="business_name">Business
-                                                        name</label>
-                                                    <input type="email" id="business_name"
-                                                           class="form-control"
-                                                           placeholder="Business name"
-                                                           value="{{ cur_team.business_name or '' }}">
+                                            <div class="row">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="team_webiste">Website</label>
+                                                        <input type="text" id="team_website"
+                                                               class="form-control"
+                                                               placeholder="www.xxx.com"
+                                                               value="{{ cur_team.website or '' }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="team_email">
+                                                            Team Email
+                                                        </label>
+                                                        <input type="text"
+                                                               id="team_email"
+                                                               class="form-control"
+                                                               placeholder="jesse@example.com"
+                                                               value="{{ cur_team.team_email or '' }}">
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row">
-                                            <div class="col-lg-6">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="team_webiste">Website</label>
-                                                    <input type="text" id="team_website"
-                                                           class="form-control"
-                                                           placeholder="www.xxx.com"
-                                                           value="{{ cur_team.website or '' }}">
+                                        <hr class="my-4"/>
+                                        <button class="btn btn-icon btn-primary update-team-info" type="button"
+                                            style="float: right">
+                                            <span class="btn-inner--icon"><i
+                                                    class="far fa-save"></i></span>
+                                            <span class="btn-inner--text">Save changes</span>
+                                        </button>
+                                        <!-- Address -->
+                                        <h6 class="heading-small text-muted mb-4" style="margin-top: 70px">
+                                            Billing Address
+                                        </h6>
+                                        <div class="pl-lg-4">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="billing-address">Address</label>
+                                                        <input id="billing-address"
+                                                               class="form-control"
+                                                               placeholder="Home Address"
+                                                               value="{{ cus_address.line1 }}"
+                                                               type="text">
+                                                         <div class="invalid-feedback">
+                                                            Address required
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="col-lg-6">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="team_email">
-                                                        Team Email
-                                                    </label>
-                                                    <input type="text"
-                                                           id="team_email"
-                                                           class="form-control"
-                                                           placeholder="jesse@example.com"
-                                                           value="{{ cur_team.team_email or '' }}">
+                                            <div class="row">
+                                                <div class="col-lg-3">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="billing-city">City</label>
+                                                        <input type="text" id="billing-city"
+                                                               class="form-control"
+                                                               placeholder="City"
+                                                               value="{{ cus_address.city }}">
+                                                        <div class="invalid-feedback">
+                                                            City required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="region_select">Country</label>
+                                                        <select class="form-control crs-country"
+                                                                data-region-id="region_select"
+                                                                data-value="shortcode"
+                                                                data-default-value="{{ cus_address.country }}"
+                                                                id="country_select">
+                                                        </select>
+                                                        <div class="invalid-feedback">
+                                                            Country required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="region_select">
+                                                            State
+                                                        </label>
+                                                        <select class="form-control region-selector"
+                                                                id="region_select"
+                                                                data-value="shortcode"
+                                                                data-default-value="{{ cus_address.state }}">
+                                                        </select>
+                                                        <div class="invalid-feedback">
+                                                            State required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="postal-code">
+                                                            Postal code
+                                                        </label>
+                                                        <input type="text"
+                                                               id="postal-code"
+                                                               class="form-control"
+                                                               placeholder="Postal code"
+                                                               value="{{ cus_address.postal_code }}">
+                                                        <div class="invalid-feedback">
+                                                            Postal code required
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <hr class="my-4"/>
-                                    <button class="btn btn-icon btn-primary update-team-info" type="button"
-                                        style="float: right">
+                                        <hr class="my-4"/>
+                                        <!-- Description -->
+
+                                    </form>
+                                    <button class="btn btn-icon btn-primary update-billing-details" type="button"
+                                            style="float: right">
                                         <span class="btn-inner--icon"><i
                                                 class="far fa-save"></i></span>
                                         <span class="btn-inner--text">Save changes</span>
                                     </button>
-                                    <!-- Address -->
-                                    <h6 class="heading-small text-muted mb-4" style="margin-top: 70px">
-                                        Billing Address
-                                    </h6>
-                                    <div class="pl-lg-4">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="billing-address">Address</label>
-                                                    <input id="billing-address"
-                                                           class="form-control"
-                                                           placeholder="Home Address"
-                                                           value="{{ cus_address.line1 }}"
-                                                           type="text">
-                                                     <div class="invalid-feedback">
-                                                        Address required
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-lg-3">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="billing-city">City</label>
-                                                    <input type="text" id="billing-city"
-                                                           class="form-control"
-                                                           placeholder="City"
-                                                           value="{{ cus_address.city }}">
-                                                    <div class="invalid-feedback">
-                                                        City required
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="region_select">Country</label>
-                                                    <select class="form-control crs-country"
-                                                            data-region-id="region_select"
-                                                            data-value="shortcode"
-                                                            data-default-value="{{ cus_address.country }}"
-                                                            id="country_select">
-                                                    </select>
-                                                    <div class="invalid-feedback">
-                                                        Country required
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="region_select">
-                                                        State
-                                                    </label>
-                                                    <select class="form-control region-selector"
-                                                            id="region_select"
-                                                            data-value="shortcode"
-                                                            data-default-value="{{ cus_address.state }}">
-                                                    </select>
-                                                    <div class="invalid-feedback">
-                                                        State required
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3">
-                                                <div class="form-group">
-                                                    <label class="form-control-label"
-                                                           for="postal-code">
-                                                        Postal code
-                                                    </label>
-                                                    <input type="text"
-                                                           id="postal-code"
-                                                           class="form-control"
-                                                           placeholder="Postal code"
-                                                           value="{{ cus_address.postal_code }}">
-                                                    <div class="invalid-feedback">
-                                                        Postal code required
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <hr class="my-4"/>
-                                    <!-- Description -->
-
-                                </form>
-                                <button class="btn btn-icon btn-primary update-billing-details" type="button"
-                                        style="float: right">
-                                    <span class="btn-inner--icon"><i
-                                            class="far fa-save"></i></span>
-                                    <span class="btn-inner--text">Save changes</span>
-                                </button>
-                            </div>
-                            <div class="tab-pane fade" id="tabs-icons-text-3"
-                                 role="tabpanel"
-                                 aria-labelledby="tabs-icons-text-3-tab">
-                                <div class="row">
-                                    <div class="col">
-                                        <div class="card">
-                                            <!-- Card header -->
-                                            <div class="card-header">
-                                                <h3 class="mb-0">Billing History</h3>
-                                            </div>
-                                            <div class="table-responsive py-4">
-                                                <table class="table table-flush"
-                                                       id="datatable-buttons">
-                                                    <thead class="thead-light">
-                                                    <tr>
-                                                        <th>Invoice#</th>
-                                                        <th>Plan</th>
-                                                        <th>Issued Date</th>
-                                                        <th>Subscription Cost</th>
-                                                        <th>Business Cases Cost</th>
-                                                        <th>Status</th>
-                                                        <th>Download</th>
-                                                    </tr>
-                                                    </thead>
-                                                    <tfoot>
-                                                    <tr>
-                                                        <th>Invoice#</th>
-                                                        <th>Plan</th>
-                                                        <th>Issued Date</th>
-                                                        <th>Subscription Cost</th>
-                                                        <th>Business Cases Cost</th>
-                                                        <th>Status</th>
-                                                        <th>Download</th>
-                                                    </tr>
-                                                    </tfoot>
-                                                    <tbody>
-                                                    {% for invoice in cus_invoices %}
-                                                        <tr>
-                                                            <td>{{ invoice['invoice_id'] }}</td>
-                                                            <td>{{ invoice['plan_name'] }}</td>
-                                                            <td>{{ invoice['date'] }}</td>
-                                                            <td>$599</td>
-                                                            <td>{{ invoice['status'] }}</td>
-                                                            <td>{{ invoice['total'] }}</td>
-                                                            <td>
-                                                                <a href="{{ invoice['link'] }}"><i
-                                                                        class="ni ni-cloud-download-95"></i></a>
-                                                            </td>
-                                                        </tr>
-                                                    {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
+                                <div class="tab-pane fade" id="tabs-icons-text-3"
+                                     role="tabpanel"
+                                     aria-labelledby="tabs-icons-text-3-tab">
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="card">
+                                                <!-- Card header -->
+                                                <div class="card-header">
+                                                    <h3 class="mb-0">Billing History</h3>
+                                                </div>
+                                                <div class="table-responsive py-4">
+                                                    <table class="table table-flush"
+                                                           id="datatable-buttons">
+                                                        <thead class="thead-light">
+                                                        <tr>
+                                                            <th>Invoice#</th>
+                                                            <th>Plan</th>
+                                                            <th>Issued Date</th>
+                                                            <th>Subscription Cost</th>
+                                                            <th>Business Cases Cost</th>
+                                                            <th>Status</th>
+                                                            <th>Download</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tfoot>
+                                                        <tr>
+                                                            <th>Invoice#</th>
+                                                            <th>Plan</th>
+                                                            <th>Issued Date</th>
+                                                            <th>Subscription Cost</th>
+                                                            <th>Business Cases Cost</th>
+                                                            <th>Status</th>
+                                                            <th>Download</th>
+                                                        </tr>
+                                                        </tfoot>
+                                                        <tbody>
+                                                        {% for invoice in cus_invoices %}
+                                                            <tr>
+                                                                <td>{{ invoice['invoice_id'] }}</td>
+                                                                <td>{{ invoice['plan_name'] }}</td>
+                                                                <td>{{ invoice['date'] }}</td>
+                                                                <td>$599</td>
+                                                                <td>{{ invoice['status'] }}</td>
+                                                                <td>{{ invoice['total'] }}</td>
+                                                                <td>
+                                                                    <a href="{{ invoice['link'] }}"><i
+                                                                            class="ni ni-cloud-download-95"></i></a>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                <button class="btn btn-icon btn-primary" type="button"
-                                        style="float: right"
-                                        data-toggle="notify" data-placement="top"
-                                        data-align="center"
-                                        data-type="success" data-icon="ni ni-bell-55">
-                                    <span class="btn-inner--icon"><i
-                                            class="far fa-save"></i></span>
-                                    <span class="btn-inner--text">Save changes</span>
-                                </button>
-                            </div>
-
+                                    <button class="btn btn-icon btn-primary" type="button"
+                                            style="float: right"
+                                            data-toggle="notify" data-placement="top"
+                                            data-align="center"
+                                            data-type="success" data-icon="ni ni-bell-55">
+                                        <span class="btn-inner--icon"><i
+                                                class="far fa-save"></i></span>
+                                        <span class="btn-inner--text">Save changes</span>
+                                    </button>
+                                </div>
+                            {% endif %}
 
                         </div>
                     </div>

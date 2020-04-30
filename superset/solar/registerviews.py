@@ -488,7 +488,6 @@ class SolarBIRegisterInvitationUserDBView(RegisterUserDBView):
 
 
 class SolarBIRegisterInvitationView(BaseRegisterUser):
-    # mc_client = MailChimp(mc_api=os.environ['MC_API_KEY'], mc_user='solarbi')
     sg = SendGridAPIClient(os.environ['SG_API_KEY'])
     activation_message = lazy_gettext("Register successfully! An activation email has been sent to you")
     error_message = lazy_gettext("Username or Email already existed")
@@ -499,27 +498,6 @@ class SolarBIRegisterInvitationView(BaseRegisterUser):
 
     email_template = 'appbuilder/general/security/account_activation_mail.html'
     email_subject = 'SolarBI - Team Member Activation'
-
-    # def send_email(self, register_user):
-    #     """
-    #         Method for sending the registration Email to the user
-    #     """
-    #     mail = Mail(self.appbuilder.get_app)
-    #     msg = Message()
-    #     msg.sender = 'SolarBI', 'no-reply@solarbi.com.au'
-    #     msg.subject = self.email_subject
-    #     url = url_for('.activate', _external=True, invitation_hash=register_user.registration_hash)
-    #     msg.html = self.render_template(self.email_template,
-    #                                     url=url,
-    #                                     username=register_user.username,
-    #                                     team_name=register_user.team)
-    #     msg.recipients = [register_user.email]
-    #     try:
-    #         mail.send(msg)
-    #     except Exception as e:
-    #         log.error('Send email exception: {0}'.format(str(e)))
-    #         return False
-    #     return True
 
     def send_sg_email(self, register_user):
         url = url_for('.activate', _external=True, invitation_hash=register_user.registration_hash)
@@ -618,6 +596,8 @@ class SolarBIRegisterInvitationView(BaseRegisterUser):
             flash(as_unicode(self.error_message), 'danger')
             return redirect(self.appbuilder.get_url_for_index)
         else:
+            user = self.appbuilder.get_session.query(SolarBIUser).filter_by(email=reg.email).first()
+            _ = self.appbuilder.sm.add_team(user, user.username + "'s Team", reg.registration_date)
             self.appbuilder.sm.del_register_user(reg)
             return self.render_template(self.activation_template,
                                         username=reg.email,

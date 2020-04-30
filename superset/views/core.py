@@ -687,7 +687,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
                              'plan_name': self.appbuilder.sm.get_plan_name_by_stripe_id(invoice['lines']['data'][0]['plan']['id']),
                              'date': datetime.utcfromtimestamp(invoice['created']).strftime("%d/%m/%Y"),
                              'status': invoice['status'].capitalize(),
-                             'total': '$' + str(invoice['total'] / 100),
+                             'total': '$' + str(int(invoice['total'] / 100)),
                              'link': invoice['invoice_pdf']} for invoice in stripe.Invoice.list(customer=cus_obj['id']))
 
         card_info = None
@@ -1037,6 +1037,19 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
                                             'postal_code': billing_info['postal_code'],
                                             'city': billing_info['city'],
                                             'line1': billing_info['line1']})
+        flash('Update billing details success!', 'info')
+        return jsonify(dict(redirect='/solar/profile'))
+
+    @expose('/remove-team-member/', methods=['POST'])
+    def remove_team_member(self):
+        team_member_email = request.json['team_member_email']
+        session_team_id = get_session_team(self.appbuilder.sm, g.user.id)[0]
+        if self.appbuilder.sm.remove_team_member(team_member_email, session_team_id):
+            flash('Update billing details success!', 'info')
+            return jsonify(dict(redirect='/solar/dashboard'))
+        else:
+            flash('Update billing details success!', 'danger')
+            return jsonify(dict(redirect='/solar/dashboard'))
 
 
 appbuilder.add_view(

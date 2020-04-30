@@ -95,15 +95,17 @@
                 <hr class="my-3">
                 <!-- Nav items -->
                 <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a {% if request.path == '/solar/dashboard' %}
-                            class="nav-link active" {% else %}
-                            class="nav-link" {% endif %}
-                            href="{{ url_for('SolarBIModelView.dashboard') }}">
-                            <i class="ni ni-atom text-primary"></i>
-                            <span class="nav-link-text">Dashboard</span>
-                        </a>
-                    </li>
+                    {% if current_user_role == 'team_owner' %}
+                        <li class="nav-item">
+                            <a {% if request.path == '/solar/dashboard' %}
+                                class="nav-link active" {% else %}
+                                class="nav-link" {% endif %}
+                                href="{{ url_for('SolarBIModelView.dashboard') }}">
+                                <i class="ni ni-atom text-primary"></i>
+                                <span class="nav-link-text">Dashboard</span>
+                            </a>
+                        </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a {% if request.path == '/solar/add' %}
                             class="nav-link active" {% else %}
