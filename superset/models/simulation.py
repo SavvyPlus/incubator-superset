@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -33,13 +33,6 @@ from superset.models.tags import ChartUpdater
 from superset.utils import core as utils
 from superset.viz import BaseViz, viz_types
 
-simulation_assumption = Table(
-    "simulation_assumption",
-    Model.metadata,
-    Column("id", Integer, primary_key=True),
-    Column("simulation_id", Integer, ForeignKey("simulation.id")),
-    Column("assumption_id", Integer, ForeignKey("assumption.id")),
-)
 
 class Assumption(
     Model
@@ -47,13 +40,13 @@ class Assumption(
     __tablename__ = "assumption"
     id = Column(Integer, primary_key=True)
     name = Column(String(200))
-    s3_path = Column(String(500))
     status = Column(String(10))
     status_detail = Column(String(500))
     download_link = Column(String(200))
 
     def __repr__(self):
         return self.name
+
 
 class Simulation(
     Model
@@ -62,6 +55,30 @@ class Simulation(
     id = Column(Integer, primary_key=True)
     run_id = Column(String(20))
     name = Column(String(200))
-    assumption = relationship("Assumption", secondary=simulation_assumption, backref="simulation")
+    description = Column(String(200))
+    assumption_id = Column(Integer, ForeignKey("assumption.id"))
+    assumption = relationship("Assumption", foreign_keys=[assumption_id])
+    run_no = Column(Integer)
+    start_date = Column(Date)
+    end_date = Column(Date)
     status = Column(String(10))
     status_detail = Column(String(500))
+
+    def __repr__(self):
+        return self.name
+
+
+
+class SimulationLog(Model):
+    __tablename__ = "simulation_log"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("ab_user.id"))
+    user = relationship(
+        security_manager.user_model, foreign_keys=[user_id]
+    )
+    action = Column(String(512))
+    action_object = Column(String(512))
+    action_object_type = Column(String(20))
+    dttm = Column(DateTime)
+    result = Column(String(20))
+    detail = Column(String(512))

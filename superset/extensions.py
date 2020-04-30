@@ -132,6 +132,7 @@ celery_app = celery.Celery()
 db = SQLA()
 _event_logger: dict = {}
 event_logger = LocalProxy(lambda: _event_logger.get("event_logger"))
+simulation_logger = LocalProxy(lambda: _event_logger.get("simulation_logger"))
 feature_flag_manager = FeatureFlagManager()
 jinja_context_manager = JinjaContextManager()  # type: JinjaContextManager
 manifest_processor = UIManifestProcessor(APP_DIR)

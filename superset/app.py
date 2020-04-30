@@ -42,7 +42,7 @@ from superset.extensions import (
 )
 from superset.security import SupersetSecurityManager
 from superset.utils.core import pessimistic_connection_handling
-from superset.utils.log import DBEventLogger, get_event_logger_from_cfg_value
+from superset.utils.log import DBEventLogger, get_event_logger_from_cfg_value, get_simulation_logger
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +166,7 @@ class SupersetAppInitializer:
             UploadAssumptionView,
             AssumptionModelView,
             SimulationModelView,
+            SimulationLogModelView,
         )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
@@ -262,7 +263,13 @@ class SupersetAppInitializer:
             label=__("Simulations"),
             icon="fa-dashboard",
             category="Simulation",
-            category_icon="fa-wrench",
+        )
+        appbuilder.add_view(
+            SimulationLogModelView,
+            'Simulation Logs',
+            label=__("Simulation Logs"),
+            icon="fa-list-ol",
+            category="Simulation",
         )
         appbuilder.add_separator("Simulation")
         appbuilder.add_view(
@@ -527,6 +534,7 @@ class SupersetAppInitializer:
         _event_logger["event_logger"] = get_event_logger_from_cfg_value(
             self.flask_app.config.get("EVENT_LOGGER", DBEventLogger())
         )
+        _event_logger['simulation_logger'] = get_simulation_logger()
 
     def configure_data_sources(self):
         # Registering sources

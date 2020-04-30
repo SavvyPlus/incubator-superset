@@ -33,4 +33,5 @@ else
         --limit-request-line 0 \
         --limit-request-field_size 0 \
         "${FLASK_APP}"
+    celery worker --app=superset.tasks.celery_app:app -Ofair
 fi
