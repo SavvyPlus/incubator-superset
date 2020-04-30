@@ -596,14 +596,6 @@ class SolarBIRegisterInvitationView(BaseRegisterUser):
             flash(as_unicode(self.false_error_message), 'danger')
             return redirect(self.appbuilder.get_url_for_index)
 
-        # self.mc_client.lists.members.create(list_id='c257103535', data={
-        #     'email_address': reg.email,
-        #     'status': 'subscribed',
-        #     'merge_fields': {
-        #         'FNAME': reg.first_name,
-        #         'LNAME': reg.last_name,
-        #     },
-        # })
         _ = self.sg.client.marketing.contacts.put(request_body={
             "list_ids": [
                 "823624d1-c51e-4193-8542-3904b7586c29"

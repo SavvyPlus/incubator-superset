@@ -58,7 +58,7 @@ import simplejson as json
 from sqlalchemy import and_, or_, select
 from werkzeug.routing import BaseConverter
 from ..solar.forms import SolarBIListWidget, SolarBIDashboardListWidget, SolarBIProfileWidget
-from ..solar.models import Plan, TeamSubscription, Team, StripeEvent
+from ..solar.models import Plan, TeamSubscription, Team, StripeEvent, TeamRegisterUser
 from ..solar.utils import set_session_team, get_session_team, log_to_mp, get_athena_query, send_sendgrid_email
 from superset import (
     app,
@@ -118,6 +118,7 @@ from .utils import (
     list_object_key,
     get_user_teams,
 )
+from ..solar.utils import update_mp_user
 
 config = app.config
 CACHE_DEFAULT_TIMEOUT = config.get("CACHE_DEFAULT_TIMEOUT", 0)
@@ -990,6 +991,52 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
 
         flash('Team Error', 'danger')
         return redirect("/")
+
+    @expose('/update-user-info/', methods=['POST'])
+    def update_user_info(self):
+        user_info = request.json
+        item = self.appbuilder.sm.get_user_by_id(g.user.id)
+        for name, field in item.__dict__.items():
+            if name in user_info:
+                setattr(item, name, user_info[name])
+
+        self.appbuilder.sm.update_user(item)
+        update_mp_user(g.user)
+        flash('Update personal info success!', 'info')
+        return jsonify(dict(redirect='/solar/profile'))
+
+    @expose('/update-team-info/', methods=['POST'])
+    def update_team_info(self):
+        team_info = request.json
+        # Check if team name has changed. If so, check if it has been used
+        session_team = get_session_team(self.appbuilder.sm, g.user.id)
+        prev_team_name = session_team[1]
+        team_name_changed = False
+        if prev_team_name != team_info['team_name']:
+            team_name_changed = True
+            if self.appbuilder.sm.find_team(team_name=team_info['team_name']) is not None:
+                flash('New team name has been used', 'danger')
+                return jsonify(dict(redirect='/solar/profile'))
+
+        cur_team = self.appbuilder.sm.find_team(team_id=session_team[0])
+        if self.appbuilder.sm.update_team(cur_team, team_info, team_name_changed, prev_team_name):
+            flash('Update team info success!', 'info')
+        else:
+            flash('Update team info failed. Please try again later.', 'danger')
+
+        return jsonify(dict(redirect='/solar/profile'))
+
+    @expose('/update-billing-details/', methods=['POST'])
+    def update_billing_details(self):
+        billing_info = request.json
+        session_team_id = get_session_team(self.appbuilder.sm, g.user.id)[0]
+        cur_team = self.appbuilder.sm.find_team(team_id=session_team_id)
+        _ = stripe.Customer.modify(cur_team.stripe_user_id,
+                                   address={'country': billing_info['country'],
+                                            'state': billing_info['state'],
+                                            'postal_code': billing_info['postal_code'],
+                                            'city': billing_info['city'],
+                                            'line1': billing_info['line1']})
 
 
 appbuilder.add_view(

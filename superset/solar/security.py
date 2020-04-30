@@ -810,3 +810,23 @@ class CustomSecurityManager(SupersetSecurityManager):
         plan = self.get_session.query(Plan).filter_by(stripe_id=stripe_id).first()
         return plan.plan_name
 
+    def update_team(self, cur_team, team_info, team_name_changed, prev_team_name):
+        try:
+            for name, field in cur_team.__dict__.items():
+                if name in team_info:
+                    setattr(cur_team, name, team_info[name])
+            self.get_session.merge(cur_team)
+
+            if team_name_changed:
+                awaiting_users = self.get_session.query(
+                    self.registeruser_model).filter_by(
+                    team=prev_team_name).all()
+                for user in awaiting_users:
+                    user.team = cur_team.team_name
+
+            set_session_team(cur_team.id, cur_team.team_name)
+            self.get_session.commit()
+            return True
+        except Exception as e:
+            self.get_session.rollback()
+            return False

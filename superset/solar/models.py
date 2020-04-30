@@ -54,6 +54,9 @@ class Team(Model):
     date_created = Column(DateTime, default=datetime.datetime.now)
     stripe_user_id = Column(String(64))
     stripe_pm_id = Column(String(64))
+    business_name = Column(Text)
+    website = Column(Text)
+    team_email = Column(Text)
     def __repr__(self):
         return self.team_name
 
@@ -123,6 +126,7 @@ class SolarBIUser(User):
     address = Column(Text)
     city = Column(Text)
     country = Column(Text)
+    state = Column(Text)
     postal_code = Column(Text)
     about_me = Column(Text)
 
