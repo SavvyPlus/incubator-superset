@@ -151,7 +151,7 @@ def max_renewable_proportion(file_path, state):
                 }
         """
     max_renewable_proportion_df = read_file_sheet(file_path, sheet_renewable_proportion)
-    max_renewable_proportion_df = rename_header_with_top_row(max_renewable_proportion_df)
+    # max_renewable_proportion_df = rename_header_with_top_row(max_renewable_proportion_df)
     max_renewable_proportion_df = max_renewable_proportion_df.query(f"State == '{state}'")
     max_renewable_proportion_dict = dict()
     for index, row in max_renewable_proportion_df.iterrows():
@@ -170,7 +170,7 @@ def floor_price_assumption(file_path, state):
                 }
         """
     floor_price_df = read_file_sheet(file_path, sheet_floor_price)
-    floor_price_df = rename_header_with_top_row(floor_price_df)
+    # floor_price_df = rename_header_with_top_row(floor_price_df)
     floor_price_df = floor_price_df.query(f"State == '{state}'")
     floor_price_dic_t = dict()
     for index, row in floor_price_df.iterrows():
@@ -185,7 +185,7 @@ def projects_wind_solar_assumption(file_path):
         :return: dictionaries of projects and its proxy_projects
     """
     project_df = read_file_sheet(file_path, sheet_project_list)
-    project_df = rename_header_with_top_row(project_df)
+    # project_df = rename_header_with_top_row(project_df)
     projects_ref_dic = {}
     for index, row in project_df.iterrows():
         if row['Quantity'] != 0 and (row['FuelType'] in ['Solar', 'Wind']):
@@ -198,7 +198,7 @@ def projects_wind_solar_assumption(file_path):
 
 def proxy_assumption(file_path):
     proxy_df = read_file_sheet(file_path, sheet_project_proxy)
-    proxy_df = rename_header_with_top_row(proxy_df)
+    # proxy_df = rename_header_with_top_row(proxy_df)
     proxy_capacity_dic = {}
     for index, row in proxy_df.iterrows():
         proxy_capacity_dic[row['Project']] = {'capacity': row['Nameplate Capacity (MW)'],
@@ -258,7 +258,7 @@ def get_strategic_behaviour_assumption(file_path, state):
                       }
     """
     strategic_behaviour_df = read_file_sheet(file_path, sheet_strategic_behaviour)
-    strategic_behaviour_df = rename_header_with_top_row(strategic_behaviour_df)
+    # strategic_behaviour_df = rename_header_with_top_row(strategic_behaviour_df)
     strategic_behaviour_df = strategic_behaviour_df.query(f"State == '{state}'")
     strategic_behaviour_df = strategic_behaviour_df.drop(columns=['State'])
 
@@ -294,7 +294,7 @@ def get_generation_closure_assumption(file_path, state):
     :rtype: dict like {'power station': {'Adjustment Factor': , 'Closure Date': }, ...}
     """
     generation_closure_df = read_file_sheet(file_path, sheet_generation_closure)
-    generation_closure_df = rename_header_with_top_row(generation_closure_df)
+    # generation_closure_df = rename_header_with_top_row(generation_closure_df)
     generation_closure_df = generation_closure_df.query(f"`Impact To State`=='{state}'")
     generation_closure_df = generation_closure_df.set_index('DUID')
     generation_closure_dict = generation_closure_df.to_dict(orient='index')
@@ -344,7 +344,7 @@ def get_new_power_stations_assumption(file_path, state):
     """
     new_ps_dict = dict()
     new_ps_df = read_file_sheet(file_path, sheet_new_power_stations)
-    new_ps_df = rename_header_with_top_row(new_ps_df)
+    # new_ps_df = rename_header_with_top_row(new_ps_df)
     new_ps_df = new_ps_df.query(f"`Region`=='{state}'")
     stations_id = new_ps_df[new_ps_df.columns[0]].unique().tolist()
     for nps_id in stations_id:
