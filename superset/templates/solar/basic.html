@@ -43,7 +43,6 @@
       <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css')}}">
       <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-select-bs4/css/select.bootstrap4.min.css')}}">
       <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/css/solarbi.css')}}?v=3.2">
-      <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
       {% for entry in get_unloaded_chunks(css_manifest('theme'), loaded_chunks) %}
         <link rel="stylesheet" type="text/css" href="{{ entry }}" />
       {% endfor %}
