@@ -35,15 +35,15 @@
       <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700">
       <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/nucleo/css/nucleo.css')}}" rel="stylesheet">
-      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/@fortawesome/fontawesome-free/css/all.min.css')}}" rel="stylesheet">
-      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/jvectormap-next/jquery-jvectormap.css')}}" rel="stylesheet">
-      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/animate.css/animate.min.css')}}" rel="stylesheet">
-      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
-      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css')}}" rel="stylesheet">
-      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-select-bs4/css/select.bootstrap4.min.css')}}" rel="stylesheet">
-      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/css/solarbi.css')}}?v=3.2" rel="stylesheet">
-
+      <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/nucleo/css/nucleo.css')}}">
+      <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/@fortawesome/fontawesome-free/css/all.min.css')}}">
+      <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/jvectormap-next/jquery-jvectormap.css')}}">
+      <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/animate.css/animate.min.css')}}">
+      <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css')}}">
+      <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css')}}">
+      <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-select-bs4/css/select.bootstrap4.min.css')}}">
+      <link rel="stylesheet" href="{{url_for('static',filename='assets/stylesheets/argon_assets/css/solarbi.css')}}?v=3.2">
+      <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
       {% for entry in get_unloaded_chunks(css_manifest('theme'), loaded_chunks) %}
         <link rel="stylesheet" type="text/css" href="{{ entry }}" />
       {% endfor %}
