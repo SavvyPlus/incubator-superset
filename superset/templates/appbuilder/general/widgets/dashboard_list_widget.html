@@ -643,7 +643,6 @@
             });
             $('.remove-team-member').click(function () {
                 const team_member_email = $("#removed_team_member").html();
-                console.log(team_member_email);
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {

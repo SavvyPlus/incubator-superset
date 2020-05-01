@@ -185,8 +185,8 @@
                             <div class="col text-right">
                                 {#                          <a class="btn btn-sm btn-primary" href="#">Send Invitation</a>#}
                                 <button type="button" class="btn btn-sm btn-primary"
-                                        data-toggle="modal" data-target="#modal-form">Send
-                                    Invitation
+                                        data-toggle="modal" data-target="#modal-form">
+                                    Send Invitation
                                 </button>
                                 <div class="modal fade" id="modal-form" tabindex="-1"
                                      role="dialog" aria-labelledby="modal-form"
@@ -211,6 +211,9 @@
                                                                     <input class="form-control recipient-email"
                                                                            placeholder="Email"
                                                                            type="email">
+                                                                    <div class="invalid-feedback">
+                                                                        Email required
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <div class="text-center">
@@ -870,7 +873,12 @@
 
 
             $('.send-invitation').click(function () {
+                $(".recipient-email").removeClass('is-invalid');
                 let selected_email = $(".recipient-email").val();
+                if (!selected_email) {
+                    return $(".recipient-email").addClass('is-invalid');
+                }
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
@@ -895,6 +903,7 @@
             $('.resend-email').click(function () {
                 let selected_email = $(this).parent().prev().prev().children(':first').html();
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 28px; margin: 0 15.5px;\">");
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
