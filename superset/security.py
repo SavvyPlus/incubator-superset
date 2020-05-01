@@ -83,6 +83,7 @@ SOLAR_PERMISSIONS = [
     ('can_this_form_get', 'SolarBIResetMyPasswordView'),
     # ('can_userinfo', 'UserDBModelView'),
     ('userinfoedit', 'UserDBModelView'),
+    ('can_profile', 'SolarBIModelView'),
 ]
 
 SOLAR_PERMISSIONS_COMMON = ['can_show', 'can_list', 'can_delete', 'can_add']
@@ -784,7 +785,7 @@ class SupersetSecurityManager(SecurityManager):
             connection.execute(
                 permission_table.insert().values(name=permission_name),
             )
-            connection.execute(permission_table.insert().values(name=permission_name))
+            # connection.execute(permission_table.insert().values(name=permission_name))
             permission = self.find_permission(permission_name)
         if not view_menu:
             view_menu_table = self.viewmenu_model.__table__  # pylint: disable=no-member

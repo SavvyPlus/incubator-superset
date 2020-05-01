@@ -21,7 +21,7 @@ from datetime import timedelta
 from flask_appbuilder import Model
 from flask_appbuilder.security.sqla.models import User
 from sqlalchemy import (
-    Boolean, Column, DateTime, Integer, Float, String, UniqueConstraint, ForeignKey, Sequence, Table)
+    Boolean, Column, DateTime, Integer, Float, String, UniqueConstraint, ForeignKey, Sequence, Table, Text)
 from sqlalchemy.orm import relationship
 
 metadata = Model.metadata  # pylint: disable=no-member
@@ -54,6 +54,9 @@ class Team(Model):
     date_created = Column(DateTime, default=datetime.datetime.now)
     stripe_user_id = Column(String(64))
     stripe_pm_id = Column(String(64))
+    business_name = Column(Text)
+    website = Column(Text)
+    team_email = Column(Text)
     def __repr__(self):
         return self.team_name
 
@@ -120,6 +123,13 @@ class SolarBIUser(User):
     email_confirm = Column(Boolean, default=False)
     team_role = relationship('TeamRole', secondary=assoc_teamrole_user, backref='user')
     trial_used = Column(Boolean, default=False)
+    address = Column(Text)
+    city = Column(Text)
+    country = Column(Text)
+    state = Column(Text)
+    postal_code = Column(Text)
+    about_me = Column(Text)
+
     __table_args__ = {'extend_existing': True}
 
 

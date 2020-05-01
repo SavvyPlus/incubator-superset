@@ -15,19 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=C,R,W
+import os
 import json
+import requests
 
 from flask import session, redirect
 from mixpanel import Mixpanel
 from sendgrid.helpers.mail import Mail
 from sendgrid import SendGridAPIClient
 import logging as log
-import os
 
 mp = Mixpanel('8b85dcbb1c5f693a3b045b24fca1e787')
 mp_prefix = os.getenv('SUPERSET_ENV')
 
 free_credit_in_dollar = os.getenv('FREE_CREDIT_DOLLAR')
+sg = SendGridAPIClient(os.environ['SG_API_KEY'])
+sg_headers = {'authorization': 'Bearer ' + os.environ['SG_API_KEY']}
 sendgrid_email_sender = ('no-reply@solarbi.com.au', 'SolarBI')
 
 
@@ -193,3 +196,110 @@ def send_sendgrid_email(user, message_data, template_id):
     except Exception as e:
         log.error('Send email exception: {0}'.format(str(e)))
         return False
+
+
+def is_in_sg(email):
+    # First check the 50 most recent changed contacts
+    response1 = sg.client.marketing.lists._('823624d1-c51e-4193-8542-3904b7586c29?contact_sample=true').get()
+    contact_sample = json.loads(response1.body.decode('utf-8'))['contact_sample']
+    for contact in contact_sample:
+        if email == contact['email']:
+            return contact['id']
+
+    # If we do not find any record, we then use query to search the whole sg db
+    response = sg.client.marketing.contacts.search.post(request_body={
+        "query": "email LIKE '" + g.user.email + "' AND CONTAINS(list_ids, '823624d1-c51e-4193-8542-3904b7586c29')"
+    })
+    res = json.loads(response.body.decode("utf-8"))
+    if not res['result']:
+        return -1
+    else:
+        return res['result'][0]['id']
+
+
+def update_sg_info(email_changed=False, names_changed=False, old_email=None, new_user=None):
+    if email_changed:
+        # If the user has been in SG already, delete it from contacts and marketing
+        # suppression group
+        contact_id = is_in_sg(old_email)
+        if contact_id != -1:
+            delete_contact(contact_id)
+            delete_user_from_marketing_suppression(old_email)
+
+        add_or_update_contact(new_user.email, new_user.first_name, new_user.last_name)
+    else:
+        if names_changed:
+            contact_id = is_in_sg(new_user.email)
+            if contact_id != -1:
+                add_or_update_contact(new_user.email, new_user.first_name, new_user.last_name)
+
+            # user_in_marketing_suppression = user_in_marketing_suppression(form.email.data)
+            # subscription_status = (user_in_sg and not user_in_marketing_suppression)
+            # if form.subscription.data != subscription_status:
+            #     if form.subscription.data:
+            #         if user_in_marketing_suppression(form.email.data):
+            #             delete_user_from_marketing_suppression(form.email.data)
+            #         else:
+            #             add_or_update_contact(form.email.data, form.first_name.data, form.last_name.data)
+            #     else:
+            #         add_user_to_marketing_suppression(form.email.data)
+
+
+def add_or_update_contact(email, first_name, last_name):
+    _ = sg.client.marketing.contacts.put(request_body={
+        "list_ids": [
+            "823624d1-c51e-4193-8542-3904b7586c29"
+        ],
+        "contacts": [
+            {
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name
+            }
+        ]
+    })
+
+
+def add_user_to_marketing_suppression(email):
+    url = "https://api.sendgrid.com/v3/asm/groups/14067/suppressions"
+    payload = "{\"recipient_emails\":[\"" + email + "\"]}"
+    _ = requests.request("POST", url, data=payload, headers=sg_headers)
+
+
+def delete_user_from_marketing_suppression(email):
+    url = "https://api.sendgrid.com/v3/asm/groups/14067/suppressions/" + email
+    _ = requests.request("DELETE", url, headers=sg_headers)
+
+
+def user_in_marketing_suppression(email):
+    url = "https://api.sendgrid.com/v3/asm/groups/14067/suppressions/search"
+    payload = '{"recipient_emails":["' + email + '"]}'
+    response = requests.request("POST", url, data=payload, headers=sg_headers)
+    if json.loads(response.text):
+        return True
+    else:
+        return False
+
+
+def delete_contact(contact_id):
+    sg.client.marketing.contacts.delete(query_params={"ids": contact_id})
+
+
+def user_in_gs(email):
+    url = "https://api.sendgrid.com/v3/asm/suppressions/global/" + email
+    response = requests.request("GET", url, headers=sg_headers)
+    if json.loads(response.text):
+        return True
+    else:
+        return False
+
+
+def add_to_gs(email):
+    url = "https://api.sendgrid.com/v3/asm/suppressions/global"
+    payload = "{\"recipient_emails\":[\"" + email + "\"]}"
+    _ = requests.request("POST", url, data=payload, headers=self.headers)
+
+
+def delete_gs(email):
+    url = "https://api.sendgrid.com/v3/asm/suppressions/global/" + email
+    _ = requests.request("DELETE", url, headers=self.headers)

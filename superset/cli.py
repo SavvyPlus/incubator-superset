@@ -20,6 +20,7 @@ from datetime import datetime
 import logging
 from subprocess import Popen
 from sys import stdout
+from urllib.parse import urljoin
 
 import click
 from colorama import Fore, Style
@@ -37,6 +38,11 @@ celery_app = utils.get_celery_app(config)
 
 
 def create_app(script_info=None):
+
+    @app.template_global()
+    def static_url(prefix, filename):
+        return urljoin(app.config['STATIC_URL'], f'{prefix}/{filename}')
+
     return app
 
 

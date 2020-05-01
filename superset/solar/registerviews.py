@@ -415,6 +415,45 @@ class SolarBIRegisterInvitationUserDBView(RegisterUserDBView):
             flash(as_unicode('Unable to create team'), 'danger')
             return jsonify(dict(redirect='/solar/my-team'))
 
+    @expose('/send-invitation', methods=['POST'])
+    def send_invitation(self):
+        user_email = request.json['selected_email']
+        role_id = self.appbuilder.sm.find_solar_default_role_id().id
+
+        if user_email:
+            user_id = g.user.id
+            try:
+                team = self.appbuilder.sm.find_team(team_id=get_session_team(self.appbuilder.sm, user_id)[0])
+                # Check if the invited user is already in the team
+                for existed_user in team.users:
+                    if existed_user.email == user_email:
+                        flash(as_unicode('User already in the team'), 'danger')
+                        return jsonify(dict(redirect='/solar/dashboard'))
+
+                if self.appbuilder.sm.get_registered_user(user_email):
+                    flash(as_unicode('You have already send invitation to the user'), 'danger')
+                    return jsonify(dict(redirect='/solar/dashboard'))
+
+                reg_user, existed = self.appbuilder.sm.add_invite_register_user(email=user_email, team=team,
+                                                                                role=role_id, inviter=user_id)
+                if reg_user:
+                    if self.send_sg_email(reg_user, existed):
+                        if not existed:
+                            flash(as_unicode('Invitation sent to %s' % user_email), 'info')
+                        else:
+                            flash(as_unicode('%s is an existed user. Added to your team' % user_email), 'info')
+                        return jsonify(dict(redirect='/solar/dashboard'))
+                    else:
+                        self.appbuilder.sm.delete_invited_user(user_email=user_email)
+                        flash(as_unicode('Cannot send invitation to user'), 'danger')
+                        return jsonify(dict(redirect='/solar/dashboard'))
+            except Exception as e:
+                flash(as_unicode(e), 'danger')
+                return jsonify(dict(redirect='/solar/dashboard'))
+        else:
+            flash(as_unicode('Invalid email'), 'danger')
+            return jsonify(dict(redirect='/solar/dashboard'))
+
     @expose('/resend-email', methods=['POST'])
     def resend_email(self):
         user_email = request.json['selected_email']
@@ -449,7 +488,6 @@ class SolarBIRegisterInvitationUserDBView(RegisterUserDBView):
 
 
 class SolarBIRegisterInvitationView(BaseRegisterUser):
-    # mc_client = MailChimp(mc_api=os.environ['MC_API_KEY'], mc_user='solarbi')
     sg = SendGridAPIClient(os.environ['SG_API_KEY'])
     activation_message = lazy_gettext("Register successfully! An activation email has been sent to you")
     error_message = lazy_gettext("Username or Email already existed")
@@ -460,27 +498,6 @@ class SolarBIRegisterInvitationView(BaseRegisterUser):
 
     email_template = 'appbuilder/general/security/account_activation_mail.html'
     email_subject = 'SolarBI - Team Member Activation'
-
-    # def send_email(self, register_user):
-    #     """
-    #         Method for sending the registration Email to the user
-    #     """
-    #     mail = Mail(self.appbuilder.get_app)
-    #     msg = Message()
-    #     msg.sender = 'SolarBI', 'no-reply@solarbi.com.au'
-    #     msg.subject = self.email_subject
-    #     url = url_for('.activate', _external=True, invitation_hash=register_user.registration_hash)
-    #     msg.html = self.render_template(self.email_template,
-    #                                     url=url,
-    #                                     username=register_user.username,
-    #                                     team_name=register_user.team)
-    #     msg.recipients = [register_user.email]
-    #     try:
-    #         mail.send(msg)
-    #     except Exception as e:
-    #         log.error('Send email exception: {0}'.format(str(e)))
-    #         return False
-    #     return True
 
     def send_sg_email(self, register_user):
         url = url_for('.activate', _external=True, invitation_hash=register_user.registration_hash)
@@ -557,14 +574,6 @@ class SolarBIRegisterInvitationView(BaseRegisterUser):
             flash(as_unicode(self.false_error_message), 'danger')
             return redirect(self.appbuilder.get_url_for_index)
 
-        # self.mc_client.lists.members.create(list_id='c257103535', data={
-        #     'email_address': reg.email,
-        #     'status': 'subscribed',
-        #     'merge_fields': {
-        #         'FNAME': reg.first_name,
-        #         'LNAME': reg.last_name,
-        #     },
-        # })
         _ = self.sg.client.marketing.contacts.put(request_body={
             "list_ids": [
                 "823624d1-c51e-4193-8542-3904b7586c29"
@@ -587,6 +596,8 @@ class SolarBIRegisterInvitationView(BaseRegisterUser):
             flash(as_unicode(self.error_message), 'danger')
             return redirect(self.appbuilder.get_url_for_index)
         else:
+            user = self.appbuilder.get_session.query(SolarBIUser).filter_by(email=reg.email).first()
+            _ = self.appbuilder.sm.add_team(user, user.username + "'s Team", reg.registration_date)
             self.appbuilder.sm.del_register_user(reg)
             return self.render_template(self.activation_template,
                                         username=reg.email,

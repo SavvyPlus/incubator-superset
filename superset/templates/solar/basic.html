@@ -32,10 +32,17 @@
     {% block head_css %}
       <link rel="icon" type="image/png" href="/static/assets/images/favicon.png">
 {#      <link rel="stylesheet" type="text/css" href="/static/appbuilder/css/flags/flags16.css" />#}
-{#      <link rel="stylesheet" type="text/css" href="/static/appbuilder/css/font-awesome.min.css">#}
       <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css">
-      <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,700&display=swap" rel="stylesheet">
-      <script type="text/javascript" src="/static/appbuilder/js/jquery-latest.js"></script>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/nucleo/css/nucleo.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/@fortawesome/fontawesome-free/css/all.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/jvectormap-next/jquery-jvectormap.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/animate.css/animate.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/vendor/datatables.net-select-bs4/css/select.bootstrap4.min.css')}}" rel="stylesheet">
+      <link href="{{url_for('static',filename='assets/stylesheets/argon_assets/css/solarbi.css')}}?v=3.2" rel="stylesheet">
 
       {% for entry in get_unloaded_chunks(css_manifest('theme'), loaded_chunks) %}
         <link rel="stylesheet" type="text/css" href="{{ entry }}" />
@@ -49,9 +56,9 @@
       {% endif %}
 
     {% endblock %}
-    {% with filename="theme" %}
-      {% include "superset/partials/_script_tag.html" %}
-    {% endwith %}
+{#    {% with filename="theme" %}#}
+{#      {% include "superset/partials/_script_tag.html" %}#}
+{#    {% endwith %}#}
 
     <input
       type="hidden"
@@ -61,7 +68,7 @@
     >
   </head>
 
-  <body {% if standalone_mode %}class="standalone"{% endif %}>
+  <body class="nav-open g-sidenav-hidden" {% if standalone_mode %}class="standalone"{% endif %}>
     {% if not is_solar %}
       {% block navbar %}
         {% if not standalone_mode %}
@@ -77,41 +84,50 @@
         </div>
       {% endblock %}
     {% else %}
-      <div class="s-layout" style="display: flex; width: 100%; min-height: 100vh">
         {% block side_layout %}
           {% include 'solar/sidebar.html' %}
         {% endblock %}
         {% block solar_content %}
-          <div id="app" class="s-layout__content" data-bootstrap="{{ bootstrap_data }}">
+          <div id="app" class="main-content" data-bootstrap="{{ bootstrap_data }}">
             <div class="alert-top">
               {% block messages %}
                 {% include 'superset/flash_wrapper.html' %}
               {% endblock %}
             </div>
             <img src="/static/assets/images/loading.gif"
-                 style="width: 60px; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%)">
+                 style="width: 60px; position: absolute; top: 300px; left: 50%; transform: translate(-50%,-50%)">
           </div>
         {% endblock %}
-      </div>
     {% endif %}
 
-    <!-- Modal for misc messages / alerts  -->
-    <div class="misc-modal modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
+    <div class="modal fade" id="addNewTeam" tabindex="-1" role="dialog" aria-labelledby="addNewTeamTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div style="font-family: Open Sans, sans-serif" class="modal-content">
           <div class="modal-header">
-            <button type="button" class="creddisspan">
+            <h5 class="add-new-team-title modal-title" id="addNewTeamTitle">Create New Team</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
             </button>
-            <h4 class="modal-title"></h4>
           </div>
           <div class="modal-body">
+            <form>
+              <div class="form-group">
+                <label for="recipient-name" class="col-form-label">Team Name:</label>
+                <input type="text" class="form-control" id="teamName">
+                  <p id="team_name_empty" style="display: none; color: #f44336;">* Team name cannot be empty</p>
+                <p id="team_name_error" style="display: none; color: #f44336;">* Team name length cannot be longer than 13</p>
+                <p id="team_name_existed_error" style="display: none; color: #f44336;">* Team name already exists</p>
+              </div>
+            </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button id="addTeamBtn" type="button" class="btn btn-primary create-new-team-btn">Create</button>
           </div>
         </div>
       </div>
     </div>
+
     {% block tail_js %}
       <script src="https://js.stripe.com/v3/"></script>
       <!-- Hotjar Tracking Code -->
@@ -137,7 +153,77 @@
       </script>
       <script>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/ruplq61n';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();</script>
 
-      <script src="{{url_for('appbuilder.static',filename='js/bootstrap.min.js')}}"></script>
+{#      <script src="{{url_for('appbuilder.static',filename='js/jquery-latest.js')}}"></script>#}
+      <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
+{#      <script src="{{url_for('appbuilder.static',filename='js/bootstrap.min.js')}}"></script>#}
+      <script src="/static/assets/stylesheets/argon_assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/js-cookie/js.cookie.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/jquery.scrollbar/jquery.scrollbar.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/jquery-scroll-lock/dist/jquery-scrollLock.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/jvectormap-next/jquery-jvectormap.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/js/vendor/jvectormap/jquery-jvectormap-au-merc.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons/js/buttons.html5.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons/js/buttons.flash.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-buttons/js/buttons.print.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/vendor/datatables.net-select/js/dataTables.select.min.js"></script>
+      <script src="/static/assets/stylesheets/argon_assets/js/argon.js?v=1.2.0"></script>
+      <script>
+        $(document).ready(function () {
+          $('form').bind("keypress", function(e) {
+            if (e.keyCode === 13) {
+              e.preventDefault();
+              return false;
+            }
+          });
+
+          $('#addTeamBtn').click(function() {
+            $(this).prop('disabled',true);
+            $('#team_name_error').hide();
+            $('#team_name_empty').hide();
+            $('#team_name_existed_error').hide();
+            let team_name = $('#teamName').val();
+            if (team_name === '') {
+                return $('#team_name_empty').show();
+            }
+            if (team_name.length > 13) {
+                return $('#team_name_error').show();
+            }
+            let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type : "POST",
+                url : "{{ url_for('SolarBIRegisterInvitationUserDBView.create_team') }}",
+                data: JSON.stringify({team_name: team_name}),
+                contentType: 'application/json;charset=UTF-8',
+                success: function(data) {
+                    if (data.redirect) {
+                        window.location.replace(data.redirect)
+                    } else {
+                        $('#team_name_existed_error').show();
+                    }
+                    {#console.log('success')#}
+                }
+            });
+          });
+
+          $('#addNewTeam').on('hidden.bs.modal', function () {
+            $('#teamName').val('');
+            $('#team_name_error').hide();
+            $('#team_name_existed_error').hide();
+          });
+
+        });
+      </script>
       {% if entry %}
           {% with filename=entry %}
             {% include "superset/partials/_script_tag.html" %}

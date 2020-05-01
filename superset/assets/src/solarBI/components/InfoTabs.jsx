@@ -48,7 +48,7 @@ const styles = theme => ({
     backgroundColor: '#0063B0',
     border: 'none',
     fontSize: 16,
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Open Sans, sans-serif',
     fontWeight: 'bold',
     '&:hover': {
       color: 'white',

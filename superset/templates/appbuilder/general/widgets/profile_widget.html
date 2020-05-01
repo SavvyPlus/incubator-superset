@@ -1,0 +1,1117 @@
+{#
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+#}
+{% extends 'appbuilder/general/widgets/profile.html' %}
+{% import 'appbuilder/general/lib.html' as lib %}
+
+{% set is_team_owner = appbuilder.sm.get_role_in_team(g.user, session_team[0]).name == 'team_owner' %}
+
+{% block header %}
+    <div class="header pb-6 d-flex align-items-center"
+         style="min-height: 500px; background-size: cover; background-position: center top;">
+        <!-- Mask -->
+        <span class="mask bg-gradient-default opacity-8"></span>
+        <!-- Header container -->
+        <div class="container-fluid d-flex align-items-center">
+            <div class="row">
+                <div class="col-lg-7 col-md-10">
+                    <a href="#!" class="avatar avatar-xl rounded-circle">
+                        <img alt="Image placeholder" src="/static/assets/images/team-4.jpg">
+                    </a>
+                    <h1 class="display-2 text-white">Hello User</h1>
+                    <p class="text-white mt-0 mb-5">This is your profile page. You can see
+                        the You details,
+                        invite people to your team and adjust settings</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid mt--6">
+        <div class="row">
+            {% if is_team_owner %}
+                <div class="col-xl-4 order-xl-2">
+                <div class="card bg-gradient-primary">
+                    <!-- Card body -->
+                    <div class="card-body">
+                        <div class="row justify-content-between align-items-center">
+                            <div class="col">
+                                {% if card_info.brand == 'visa' %}
+                                    <img style="width: 48px"
+                                         src="/static/assets/images/visa_icon.png"
+                                         alt="Visa">
+                                {% elif card_info.brand == 'mastercard' %}
+                                    <img style="width: 48px"
+                                         src="/static/assets/images/master_icon.png"
+                                         alt="Mastercard">
+                                {% elif card_info.brand == 'amex' %}
+                                    <img style="width: 48px"
+                                         src="/static/assets/images/amex_icon.png"
+                                         alt="Mastercard">
+                                {% elif card_info.brand == 'jcb' %}
+                                    <img style="width: 48px"
+                                         src="/static/assets/images/jcb_icon.png"
+                                         alt="JCB">
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn btn-outline-info"
+                                    data-toggle="modal" data-target="#ccmodal">
+                                {% if card_info %}
+                                    Update
+                                {% else %}
+                                    Add New Card
+                                {% endif %}
+                            </button>
+                            <div class="modal fade" id="ccmodal" tabindex="-1"
+                                 role="dialog" aria-labelledby="ccmodalLabel"
+                                 aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered"
+                                     role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-body">
+                                            <button type="button" class="close"
+                                                    data-dismiss="modal"
+                                                    aria-label="Close">
+                                                <span aria-hidden="true">×</span>
+                                            </button>
+                                            <div class="mt-4">
+                                                <form role="form" class="form-primary">
+                                                    <div class="form-group">
+                                                        <div class="input-group input-group-alternative mb-3">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text"><i
+                                                                        class="ni ni-single-02"></i></span>
+                                                            </div>
+                                                            <input id="name_on_card"
+                                                                   class="form-control"
+                                                                   placeholder="Name on card"
+                                                                   type="text">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group"
+                                                         action="/charge" method="post">
+                                                        <div style="background-color: rgba(50, 76, 221, 0.5)"
+                                                             class="input-group input-group-alternative mb-3">
+                                                            <div id="card-element">
+                                                                <!-- A Stripe Element will be inserted here. -->
+                                                            </div>
+                                                        </div>
+
+                                                        <div id="card-errors"
+                                                             style="color: #f5365c"
+                                                             role="alert"></div>
+                                                    </div>
+                                                    <button type="button"
+                                                            class="update-card btn btn-block btn-info">
+                                                        Update new card
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if card_info %}
+                                <div class="col-auto">
+                                    {% if card_expire_soon %}
+                                        <span class="badge badge-lg badge-warning">Expire Soon</span>
+                                    {% elif card_has_expired %}
+                                        <span class="badge badge-lg badge-danger">Expired</span>
+                                    {% else %}
+                                        <span class="badge badge-lg badge-success">Active</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if card_info %}
+                            <div class="my-4">
+                                <span class="h6 surtitle text-light">
+                                  Card number
+                                </span>
+                                <div class="card-serial-number h1 text-white">
+                                    <div>xxxx</div>
+                                    <div>xxxx</div>
+                                    <div>xxxx</div>
+                                    <div>{{ card_info.last4 }}</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <span class="h6 surtitle text-light">Name</span>
+                                    <span class="d-block h3 text-white">{{ name_on_card }}</span>
+                                </div>
+                                <div class="col">
+                                    <span class="h6 surtitle text-light">Expiry date</span>
+                                    <span class="d-block h3 text-white">
+                                        {{ ('0' + card_info.exp_month|string)[-2:] }}/{{ (card_info.exp_year|string)[-2:] }}
+                                    </span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <h2 style="color: white">No credit card provided</h2>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Progress track -->
+                <div class="card">
+                    <!-- Card header -->
+                    <div class="card-header border-0">
+                        <!-- Title -->
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h5 class="mb-0">Team members</h5>
+                            </div>
+                            <div class="col text-right">
+                                {#                          <a class="btn btn-sm btn-primary" href="#">Send Invitation</a>#}
+                                <button type="button" class="btn btn-sm btn-primary"
+                                        data-toggle="modal" data-target="#modal-form">Send
+                                    Invitation
+                                </button>
+                                <div class="modal fade" id="modal-form" tabindex="-1"
+                                     role="dialog" aria-labelledby="modal-form"
+                                     aria-hidden="true">
+                                    <div class="modal-dialog modal- modal-dialog-centered modal-sm"
+                                         role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-body p-0">
+                                                <div class="card bg-secondary border-0 mb-0">
+                                                    <div class="card-body px-lg-5 py-lg-5">
+                                                        <div class="text-center text-muted mb-4">
+                                                            <small>Please enter the
+                                                                recipient email</small>
+                                                        </div>
+                                                        <form role="form">
+                                                            <div class="form-group mb-3">
+                                                                <div class="input-group input-group-merge input-group-alternative">
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text"><i
+                                                                                class="ni ni-email-83"></i></span>
+                                                                    </div>
+                                                                    <input class="form-control recipient-email"
+                                                                           placeholder="Email"
+                                                                           type="email">
+                                                                </div>
+                                                            </div>
+                                                            <div class="text-center">
+                                                                <button type="button"
+                                                                        class="btn btn-primary my-4 send-invitation">
+                                                                    Send
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card body -->
+                    <div class="card-body">
+                        <!-- List group -->
+                        <ul class="list-group list-group-flush list my--3">
+                            {% for email, role in team_users %}
+                                <li class="list-group-item px-0">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <!-- Avatar -->
+                                            <a href="#" class="avatar rounded-circle">
+                                                <img alt="Image placeholder" src="">
+                                            </a>
+                                        </div>
+                                        <div class="col ml--2">
+                                            <h4 class="mb-0">{{ email }}</h4>
+                                            <span class="text-success">●</span>
+                                            <small>Accepted Invitation</small>
+                                        </div>
+                                        <div class="col-auto">
+                                            {% if role != 'Admin' %}
+                                                <button type="button"
+                                                        class="btn btn-sm btn-danger"
+                                                        data-toggle="modal"
+                                                        data-target="#remove_member"
+                                                        data-email="{{ email }}">
+                                                    Remove
+                                                </button>
+                                                <!-- Modal -->
+                                                <div class="modal fade" id="remove_member"
+                                                     tabindex="-1"
+                                                     role="dialog"
+                                                     aria-labelledby="remove"
+                                                     aria-hidden="true">
+                                                    <div class="modal-dialog modal-danger modal-dialog-centered modal-"
+                                                         role="document">
+                                                        <div class="modal-content bg-gradient-danger">
+                                                            <div class="modal-header">
+                                                                <button type="button"
+                                                                        class="close"
+                                                                        data-dismiss="modal"
+                                                                        aria-label="Close">
+                                                                    <span aria-hidden="true">×</span>
+                                                                </button>
+                                                            </div>
+
+                                                            <div class="modal-body">
+
+                                                                <div class="py-3 text-center">
+                                                                    <i class="ni ni-bell-55 ni-3x"></i>
+                                                                    <h4 class="heading mt-4">
+                                                                        You are about to remove a team member!
+                                                                    </h4>
+                                                                     <p style="display: none" id="removed_team_member"></p>
+                                                                    <p>This cannot be
+                                                                        undone, are
+                                                                        you sure ?</p>
+                                                                </div>
+
+                                                            </div>
+
+                                                            <div class="modal-footer">
+                                                                <button type="button"
+                                                                        class="btn btn-white remove-team-member">
+                                                                    Yeah, I'm sure
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="btn btn-link text-white ml-auto"
+                                                                        data-dismiss="modal">
+                                                                    Oh
+                                                                    let me think about it
+                                                                </button>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <div class="col-auto">Admin</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+
+                            {% for email, valid in awaiting_emails %}
+                                <li class="list-group-item px-0">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <!-- Avatar -->
+                                            <a href="#" class="avatar rounded-circle">
+                                                <img alt="Image placeholder" src="">
+                                            </a>
+                                        </div>
+                                        <div class="col ml--2">
+                                            <h4 class="mb-0">{{ email }}</h4>
+                                            {% if valid %}
+                                                <span class="text-warning">●</span>
+                                                <small>Pending</small>
+                                            {% else %}
+                                                <span class="text-danger">●</span>
+                                                <small>Expired</small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-auto">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-neutral delete-invitation">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                        <div class="col-auto">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-primary resend-email">
+                                                Resend
+                                            </button>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="col-xl-8 order-xl-1">
+                <div class="row">
+                    <div class="col-lg-9">
+                        <div class="nav-wrapper">
+                            <ul class="nav nav-pills nav-fill flex-column flex-md-row"
+                                id="tabs-icons-text" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link mb-sm-3 mb-md-0 active"
+                                       id="tabs-icons-text-1-tab" data-toggle="tab"
+                                       href="#tabs-icons-text-1" role="tab"
+                                       aria-controls="tabs-icons-text-1"
+                                       aria-selected="true"><i
+                                            class="ni ni-single-02  mr-2"></i>Profile</a>
+                                </li>
+                                {% if is_team_owner %}
+                                    <li class="nav-item">
+                                        <a class="nav-link mb-sm-3 mb-md-0"
+                                           id="tabs-icons-text-2-tab" data-toggle="tab"
+                                           href="#tabs-icons-text-2" role="tab"
+                                           aria-controls="tabs-icons-text-2"
+                                           aria-selected="false"><i
+                                                class="ni ni-diamond mr-2"></i>Workspace</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link mb-sm-3 mb-md-0"
+                                           id="tabs-icons-text-3-tab" data-toggle="tab"
+                                           href="#tabs-icons-text-3" role="tab"
+                                           aria-controls="tabs-icons-text-3"
+                                           aria-selected="false"><i
+                                                class="ni ni-diamond mr-2"></i>Settings</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card shadow">
+                    <div class="card-body">
+                        <div class="tab-content" id="myTabContent">
+                            <div class="tab-pane fade show active" id="tabs-icons-text-1"
+                                 role="tabpanel"
+                                 aria-labelledby="tabs-icons-text-1-tab">
+                                <form>
+                                    <h6 class="heading-small text-muted mb-4">User
+                                        information</h6>
+                                    <div class="pl-lg-4">
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user-username">
+                                                        Username (readonly)
+                                                    </label>
+                                                    <input type="text"
+                                                           id="user-username"
+                                                           class="form-control"
+                                                           placeholder="Username"
+                                                           disabled
+                                                           value="{{ user_info.username }}">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user-email">
+                                                        Email address
+                                                    </label>
+                                                    <input type="email" id="user-email"
+                                                           class="form-control"
+                                                           placeholder="jesse@example.com"
+                                                           value="{{ user_info.email }}">
+                                                    <div class="invalid-feedback">
+                                                        Email required
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user-first-name">First
+                                                        name</label>
+                                                    <input type="text"
+                                                           id="user-first-name"
+                                                           class="form-control"
+                                                           placeholder="First name"
+                                                           value="{{ user_info.first_name }}">
+                                                    <div class="invalid-feedback">
+                                                       First name required
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user-last-name">Last
+                                                        name</label>
+                                                    <input type="text"
+                                                           id="user-last-name"
+                                                           class="form-control"
+                                                           placeholder="Last name"
+                                                           value="{{ user_info.last_name }}">
+                                                    <div class="invalid-feedback">
+                                                        Last name required
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-4"/>
+                                    <!-- Address -->
+                                    <h6 class="heading-small text-muted mb-4">Contact
+                                        information</h6>
+                                    <div class="pl-lg-4">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user-address">Address</label>
+                                                    <input id="user-address"
+                                                           class="form-control"
+                                                           placeholder="Home Address"
+                                                           value="{{ user_info.address or '' }}"
+                                                           type="text">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-3">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user-city">City</label>
+                                                    <input type="text" id="user-city"
+                                                           class="form-control"
+                                                           placeholder="City"
+                                                           value="{{ user_info.city or '' }}">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user-country">Country</label>
+                                                    <select class="form-control crs-country"
+                                                            data-region-id="user_region_select"
+                                                            data-default-value="{{ user_info.country }}"
+                                                            id="user_country_select">
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user_region_select">
+                                                        State
+                                                    </label>
+                                                    <select class="form-control"
+                                                            id="user_region_select"
+                                                            data-default-value="{{ user_info.state }}">
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3">
+                                                <div class="form-group">
+                                                    <label class="form-control-label"
+                                                           for="user-postal-code">
+                                                        Postal code
+                                                    </label>
+                                                    <input type="text"
+                                                           id="user-postal-code"
+                                                           class="form-control"
+                                                           placeholder="Postal code"
+                                                           value="{{ user_info.postal_code or '' }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-4"/>
+                                    <!-- Description -->
+                                    <h6 class="heading-small text-muted mb-4">About
+                                        me</h6>
+                                    <div class="pl-lg-4">
+                                        <div class="form-group">
+                                            <label class="form-control-label">
+                                                About Me
+                                            </label>
+                                            <textarea id="user-about-me"
+                                                    rows="4" class="form-control"
+                                                   placeholder="A few words about you ...">{{ user_info.about_me or '' }}</textarea>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-icon btn-primary update-user-info" type="button"
+                                            style="float: right">
+                                        <span class="btn-inner--icon">
+                                            <i class="far fa-save"></i>
+                                        </span>
+                                        <span class="btn-inner--text">Save changes</span>
+                                    </button>
+                                </form>
+                            </div>
+                            {% if is_team_owner %}
+                                <div class="tab-pane fade" id="tabs-icons-text-2"
+                                     role="tabpanel"
+                                     aria-labelledby="tabs-icons-text-2-tab">
+                                    <form>
+                                        <h6 class="heading-small text-muted mb-4">Team
+                                            Information</h6>
+                                        <div class="pl-lg-4">
+
+                                            <div class="row" style="padding-top: 10px">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="team_name">Team
+                                                            name</label>
+                                                        <input type="text"
+                                                               id="team_name"
+                                                               class="form-control"
+                                                               placeholder="Team name"
+                                                               value={{ cur_team.team_name }}>
+                                                        <div class="invalid-feedback">
+                                                            Team name required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="business_name">Business
+                                                            name</label>
+                                                        <input type="email" id="business_name"
+                                                               class="form-control"
+                                                               placeholder="Business name"
+                                                               value="{{ cur_team.business_name or '' }}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="team_webiste">Website</label>
+                                                        <input type="text" id="team_website"
+                                                               class="form-control"
+                                                               placeholder="www.xxx.com"
+                                                               value="{{ cur_team.website or '' }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="team_email">
+                                                            Team Email
+                                                        </label>
+                                                        <input type="text"
+                                                               id="team_email"
+                                                               class="form-control"
+                                                               placeholder="jesse@example.com"
+                                                               value="{{ cur_team.team_email or '' }}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr class="my-4"/>
+                                        <button class="btn btn-icon btn-primary update-team-info" type="button"
+                                            style="float: right">
+                                            <span class="btn-inner--icon"><i
+                                                    class="far fa-save"></i></span>
+                                            <span class="btn-inner--text">Save changes</span>
+                                        </button>
+                                        <!-- Address -->
+                                        <h6 class="heading-small text-muted mb-4" style="margin-top: 70px">
+                                            Billing Address
+                                        </h6>
+                                        <div class="pl-lg-4">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="billing-address">Address</label>
+                                                        <input id="billing-address"
+                                                               class="form-control"
+                                                               placeholder="Home Address"
+                                                               value="{{ cus_address.line1 }}"
+                                                               type="text">
+                                                         <div class="invalid-feedback">
+                                                            Address required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-lg-3">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="billing-city">City</label>
+                                                        <input type="text" id="billing-city"
+                                                               class="form-control"
+                                                               placeholder="City"
+                                                               value="{{ cus_address.city }}">
+                                                        <div class="invalid-feedback">
+                                                            City required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="region_select">Country</label>
+                                                        <select class="form-control crs-country"
+                                                                data-region-id="region_select"
+                                                                data-value="shortcode"
+                                                                data-default-value="{{ cus_address.country }}"
+                                                                id="country_select">
+                                                        </select>
+                                                        <div class="invalid-feedback">
+                                                            Country required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="region_select">
+                                                            State
+                                                        </label>
+                                                        <select class="form-control region-selector"
+                                                                id="region_select"
+                                                                data-value="shortcode"
+                                                                data-default-value="{{ cus_address.state }}">
+                                                        </select>
+                                                        <div class="invalid-feedback">
+                                                            State required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <div class="form-group">
+                                                        <label class="form-control-label"
+                                                               for="postal-code">
+                                                            Postal code
+                                                        </label>
+                                                        <input type="text"
+                                                               id="postal-code"
+                                                               class="form-control"
+                                                               placeholder="Postal code"
+                                                               value="{{ cus_address.postal_code }}">
+                                                        <div class="invalid-feedback">
+                                                            Postal code required
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr class="my-4"/>
+                                        <!-- Description -->
+
+                                    </form>
+                                    <button class="btn btn-icon btn-primary update-billing-details" type="button"
+                                            style="float: right">
+                                        <span class="btn-inner--icon"><i
+                                                class="far fa-save"></i></span>
+                                        <span class="btn-inner--text">Save changes</span>
+                                    </button>
+                                </div>
+                                <div class="tab-pane fade" id="tabs-icons-text-3"
+                                     role="tabpanel"
+                                     aria-labelledby="tabs-icons-text-3-tab">
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="card">
+                                                <!-- Card header -->
+                                                <div class="card-header">
+                                                    <h3 class="mb-0">Billing History</h3>
+                                                </div>
+                                                <div class="table-responsive py-4">
+                                                    <table class="table table-flush"
+                                                           id="datatable-buttons">
+                                                        <thead class="thead-light">
+                                                        <tr>
+                                                            <th>Invoice#</th>
+                                                            <th>Plan</th>
+                                                            <th>Issued Date</th>
+                                                            <th>Subscription Cost</th>
+                                                            <th>Business Cases Cost</th>
+                                                            <th>Status</th>
+                                                            <th>Download</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tfoot>
+                                                        <tr>
+                                                            <th>Invoice#</th>
+                                                            <th>Plan</th>
+                                                            <th>Issued Date</th>
+                                                            <th>Subscription Cost</th>
+                                                            <th>Business Cases Cost</th>
+                                                            <th>Status</th>
+                                                            <th>Download</th>
+                                                        </tr>
+                                                        </tfoot>
+                                                        <tbody>
+                                                        {% for invoice in cus_invoices %}
+                                                            <tr>
+                                                                <td>{{ invoice['invoice_id'] }}</td>
+                                                                <td>{{ invoice['plan_name'] }}</td>
+                                                                <td>{{ invoice['date'] }}</td>
+                                                                <td>$599</td>
+                                                                <td>{{ invoice['status'] }}</td>
+                                                                <td>{{ invoice['total'] }}</td>
+                                                                <td>
+                                                                    <a href="{{ invoice['link'] }}"><i
+                                                                            class="ni ni-cloud-download-95"></i></a>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-icon btn-primary" type="button"
+                                            style="float: right"
+                                            data-toggle="notify" data-placement="top"
+                                            data-align="center"
+                                            data-type="success" data-icon="ni ni-bell-55">
+                                        <span class="btn-inner--icon"><i
+                                                class="far fa-save"></i></span>
+                                        <span class="btn-inner--text">Save changes</span>
+                                    </button>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block tail_js %}
+    <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
+    <script src="/static/assets/stylesheets/js/jquery.crs.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            if ('{{ is_team_owner }}' === 'True') {
+                const stripe = Stripe('pk_test_2CT1LvA7viLp1j7yCHJ2MezU00xXxxnRdM');
+                const elements = stripe.elements();
+                const style = {
+                    base: {
+                        iconColor: '#e7eafb',
+                        color: '#fff',
+                        fontFamily: '"Open Sans, sans-serif',
+                        letterSpacing: 'normal',
+                        fontSize: '0.875rem',
+                        '::placeholder': {
+                            color: '#e7eafb'
+                        }
+                    },
+                    invalid: {
+                        color: '#f5365c',
+                        iconColor: '#f5365c'
+                    }
+                };
+                const card = elements.create('card', {iconStyle: "solid", style: style});
+                card.mount('#card-element');
+                card.addEventListener('change', function (event) {
+                    const displayError = document.getElementById('card-errors');
+                    if (event.error) {
+                        displayError.textContent = event.error.message;
+                    } else {
+                        displayError.textContent = '';
+                    }
+                });
+            }
+
+            $('.update-card').click(function () {
+                const name_on_card = $("#name_on_card").val();
+                if (name_on_card === null || name_on_card.length === 0) {
+                    return $("#card-errors").html('Name on card cannot be empty');
+                }
+                stripe.createToken(card, {name: name_on_card}).then(function (result) {
+                    if (result.error) {
+                        // Inform the user if there was an error.
+                        $("#card-errors").html(result.error.message);
+                    } else {
+                        // Send the token to your server.
+                         $(".update-card").replaceWith('<div style="text-align:center"><img src="/static/assets/images/loading.gif" style="width:43px;"></div>');
+                        let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                        $.ajaxSetup({
+                            beforeSend: function (xhr, settings) {
+                                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                                }
+                            }
+                        });
+                        $.ajax({
+                            type: "POST",
+                            url: "{{ url_for('SolarBIBillingView.update_card_info') }}",
+                            data: JSON.stringify({pm_id: result.token.id}),
+                            contentType: 'application/json;charset=UTF-8',
+                            success: function (data) {
+                                if (data.redirect) {
+                                    window.location.replace(data.redirect)
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+
+
+            $('.send-invitation').click(function () {
+                let selected_email = $(".recipient-email").val();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.send_invitation') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                    }
+                });
+            });
+
+            $('.resend-email').click(function () {
+                let selected_email = $(this).parent().prev().prev().children(':first').html();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.resend_email') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                    }
+                });
+            });
+
+            $('.delete-invitation').click(function () {
+                let selected_email = $(this).parent().prev().children(':first').html();
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIRegisterInvitationUserDBView.delete_invitation') }}",
+                    data: JSON.stringify({selected_email: selected_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                    }
+                });
+            });
+
+            $('.update-user-info').click(function () {
+                $(this).attr('disabled', 'disabled');
+                $("#user-email").removeClass('is-invalid');
+                $("#user-first-name").removeClass('is-invalid');
+                $("#user-last-name").removeClass('is-invalid');
+                let form_has_errors = false;
+                if (!$("#user-email").val()) {
+                    form_has_errors = true;
+                    $("#user-email").addClass('is-invalid');
+                }
+                if (!$("#user-first-name").val()) {
+                    form_has_errors = true;
+                    $("#user-first-name").addClass('is-invalid');
+                }
+                if (!$("#user-last-name").val()) {
+                    form_has_errors = true;
+                    $("#user-last-name").addClass('is-invalid');
+                }
+                if (form_has_errors) {
+                    $(this).removeAttr('disabled');
+                    return;
+                }
+                const user_info = {
+                    first_name: $("#user-first-name").val(),
+                    last_name: $("#user-last-name").val(),
+                    email: $("#user-email").val(),
+                    address: $("#user-address").val(),
+                    city: $("#user-city").val(),
+                    country: $("#user_country_select").find(":selected").text(),
+                    state: $("#user_region_select").find(":selected").text(),
+                    postal_code: $("#user-postal-code").val(),
+                    about_me: $("#user-about-me").val(),
+                };
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIModelView.update_user_info') }}",
+                    data: JSON.stringify(user_info),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                    }
+                });
+            });
+
+            $('.update-team-info').click(function () {
+                $(this).attr('disabled', 'disabled');
+                $("#team_name").removeClass('is-invalid');
+                if (!$("#team_name").val()) {
+                    $('.update-team-info').removeAttr('disabled');
+                    return $("#team_name").addClass('is-invalid');
+                }
+                const user_info = {
+                    team_name: $("#team_name").val(),
+                    business_name: $("#business_name").val(),
+                    website: $("#team_website").val(),
+                    team_email: $("#team_email").val(),
+                };
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIModelView.update_team_info') }}",
+                    data: JSON.stringify(user_info),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                    }
+                });
+            });
+
+            $('.update-billing-details').click(function () {
+                $(this).attr('disabled', 'disabled');
+                $("#billing-address").removeClass('is-invalid');
+                $("#billing-city").removeClass('is-invalid');
+                $("#country_select").removeClass('is-invalid');
+                $("#region_select").removeClass('is-invalid');
+                $("#postal-code").removeClass('is-invalid');
+                let billing_form_error = false;
+                if (!$("#billing-address").val()) {
+                    billing_form_error = true;
+                    $("#billing-address").addClass('is-invalid');
+                }
+                if (!$("#billing-city").val()) {
+                    billing_form_error = true;
+                    $("#billing-city").addClass('is-invalid');
+                }
+                if ($("#country_select").find(":selected").text() === 'Select country') {
+                    billing_form_error = true;
+                    $("#country_select").addClass('is-invalid');
+                }
+                if ($("#region_select").find(":selected").text() === '-' ||
+                    $("#region_select").find(":selected").text() === 'Select region') {
+                    billing_form_error = true;
+                    $("#region_select").addClass('is-invalid');
+                }
+                if (!$("#postal-code").val()) {
+                    billing_form_error = true;
+                    $("#postal-code").addClass('is-invalid');
+                }
+                if (billing_form_error) {
+                    $(this).removeAttr('disabled');
+                    return;
+                }
+                const billing_info = {
+                    line1: $("#billing-address").val(),
+                    city: $("#billing-city").val(),
+                    country: $("#country_select").find(":selected").val(),
+                    state: $("#region_select").find(":selected").val(),
+                    postal_code: $("#postal-code").val(),
+                };
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                {#$(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");#}
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIModelView.update_billing_details') }}",
+                    data: JSON.stringify(billing_info),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
+                    }
+                });
+            });
+
+            $('#remove_member').on('show.bs.modal', function (event) {
+              const email = $(event.relatedTarget).data('email')
+              $(this).find('#removed_team_member').html(email)
+            });
+            $('.remove-team-member').click(function () {
+                const team_member_email = $("#removed_team_member").html();
+                console.log(team_member_email);
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIModelView.remove_team_member') }}",
+                    data: JSON.stringify({team_member_email: team_member_email}),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

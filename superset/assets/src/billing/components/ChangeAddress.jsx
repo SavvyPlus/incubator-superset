@@ -19,7 +19,7 @@ const useStyles = makeStyles({
     fontSize: '12px',
   },
   textInput: {
-    fontFamily: 'Montserrat',
+    fontFamily: 'Open Sans, sans-serif',
     fontSize: '1.1em',
   },
   label: {

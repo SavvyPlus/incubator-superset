@@ -52,7 +52,7 @@
     <div class="invite-wrapper">
         {% for col in include_cols %}
             {% set field = form[col] %}
-            {% if field.name not in exclude_cols %}
+            {% if field.name not in exclude_cols and field.name != 'csrf_token' %}
                 {{ field(id='invite_email') }}
             {% endif %}
         {% endfor %}

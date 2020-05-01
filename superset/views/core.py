@@ -22,6 +22,7 @@ from dateutil.relativedelta import relativedelta
 import logging
 import re
 import time
+import itertools
 import requests
 import boto3
 from typing import Dict, List  # noqa: F401
@@ -39,9 +40,11 @@ from flask import (
     Response,
     url_for,
     session,
+    jsonify,
 )
 from flask_appbuilder import expose
 from flask_appbuilder.actions import action
+from flask_appbuilder.urltools import get_order_args, get_page_args, get_page_size_args, get_filter_args
 from flask_appbuilder.models.sqla.filters import FilterEqual, \
     FilterEqualFunction, FilterNotEqual
 from flask_appbuilder.models.sqla.interface import SQLAInterface
@@ -54,9 +57,10 @@ import pandas as pd
 import simplejson as json
 from sqlalchemy import and_, or_, select
 from werkzeug.routing import BaseConverter
-from ..solar.forms import SolarBIListWidget
-from ..solar.models import Plan, TeamSubscription, Team, StripeEvent
-from ..solar.utils import set_session_team, get_session_team, log_to_mp, get_athena_query, send_sendgrid_email
+from ..solar.forms import SolarBIListWidget, SolarBIDashboardListWidget, SolarBIProfileWidget
+from ..solar.models import Plan, TeamSubscription, Team, StripeEvent, TeamRegisterUser
+from ..solar.utils import set_session_team, get_session_team, log_to_mp, \
+    get_athena_query, send_sendgrid_email, update_sg_info
 from superset import (
     app,
     appbuilder,
@@ -111,8 +115,11 @@ from .utils import (
     get_datasource_info,
     get_form_data,
     get_viz,
+    format_datetime,
+    list_object_key,
     get_user_teams,
 )
+from ..solar.utils import update_mp_user
 
 config = app.config
 CACHE_DEFAULT_TIMEOUT = config.get("CACHE_DEFAULT_TIMEOUT", 0)
@@ -427,7 +434,8 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
     base_filters = [['viz_type', FilterEqual, 'solarBI'],
                     ['team_id', FilterEqualFunction, get_team_id]]
                     # ['created_by', FilterEqualFunction, get_user]]
-    base_permissions = ['can_list', 'can_show', 'can_add', 'can_delete', 'can_edit']
+    base_permissions = ['can_list', 'can_show', 'can_add', 'can_delete', 'can_edit',
+                        'can_dashboard', 'can_profile']
 
     search_columns = (
         'slice_name', 'description', 'owners',
@@ -452,6 +460,282 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
     list_template = 'solar/my_data_list.html',
     list_title = 'My Data - SolarBI'
     list_widget = SolarBIListWidget
+
+    dashboard_template = 'solar/my_dashboard.html',
+    dashboard_title = 'My Dashboard - SolarBI'
+    dashboard_widget = SolarBIDashboardListWidget
+
+    profile_template = 'solar/my_profile.html',
+    profile_title = 'My Profile -SolarBI'
+    profile_widget = SolarBIProfileWidget
+
+    @expose('/dashboard')
+    @has_access
+    def dashboard(self):
+
+        for team_role in g.user.team_role:
+            role = team_role.role
+            if role.name == 'Admin':
+                self.remove_filters_for_role(role.name)
+                break
+            else:
+                self.add_filters_for_role(role.name)
+        widgets = self._dashboard()
+        return self.render_template(self.dashboard_template,
+                                    title=self.dashboard_title,
+                                    widgets=widgets)
+
+    def _dashboard(self):
+        if get_order_args().get(self.__class__.__name__):
+            order_column, order_direction = get_order_args().get(
+                self.__class__.__name__
+            )
+        else:
+            order_column, order_direction = "", ""
+        page = get_page_args().get(self.__class__.__name__)
+        page_size = get_page_size_args().get(self.__class__.__name__)
+        get_filter_args(self._filters)
+        widgets = self._get_dashboard_widget(
+            filters=self._filters,
+            order_column=order_column,
+            order_direction=order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        form = self.search_form.refresh()
+        self.update_redirect()
+        return self._get_search_widget(form=form, widgets=widgets)
+
+    def _get_dashboard_widget(
+            self,
+            filters,
+            actions=None,
+            order_column="",
+            order_direction="",
+            page=None,
+            page_size=None,
+            widgets=None,
+            **args
+    ):
+        """ get joined base filter and current active filter for query """
+        # pylint: disable=unpacking-non-sequence
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column, order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count, lst = self.datamodel.query(
+            joined_filters,
+            order_column,
+            order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        pks = self.datamodel.get_keys(lst)
+
+        # serialize composite pks
+        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+
+        all_object_keys = []
+        try:
+            all_object_keys = list_object_key('colin-query-test',
+                                                'TID' + str(get_session_team(
+                                                       self.appbuilder.sm, g.user.id)[
+                                                                   0]) + '/')
+        except Exception:
+            pass
+
+        obj_keys = []
+        avail_object_keys = []
+        if all_object_keys:
+            avail_object_keys = [key for key in all_object_keys if key.endswith('.csv')]
+            obj_keys = [key.split('/')[2].replace('.csv', '') for key in
+                        avail_object_keys]
+
+        # Get current session team
+        session_team = get_session_team(self.appbuilder.sm, g.user.id)
+
+        # Get remaining advance requests in this billing period
+        subscription = self.appbuilder.sm.get_subscription(team_id=session_team[0])
+        remain_advanced_searches = subscription.remain_count
+        # Get the total number of advance requests in the history
+        value_generator = self.datamodel.get_values(lst, self.list_columns)
+        history_advance_count = len([item['slice_query_id'] for item in value_generator
+                                    if item['slice_query_id'] != 'None'])
+        # Get the number of team members
+        cur_team = self.appbuilder.sm.find_team(team_id=session_team[0])
+        awaiting_emails = self.appbuilder.sm.get_awaiting_emails(cur_team)
+        team_users = self.appbuilder.sm.get_team_members(cur_team.id)
+        team_users_count = len(cur_team.users)
+        # Get the number of new team members who joined in this week
+        new_team_users_count = self.appbuilder.sm.get_new_team_users_count(session_team[0])
+        # Get the current plan name
+        plan_name = self.appbuilder.get_session.query(Plan).filter_by(id=subscription.plan).first().plan_name
+
+        widgets["dashboard"] = self.dashboard_widget(
+            appbuilder=self.appbuilder,
+            session_team=session_team,
+            avail_object_keys=avail_object_keys,
+            obj_keys=obj_keys,
+            remain_advanced_searches=remain_advanced_searches,
+            history_advance_count=history_advance_count,
+            team_users_count=team_users_count,
+            new_team_users_count=new_team_users_count,
+            plan_name=plan_name,
+            format_datetime=format_datetime,
+            awaiting_emails=awaiting_emails,
+            team_users=team_users,
+            label_columns=self.label_columns,
+            include_columns=self.list_columns,
+            value_columns=itertools.islice(self.datamodel.get_values(lst, self.list_columns), 5),
+            order_columns=self.order_columns,
+            formatters_columns=self.formatters_columns,
+            page=page,
+            page_size=page_size,
+            count=count,
+            pks=pks,
+            actions=actions,
+            filters=filters,
+            modelview_name=self.__class__.__name__,
+        )
+        return widgets
+
+    @expose('/profile')
+    @has_access
+    def profile(self):
+
+        for team_role in g.user.team_role:
+            role = team_role.role
+            if role.name == 'Admin':
+                self.remove_filters_for_role(role.name)
+                break
+            else:
+                self.add_filters_for_role(role.name)
+        widgets = self._profile()
+        return self.render_template(self.profile_template,
+                                    title=self.profile_title,
+                                    widgets=widgets)
+
+    def _profile(self):
+        if get_order_args().get(self.__class__.__name__):
+            order_column, order_direction = get_order_args().get(
+                self.__class__.__name__
+            )
+        else:
+            order_column, order_direction = "", ""
+        page = get_page_args().get(self.__class__.__name__)
+        page_size = get_page_size_args().get(self.__class__.__name__)
+        get_filter_args(self._filters)
+        widgets = self._get_profile_widget(
+            filters=self._filters,
+            order_column=order_column,
+            order_direction=order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        form = self.search_form.refresh()
+        self.update_redirect()
+        return self._get_search_widget(form=form, widgets=widgets)
+
+    def _get_profile_widget(
+            self,
+            filters,
+            actions=None,
+            order_column="",
+            order_direction="",
+            page=None,
+            page_size=None,
+            widgets=None,
+            **args
+    ):
+        """ get joined base filter and current active filter for query """
+        # pylint: disable=unpacking-non-sequence
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column, order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count, lst = self.datamodel.query(
+            joined_filters,
+            order_column,
+            order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        pks = self.datamodel.get_keys(lst)
+
+        # serialize composite pks
+        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+
+        # Get current session team
+        session_team = get_session_team(self.appbuilder.sm, g.user.id)
+        # Get remaining advance requests in this billing period
+        # subscription = self.appbuilder.sm.get_subscription(team_id=session_team[0])
+        # Get the number of team members
+        cur_team = self.appbuilder.sm.find_team(team_id=session_team[0])
+        awaiting_emails = self.appbuilder.sm.get_awaiting_emails(cur_team)
+        team_users = self.appbuilder.sm.get_team_members(cur_team.id)
+        # Get current user info
+        user_info = self.appbuilder.sm.get_user_by_id(g.user.id)
+        # Get billing info
+        cus_obj = stripe.Customer.retrieve(cur_team.stripe_user_id)
+        cus_name = cus_obj.name
+        cus_email = cus_obj.email
+        cus_address = cus_obj.address
+        cus_invoices = list({'invoice_id': invoice['id'],
+                             'plan_name': self.appbuilder.sm.get_plan_name_by_stripe_id(invoice['lines']['data'][0]['plan']['id']),
+                             'date': datetime.utcfromtimestamp(invoice['created']).strftime("%d/%m/%Y"),
+                             'status': invoice['status'].capitalize(),
+                             'total': '$' + str(int(invoice['total'] / 100)),
+                             'link': invoice['invoice_pdf']} for invoice in stripe.Invoice.list(customer=cus_obj['id']))
+
+        card_info = None
+        card_has_expired = False
+        card_expire_soon = False
+        name_on_card = 'Unknown'
+        if stripe.PaymentMethod.list(customer=cur_team.stripe_user_id, type='card')['data']:
+            credit_card = stripe.PaymentMethod.list(customer=cur_team.stripe_user_id, type='card')['data'][0]
+            card_info = credit_card['card']
+            name_on_card = credit_card['billing_details']['name']
+            one_month_later = str(date.today() + relativedelta(months=1))[:-3]
+            card_expire_date = str(card_info['exp_year']) + '-' + ('0' + str(card_info['exp_month']))[-2:]
+            if str(date.today())[:-3] > card_expire_date:
+                card_has_expired = True
+            elif one_month_later >= card_expire_date:
+                card_expire_soon = True
+
+        widgets["profile"] = self.profile_widget(
+            appbuilder=self.appbuilder,
+            cur_team=cur_team,
+            awaiting_emails=awaiting_emails,
+            session_team=session_team,
+            user_info=user_info,
+            cus_name=cus_name,
+            cus_email=cus_email,
+            cus_address=cus_address,
+            cus_invoices=cus_invoices,
+            card_info=card_info,
+            name_on_card=name_on_card,
+            card_has_expired=card_has_expired,
+            card_expire_soon=card_expire_soon,
+            format_datetime=format_datetime,
+            team_users=team_users,
+            label_columns=self.label_columns,
+            include_columns=self.list_columns,
+            value_columns=itertools.islice(self.datamodel.get_values(lst, self.list_columns), 5),
+            order_columns=self.order_columns,
+            formatters_columns=self.formatters_columns,
+            page=page,
+            page_size=page_size,
+            count=count,
+            pks=pks,
+            actions=actions,
+            filters=filters,
+            modelview_name=self.__class__.__name__,
+        )
+        return widgets
 
     @expose('/list')
     @has_access
@@ -515,7 +799,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         #         continue
         all_object_keys = []
         try:
-            all_object_keys = self.list_object_key('solarbi-saved-radiation',
+            all_object_keys = list_object_key('colin-query-test',
                                                    'TID' + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + '/')
         except Exception:
             pass
@@ -545,47 +829,6 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             modelview_name=self.__class__.__name__,
         )
         return widgets
-
-    def list_object_key(self, bucket, prefix):
-        # AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
-        # AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-        # session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
-        #                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-        # client = session.client('s3', region_name='ap-southeast-2')
-        s3_client = boto3.client('s3')
-        key_list = []
-        response = s3_client.list_objects_v2(
-            Bucket=bucket,
-            Prefix=prefix
-        )
-        contents = None
-        try:
-            contents = response['Contents']
-        except:
-            pass
-
-        is_truncated = response['IsTruncated']
-        for content in contents:
-            try:
-                key_list.append(content['Key'])
-            except:
-                pass
-
-        if is_truncated:
-            cont_token = response['NextContinuationToken']
-        while is_truncated:
-            response = s3_client.list_objects_v2(
-                Bucket=bucket,
-                Prefix=prefix,
-                ContinuationToken=cont_token
-            )
-            contents = response['Contents']
-            is_truncated = response['IsTruncated']
-            for content in contents:
-                key_list.append(content['Key'])
-            if is_truncated:
-                cont_token = response['NextContinuationToken']
-        return sorted(key_list)
 
     def remove_filters_for_role(self, role_name):
         if role_name == 'Admin':
@@ -636,6 +879,21 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
                 # Remove credit card to force update cc for next time
                 team.stripe_pm_id = None
 
+        # Get the saved queries
+        _, lst = self.datamodel.query(
+            self._filters.get_joined_filters(self._base_filters),
+            "",
+            "",
+            page=None,
+            page_size=10,
+        )
+        saved_queries = [{
+            'name': i.data['slice_name'],
+            'address': i.data['form_data']['spatial_address']['address'],
+            'updateDate': i.changed_on.strftime("%m/%d/%Y"),
+            'slice_url': i.slice_url,
+        } for i in lst if i.query_id is None]
+
         entry_point = 'solarBI'
 
         datasource_id = self.get_solar_datasource()
@@ -649,6 +907,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             'common': BaseSupersetView().common_bootstrap_payload(),
             'datasource_id': datasource_id,
             'datasource_type': 'table',
+            'saved_queries': saved_queries,
             'remain_count': subscription.remain_count,
             'plan_id': subscription.plan,
             'remain_days': remain_days,
@@ -695,31 +954,31 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             self.appbuilder.get_session.rollback()
             logging.warning(e)
 
-    @expose('/demo')
-    def demo(self):
-        """Personalized welcome page"""
-
-        if not g.user or not g.user.get_id():
-            return redirect(appbuilder.get_url_for_login)
-
-        entry_point = 'solarBI'
-
-        datasource_id = self.get_solar_datasource()
-
-        payload = {
-            'user': bootstrap_user_data(g.user),
-            'common': BaseSupersetView().common_bootstrap_payload(),
-            'datasource_id': datasource_id,
-            'datasource_type': 'table',
-            'entry': 'demo',
-        }
-
-        return self.render_template(
-            'solar/basic.html',
-            entry=entry_point,
-            title='Demo - SolarBI',
-            bootstrap_data=json.dumps(payload, default=utils.json_iso_dttm_ser),
-        )
+    # @expose('/demo')
+    # def demo(self):
+    #     """Personalized welcome page"""
+    #
+    #     if not g.user or not g.user.get_id():
+    #         return redirect(appbuilder.get_url_for_login)
+    #
+    #     entry_point = 'solarBI'
+    #
+    #     datasource_id = self.get_solar_datasource()
+    #
+    #     payload = {
+    #         'user': bootstrap_user_data(g.user),
+    #         'common': BaseSupersetView().common_bootstrap_payload(),
+    #         'datasource_id': datasource_id,
+    #         'datasource_type': 'table',
+    #         'entry': 'demo',
+    #     }
+    #
+    #     return self.render_template(
+    #         'solar/basic.html',
+    #         entry=entry_point,
+    #         title='Demo - SolarBI',
+    #         bootstrap_data=json.dumps(payload, default=utils.json_iso_dttm_ser),
+    #     )
 
     @expose('/switch_team/<team_id>', methods=['GET'])
     def switch_team(self, team_id):
@@ -733,6 +992,79 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
 
         flash('Team Error', 'danger')
         return redirect("/")
+
+    @expose('/update-user-info/', methods=['POST'])
+    def update_user_info(self):
+        user_info = request.json
+        item = self.appbuilder.sm.get_user_by_id(g.user.id)
+        # Store old email, first name and last name in case they change so we
+        # need to update the Sendgrid info
+        old_email = item.email
+        old_first_name = item.first_name
+        old_last_name = item.last_name
+
+        for name, field in item.__dict__.items():
+            if name in user_info:
+                setattr(item, name, user_info[name])
+
+        self.appbuilder.sm.update_user(item)
+
+        # Update Sendgrid info
+        if old_email != g.user.email:
+            update_sg_info(email_changed=True, old_email=old_email, new_user=g.user)
+        elif old_first_name != g.user.first_name or old_last_name != g.user.last_name:
+            update_sg_info(names_changed=True, new_user=g.user)
+        # Update Mixpanel info
+        update_mp_user(g.user)
+
+        flash('Update personal info success!', 'info')
+        return jsonify(dict(redirect='/solar/profile'))
+
+    @expose('/update-team-info/', methods=['POST'])
+    def update_team_info(self):
+        team_info = request.json
+        # Check if team name has changed. If so, check if it has been used
+        session_team = get_session_team(self.appbuilder.sm, g.user.id)
+        prev_team_name = session_team[1]
+        team_name_changed = False
+        if prev_team_name != team_info['team_name']:
+            team_name_changed = True
+            if self.appbuilder.sm.find_team(team_name=team_info['team_name']) is not None:
+                flash('New team name has been used', 'danger')
+                return jsonify(dict(redirect='/solar/profile'))
+
+        cur_team = self.appbuilder.sm.find_team(team_id=session_team[0])
+        if self.appbuilder.sm.update_team(cur_team, team_info, team_name_changed, prev_team_name):
+            flash('Update team info success!', 'info')
+        else:
+            flash('Update team info failed. Please try again later.', 'danger')
+
+        return jsonify(dict(redirect='/solar/profile'))
+
+    @expose('/update-billing-details/', methods=['POST'])
+    def update_billing_details(self):
+        billing_info = request.json
+        session_team_id = get_session_team(self.appbuilder.sm, g.user.id)[0]
+        cur_team = self.appbuilder.sm.find_team(team_id=session_team_id)
+        _ = stripe.Customer.modify(cur_team.stripe_user_id,
+                                   address={'country': billing_info['country'],
+                                            'state': billing_info['state'],
+                                            'postal_code': billing_info['postal_code'],
+                                            'city': billing_info['city'],
+                                            'line1': billing_info['line1']})
+        flash('Update billing details success!', 'info')
+        return jsonify(dict(redirect='/solar/profile'))
+
+    @expose('/remove-team-member/', methods=['POST'])
+    def remove_team_member(self):
+        team_member_email = request.json['team_member_email']
+        session_team_id = get_session_team(self.appbuilder.sm, g.user.id)[0]
+        if self.appbuilder.sm.remove_team_member(team_member_email, session_team_id):
+            flash('Remove team member success!', 'info')
+            return jsonify(dict(redirect='/solar/dashboard'))
+        else:
+            flash('Unable to remove the team member. Please try again later', 'danger')
+            return jsonify(dict(redirect='/solar/dashboard'))
 
 
 appbuilder.add_view(
@@ -901,6 +1233,16 @@ class SolarBIBillingView(ModelView):
                                             'line1': form_data['line1'], 'line2': form_data['line2']})
 
         return json_success(json.dumps({'msg': 'Successfully changed billing detail!'}))
+
+    @expose('/update-card-info', methods=['POST'])
+    def update_card_info(self):
+        pm_id = request.json['pm_id']
+        if self.update_ccard(pm_id, get_team_id()):
+            flash('Credit card updated successful', 'info')
+            return jsonify(dict(redirect='/solar/profile'))
+        else:
+            flash('Card update failed. Please try again later.', 'danger')
+            return jsonify(dict(redirect='/solar/profile'))
 
     @api
     @handle_api_exception
@@ -1253,6 +1595,226 @@ appbuilder.add_view(
     category_label=__('Billing'),
     category_icon='fa-sun-o',
 )
+
+
+# class SolarBIDashboardView(ModelView):
+#     route_base = '/solarbidashboard'
+#     datamodel = SQLAInterface(models.SolarBISlice)
+#     base_filters = [['viz_type', FilterEqual, 'solarBI'],
+#                     ['team_id', FilterEqualFunction, get_team_id]]
+#     # ['created_by', FilterEqualFunction, get_user]]
+#     # base_permissions = ['can_list', 'can_show', 'can_add', 'can_delete', 'can_edit']
+#
+#     search_columns = (
+#         'slice_name', 'description', 'owners',
+#     )
+#     list_columns = [
+#         'slice_link', 'creator', 'modified', 'view_slice_name', 'view_slice_link',
+#         'slice_query_id', 'slice_download_link', 'slice_id', 'changed_by_name'
+#     ]
+#     edit_columns = [
+#         "slice_name",
+#         "description",
+#         "viz_type",
+#         "owners",
+#         "params",
+#         "cache_timeout",
+#     ]
+#
+#     order_columns = ['modified']
+#
+#     filters_not_for_admin = {}
+#
+#     list_template = 'solar/my_dashboard.html',
+#     list_title = 'My Dashboard - SolarBI'
+#     list_widget = SolarBIDashboardListWidget
+#
+#     @expose('/my-dashboard')
+#     @has_access
+#     def mydashboard(self):
+#
+#         for team_role in g.user.team_role:
+#             role = team_role.role
+#             if role.name == 'Admin':
+#                 self.remove_filters_for_role(role.name)
+#                 break
+#             else:
+#                 self.add_filters_for_role(role.name)
+#         widgets = self._list()
+#         return self.render_template(self.list_template,
+#                                     title=self.list_title,
+#                                     widgets=widgets)
+#
+#     def _get_list_widget(
+#             self,
+#             filters,
+#             actions=None,
+#             order_column="",
+#             order_direction="",
+#             page=None,
+#             page_size=None,
+#             widgets=None,
+#             **args
+#     ):
+#         """ get joined base filter and current active filter for query """
+#         # pylint: disable=unpacking-non-sequence
+#         widgets = widgets or {}
+#         actions = actions or self.actions
+#         page_size = page_size or self.page_size
+#         if not order_column and self.base_order:
+#             order_column, order_direction = self.base_order
+#         joined_filters = filters.get_joined_filters(self._base_filters)
+#         count, lst = self.datamodel.query(
+#             joined_filters,
+#             order_column,
+#             order_direction,
+#             page=page,
+#             page_size=page_size,
+#         )
+#         pks = self.datamodel.get_keys(lst)
+#
+#         # serialize composite pks
+#         pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+#
+#         all_object_keys = []
+#         try:
+#             all_object_keys = self.list_object_key('colin-query-test',
+#                                                    'TID' + str(get_session_team(
+#                                                        self.appbuilder.sm, g.user.id)[
+#                                                                    0]) + '/')
+#         except Exception:
+#             pass
+#
+#         obj_keys = []
+#         avail_object_keys = []
+#         if all_object_keys:
+#             avail_object_keys = [key for key in all_object_keys if key.endswith('.csv')]
+#             obj_keys = [key.split('/')[2].replace('.csv', '') for key in
+#                         avail_object_keys]
+#
+#         # Get current session team
+#         session_team = get_session_team(self.appbuilder.sm, g.user.id)
+#
+#         # Get remaining advance requests in this billing period
+#         subscription = self.appbuilder.sm.get_subscription(team_id=session_team[0])
+#         remain_advanced_searches = subscription.remain_count
+#         # Get the total number of advance requests in the history
+#         value_generator = self.datamodel.get_values(lst, self.list_columns)
+#         history_advance_count = len([item['slice_query_id'] for item in value_generator
+#                                     if item['slice_query_id'] != 'None'])
+#         # Get the number of team members
+#         cur_team = self.appbuilder.sm.find_team(team_id=session_team[0])
+#         awaiting_emails = self.appbuilder.sm.get_awaiting_emails(cur_team)
+#         team_users = self.appbuilder.sm.get_team_members(cur_team.id)
+#         team_users_count = len(cur_team.users)
+#         # Get the number of new team members who joined in this week
+#         new_team_users_count = self.appbuilder.sm.get_new_team_users_count(session_team[0])
+#         # Get the current plan name
+#         plan_name = self.appbuilder.get_session.query(Plan).filter_by(id=subscription.plan).first().plan_name
+#
+#         widgets["list"] = self.list_widget(
+#             appbuilder=self.appbuilder,
+#             session_team=session_team,
+#             avail_object_keys=avail_object_keys,
+#             obj_keys=obj_keys,
+#             remain_advanced_searches=remain_advanced_searches,
+#             history_advance_count=history_advance_count,
+#             team_users_count=team_users_count,
+#             new_team_users_count=new_team_users_count,
+#             plan_name=plan_name,
+#             format_datetime=format_datetime,
+#             awaiting_emails=awaiting_emails,
+#             team_users=team_users,
+#             label_columns=self.label_columns,
+#             include_columns=self.list_columns,
+#             value_columns=itertools.islice(self.datamodel.get_values(lst, self.list_columns), 5),
+#             order_columns=self.order_columns,
+#             formatters_columns=self.formatters_columns,
+#             page=page,
+#             page_size=page_size,
+#             count=count,
+#             pks=pks,
+#             actions=actions,
+#             filters=filters,
+#             modelview_name=self.__class__.__name__,
+#         )
+#         return widgets
+#
+#     def list_object_key(self, bucket, prefix):
+#         AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+#         AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+#         session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
+#                                         aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+#         client = session.client('s3', region_name='ap-southeast-2')
+#         key_list = []
+#         response = client.list_objects_v2(
+#             Bucket=bucket,
+#             Prefix=prefix
+#         )
+#         contents = None
+#         try:
+#             contents = response['Contents']
+#         except:
+#             pass
+#
+#         is_truncated = response['IsTruncated']
+#         for content in contents:
+#             try:
+#                 key_list.append(content['Key'])
+#             except:
+#                 pass
+#
+#         if is_truncated:
+#             cont_token = response['NextContinuationToken']
+#         while is_truncated:
+#             response = client.list_objects_v2(
+#                 Bucket=bucket,
+#                 Prefix=prefix,
+#                 ContinuationToken=cont_token
+#             )
+#             contents = response['Contents']
+#             is_truncated = response['IsTruncated']
+#             for content in contents:
+#                 key_list.append(content['Key'])
+#             if is_truncated:
+#                 cont_token = response['NextContinuationToken']
+#         return sorted(key_list)
+#
+#     def remove_filters_for_role(self, role_name):
+#         if role_name == 'Admin':
+#             self.remove_filter('created_by')
+#
+#     def add_filters_for_role(self, role_name):
+#         if role_name != 'Admin':
+#             self.add_filters('created_by')
+#
+#     def add_filters(self, filter_name):
+#         for f in self.filters_not_for_admin:
+#             if f.column_name == filter_name:
+#                 self._base_filters.filters.append(f)
+#                 self._base_filters.values.append(self.filters_not_for_admin[f])
+#                 del self.filters_not_for_admin[f]
+#                 break
+#
+#     def remove_filter(self, filter_name):
+#         for f in self._base_filters.filters:
+#             if f.column_name == filter_name:
+#                 index_filter = self._base_filters.filters.index(f)
+#                 value = self._base_filters.values[index_filter]
+#                 self.filters_not_for_admin[f] = value
+#                 self._base_filters.filters.remove(f)
+#                 self._base_filters.values.remove(value)
+#
+#
+# appbuilder.add_view(
+#     SolarBIDashboardView,
+#     'Dashboard',
+#     label=__('Dashboard'),
+#     icon='fa-save',
+#     category='Dashboard',
+#     category_label=__('Dashboard'),
+#     category_icon='fa-sun-o',
+# )
 
 
 class SliceAsync(SliceModelView):  # noqa
@@ -4056,6 +4618,7 @@ class Superset(BaseSupersetView):
             'remain_days': remain_days,
             'plan_id': subscription.plan,
             'can_trial': can_trial,
+            'saved_queries': [],
         }
         table_name = datasource.table_name \
             if datasource_type == 'table' \
