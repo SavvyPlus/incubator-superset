@@ -249,11 +249,12 @@
                                                 <button type="button"
                                                         class="btn btn-sm btn-danger"
                                                         data-toggle="modal"
-                                                        data-target="#remove-member">
+                                                        data-target="#remove_member"
+                                                        data-email="{{ email }}">
                                                     Remove
                                                 </button>
                                                 <!-- Modal -->
-                                                <div class="modal fade" id="remove-member"
+                                                <div class="modal fade" id="remove_member"
                                                      tabindex="-1"
                                                      role="dialog"
                                                      aria-labelledby="remove"
@@ -261,9 +262,7 @@
                                                     <div class="modal-dialog modal-danger modal-dialog-centered modal-"
                                                          role="document">
                                                         <div class="modal-content bg-gradient-danger">
-
                                                             <div class="modal-header">
-
                                                                 <button type="button"
                                                                         class="close"
                                                                         data-dismiss="modal"
@@ -277,10 +276,9 @@
                                                                 <div class="py-3 text-center">
                                                                     <i class="ni ni-bell-55 ni-3x"></i>
                                                                     <h4 class="heading mt-4">
-                                                                        You
-                                                                        are about to
-                                                                        remove a team
-                                                                        member!</h4>
+                                                                        You are about to remove a team member!
+                                                                    </h4>
+                                                                     <p style="display: none" id="removed_team_member"></p>
                                                                     <p>This cannot be
                                                                         undone, are
                                                                         you sure ?</p>
@@ -290,7 +288,7 @@
 
                                                             <div class="modal-footer">
                                                                 <button type="button"
-                                                                        class="btn btn-white">
+                                                                        class="btn btn-white remove-team-member">
                                                                     Yeah, I'm sure
                                                                 </button>
                                                                 <button type="button"
@@ -353,7 +351,7 @@
             {% endif %}
             <div class="col-xl-8 order-xl-1">
                 <div class="row">
-                    <div class="col-lg-6">
+                    <div class="col-lg-9">
                         <div class="nav-wrapper">
                             <ul class="nav nav-pills nav-fill flex-column flex-md-row"
                                 id="tabs-icons-text" role="tablist">
@@ -799,34 +797,36 @@
     <script src="/static/assets/stylesheets/js/jquery.crs.min.js"></script>
     <script>
         $(document).ready(function () {
-            const stripe = Stripe('pk_test_2CT1LvA7viLp1j7yCHJ2MezU00xXxxnRdM');
-            const elements = stripe.elements();
-            const style = {
-                base: {
-                    iconColor: '#e7eafb',
-                    color: '#fff',
-                    fontFamily: '"Open Sans, sans-serif',
-                    letterSpacing: 'normal',
-                    fontSize: '0.875rem',
-                    '::placeholder': {
-                        color: '#e7eafb'
+            if ('{{ is_team_owner }}' === 'True') {
+                const stripe = Stripe('pk_test_2CT1LvA7viLp1j7yCHJ2MezU00xXxxnRdM');
+                const elements = stripe.elements();
+                const style = {
+                    base: {
+                        iconColor: '#e7eafb',
+                        color: '#fff',
+                        fontFamily: '"Open Sans, sans-serif',
+                        letterSpacing: 'normal',
+                        fontSize: '0.875rem',
+                        '::placeholder': {
+                            color: '#e7eafb'
+                        }
+                    },
+                    invalid: {
+                        color: '#f5365c',
+                        iconColor: '#f5365c'
                     }
-                },
-                invalid: {
-                    color: '#f5365c',
-                    iconColor: '#f5365c'
-                }
-            };
-            const card = elements.create('card', {iconStyle: "solid", style: style});
-            card.mount('#card-element');
-            card.addEventListener('change', function (event) {
-                const displayError = document.getElementById('card-errors');
-                if (event.error) {
-                    displayError.textContent = event.error.message;
-                } else {
-                    displayError.textContent = '';
-                }
-            });
+                };
+                const card = elements.create('card', {iconStyle: "solid", style: style});
+                card.mount('#card-element');
+                card.addEventListener('change', function (event) {
+                    const displayError = document.getElementById('card-errors');
+                    if (event.error) {
+                        displayError.textContent = event.error.message;
+                    } else {
+                        displayError.textContent = '';
+                    }
+                });
+            }
 
             $('.update-card').click(function () {
                 const name_on_card = $("#name_on_card").val();
@@ -839,8 +839,8 @@
                         $("#card-errors").html(result.error.message);
                     } else {
                         // Send the token to your server.
+                         $(".update-card").replaceWith('<div style="text-align:center"><img src="/static/assets/images/loading.gif" style="width:43px;"></div>');
                         let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-                        $(".update-card").replaceWith('<div style="text-align:center"><img src="/static/assets/images/loading.gif" style="width:43px;"></div>');
                         $.ajaxSetup({
                             beforeSend: function (xhr, settings) {
                                 if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -857,7 +857,6 @@
                                 if (data.redirect) {
                                     window.location.replace(data.redirect)
                                 }
-                                console.log('success')
                             }
                         });
                     }
@@ -868,7 +867,6 @@
             $('.send-invitation').click(function () {
                 let selected_email = $(".recipient-email").val();
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -885,7 +883,6 @@
                         if (data.redirect) {
                             window.location.replace(data.redirect)
                         }
-                        console.log('success')
                     }
                 });
             });
@@ -893,7 +890,6 @@
             $('.resend-email').click(function () {
                 let selected_email = $(this).parent().prev().prev().children(':first').html();
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 28px; margin: 0 15.5px;\">");
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -910,7 +906,6 @@
                         if (data.redirect) {
                             window.location.replace(data.redirect)
                         }
-                        console.log('success')
                     }
                 });
             });
@@ -934,12 +929,15 @@
                         if (data.redirect) {
                             window.location.replace(data.redirect)
                         }
-                        console.log('success')
                     }
                 });
             });
 
             $('.update-user-info').click(function () {
+                $(this).attr('disabled', 'disabled');
+                $("#user-email").removeClass('is-invalid');
+                $("#user-first-name").removeClass('is-invalid');
+                $("#user-last-name").removeClass('is-invalid');
                 let form_has_errors = false;
                 if (!$("#user-email").val()) {
                     form_has_errors = true;
@@ -953,7 +951,10 @@
                     form_has_errors = true;
                     $("#user-last-name").addClass('is-invalid');
                 }
-                if (form_has_errors) return;
+                if (form_has_errors) {
+                    $(this).removeAttr('disabled');
+                    return;
+                }
                 const user_info = {
                     first_name: $("#user-first-name").val(),
                     last_name: $("#user-last-name").val(),
@@ -982,14 +983,16 @@
                         if (data.redirect) {
                             window.location.replace(data.redirect)
                         }
-                        console.log('success')
                     }
                 });
             });
 
             $('.update-team-info').click(function () {
+                $(this).attr('disabled', 'disabled');
+                $("#team_name").removeClass('is-invalid');
                 if (!$("#team_name").val()) {
-                    $("#team_name").addClass('is-invalid');
+                    $('.update-team-info').removeAttr('disabled');
+                    return $("#team_name").addClass('is-invalid');
                 }
                 const user_info = {
                     team_name: $("#team_name").val(),
@@ -998,7 +1001,6 @@
                     team_email: $("#team_email").val(),
                 };
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-                {#$(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");#}
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -1015,12 +1017,12 @@
                         if (data.redirect) {
                             window.location.replace(data.redirect)
                         }
-                        console.log('success')
                     }
                 });
             });
 
             $('.update-billing-details').click(function () {
+                $(this).attr('disabled', 'disabled');
                 $("#billing-address").removeClass('is-invalid');
                 $("#billing-city").removeClass('is-invalid');
                 $("#country_select").removeClass('is-invalid');
@@ -1048,7 +1050,10 @@
                     billing_form_error = true;
                     $("#postal-code").addClass('is-invalid');
                 }
-                if (billing_form_error) return;
+                if (billing_form_error) {
+                    $(this).removeAttr('disabled');
+                    return;
+                }
                 const billing_info = {
                     line1: $("#billing-address").val(),
                     city: $("#billing-city").val(),
@@ -1069,6 +1074,35 @@
                     type: "POST",
                     url: "{{ url_for('SolarBIModelView.update_billing_details') }}",
                     data: JSON.stringify(billing_info),
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function (data) {
+                        if (data.redirect) {
+                            window.location.replace(data.redirect)
+                        }
+                        console.log('success')
+                    }
+                });
+            });
+
+            $('#remove_member').on('show.bs.modal', function (event) {
+              const email = $(event.relatedTarget).data('email')
+              $(this).find('#removed_team_member').html(email)
+            });
+            $('.remove-team-member').click(function () {
+                const team_member_email = $("#removed_team_member").html();
+                console.log(team_member_email);
+                let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('SolarBIModelView.remove_team_member') }}",
+                    data: JSON.stringify({team_member_email: team_member_email}),
                     contentType: 'application/json;charset=UTF-8',
                     success: function (data) {
                         if (data.redirect) {

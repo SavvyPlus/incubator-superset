@@ -59,7 +59,8 @@ from sqlalchemy import and_, or_, select
 from werkzeug.routing import BaseConverter
 from ..solar.forms import SolarBIListWidget, SolarBIDashboardListWidget, SolarBIProfileWidget
 from ..solar.models import Plan, TeamSubscription, Team, StripeEvent, TeamRegisterUser
-from ..solar.utils import set_session_team, get_session_team, log_to_mp, get_athena_query, send_sendgrid_email
+from ..solar.utils import set_session_team, get_session_team, log_to_mp, \
+    get_athena_query, send_sendgrid_email, update_sg_info
 from superset import (
     app,
     appbuilder,
@@ -996,12 +997,26 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
     def update_user_info(self):
         user_info = request.json
         item = self.appbuilder.sm.get_user_by_id(g.user.id)
+        # Store old email, first name and last name in case they change so we
+        # need to update the Sendgrid info
+        old_email = item.email
+        old_first_name = item.first_name
+        old_last_name = item.last_name
+
         for name, field in item.__dict__.items():
             if name in user_info:
                 setattr(item, name, user_info[name])
 
         self.appbuilder.sm.update_user(item)
+
+        # Update Sendgrid info
+        if old_email != g.user.email:
+            update_sg_info(email_changed=True, old_email=old_email, new_user=g.user)
+        elif old_first_name != g.user.first_name or old_last_name != g.user.last_name:
+            update_sg_info(names_changed=True, new_user=g.user)
+        # Update Mixpanel info
         update_mp_user(g.user)
+
         flash('Update personal info success!', 'info')
         return jsonify(dict(redirect='/solar/profile'))
 
@@ -1045,10 +1060,10 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         team_member_email = request.json['team_member_email']
         session_team_id = get_session_team(self.appbuilder.sm, g.user.id)[0]
         if self.appbuilder.sm.remove_team_member(team_member_email, session_team_id):
-            flash('Update billing details success!', 'info')
+            flash('Remove team member success!', 'info')
             return jsonify(dict(redirect='/solar/dashboard'))
         else:
-            flash('Update billing details success!', 'danger')
+            flash('Unable to remove the team member. Please try again later', 'danger')
             return jsonify(dict(redirect='/solar/dashboard'))
 
 

@@ -862,6 +862,8 @@ class CustomSecurityManager(SupersetSecurityManager):
                 for user in awaiting_users:
                     user.team = cur_team.team_name
 
+                stripe.Customer.modify(cur_team.stripe_user_id, description=cur_team.team_name)
+
             set_session_team(cur_team.id, cur_team.team_name)
             self.get_session.commit()
             return True
@@ -884,6 +886,6 @@ class CustomSecurityManager(SupersetSecurityManager):
             engine.execute(d2)
             return True
         except Exception as e:
-            self.get_session.rollback()
             return False
+
 
