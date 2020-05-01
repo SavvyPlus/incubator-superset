@@ -204,7 +204,8 @@ const config = {
           /superset[-]ui.+\/src/,
         ],
         use: [
-          isDevMode ? 'style-loader' : MiniCssExtractPlugin.loader,
+          // isDevMode ? 'style-loader' : MiniCssExtractPlugin.loader,
+          'style-loader',
           'css-loader',
         ],
       },
@@ -212,7 +213,8 @@ const config = {
         test: /\.less$/,
         include: APP_DIR,
         use: [
-          isDevMode ? 'style-loader' : MiniCssExtractPlugin.loader,
+          // isDevMode ? 'style-loader' : MiniCssExtractPlugin.loader,
+          'style-loader',
           'css-loader',
           'less-loader',
         ],
