@@ -119,7 +119,7 @@ function TopNav() {
               >
                 <div className="media align-items-center">
                   <span className="avatar avatar-sm rounded-circle">
-                    <img alt="placeholder" src="/static/assets/images/team-4.jpg" />
+                    <img alt="Avatar" src="https://www.gravatar.com/avatar/{{ email_hash }}" />
                   </span>
                   <div className="media-body  ml-2  d-none d-lg-block">
                     <span className="mb-0 text-sm  font-weight-bold">John Snow</span>

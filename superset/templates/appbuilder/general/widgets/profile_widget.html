@@ -30,9 +30,13 @@
         <div class="container-fluid d-flex align-items-center">
             <div class="row">
                 <div class="col-lg-7 col-md-10">
-                    <a href="#!" class="avatar avatar-xl rounded-circle">
-                        <img alt="Image placeholder" src="/static/assets/images/team-4.jpg">
-                    </a>
+{#                    <label for="image_upload" class="avatar avatar-xl rounded-circle">#}
+{#                    </label>#}
+{#                    <input id="image_upload" type="file" style="display: none"/>#}
+{#                    <img id="blah" src="#" alt="your image" />#}
+                    <span class="avatar avatar-xl rounded-circle">
+                        <img alt="Avatar" src="https://www.gravatar.com/avatar/{{ email_hash }}">
+                    </span>
                     <h1 class="display-2 text-white">Hello User</h1>
                     <p class="text-white mt-0 mb-5">This is your profile page. You can see
                         the You details,
@@ -795,6 +799,7 @@
 {% block tail_js %}
     <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
     <script src="/static/assets/stylesheets/js/jquery.crs.min.js"></script>
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.4/croppie.min.js"></script>#}
     <script>
         $(document).ready(function () {
             if ('{{ is_team_owner }}' === 'True') {
@@ -1113,5 +1118,39 @@
                 });
             });
         });
+
+        {#var $uploadCrop;#}
+        {#$uploadCrop = $('#blah').croppie({#}
+        {#    viewport: {#}
+        {#        width: 270,#}
+        {#        height: 270,#}
+        {#        type: 'circle'#}
+        {#    },#}
+        {#    boundary: {#}
+        {#        width: 450,#}
+        {#        height: 450#}
+        {#    }#}
+        {#});#}
+        {#$("#image_upload").change(function() {#}
+        {#    if (this.files && this.files[0]) {#}
+        {#        var reader = new FileReader();#}
+        {#        reader.onload = function(e) {#}
+        {#            $uploadCrop.croppie('bind', {#}
+        {#                url: e.target.result#}
+        {#            });#}
+        {#            $('#blah').attr('src', e.target.result);#}
+        {#            $('#blah').addClass('ready');#}
+        {#        }#}
+        {#        reader.readAsDataURL(this.files[0]); // convert to base64 string#}
+        {#      }#}
+        {#});#}
+        {#$('.save-result').on('click', function (ev) {#}
+        {#    $uploadCrop.croppie('result', {#}
+        {#        type: 'base64',#}
+        {#        size: 'original'#}
+        {#    }).then(function (res) {#}
+        {#        console.log(res);#}
+        {#    });#}
+        {#});#}
     </script>
 {% endblock %}

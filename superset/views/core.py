@@ -16,6 +16,7 @@
 # under the License.
 # pylint: disable=C,R,W
 import os
+import hashlib
 from contextlib import closing
 from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
@@ -706,6 +707,9 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             elif one_month_later >= card_expire_date:
                 card_expire_soon = True
 
+        # Get Gravatar email hash
+        email_hash = hashlib.md5(g.user.email.encode()).hexdigest()
+
         widgets["profile"] = self.profile_widget(
             appbuilder=self.appbuilder,
             cur_team=cur_team,
@@ -722,6 +726,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             card_expire_soon=card_expire_soon,
             format_datetime=format_datetime,
             team_users=team_users,
+            email_hash=email_hash,
             label_columns=self.label_columns,
             include_columns=self.list_columns,
             value_columns=itertools.islice(self.datamodel.get_values(lst, self.list_columns), 5),
