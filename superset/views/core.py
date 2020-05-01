@@ -539,7 +539,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
 
         all_object_keys = []
         try:
-            all_object_keys = list_object_key('colin-query-test',
+            all_object_keys = list_object_key('solarbi-saved-radiation',
                                                 'TID' + str(get_session_team(
                                                        self.appbuilder.sm, g.user.id)[
                                                                    0]) + '/')
@@ -799,7 +799,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         #         continue
         all_object_keys = []
         try:
-            all_object_keys = list_object_key('colin-query-test',
+            all_object_keys = list_object_key('solarbi-saved-radiation',
                                                    'TID' + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + '/')
         except Exception:
             pass
