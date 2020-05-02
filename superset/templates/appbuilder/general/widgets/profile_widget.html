@@ -927,6 +927,7 @@
             $('.delete-invitation').click(function () {
                 let selected_email = $(this).parent().prev().children(':first').html();
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 28px; margin: 0 15.5px;\">");
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -948,7 +949,6 @@
             });
 
             $('.update-user-info').click(function () {
-                $(this).attr('disabled', 'disabled');
                 $("#user-email").removeClass('is-invalid');
                 $("#user-first-name").removeClass('is-invalid');
                 $("#user-last-name").removeClass('is-invalid');
@@ -966,7 +966,6 @@
                     $("#user-last-name").addClass('is-invalid');
                 }
                 if (form_has_errors) {
-                    $(this).removeAttr('disabled');
                     return;
                 }
                 const user_info = {
@@ -981,6 +980,7 @@
                     about_me: $("#user-about-me").val(),
                 };
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith('<img src="/static/assets/images/loading.gif" style="width: 40px; margin: 0 20px; float: right">')
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -1002,10 +1002,8 @@
             });
 
             $('.update-team-info').click(function () {
-                $(this).attr('disabled', 'disabled');
                 $("#team_name").removeClass('is-invalid');
                 if (!$("#team_name").val()) {
-                    $('.update-team-info').removeAttr('disabled');
                     return $("#team_name").addClass('is-invalid');
                 }
                 const user_info = {
@@ -1015,6 +1013,7 @@
                     team_email: $("#team_email").val(),
                 };
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith('<img src="/static/assets/images/loading.gif" style="width: 40px; margin: 0 20px; float: right">');
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -1036,7 +1035,6 @@
             });
 
             $('.update-billing-details').click(function () {
-                $(this).attr('disabled', 'disabled');
                 $("#billing-address").removeClass('is-invalid');
                 $("#billing-city").removeClass('is-invalid');
                 $("#country_select").removeClass('is-invalid');
@@ -1064,10 +1062,8 @@
                     billing_form_error = true;
                     $("#postal-code").addClass('is-invalid');
                 }
-                if (billing_form_error) {
-                    $(this).removeAttr('disabled');
-                    return;
-                }
+                if (billing_form_error) return;
+
                 const billing_info = {
                     line1: $("#billing-address").val(),
                     city: $("#billing-city").val(),
@@ -1076,7 +1072,7 @@
                     postal_code: $("#postal-code").val(),
                 };
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-                {#$(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");#}
+                $(this).replaceWith('<img src="/static/assets/images/loading.gif" style="width: 40px; margin: 0 20px; float: right">');
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
