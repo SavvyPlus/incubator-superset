@@ -20,6 +20,7 @@ from contextlib import closing
 from copy import copy, deepcopy
 from datetime import datetime, timedelta
 # from dateutil.relativedelta import relativedelta
+import hashlib
 import urllib
 import json
 import logging
@@ -624,6 +625,14 @@ class SolarBISlice(Model, AuditMixinNullable, ImportMixin):
         download_link = self.get_slice_download_link()
         # return Markup(f'<a href="{download_link}">Download Data</a>')
         return Markup(f'{download_link}')
+
+    @property
+    def creator_by_email_hash(self):
+        return Markup(f'{hashlib.md5(self.created_by.email.strip().lower().encode()).hexdigest()}')
+
+    @property
+    def creator_by_id(self):
+        return Markup(f'{self.created_by.id}')
 
     def get_viz(self, force=False):
         """Creates :py:class:viz.BaseViz object from the url_params_multidict.

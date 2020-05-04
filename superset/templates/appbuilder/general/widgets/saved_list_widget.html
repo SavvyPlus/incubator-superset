@@ -21,6 +21,7 @@
 
 {% set is_team_owner = appbuilder.sm.get_role_in_team(g.user, session_team[0]).name == 'team_owner' %}
 {% set download_prefix = "https://colin-query-test.s3-ap-southeast-2.amazonaws.com/" %}
+{% set user_id = g.user.id %}
 
 {% block header %}
     <div class="header bg-primary pb-6">
@@ -40,8 +41,9 @@
                         </nav>
                     </div>
                     <div class="col-lg-6 col-5 text-right">
-                        <a href="search.html" class="btn btn-md btn-neutral">New
-                            Search</a>
+                        <a href="/solar/add" class="btn btn-md btn-neutral">
+                            New Search
+                        </a>
                     </div>
                 </div>
             </div>
@@ -55,17 +57,21 @@
                       style="color: whitesmoke; padding-bottom: 10%"> List By Title</span>
             </div>
             <div class="col-lg-6 col-5" style="padding-left: 16.5%; padding-bottom: 2.5%">
-                <div class="btn-group ">
-                    <button type="button" class="btn  dropdown-toggle"
+                <div class="btn-group">
+                    <button id="data_owners_btn"
+                            type="button" class="btn  dropdown-toggle"
                             data-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="false" style="color: whitesmoke">Owned by Me
+                            aria-expanded="false" style="color: whitesmoke">
+                        Owned by anyone
                     </button>
-                    <div class="dropdown-menu">
+                    <div id="data_owners_dropdown" class="dropdown-menu">
                         <a class="dropdown-item" href="#">Owned by anyone</a>
+                        <a class="dropdown-item" href="#">Owned by me</a>
                         <a class="dropdown-item" href="#">Not owned by me</a>
                     </div>
                 </div>
-                <span class="view-toggler" data-toggle="tooltip" data-placement="right" title="List view"
+                <span class="view-toggler" data-toggle="tooltip" data-placement="right"
+                      title="Toggle view"
                       style="color: whitesmoke;padding-left: 2.5%;">
                     <i class="fas fa-th"></i>
                     <i class="fas fa-list" style="display: none"></i>
@@ -73,15 +79,33 @@
             </div>
         </div>
     </div>
+
+    <form class="navbar-search navbar-search-light form-inline mr-sm-3"
+          id="navbar-search-main">
+        <div class="form-group mb-3" style="margin: auto">
+            <div class="input-group input-group-alternative input-group-merge">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                </div>
+                <input id="searchInput" class="form-control" placeholder="Search"
+                       type="text">
+            </div>
+        </div>
+        <button type="button" class="close" data-action="search-close"
+                data-target="#navbar-search-main"
+                aria-label="Close">
+            <span aria-hidden="true">×</span>
+        </button>
+    </form>
 {% endblock %}
 
 {% block content %}
     <div class="container-fluid">
-        <div class="row data-grid-view">
-            <div class="card-deck" style="padding: 0 100px">
+        {% if value_columns %}
+            <div class="row data-grid-view card-deck" style="padding: 0 100px">
                 {% for item in value_columns %}
                     {% if 'None' not in item['slice_query_id'] %}
-                        <div class="col-lg-3 col-md-6">
+                        <div class="col-lg-3 col-md-6 data-card creator_id_{{ item['creator_by_id'] }}">
                             <div class="card">
                                 <div class="card-body" style="text-align:center">
                                     <div class=" justify-content-between align-items-center">
@@ -90,7 +114,7 @@
                                              alt="Card image cap">
                                         <div class="card-profile-image">
                                             <a href="#">
-                                                <img src="/static/assets/images/team-4.jpg"
+                                                <img src="https://www.gravatar.com/avatar/{{ item['creator_by_email_hash'] }}"
                                                      class="avatar rounded-circle">
                                             </a>
                                         </div>
@@ -107,14 +131,14 @@
                                                 to {{ info[2] }}, {{ info[4] }}</p>
                                         </li>
                                         <li class="list-group-item px-0">
-                                            <button type="button"
-                                                    class="btn btn-primary btn-sm"
-                                                    style="float: left">
-                                                View
-                                            </button>
                                             {% if item['slice_query_id'] in obj_keys %}
                                                 {% for aok in avail_object_keys %}
                                                     {% if item['slice_query_id'] in aok %}
+                                                        <button type="button"
+                                                                class="btn btn-primary btn-sm"
+                                                                style="float: left">
+                                                            View
+                                                        </button>
                                                         <button type="button"
                                                                 style="float: right"
                                                                 class="btn btn-secondary btn-sm"
@@ -124,7 +148,9 @@
                                                     {% endif %}
                                                 {% endfor %}
                                             {% else %}
-                                                <p>Pending</p>
+                                                <p style="margin-bottom: 0">
+                                                    Pending
+                                                </p>
                                             {% endif %}
                                         </li>
                                     </ul>
@@ -134,104 +160,109 @@
                     {% endif %}
                 {% endfor %}
             </div>
-        </div>
 
-        <div class="row data-list-view" style="display: none">
-            <div class="col-lg-9" style="margin: auto">
-                <div class="card">
-                    <div class="table-responsive">
-                        <table class="table align-items-center table-flush">
-                            <thead class="thead-light">
-                            <tr>
-                                <th scope="col" class="sort" data-sort="name">Name</th>
-                                <th scope="col" class="sort" data-sort="address">Address
-                                </th>
-                                <th scope="col" class="sort" data-sort="date">Date</th>
-                                <th scope="col" class="sort" data-sort="status">Status
-                                </th>
-                                <th scope="col" class="sort" data-sort="granularity">
-                                    Granularity
-                                </th>
-                                <th scope="col">Owner</th>
-                                <th scope="col"></th>
-                            </tr>
-                            </thead>
-                            <tbody class="list">
-                            {% for item in value_columns %}
-{#                                {{ item }}#}
-                                {% if 'None' not in item['slice_query_id'] %}
-                                    {% set info1 = item['view_slice_name'].split('_') %}
-                                    <tr>
-                                        <th scope="row">
-                                            <div class="media align-items-center">
-                                                <div class="media-body">
-                                                    <span class="name mb-0 text-sm">Custom Name</span>
+            <div class="row data-list-view" style="display: none">
+                <div class="col-lg-9" style="margin: auto">
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="table align-items-center table-flush">
+                                <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" class="sort" data-sort="name">Name
+                                    </th>
+                                    <th scope="col" class="sort" data-sort="address">
+                                        Address
+                                    </th>
+                                    <th scope="col" class="sort" data-sort="date">Date
+                                    </th>
+                                    <th scope="col" class="sort" data-sort="status">Status
+                                    </th>
+                                    <th scope="col" class="sort" data-sort="granularity">
+                                        Granularity
+                                    </th>
+                                    <th scope="col">Owner</th>
+                                    <th scope="col"></th>
+                                </tr>
+                                </thead>
+                                <tbody class="list">
+                                {% for item in value_columns %}
+                                    {#                                {{ item }}#}
+                                    {% if 'None' not in item['slice_query_id'] %}
+                                        {% set info1 = item['view_slice_name'].split('_') %}
+                                        <tr class="data-card creator_id_{{ item['creator_by_id'] }}">
+                                            <th scope="row">
+                                                <div class="media align-items-center">
+                                                    <div class="media-body">
+                                                        <span class="name mb-0 text-sm">Custom Name</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </th>
-                                        <td class="address">{{ info1[0] }}</td>
-                                        <td class="date">
-                                            {{ info1[1] }} to </br>{{ info1[2] }}
-                                        </td>
-                                        <td>
-                                            {% if item['slice_query_id'] in obj_keys %}
-                                                {% for aok in avail_object_keys %}
-                                                    {% if item['slice_query_id'] in aok %}
-                                                        <span class="badge badge-dot mr-4">
+                                            </th>
+                                            <td class="address">{{ info1[0] }}</td>
+                                            <td class="date">
+                                                {{ info1[1] }} to </br>{{ info1[2] }}
+                                            </td>
+                                            <td>
+                                                {% if item['slice_query_id'] in obj_keys %}
+                                                    {% for aok in avail_object_keys %}
+                                                        {% if item['slice_query_id'] in aok %}
+                                                            <span class="badge badge-dot mr-4">
                                                             <i class="bg-success"></i>
                                                             <span class="status">Completed</span>
                                                         </span>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            {% else %}
-                                                <span class="badge badge-dot mr-4">
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="badge badge-dot mr-4">
                                                     <i class="bg-warning"></i>
                                                     <span class="status">Pending</span>
                                                 </span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="granularity">
-                                            {{ info1[4]|capitalize }}
-                                        </td>
-                                        <td>
-                                            <div class="avatar-group">
-                                                <a href="#"
-                                                   class="avatar avatar-sm rounded-circle"
-                                                   data-toggle="tooltip"
-                                                   data-original-title="{{ item['changed_by_name'] }}">
-                                                    <img alt="Image placeholder"
-                                                         src="/static/assets/images/team-3.jpg">
-                                                </a>
-                                            </div>
-                                        </td>
-                                        <td class="text-right">
-                                            <div class="dropdown">
-                                                <a class="btn btn-sm btn-icon-only text-light"
-                                                   href="#" role="button"
-                                                   data-toggle="dropdown"
-                                                   aria-haspopup="true"
-                                                   aria-expanded="false"
-                                                   style="padding: 10px 0">
-                                                    <i class="fas fa-ellipsis-v"></i>
-                                                </a>
-                                                <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
-                                                    <a class="dropdown-item"
-                                                       href="#">View</a>
-                                                    <a class="dropdown-item"
-                                                       href="#">Download</a>
+                                                {% endif %}
+                                            </td>
+                                            <td class="granularity">
+                                                {{ info1[4]|capitalize }}
+                                            </td>
+                                            <td>
+                                                <div class="avatar-group">
+                                                    <a href="#"
+                                                       class="avatar avatar-sm rounded-circle"
+                                                       data-toggle="tooltip"
+                                                       data-original-title="{{ item['changed_by_name'] }}">
+                                                        <img alt="Image placeholder"
+                                                             src="https://www.gravatar.com/avatar/{{ item['creator_by_email_hash'] }}">
+                                                    </a>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endif %}
-                            {% endfor %}
-                            </tbody>
-                        </table>
+                                            </td>
+                                            <td class="text-right">
+                                                <div class="dropdown">
+                                                    <a class="btn btn-sm btn-icon-only text-light"
+                                                       href="#" role="button"
+                                                       data-toggle="dropdown"
+                                                       aria-haspopup="true"
+                                                       aria-expanded="false"
+                                                       style="padding: 10px 0">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </a>
+                                                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                                                        <a class="dropdown-item"
+                                                           href="#">View</a>
+                                                        <a class="dropdown-item"
+                                                           href="#">Download</a>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
 
+                </div>
             </div>
-        </div>
+        {% else %}
+            <h2 style="text-align: center">No advance request records to display</h2>
+        {% endif %}
     </div>
 {% endblock %}
 
@@ -252,6 +283,33 @@
                     $('.data-list-view').hide();
                     $('.view-toggler .fa-th').show();
                     $('.data-grid-view').show();
+                }
+            });
+
+            $("#searchInput").on("keyup", function () {
+                let value = $(this).val().toLowerCase();
+                $(".data-card").filter(function () {
+                    if ($("#data_owners_btn").text() === 'Owned by me') {
+                        $(this).filter('.creator_id_{{ user_id }}').toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                    } else if ($("#data_owners_btn").text() === 'Not owned by me') {
+                        $(this).filter(':not(.creator_id_{{ user_id }})').toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                    } else {
+                        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                    }
+                });
+            });
+
+            $('#data_owners_dropdown a').click(function () {
+                $("#searchInput").val('');
+                const item = $(this).text();
+
+                $('#data_owners_btn').text(item);
+                if (item === 'Owned by anyone') {
+                    $('.data-card').show();
+                } else if (item === 'Owned by me') {
+                    $('.data-card').show().filter(':not(.creator_id_{{ user_id }})').hide();
+                } else {
+                    $('.data-card').show().filter('.creator_id_{{ user_id }}').hide();
                 }
             });
         });
