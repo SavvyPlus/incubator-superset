@@ -607,7 +607,7 @@ class SolarBISlice(Model, AuditMixinNullable, ImportMixin):
     @property
     def view_slice_name(self):
         name = escape(self.chart)
-        return Markup(f'<p>{name}</p>')
+        return Markup(f'{name}')
 
     @property
     def view_slice_link(self):

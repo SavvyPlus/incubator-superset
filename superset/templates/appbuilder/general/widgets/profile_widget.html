@@ -16,7 +16,7 @@
   specific language governing permissions and limitations
   under the License.
 #}
-{% extends 'appbuilder/general/widgets/profile.html' %}
+{% extends 'appbuilder/general/widgets/solarbi_base.html' %}
 {% import 'appbuilder/general/lib.html' as lib %}
 
 {% set is_team_owner = appbuilder.sm.get_role_in_team(g.user, session_team[0]).name == 'team_owner' %}

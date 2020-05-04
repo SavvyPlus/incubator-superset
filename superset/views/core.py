@@ -574,6 +574,9 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         # Get the current plan name
         plan_name = self.appbuilder.get_session.query(Plan).filter_by(id=subscription.plan).first().plan_name
 
+        # Get Gravatar email hash
+        email_hash = hashlib.md5(g.user.email.strip().lower().encode()).hexdigest()
+
         widgets["dashboard"] = self.dashboard_widget(
             appbuilder=self.appbuilder,
             session_team=session_team,
@@ -587,6 +590,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             format_datetime=format_datetime,
             awaiting_emails=awaiting_emails,
             team_users=team_users,
+            email_hash=email_hash,
             label_columns=self.label_columns,
             include_columns=self.list_columns,
             value_columns=itertools.islice(self.datamodel.get_values(lst, self.list_columns), 5),
@@ -822,7 +826,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
             obj_keys=obj_keys,
             label_columns=self.label_columns,
             include_columns=self.list_columns,
-            value_columns=self.datamodel.get_values(lst, self.list_columns),
+            value_columns=list(self.datamodel.get_values(lst, self.list_columns)),
             order_columns=self.order_columns,
             formatters_columns=self.formatters_columns,
             page=page,

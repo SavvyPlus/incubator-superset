@@ -18345,3 +18345,5 @@ input.datetimepicker[data-color="yellow"] + .bootstrap-datetimepicker-widget {
   border-color: #f5365c; }
 .StripeElement--webkit-autofill {
   background-color: #fefde5 !important; }
+.view-toggler:hover {
+    cursor: pointer; }
