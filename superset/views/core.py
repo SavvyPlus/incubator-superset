@@ -69,6 +69,7 @@ from superset.constants import RouteMethod
 from superset.exceptions import (
     CertificateException,
     DatabaseNotFound,
+    QueryObjectValidationError,
     SupersetException,
     SupersetSecurityException,
     SupersetTimeoutException,
@@ -84,7 +85,7 @@ from superset.security.analytics_db_safety import (
     check_sqlalchemy_uri,
     DBSecurityException,
 )
-from superset.sql_parse import ParsedQuery
+from superset.sql_parse import ParsedQuery, Table
 from superset.sql_validators import get_validator_by_name
 from superset.utils import core as utils, dashboard_import_export
 from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
@@ -653,13 +654,16 @@ class Superset(BaseSupersetView):
         form_data, slc = get_form_data(slice_id, use_slice_data=True)
         datasource_type = slc.datasource.type
         datasource_id = slc.datasource.id
-        viz_obj = get_viz(
-            datasource_type=datasource_type,
-            datasource_id=datasource_id,
-            form_data=form_data,
-            force=False,
-        )
-        return self.generate_json(viz_obj)
+        try:
+            viz_obj = get_viz(
+                datasource_type=datasource_type,
+                datasource_id=datasource_id,
+                form_data=form_data,
+                force=False,
+            )
+            return self.generate_json(viz_obj)
+        except SupersetException as ex:
+            return json_error_response(utils.error_msg_from_exception(ex))
 
     @event_logger.log_this
     @api
@@ -708,19 +712,19 @@ class Superset(BaseSupersetView):
             datasource_id, datasource_type = get_datasource_info(
                 datasource_id, datasource_type, form_data
             )
+
+            viz_obj = get_viz(
+                datasource_type=datasource_type,
+                datasource_id=datasource_id,
+                form_data=form_data,
+                force=force,
+            )
+
+            return self.generate_json(
+                viz_obj, csv=csv, query=query, results=results, samples=samples
+            )
         except SupersetException as ex:
             return json_error_response(utils.error_msg_from_exception(ex))
-
-        viz_obj = get_viz(
-            datasource_type=datasource_type,
-            datasource_id=datasource_id,
-            form_data=form_data,
-            force=force,
-        )
-
-        return self.generate_json(
-            viz_obj, csv=csv, query=query, results=results, samples=samples
-        )
 
     @event_logger.log_this
     @has_access
@@ -1468,7 +1472,7 @@ class Superset(BaseSupersetView):
         except CertificateException as ex:
             logger.info(ex.message)
             return json_error_response(ex.message)
-        except NoSuchModuleError as ex:
+        except (NoSuchModuleError, ModuleNotFoundError) as ex:
             logger.info("Invalid driver %s", ex)
             driver_name = make_url(uri).drivername
             return json_error_response(
@@ -1732,6 +1736,7 @@ class Superset(BaseSupersetView):
             payload.append(d)
         return json_success(json.dumps(payload, default=utils.json_int_dttm_ser))
 
+    @event_logger.log_this
     @api
     @has_access_api
     @expose("/warm_up_cache/", methods=["GET"])
@@ -1786,6 +1791,8 @@ class Superset(BaseSupersetView):
                 .all()
             )
 
+        result = []
+
         for slc in slices:
             try:
                 form_data = get_form_data(slc.id, use_slice_data=True)[0]
@@ -1793,21 +1800,28 @@ class Superset(BaseSupersetView):
                     form_data["extra_filters"] = get_dashboard_extra_filters(
                         slc.id, dashboard_id
                     )
+
                 obj = get_viz(
                     datasource_type=slc.datasource.type,
                     datasource_id=slc.datasource.id,
                     form_data=form_data,
                     force=True,
                 )
-                obj.get_json()
+
+                g.form_data = form_data
+                payload = obj.get_payload()
+                delattr(g, "form_data")
+                error = payload["error"]
+                status = payload["status"]
             except Exception as ex:
-                logger.exception("Failed to warm up cache")
-                return json_error_response(utils.error_msg_from_exception(ex))
-        return json_success(
-            json.dumps(
-                [{"slice_id": slc.id, "slice_name": slc.slice_name} for slc in slices]
+                error = utils.error_msg_from_exception(ex)
+                status = None
+
+            result.append(
+                {"slice_id": slc.id, "viz_error": error, "viz_status": status}
             )
-        )
+
+        return json_success(json.dumps(result))
 
     @has_access_api
     @expose("/favstar/<class_name>/<obj_id>/<action>/")
@@ -2162,7 +2176,9 @@ class Superset(BaseSupersetView):
         schema = utils.parse_js_uri_path_item(schema, eval_undefined=True)
         table_name = utils.parse_js_uri_path_item(table_name)
         # Check that the user can access the datasource
-        if not self.appbuilder.sm.can_access_datasource(database, table_name, schema):
+        if not self.appbuilder.sm.can_access_datasource(
+            database, Table(table_name, schema), schema
+        ):
             stats_logger.incr(
                 f"deprecated.{self.__class__.__name__}.select_star.permission_denied"
             )

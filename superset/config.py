@@ -286,8 +286,11 @@ DEFAULT_FEATURE_FLAGS = {
     "ENABLE_EXPLORE_JSON_CSRF_PROTECTION": False,
     "KV_STORE": False,
     "PRESTO_EXPAND_DATA": False,
-    "REDUCE_DASHBOARD_BOOTSTRAP_PAYLOAD": False,
+    # Exposes API endpoint to compute thumbnails
+    "THUMBNAILS": False,
+    "REDUCE_DASHBOARD_BOOTSTRAP_PAYLOAD": True,
     "SHARE_QUERIES_VIA_KV_STORE": False,
+    "SIP_38_VIZ_REARCHITECTURE": False,
     "TAGGING_SYSTEM": False,
     "SQLLAB_BACKEND_PERSISTENCE": False,
     "LIST_VIEWS_NEW_UI": False,
@@ -312,6 +315,11 @@ FEATURE_FLAGS: Dict[str, bool] = {}
 #     return feature_flags_dict
 GET_FEATURE_FLAGS_FUNC: Optional[Callable[[Dict[str, bool]], Dict[str, bool]]] = None
 
+# ---------------------------------------------------
+# Thumbnail config (behind feature flag)
+# ---------------------------------------------------
+THUMBNAIL_SELENIUM_USER = "Admin"
+THUMBNAIL_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
 # ---------------------------------------------------
 # Image and file configuration

@@ -30,6 +30,12 @@ SUPERSET_WEBSERVER_PORT = 8081
 if "SUPERSET__SQLALCHEMY_DATABASE_URI" in os.environ:
     SQLALCHEMY_DATABASE_URI = os.environ["SUPERSET__SQLALCHEMY_DATABASE_URI"]
 
+if "sqlite" in SQLALCHEMY_DATABASE_URI:
+    logger.warning(
+        "SQLite Database support for metadata databases will be \
+        removed in a future version of Superset."
+    )
+
 SQL_MAX_ROW = 666
 SQLLAB_CTAS_NO_LIMIT = True  # SQL_MAX_ROW will not take affect for the CTA queries
 FEATURE_FLAGS = {"foo": "bar", "KV_STORE": True, "SHARE_QUERIES_VIA_KV_STORE": True}
@@ -46,12 +52,15 @@ WTF_CSRF_ENABLED = False
 PUBLIC_ROLE_LIKE_GAMMA = True
 AUTH_ROLE_PUBLIC = "Public"
 EMAIL_NOTIFICATIONS = False
+ENABLE_ROW_LEVEL_SECURITY = True
 
 CACHE_CONFIG = {"CACHE_TYPE": "simple"}
 
 
 class CeleryConfig(object):
-    BROKER_URL = "redis://localhost"
+    BROKER_URL = "redis://{}:{}".format(
+        os.environ.get("REDIS_HOST", "localhost"), os.environ.get("REDIS_PORT", "6379")
+    )
     CELERY_IMPORTS = ("superset.sql_lab",)
     CELERY_ANNOTATIONS = {"sql_lab.add": {"rate_limit": "10/s"}}
     CONCURRENCY = 1

@@ -21,11 +21,10 @@
 
 import React from 'react';
 import { t } from '@superset-ui/translation';
+import { validateNonEmpty } from '@superset-ui/validator';
 import ColumnOption from '../../components/ColumnOption';
 import { D3_FORMAT_OPTIONS, columnChoices, PRIMARY_COLOR } from '../controls';
 import { DEFAULT_VIEWPORT } from '../../explore/components/controls/ViewportControl';
-
-import { nonEmpty } from '../validators';
 
 const timeColumnOption = {
   verbose_name: 'Time',
@@ -230,7 +229,7 @@ export const lineColumn = {
     mapStateToProps: state => ({
       choices: columnChoices(state.datasource),
     }),
-    validators: [nonEmpty],
+    validators: [validateNonEmpty],
   },
 };
 
@@ -336,7 +335,7 @@ export const spatial = {
   config: {
     type: 'SpatialControl',
     label: t('Longitude & Latitude'),
-    validators: [nonEmpty],
+    validators: [validateNonEmpty],
     description: t('Point to your spatial columns'),
     mapStateToProps: state => ({
       choices: columnChoices(state.datasource),
@@ -391,5 +390,25 @@ export const reverseLongLat = {
     type: 'CheckboxControl',
     label: t('Reverse Lat & Long'),
     default: false,
+  },
+};
+
+export const mapboxStyle = {
+  name: 'mapbox_style',
+  config: {
+    type: 'SelectControl',
+    label: t('Map Style'),
+    clearable: false,
+    renderTrigger: true,
+    choices: [
+      ['mapbox://styles/mapbox/streets-v9', 'Streets'],
+      ['mapbox://styles/mapbox/dark-v9', 'Dark'],
+      ['mapbox://styles/mapbox/light-v9', 'Light'],
+      ['mapbox://styles/mapbox/satellite-streets-v9', 'Satellite Streets'],
+      ['mapbox://styles/mapbox/satellite-v9', 'Satellite'],
+      ['mapbox://styles/mapbox/outdoors-v9', 'Outdoors'],
+    ],
+    default: 'mapbox://styles/mapbox/light-v9',
+    description: t('Base layer map style'),
   },
 };
