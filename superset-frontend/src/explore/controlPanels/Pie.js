@@ -17,6 +17,8 @@
  * under the License.
  */
 import { t } from '@superset-ui/translation';
+import { showLegend } from './Shared_NVD3';
+import { D3_FORMAT_OPTIONS } from '../controls';
 
 export default {
   controlPanelSections: [
@@ -52,7 +54,23 @@ export default {
               description: t('What should be shown on the label?'),
             },
           },
-          'number_format',
+          {
+            name: 'number_format',
+            config: {
+              type: 'SelectControl',
+              freeForm: true,
+              label: t('Number format'),
+              renderTrigger: true,
+              default: 'SMART_NUMBER',
+              choices: D3_FORMAT_OPTIONS,
+              description:
+                t('D3 format syntax: https://github.com/d3/d3-format') +
+                ' ' +
+                t(
+                  'Only applies when the "Label Type" is not set to a percentage.',
+                ),
+            },
+          },
         ],
         [
           {
@@ -65,10 +83,22 @@ export default {
               description: t('Do you want a donut or a pie?'),
             },
           },
-          'show_legend',
+          showLegend,
         ],
         [
-          'show_labels',
+          {
+            name: 'show_labels',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Show Labels'),
+              renderTrigger: true,
+              default: true,
+              description: t(
+                'Whether to display the labels. Note that the label only displays when the the 5% ' +
+                  'threshold.',
+              ),
+            },
+          },
           {
             name: 'labels_outside',
             config: {
@@ -87,12 +117,6 @@ export default {
   controlOverrides: {
     row_limit: {
       default: 25,
-    },
-    number_format: {
-      description:
-        t('D3 format syntax: https://github.com/d3/d3-format') +
-        ' ' +
-        t('Only applies when the "Label Type" is not set to a percentage.'),
     },
   },
 };

@@ -238,6 +238,8 @@ class AssumptionModelView(SupersetModelView):
     order_columns = ['name']
     list_columns = ['name', 'status', 'status_detail', 'download_link']
     label_columns = {'name':'Name','status':'Status','status_detail':'Status Detail', 'download_link':'Download'}
+    edit_exclude_columns = ['status','status_detail','download_link']
+    show_exclude_columns = ['download_link']
 
 
 class SimulationModelView(
@@ -248,6 +250,8 @@ class SimulationModelView(
     include_route_methods = RouteMethod.CRUD_SET
 
     list_columns = ['run_id', 'name','assumption', 'status']
+    add_exclude_columns = ['status','status_detail']
+    label_columns = {'run_no':'No. of simulation run'}
 
     @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):

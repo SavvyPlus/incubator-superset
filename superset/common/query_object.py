@@ -16,20 +16,39 @@
 # under the License.
 # pylint: disable=R
 import hashlib
+import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 import simplejson as json
 from flask_babel import gettext as _
 from pandas import DataFrame
 
-from superset import app
+from superset import app, is_feature_enabled
 from superset.exceptions import QueryObjectValidationError
 from superset.utils import core as utils, pandas_postprocessing
 from superset.views.utils import get_time_range_endpoints
 
+logger = logging.getLogger(__name__)
+
 # TODO: Type Metrics dictionary with TypedDict when it becomes a vanilla python type
 #  https://github.com/python/mypy/issues/5288
+
+
+class DeprecatedField(NamedTuple):
+    old_name: str
+    new_name: str
+
+
+DEPRECATED_FIELDS = (
+    DeprecatedField(old_name="granularity_sqla", new_name="granularity"),
+)
+
+DEPRECATED_EXTRAS_FIELDS = (
+    DeprecatedField(old_name="where", new_name="where"),
+    DeprecatedField(old_name="having", new_name="having"),
+    DeprecatedField(old_name="having_filters", new_name="having_druid"),
+)
 
 
 class QueryObject:
@@ -38,15 +57,15 @@ class QueryObject:
     and druid. The query objects are constructed on the client.
     """
 
-    granularity: str
+    granularity: Optional[str]
     from_dttm: datetime
     to_dttm: datetime
     is_timeseries: bool
     time_shift: Optional[timedelta]
     groupby: List[str]
-    metrics: List[Union[Dict, str]]
+    metrics: List[Union[Dict[str, Any], str]]
     row_limit: int
-    filter: List[str]
+    filter: List[Dict[str, Any]]
     timeseries_limit: int
     timeseries_limit_metric: Optional[Dict]
     order_desc: bool
@@ -57,10 +76,10 @@ class QueryObject:
 
     def __init__(
         self,
-        granularity: str,
-        metrics: List[Union[Dict, str]],
+        granularity: Optional[str] = None,
+        metrics: Optional[List[Union[Dict[str, Any], str]]] = None,
         groupby: Optional[List[str]] = None,
-        filters: Optional[List[str]] = None,
+        filters: Optional[List[Dict[str, Any]]] = None,
         time_range: Optional[str] = None,
         time_shift: Optional[str] = None,
         is_timeseries: bool = False,
@@ -72,21 +91,28 @@ class QueryObject:
         columns: Optional[List[str]] = None,
         orderby: Optional[List[List]] = None,
         post_processing: Optional[List[Dict[str, Any]]] = None,
-        relative_start: str = app.config["DEFAULT_RELATIVE_START_TIME"],
-        relative_end: str = app.config["DEFAULT_RELATIVE_END_TIME"],
+        **kwargs: Any,
     ):
+        metrics = metrics or []
+        extras = extras or {}
+        is_sip_38 = is_feature_enabled("SIP_38_VIZ_REARCHITECTURE")
         self.granularity = granularity
         self.from_dttm, self.to_dttm = utils.get_since_until(
-            relative_start=relative_start,
-            relative_end=relative_end,
+            relative_start=extras.get(
+                "relative_start", app.config["DEFAULT_RELATIVE_START_TIME"]
+            ),
+            relative_end=extras.get(
+                "relative_end", app.config["DEFAULT_RELATIVE_END_TIME"]
+            ),
             time_range=time_range,
             time_shift=time_shift,
         )
         self.is_timeseries = is_timeseries
         self.time_range = time_range
         self.time_shift = utils.parse_human_timedelta(time_shift)
-        self.groupby = groupby or []
         self.post_processing = post_processing or []
+        if not is_sip_38:
+            self.groupby = groupby or []
 
         # Temporary solution for backward compatibility issue due the new format of
         # non-ad-hoc metric which needs to adhere to superset-ui per
@@ -101,13 +127,53 @@ class QueryObject:
         self.timeseries_limit = timeseries_limit
         self.timeseries_limit_metric = timeseries_limit_metric
         self.order_desc = order_desc
-        self.extras = extras or {}
+        self.extras = extras
 
         if app.config["SIP_15_ENABLED"] and "time_range_endpoints" not in self.extras:
             self.extras["time_range_endpoints"] = get_time_range_endpoints(form_data={})
 
         self.columns = columns or []
+        if is_sip_38 and groupby:
+            self.columns += groupby
+            logger.warning(
+                f"The field `groupby` is deprecated. Viz plugins should "
+                f"pass all selectables via the `columns` field"
+            )
+
         self.orderby = orderby or []
+
+        # rename deprecated fields
+        for field in DEPRECATED_FIELDS:
+            if field.old_name in kwargs:
+                logger.warning(
+                    f"The field `{field.old_name}` is deprecated, please use "
+                    f"`{field.new_name}` instead."
+                )
+                value = kwargs[field.old_name]
+                if value:
+                    if hasattr(self, field.new_name):
+                        logger.warning(
+                            f"The field `{field.new_name}` is already populated, "
+                            f"replacing value with contents from `{field.old_name}`."
+                        )
+                    setattr(self, field.new_name, value)
+
+        # move deprecated extras fields to extras
+        for field in DEPRECATED_EXTRAS_FIELDS:
+            if field.old_name in kwargs:
+                logger.warning(
+                    f"The field `{field.old_name}` is deprecated and should be "
+                    f"passed to `extras` via the `{field.new_name}` property."
+                )
+                value = kwargs[field.old_name]
+                if value:
+                    if hasattr(self.extras, field.new_name):
+                        logger.warning(
+                            f"The field `{field.new_name}` is already populated in "
+                            f"`extras`, replacing value with contents "
+                            f"from `{field.old_name}`."
+                        )
+                    self.extras[field.new_name] = value
 
     def to_dict(self) -> Dict[str, Any]:
         query_object_dict = {
@@ -115,7 +181,6 @@ class QueryObject:
             "from_dttm": self.from_dttm,
             "to_dttm": self.to_dttm,
             "is_timeseries": self.is_timeseries,
-            "groupby": self.groupby,
             "metrics": self.metrics,
             "row_limit": self.row_limit,
             "filter": self.filter,
@@ -126,6 +191,9 @@ class QueryObject:
             "columns": self.columns,
             "orderby": self.orderby,
         }
+        if not is_feature_enabled("SIP_38_VIZ_REARCHITECTURE"):
+            query_object_dict["groupby"] = self.groupby
+
         return query_object_dict
 
     def cache_key(self, **extra: Any) -> str:

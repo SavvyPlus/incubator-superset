@@ -83,6 +83,7 @@ adjusted_offerbands_v8_5_mins_path = 'nem-pricing-v2/adjusted_offerbands_v8_5_mi
 adjusted_offerbands_v9_5_mins_path = 'nem-pricing-v2/adjusted_offerbands_v9_5_mins/{}.pickle'  # date
 adjusted_offerbands_v9a_5_mins_path = 'nem-pricing-v2/adjusted_offerbands_v9a_5_mins/{}.pickle'  # date, v8, use savvy demand
 adjusted_offerbands_v9b_5_mins_path = 'nem-pricing-v2/adjusted_offerbands_v9b_5_mins/{}.pickle'  # date, v8, use total demand
+adjusted_offerbands_v9c_5_mins_path = 'nem-pricing-v2/adjusted_offerbands_v9c_5_mins/{}.pickle'  # date, v8, use total demand
 
 actual_spot_path = 'nem-pricing-v2/actual_spot_price/{}.pickle'  # date
 actual_spot_5_mins_path = 'nem-pricing-v2/actual_spot_price_5_mins/{}.pickle'  # date
@@ -92,6 +93,7 @@ actual_total_demand_5_mins_path = 'nem-pricing-v2/actual_total_demand_5_mins/{}.
 savvy_demand_path = 'nem-pricing-v2/savvy_demand/{}.pickle'  # date
 
 all_generation_source_info_path = 'nem-pricing-v2/source_information/all_generation_source.pickle'
+units_by_fuel_type_info_path = 'nem-pricing-v2/source_information/units_by_fuel.pickle'
 all_plants_from_csv_info_path = 'nem-pricing-v2/source_information/all_plants_from_csv.pickle'
 all_units_info_in_DUDETAIL_path = 'nem-pricing-v2/source_information/all_units_info_in_DUDETAIL.pickle'  # date
 all_units_list_in_offerbands_path = 'nem-pricing-v2/source_information/all_units_list_in_offerbands.pickle'  # date
@@ -100,7 +102,7 @@ all_units_list_in_offerbands_path = 'nem-pricing-v2/source_information/all_units
 excel_path = 'assumption-excel/{}.xlsx'
 
 # S3 pickle cache path
-reference_date_s3_pickle_path = 'reference_date/test_2017to2027/{}.pickle'  # index
+reference_date_s3_pickle_path = 'reference_date/test_2017to2025/{}.pickle'  # index
 
 pv_data_s3_pickle_path = 'cache/{}/pv.pickle'    # assumptions version
 pv_forecast_s3_new_pickle_path = 'cache/{}/pv_forecast.pickle'
@@ -109,6 +111,7 @@ new_projects_pickle_path = 'cache/{}/new_projects.pickle'
 retirement_s3_pickle_path = 'cache/{}/retirement.pickle'
 demand_growth_rate_s3_pickle_path = 'cache/{}/demand_growth_rate.pickle'
 renewable_proportion_s3_pickle_path = 'cache/{}/renewable_proportion.pickle'
+small_battery_capacity_s3_pickle_path = 'cache/{}/small_battery_capacity.pickle'
 projects_gen_data_s3_pickle_path = 'cache/{}/historical_generation/{}.pickle'    # assumptions version, date
 
 parameters_for_batch = 'cache/{}/parameters_for_batch.pickle'
