@@ -214,13 +214,14 @@ def format_datetime(value, dt_format='%Y-%m-%d'):
 
 
 def list_object_key(bucket, prefix):
-    AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
-    AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-    session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-    client = session.client('s3', region_name='ap-southeast-2')
+    # AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+    # AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+    # session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
+    #                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    # client = session.client('s3', region_name='ap-southeast-2')
+    s3_client = boto3.client('s3')
     key_list = []
-    response = client.list_objects_v2(
+    response = s3_client.list_objects_v2(
         Bucket=bucket,
         Prefix=prefix
     )
@@ -240,7 +241,7 @@ def list_object_key(bucket, prefix):
     if is_truncated:
         cont_token = response['NextContinuationToken']
     while is_truncated:
-        response = client.list_objects_v2(
+        response = s3_client.list_objects_v2(
             Bucket=bucket,
             Prefix=prefix,
             ContinuationToken=cont_token
