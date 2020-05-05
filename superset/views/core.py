@@ -442,9 +442,10 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         'slice_name', 'description', 'owners',
     )
     list_columns = [
-        'slice_link', 'creator', 'modified', 'view_slice_name', 'view_slice_link', 'slice_query_id',
-        'slice_download_link', 'slice_id', 'changed_by_name', 'creator_by_email_hash',
-        'creator_by_id'
+        'slice_link', 'creator', 'modified', 'view_slice_name', 'view_slice_link',
+        'slice_query_id', 'slice_download_link', 'slice_id', 'changed_by_name',
+        'creator_by_email_hash', 'creator_by_id', 'slice_start_date', 'slice_end_date',
+        'slice_address', 'slice_resolution'
     ]
     edit_columns = [
         "slice_name",
@@ -2558,6 +2559,7 @@ class Superset(BaseSupersetView):
 
         This endpoint evolved to be the entry point of many different
         requests that GETs or POSTs a form_data."""
+        print('123123123')
         try:
             # Check whether the team has available requests. If there is no remaining request, then return an
             # error json message, otherwise subtract the remaining requests by 1
@@ -2611,8 +2613,7 @@ class Superset(BaseSupersetView):
             # Save the query details in the database
             form_data = get_form_data()[0]
             args = {'action': 'saveas',
-                    'slice_name': address_name + '_' + form_data['startDate'] + '_' +
-                                  form_data['endDate'] + '_both_' + resolution}
+                    'slice_name': 'Custom Name'}
             datasource = ConnectorRegistry.get_datasource(
                 form_data['datasource_type'], form_data['datasource_id'], db.session)
             self.save_or_overwrite_solarbislice(args, None, True, None, False, form_data['datasource_id'],
@@ -2620,7 +2621,10 @@ class Superset(BaseSupersetView):
                                                 # query_id=response['QueryExecutionId'],
                                                 query_id=response['query_id'],
                                                 start_date=form_data['startDate'],
-                                                end_date=form_data['endDate'], data_type='both', resolution=resolution)
+                                                end_date=form_data['endDate'],
+                                                data_type='both',
+                                                resolution=resolution,
+                                                address=address_name)
 
             # After data request success and save db success, send user a job received email
             self.send_email(g.user, address_name)
@@ -4452,6 +4456,7 @@ class Superset(BaseSupersetView):
         end_date=None,
         data_type=None,
         resolution=None,
+        address=None,
     ):
         """Save or overwrite a slice"""
         slice_name = args.get("slice_name")
@@ -4477,13 +4482,15 @@ class Superset(BaseSupersetView):
             slc.valid_date = datetime.now() + timedelta(hours=24*31*12*99)
             slc.query_id = query_id
         if start_date:
-            slc.start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            slc.start_date = start_date
         if end_date:
-            slc.end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            slc.end_date = end_date
         if data_type:
             slc.data_type = data_type
         if resolution:
             slc.resolution = resolution
+        if address:
+            slc.address = address
 
         if action in ("saveas") and slice_add_perm:
             self.save_slice(slc, paid=slc.paid)
