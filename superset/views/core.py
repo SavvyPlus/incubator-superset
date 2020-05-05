@@ -541,7 +541,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
 
         all_object_keys = []
         try:
-            all_object_keys = list_object_key('solarbi-saved-radiation',
+            all_object_keys = list_object_key('colin-query-test',
                                                 'TID' + str(get_session_team(
                                                        self.appbuilder.sm, g.user.id)[
                                                                    0]) + '/')
@@ -809,7 +809,7 @@ class SolarBIModelView(SupersetModelView, DeleteMixin):
         #         continue
         all_object_keys = []
         try:
-            all_object_keys = list_object_key('solarbi-saved-radiation',
+            all_object_keys = list_object_key('colin-query-test',
                                                    'TID' + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + '/')
         except Exception:
             pass
@@ -2578,7 +2578,7 @@ class Superset(BaseSupersetView):
             else:
                 capacity_list = ", 'capacity': [" + cap1 + ", " + cap2 + ", " + cap3
             payload = "{'start_date': '" + start_date + "', 'end_date': '" + end_date + "', 'lat': " + lat + \
-                      ", 'lng': " + lng + ", 'bucket': 'solarbi-saved-radiation', " \
+                      ", 'lng': " + lng + ", 'bucket': 'colin-query-test', " \
                       "'team_id': '" + str(get_session_team(self.appbuilder.sm, g.user.id)[0]) + \
                       "', 'email': '" + g.user.email + "', 'resolution': '" + resolution + \
                       "', 'generation': " + generation + capacity_list + \
