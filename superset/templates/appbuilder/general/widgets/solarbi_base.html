@@ -104,7 +104,9 @@
                                         <div class="col ml--2">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div>
-                                                    <h4 class="mb-0 text-sm">John Snow</h4>
+                                                    <h4 class="mb-0 text-sm">
+                                                        {{ g.user.first_name }} {{ g.user.last_name }}
+                                                    </h4>
                                                 </div>
                                                 <div class="text-right text-muted">
                                                     <small>5 hrs ago</small>
@@ -126,10 +128,12 @@
                         <a class="nav-link pr-0" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <div class="media align-items-center">
                                 <span class="avatar avatar-sm rounded-circle">
-                                   <img alt="Image placeholder" src="/static/assets/images/team-4.jpg">
+                                   <img alt="Avatar" src="https://www.gravatar.com/avatar/{{ email_hash }}">
                                 </span>
                                 <div class="media-body  ml-2  d-none d-lg-block">
-                                    <span class="mb-0 text-sm  font-weight-bold">John Snow</span>
+                                    <span class="mb-0 text-sm  font-weight-bold">
+                                        {{ g.user.first_name }} {{ g.user.last_name }}
+                                    </span>
                                 </div>
                             </div>
                         </a>
@@ -165,36 +169,8 @@
 {% block header %}
 {% endblock %}
 
-{% block begin_tables %}
-{% endblock %}
-
-{% block table_row_1 %}
-{% endblock %}
-
-{% block table_row_2 %}
-{% endblock %}
-
-{% block end_tables %}
+{% block content %}
 {% endblock %}
 
 {% block tail_js %}
 {% endblock %}
-{#{% if count > 0 %}#}
-{#    {% block begin_content scoped %}#}
-{#    {% endblock %}#}
-{##}
-{#    {% block begin_loop_header scoped %}#}
-{#    {% endblock %}#}
-{##}
-{#    {% block begin_loop_values %}#}
-{#    {% endblock %}#}
-{##}
-{#    {% block end_content scoped %}#}
-{#    {% endblock %}#}
-{##}
-{#    {% block tail_js %}#}
-{#    {% endblock %}#}
-{#{% else %}#}
-{#    <p class="empty-saved">{{_("NMSL")}}</p>#}
-{#{% endif %}#}
-

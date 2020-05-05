@@ -16,7 +16,7 @@
   specific language governing permissions and limitations
   under the License.
 #}
-{% extends 'appbuilder/general/widgets/profile.html' %}
+{% extends 'appbuilder/general/widgets/solarbi_base.html' %}
 {% import 'appbuilder/general/lib.html' as lib %}
 
 {% set is_team_owner = appbuilder.sm.get_role_in_team(g.user, session_team[0]).name == 'team_owner' %}
@@ -30,9 +30,13 @@
         <div class="container-fluid d-flex align-items-center">
             <div class="row">
                 <div class="col-lg-7 col-md-10">
-                    <a href="#!" class="avatar avatar-xl rounded-circle">
-                        <img alt="Image placeholder" src="/static/assets/images/team-4.jpg">
-                    </a>
+{#                    <label for="image_upload" class="avatar avatar-xl rounded-circle">#}
+{#                    </label>#}
+{#                    <input id="image_upload" type="file" style="display: none"/>#}
+{#                    <img id="blah" src="#" alt="your image" />#}
+                    <span class="avatar avatar-xl rounded-circle">
+                        <img alt="Avatar" src="https://www.gravatar.com/avatar/{{ email_hash }}">
+                    </span>
                     <h1 class="display-2 text-white">Hello User</h1>
                     <p class="text-white mt-0 mb-5">This is your profile page. You can see
                         the You details,
@@ -181,8 +185,8 @@
                             <div class="col text-right">
                                 {#                          <a class="btn btn-sm btn-primary" href="#">Send Invitation</a>#}
                                 <button type="button" class="btn btn-sm btn-primary"
-                                        data-toggle="modal" data-target="#modal-form">Send
-                                    Invitation
+                                        data-toggle="modal" data-target="#modal-form">
+                                    Send Invitation
                                 </button>
                                 <div class="modal fade" id="modal-form" tabindex="-1"
                                      role="dialog" aria-labelledby="modal-form"
@@ -207,6 +211,9 @@
                                                                     <input class="form-control recipient-email"
                                                                            placeholder="Email"
                                                                            type="email">
+                                                                    <div class="invalid-feedback">
+                                                                        Email required
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <div class="text-center">
@@ -795,6 +802,7 @@
 {% block tail_js %}
     <script src="/static/assets/stylesheets/argon_assets/vendor/jquery/dist/jquery.min.js"></script>
     <script src="/static/assets/stylesheets/js/jquery.crs.min.js"></script>
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.4/croppie.min.js"></script>#}
     <script>
         $(document).ready(function () {
             if ('{{ is_team_owner }}' === 'True') {
@@ -865,7 +873,12 @@
 
 
             $('.send-invitation').click(function () {
+                $(".recipient-email").removeClass('is-invalid');
                 let selected_email = $(".recipient-email").val();
+                if (!selected_email) {
+                    return $(".recipient-email").addClass('is-invalid');
+                }
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
@@ -890,6 +903,7 @@
             $('.resend-email').click(function () {
                 let selected_email = $(this).parent().prev().prev().children(':first').html();
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 28px; margin: 0 15.5px;\">");
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -913,6 +927,7 @@
             $('.delete-invitation').click(function () {
                 let selected_email = $(this).parent().prev().children(':first').html();
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 28px; margin: 0 15.5px;\">");
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -934,7 +949,6 @@
             });
 
             $('.update-user-info').click(function () {
-                $(this).attr('disabled', 'disabled');
                 $("#user-email").removeClass('is-invalid');
                 $("#user-first-name").removeClass('is-invalid');
                 $("#user-last-name").removeClass('is-invalid');
@@ -952,7 +966,6 @@
                     $("#user-last-name").addClass('is-invalid');
                 }
                 if (form_has_errors) {
-                    $(this).removeAttr('disabled');
                     return;
                 }
                 const user_info = {
@@ -967,6 +980,7 @@
                     about_me: $("#user-about-me").val(),
                 };
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith('<img src="/static/assets/images/loading.gif" style="width: 40px; margin: 0 20px; float: right">')
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -988,10 +1002,8 @@
             });
 
             $('.update-team-info').click(function () {
-                $(this).attr('disabled', 'disabled');
                 $("#team_name").removeClass('is-invalid');
                 if (!$("#team_name").val()) {
-                    $('.update-team-info').removeAttr('disabled');
                     return $("#team_name").addClass('is-invalid');
                 }
                 const user_info = {
@@ -1001,6 +1013,7 @@
                     team_email: $("#team_email").val(),
                 };
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                $(this).replaceWith('<img src="/static/assets/images/loading.gif" style="width: 40px; margin: 0 20px; float: right">');
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -1022,7 +1035,6 @@
             });
 
             $('.update-billing-details').click(function () {
-                $(this).attr('disabled', 'disabled');
                 $("#billing-address").removeClass('is-invalid');
                 $("#billing-city").removeClass('is-invalid');
                 $("#country_select").removeClass('is-invalid');
@@ -1050,10 +1062,8 @@
                     billing_form_error = true;
                     $("#postal-code").addClass('is-invalid');
                 }
-                if (billing_form_error) {
-                    $(this).removeAttr('disabled');
-                    return;
-                }
+                if (billing_form_error) return;
+
                 const billing_info = {
                     line1: $("#billing-address").val(),
                     city: $("#billing-city").val(),
@@ -1062,7 +1072,7 @@
                     postal_code: $("#postal-code").val(),
                 };
                 let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-                {#$(this).replaceWith("<img src=\"/static/assets/images/loading.gif\" style=\"width: 40px; margin: 24px 0;\">");#}
+                $(this).replaceWith('<img src="/static/assets/images/loading.gif" style="width: 40px; margin: 0 20px; float: right">');
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -1113,5 +1123,39 @@
                 });
             });
         });
+
+        {#var $uploadCrop;#}
+        {#$uploadCrop = $('#blah').croppie({#}
+        {#    viewport: {#}
+        {#        width: 270,#}
+        {#        height: 270,#}
+        {#        type: 'circle'#}
+        {#    },#}
+        {#    boundary: {#}
+        {#        width: 450,#}
+        {#        height: 450#}
+        {#    }#}
+        {#});#}
+        {#$("#image_upload").change(function() {#}
+        {#    if (this.files && this.files[0]) {#}
+        {#        var reader = new FileReader();#}
+        {#        reader.onload = function(e) {#}
+        {#            $uploadCrop.croppie('bind', {#}
+        {#                url: e.target.result#}
+        {#            });#}
+        {#            $('#blah').attr('src', e.target.result);#}
+        {#            $('#blah').addClass('ready');#}
+        {#        }#}
+        {#        reader.readAsDataURL(this.files[0]); // convert to base64 string#}
+        {#      }#}
+        {#});#}
+        {#$('.save-result').on('click', function (ev) {#}
+        {#    $uploadCrop.croppie('result', {#}
+        {#        type: 'base64',#}
+        {#        size: 'original'#}
+        {#    }).then(function (res) {#}
+        {#        console.log(res);#}
+        {#    });#}
+        {#});#}
     </script>
 {% endblock %}
