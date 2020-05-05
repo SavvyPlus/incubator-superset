@@ -67,6 +67,8 @@ import {
   validateNonEmpty,
 } from '@superset-ui/validator';
 
+import * as v from "./validators"
+
 import {
   formatSelectOptionsForRange,
   formatSelectOptions,
@@ -243,7 +245,7 @@ export const controls = {
     type: 'SelectControl',
     multi: false,
     label: t('Data Type'),
-    validator: [v.nonEmpty],
+    validator: [validateNonEmpty],
     default: 'SpotPrice',
     description: t('Select one data type'),
     choices: [
@@ -259,7 +261,7 @@ export const controls = {
     type: 'SelectControl',
     multi: true,
     label: t('Select Senarios'),
-    validators: [v.nonEmpty, v.noLongerThan3],
+    validators: [validateNonEmpty, v.noLongerThan3],
     default: ['Base Case'],
     description: t('Select up to 3 run senarios'),
     mapStateToProps: state => ({
@@ -305,7 +307,7 @@ export const controls = {
 
   cal_years: {
     type: 'SelectControl',
-    validators: [v.nonEmpty, v.noLongerThan20],
+    validators: [validateNonEmpty, v.noLongerThan20],
     freeForm: true,
     multi: true,
     default: ['2020'],
@@ -319,7 +321,7 @@ export const controls = {
 
   fin_years: {
     type: 'SelectControl',
-    validators: [v.nonEmpty],
+    validators: [validateNonEmpty],
     freeForm: true,
     multi: true,
     default: ['2020'],
@@ -389,7 +391,7 @@ export const controls = {
     multi: false,
     label: t('Unit'),
     default: '0',
-    validators: [v.nonEmpty],
+    validators: [validateNonEmpty],
     description: t('Select unit'),
     choices: [
       ['0', '$'],
@@ -413,7 +415,7 @@ export const controls = {
     multi: false,
     label: t('Metric'),
     default: 'PPA CFD',
-    validators: [v.nonEmpty],
+    validators: [validateNonEmpty],
     description: t('Select metric'),
     choices: [
       ['PPA CFD', 'PPA CFD'],
@@ -436,7 +438,7 @@ export const controls = {
     multi: true,
     label: t('Metric'),
     default: null,
-    validators: [v.nonEmpty, v.onlyContainsROI],
+    validators: [validateNonEmpty, v.onlyContainsROI],
     description: t('Select metric'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.fin_metric),
@@ -448,7 +450,7 @@ export const controls = {
     multi: false,
     label: t('Technology'),
     default: null,
-    validators: [v.nonEmpty],
+    validators: [validateNonEmpty],
     description: t('Select one technology'),
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.fin_techs),
