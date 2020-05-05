@@ -121,14 +121,15 @@
                                     </div>
                                     <h4 class="card-title"
                                         style="text-align: center;padding-top: 7.5%">
-                                        Custom Name
+                                         {{ item['view_slice_name'] }}
                                     </h4>
-                                    {% set info = item['view_slice_name'].split('_') %}
                                     <ul class="list-group list-group-flush list my--3">
                                         <li class="list-group-item px-0"
                                             style="text-align:center; height: 120px">
-                                            <p>{{ info[0] }}, {{ info[1] }}
-                                                to {{ info[2] }}, {{ info[4] }}</p>
+                                            <p>
+                                                {{ item['slice_address'] }}, {{ item['slice_start_date'] }}
+                                                to {{ item['slice_end_date'] }}, {{ item['slice_resolution'] }}
+                                            </p>
                                         </li>
                                         <li class="list-group-item px-0">
                                             {% if item['slice_query_id'] in obj_keys %}
@@ -186,9 +187,7 @@
                                 </thead>
                                 <tbody class="list">
                                 {% for item in value_columns %}
-                                    {#                                {{ item }}#}
                                     {% if 'None' not in item['slice_query_id'] %}
-                                        {% set info1 = item['view_slice_name'].split('_') %}
                                         <tr class="data-card creator_id_{{ item['creator_by_id'] }}">
                                             <th scope="row">
                                                 <div class="media align-items-center">
@@ -197,9 +196,9 @@
                                                     </div>
                                                 </div>
                                             </th>
-                                            <td class="address">{{ info1[0] }}</td>
+                                            <td class="address">{{ item['slice_address'] }}</td>
                                             <td class="date">
-                                                {{ info1[1] }} to </br>{{ info1[2] }}
+                                                {{ item['slice_start_date'] }} to </br>{{ item['slice_end_date'] }}
                                             </td>
                                             <td>
                                                 {% if item['slice_query_id'] in obj_keys %}
@@ -219,7 +218,7 @@
                                                 {% endif %}
                                             </td>
                                             <td class="granularity">
-                                                {{ info1[4]|capitalize }}
+                                                {{ item['slice_resolution']|capitalize }}
                                             </td>
                                             <td>
                                                 <div class="avatar-group">

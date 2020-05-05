@@ -429,9 +429,10 @@ class SolarBISlice(Model, AuditMixinNullable, ImportMixin):
     description = Column(Text)
     cache_timeout = Column(Integer)
     perm = Column(String(1000))
+    address = Column(Text)
     query_id = Column(String(200))
     start_date = Column(String(200))
-    end_date = Column(DateTime)
+    end_date = Column(String(200))
     data_type = Column(String(200))
     resolution = Column(String(200))
     query_status = Column(String(200))
@@ -629,6 +630,22 @@ class SolarBISlice(Model, AuditMixinNullable, ImportMixin):
     @property
     def creator_by_email_hash(self):
         return Markup(f'{hashlib.md5(self.created_by.email.strip().lower().encode()).hexdigest()}')
+
+    @property
+    def slice_start_date(self):
+        return Markup(f'{self.start_date}')
+
+    @property
+    def slice_end_date(self):
+        return Markup(f'{self.end_date}')
+
+    @property
+    def slice_address(self):
+        return Markup(f'{self.address}')
+
+    @property
+    def slice_resolution(self):
+        return Markup(f'{self.resolution}')
 
     @property
     def creator_by_id(self):
