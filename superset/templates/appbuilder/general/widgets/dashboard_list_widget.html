@@ -146,7 +146,7 @@
                     <div class="card-header border-0">
                         <div class="row align-items-center">
                             <div class="col">
-                                <h3 class="mb-0">Latest Search</h3>
+                                <h3 class="mb-0">Latest 5 Searches</h3>
                             </div>
                             <div class="col text-right">
                                 <a href="data.html" class="btn btn-sm btn-primary">See
@@ -187,17 +187,16 @@
                                             </td>
                                         </tr>
                                     {% else %}
-                                        {% set info = item['view_slice_name'].split('_') %}
                                         <tr>
                                             <th scope="row">
-                                                {{ info[0][3:] }}
+                                                {{ item['view_slice_name'] }}
                                             </th>
                                             <td>
-                                                {{ format_datetime(info[1]) }}
-                                                - {{ format_datetime(info[2]) }}
+                                                {{ item['slice_start_date'] }}
+                                                - {{ item['slice_end_date'] }}
                                             </td>
                                             <td>
-                                                {{ info[4][:-4].capitalize() }}
+                                                {{ item['slice_resolution'].capitalize() }}
                                             </td>
                                             <td>
                                                 {% if item['slice_query_id'] in obj_keys %}

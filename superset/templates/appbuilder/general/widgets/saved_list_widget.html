@@ -232,23 +232,32 @@
                                                 </div>
                                             </td>
                                             <td class="text-right">
-                                                <div class="dropdown">
-                                                    <a class="btn btn-sm btn-icon-only text-light"
-                                                       href="#" role="button"
-                                                       data-toggle="dropdown"
-                                                       aria-haspopup="true"
-                                                       aria-expanded="false"
-                                                       style="padding: 10px 0">
-                                                        <i class="fas fa-ellipsis-v"></i>
-                                                    </a>
-                                                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
-                                                        <a class="dropdown-item"
-                                                           href="#">View</a>
-                                                        <a class="dropdown-item"
-                                                           href="#">Download</a>
-                                                    </div>
-                                                </div>
+                                                {% if item['slice_query_id'] in obj_keys %}
+                                                    {% for aok in avail_object_keys %}
+                                                        {% if item['slice_query_id'] in aok %}
+                                                            <div class="dropdown">
+                                                                <a class="btn btn-sm btn-icon-only text-light"
+                                                                   href="#" role="button"
+                                                                   data-toggle="dropdown"
+                                                                   aria-haspopup="true"
+                                                                   aria-expanded="false"
+                                                                   style="padding: 10px 0">
+                                                                    <i class="fas fa-ellipsis-v"></i>
+                                                                </a>
+                                                                <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                                                                    <a class="dropdown-item"
+                                                                       href="#">View</a>
+                                                                    <a class="dropdown-item"
+                                                                       href="#">Download</a>
+                                                                </div>
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span>Pending</span>
+                                                {% endif %}
                                             </td>
+
                                         </tr>
                                     {% endif %}
                                 {% endfor %}
