@@ -35,7 +35,7 @@ from superset.utils import core as utils
 from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
 from .forms import UploadAssumptionForm
-from .assumption_process import process_assumptions
+from .assumption_process import process_assumptions, upload_assumption_file
 from .util import get_obg_s3_url
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
@@ -54,10 +54,10 @@ def handle_assumption_process(path, name):
     g.action_object = name
     g.action_object_type = 'Assumption'
     try:
-        obj_url = process_assumptions(path, name)
+        process_assumptions(path, name)
         assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
         assumption_file.status = "Success"
-        assumption_file.download_link = obj_url
+        # assumption_file.download_link = obj_url
         db.session.merge(assumption_file)
         db.session.commit()
         g.result = 'Success'
@@ -70,8 +70,6 @@ def handle_assumption_process(path, name):
         db.session.commit()
         g.result = 'Failed'
         g.detail = str(e)
-    finally:
-        os.remove(path)
 
 class UploadAssumptionView(SimpleFormView):
     route_base = '/upload_assumption_file'
@@ -96,14 +94,14 @@ class UploadAssumptionView(SimpleFormView):
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.excel_file.data, path)
-            # download_link = process_assumptions(path, name)
+            download_link = upload_assumption_file(path, name)
             handle_assumption_process.apply_async(args=[path, name])
             assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
             if not assumption_file:
                 assumption_file = Assumption()
             assumption_file.name = name
             assumption_file.status = "Processing"
-            # assumption_file.download_link = download_link
+            assumption_file.download_link = download_link
             db.session.merge(assumption_file)
             db.session.commit()
             message = "Upload success"
@@ -117,6 +115,8 @@ class UploadAssumptionView(SimpleFormView):
             style = 'danger'
             g.result = 'Failed'
             g.detail = message
+        finally:
+            os.remove(path)
         # os.remove(path)
         flash(message, style)
         flash("Time used:{}".format(time.time() - time1), 'info')

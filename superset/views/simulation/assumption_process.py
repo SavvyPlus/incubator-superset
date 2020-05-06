@@ -157,5 +157,8 @@ def process_assumptions(file_path, assumptions_version):
     update_renewable_prop(file_path, assumptions_version)
     prepare_proxy(file_path, assumptions_version)
     update_small_battery(file_path, assumptions_version)
+
+
+def upload_assumption_file(file_path, assumptions_version):
     put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version))
     return get_obg_s3_url(bucket_test, excel_path.format(assumptions_version))
