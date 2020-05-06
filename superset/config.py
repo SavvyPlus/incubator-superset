@@ -86,7 +86,7 @@ SECRET_KEY = "\2\1thisismyscretkey\1\2\e\y\y\h"  # noqa
 #                                                            os.environ["POSTGRES_HOST"],
 #                                                            os.environ["POSTGRES_PORT"],
 #                                                            os.environ["POSTGRES_DB"])
-SQLALCHEMY_DATABASE_URI = 'mysql://root:' + os.environ["TEST_MYSQL_PASSWORD"] + '@localhost:3306/solarbi_test'
+SQLALCHEMY_DATABASE_URI = 'mysql://' + os.environ['TEST_MYSQL_USER'] + ':' + os.environ["TEST_MYSQL_PASSWORD"] + '@localhost:3306/solarbi_test'
 # SQLALCHEMY_DATABASE_URI = 'mysql://%s:%s@%s:%s/%s' % (os.environ["MYSQL_USER"],
 #                                                       os.environ["MYSQL_PASSWORD"],
 #                                                       os.environ["MYSQL_HOST"],
