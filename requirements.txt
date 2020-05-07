@@ -10,18 +10,19 @@ apispec[yaml]==1.3.3      # via flask-appbuilder
 attrs==19.3.0             # via jsonschema
 babel==2.8.0              # via flask-babel
 backoff==1.10.0           # via apache-superset (setup.py)
-billiard==3.6.3.0         # via celery
+billiard==3.6.1.0         # via celery
 bleach==3.1.0             # via apache-superset (setup.py)
-celery==4.4.1             # via apache-superset (setup.py)
+celery==4.4.0             # via apache-superset (setup.py)
 cffi==1.13.2              # via cryptography
 click==7.1.1              # via apache-superset (setup.py), flask, flask-appbuilder
 colorama==0.4.3           # via apache-superset (setup.py), flask-appbuilder
 contextlib2==0.6.0.post1  # via apache-superset (setup.py)
 croniter==0.3.31          # via apache-superset (setup.py)
 cryptography==2.8         # via apache-superset (setup.py)
+dataclasses==0.6          # via apache-superset (setup.py)
 decorator==4.4.1          # via retry
 defusedxml==0.6.0         # via python3-openid
-flask-appbuilder==2.2.4   # via apache-superset (setup.py)
+flask-appbuilder==2.3.2   # via apache-superset (setup.py)
 flask-babel==1.0.0        # via flask-appbuilder
 flask-caching==1.8.0      # via apache-superset (setup.py)
 flask-compress==1.4.0     # via apache-superset (setup.py)
@@ -42,7 +43,7 @@ isodate==0.6.0            # via apache-superset (setup.py)
 itsdangerous==1.1.0       # via flask
 jinja2==2.10.3            # via flask, flask-babel
 jsonschema==3.2.0         # via flask-appbuilder
-kombu==4.6.8              # via celery
+kombu==4.6.7              # via celery
 mako==1.1.1               # via alembic
 markdown==3.1.1           # via apache-superset (setup.py)
 markupsafe==1.1.1         # via jinja2, mako
@@ -52,11 +53,11 @@ marshmallow==2.19.5       # via flask-appbuilder, marshmallow-enum, marshmallow-
 more-itertools==8.1.0     # via zipp
 msgpack==0.6.2            # via apache-superset (setup.py)
 numpy==1.18.1             # via pandas, pyarrow
-pandas==0.25.3            # via apache-superset (setup.py)
+pandas==1.0.3             # via apache-superset (setup.py)
 parsedatetime==2.5        # via apache-superset (setup.py)
 pathlib2==2.3.5           # via apache-superset (setup.py)
 polyline==1.4.0           # via apache-superset (setup.py)
-prison==0.1.2             # via flask-appbuilder
+prison==0.1.3             # via flask-appbuilder
 py==1.8.1                 # via retry
 pyarrow==0.16.0           # via apache-superset (setup.py)
 pycparser==2.19           # via cffi
@@ -74,7 +75,7 @@ selenium==3.141.0         # via apache-superset (setup.py)
 simplejson==3.17.0        # via apache-superset (setup.py)
 six==1.14.0               # via bleach, cryptography, flask-jwt-extended, flask-talisman, isodate, jsonschema, pathlib2, polyline, prison, pyarrow, pyrsistent, python-dateutil, sqlalchemy-utils, wtforms-json
 sqlalchemy-utils==0.36.1  # via apache-superset (setup.py), flask-appbuilder
-sqlalchemy==1.3.12        # via alembic, apache-superset (setup.py), flask-sqlalchemy, marshmallow-sqlalchemy, sqlalchemy-utils
+sqlalchemy==1.3.16        # via alembic, apache-superset (setup.py), flask-sqlalchemy, marshmallow-sqlalchemy, sqlalchemy-utils
 sqlparse==0.3.0           # via apache-superset (setup.py)
 urllib3==1.25.8           # via selenium
 vine==1.3.0               # via amqp, celery
@@ -90,6 +91,9 @@ stripe==2.37.2
 PyAthenaJDBC==2.0.5
 mysqlclient==1.4.6
 Cython==0.29.14
+s3fs==0.4.2
+boto3==1.4.7
+xlrd==1.1.0
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

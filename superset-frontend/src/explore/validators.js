@@ -57,9 +57,16 @@ export function noLongerThan3(v) {
   return false;
 }
 
-export function noLongerThan10(v) {
-  if (Array.isArray(v) && v.length > 10) {
-    return t('cannot exceed 10 years');
+export function noLongerThan20(v) {
+  if (Array.isArray(v) && v.length > 20) {
+    return t('cannot exceed 20 years');
+  }
+  return false;
+}
+
+export function onlyContainsROI(v) {
+  if (Array.isArray(v) && v.includes('ROI') && v.length > 1) {
+    return t('If ROI is chosen, then you cannot choose other metrics');
   }
   return false;
 }

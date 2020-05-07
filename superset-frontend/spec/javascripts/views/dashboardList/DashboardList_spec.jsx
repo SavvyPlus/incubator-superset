@@ -24,6 +24,7 @@ import fetchMock from 'fetch-mock';
 
 import DashboardList from 'src/views/dashboardList/DashboardList';
 import ListView from 'src/components/ListView/ListView';
+import PropertiesModal from 'src/dashboard/components/PropertiesModal';
 
 // store needed for withToasts(DashboardTable)
 const mockStore = configureStore([thunk]);
@@ -42,6 +43,7 @@ const mockDashboards = [...new Array(3)].map((_, i) => ({
   changed_by_fk: 1,
   published: true,
   changed_on: new Date().toISOString(),
+  owners: [{ first_name: 'admin', last_name: 'admin_user' }],
 }));
 
 fetchMock.get(dashboardsInfoEndpoint, {
@@ -92,5 +94,14 @@ describe('DashboardList', () => {
     expect(callsD[0][0]).toMatchInlineSnapshot(
       `"/http//localhost/api/v1/dashboard/?q={%22order_column%22:%22changed_on%22,%22order_direction%22:%22desc%22,%22page%22:0,%22page_size%22:25}"`,
     );
+  });
+  it('edits', () => {
+    expect(wrapper.find(PropertiesModal)).toHaveLength(0);
+
+    wrapper
+      .find('.fa-pencil')
+      .first()
+      .simulate('click');
+    expect(wrapper.find(PropertiesModal)).toHaveLength(1);
   });
 });

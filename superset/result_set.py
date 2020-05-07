@@ -27,6 +27,7 @@ import pandas as pd
 import pyarrow as pa
 
 from superset import db_engine_specs
+from superset.typing import DbapiDescription, DbapiResult
 from superset.utils import core as utils
 
 logger = logging.getLogger(__name__)
@@ -70,8 +71,8 @@ def stringify_values(array: np.ndarray) -> np.ndarray:
 class SupersetResultSet:
     def __init__(
         self,
-        data: List[Tuple[Any, ...]],
-        cursor_description: Tuple[Any, ...],
+        data: DbapiResult,
+        cursor_description: DbapiDescription,
         db_engine_spec: Type[db_engine_specs.BaseEngineSpec],
     ):
         self.db_engine_spec = db_engine_spec
@@ -95,9 +96,10 @@ class SupersetResultSet:
             # generate numpy structured array dtype
             numpy_dtype = [(column_name, "object") for column_name in column_names]
 
-        # put data in a structured array so we can efficiently access each column.
-        # cast `data` as list due to MySQL (others?) wrapping results with a tuple.
-        array = np.array(list(data), dtype=numpy_dtype)
+        # only do expensive recasting if datatype is not standard list of tuples
+        if data and (not isinstance(data, list) or not isinstance(data[0], tuple)):
+            data = [tuple(row) for row in data]
+        array = np.array(data, dtype=numpy_dtype)
         if array.size > 0:
             for column in column_names:
                 try:
@@ -115,9 +117,9 @@ class SupersetResultSet:
         if pa_data:
             for i, column in enumerate(column_names):
                 if pa.types.is_nested(pa_data[i].type):
-                    # TODO: revisit nested column serialization once PyArrow updated with:
-                    # https://github.com/apache/arrow/pull/6199
-                    # Related issue: https://github.com/apache/incubator-superset/issues/8978
+                    # TODO: revisit nested column serialization once nested types
+                    #  are added as a natively supported column type in Superset
+                    #  (superset.utils.core.DbColumnType).
                     stringified_arr = stringify_values(array[column])
                     pa_data[i] = pa.array(stringified_arr.tolist())
 
@@ -136,8 +138,8 @@ class SupersetResultSet:
                                 pa_data[i] = pa.Array.from_pandas(
                                     series, type=pa.timestamp("ns", tz=tz)
                                 )
-                        except Exception as e:
-                            logger.exception(e)
+                        except Exception as ex:
+                            logger.exception(ex)
 
         self.table = pa.Table.from_arrays(pa_data, names=column_names)
         self._type_dict: Dict[str, Any] = {}
@@ -148,8 +150,8 @@ class SupersetResultSet:
                 for i, col in enumerate(column_names)
                 if deduped_cursor_desc
             }
-        except Exception as e:
-            logger.exception(e)
+        except Exception as ex:
+            logger.exception(ex)
 
     @staticmethod
     def convert_pa_dtype(pa_dtype: pa.DataType) -> Optional[str]:

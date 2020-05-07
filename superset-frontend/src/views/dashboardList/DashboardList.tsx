@@ -25,12 +25,15 @@ import React from 'react';
 import { Panel } from 'react-bootstrap';
 import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
 import ListView from 'src/components/ListView/ListView';
+import ExpandableList from 'src/components/ExpandableList';
 import {
   FetchDataConfig,
   FilterOperatorMap,
   Filters,
 } from 'src/components/ListView/types';
 import withToasts from 'src/messageToasts/enhancers/withToasts';
+import PropertiesModal from 'src/dashboard/components/PropertiesModal';
+import { isFeatureEnabled, FeatureFlag } from 'src/featureFlags';
 
 const PAGE_SIZE = 25;
 
@@ -48,6 +51,7 @@ interface State {
   owners: Array<{ text: string; value: number }>;
   permissions: string[];
   lastFetchDataConfig: FetchDataConfig | null;
+  dashboardToEdit: Dashboard | null;
 }
 
 interface Dashboard {
@@ -75,6 +79,7 @@ class DashboardList extends React.PureComponent<Props, State> {
     loading: false,
     owners: [],
     permissions: [],
+    dashboardToEdit: null,
   };
 
   componentDidMount() {
@@ -98,7 +103,11 @@ class DashboardList extends React.PureComponent<Props, State> {
       },
       ([e1, e2]) => {
         this.props.addDangerToast(
-          t('An error occurred while fetching Dashboards'),
+          t(
+            'An error occurred while fetching Dashboards: %s, %s',
+            e1.statusText,
+            e1.statusText,
+          ),
         );
         if (e1) {
           console.error(e1);
@@ -122,6 +131,10 @@ class DashboardList extends React.PureComponent<Props, State> {
     return this.hasPerm('can_mulexport');
   }
 
+  get isNewUIEnabled() {
+    return isFeatureEnabled(FeatureFlag.LIST_VIEWS_NEW_UI);
+  }
+
   initialSort = [{ id: 'changed_on', desc: true }];
 
   columns = [
@@ -134,6 +147,23 @@ class DashboardList extends React.PureComponent<Props, State> {
       Header: t('Title'),
       accessor: 'dashboard_title',
       sortable: true,
+    },
+    {
+      Cell: ({
+        row: {
+          original: { owners },
+        },
+      }: any) => (
+        <ExpandableList
+          items={owners.map(
+            ({ first_name: firstName, last_name: lastName }: any) =>
+              `${firstName} ${lastName}`,
+          )}
+          display={2}
+        />
+      ),
+      Header: t('Owners'),
+      accessor: 'owners',
     },
     {
       Cell: ({
@@ -177,13 +207,9 @@ class DashboardList extends React.PureComponent<Props, State> {
       hidden: true,
     },
     {
-      accessor: 'owners',
-      hidden: true,
-    },
-    {
       Cell: ({ row: { state, original } }: any) => {
         const handleDelete = () => this.handleDashboardDelete(original);
-        const handleEdit = () => this.handleDashboardEdit(original);
+        const handleEdit = () => this.openDashboardEditModal(original);
         const handleExport = () => this.handleBulkDashboardExport([original]);
         if (!this.canEdit && !this.canDelete && !this.canExport) {
           return null;
@@ -251,8 +277,33 @@ class DashboardList extends React.PureComponent<Props, State> {
     return Boolean(this.state.permissions.find(p => p === perm));
   };
 
-  handleDashboardEdit = ({ id }: { id: number }) => {
-    window.location.assign(`/dashboard/edit/${id}`);
+  openDashboardEditModal = (dashboard: Dashboard) => {
+    this.setState({
+      dashboardToEdit: dashboard,
+    });
+  };
+
+  handleDashboardEdit = (edits: any) => {
+    this.setState({ loading: true });
+    return SupersetClient.get({
+      endpoint: `/api/v1/dashboard/${edits.id}`,
+    })
+      .then(({ json = {} }) => {
+        this.setState({
+          dashboards: this.state.dashboards.map(dashboard => {
+            if (dashboard.id === json.id) {
+              return json.result;
+            }
+            return dashboard;
+          }),
+          loading: false,
+        });
+      })
+      .catch(e => {
+        this.props.addDangerToast(
+          t('An error occurred while fetching dashboards: %s', e.statusText),
+        );
+      });
   };
 
   handleDashboardDelete = ({
@@ -293,7 +344,10 @@ class DashboardList extends React.PureComponent<Props, State> {
       (err: any) => {
         console.error(err);
         this.props.addDangerToast(
-          t('There was an issue deleting the selected dashboards'),
+          t(
+            'There was an issue deleting the selected dashboards: ',
+            err.statusText,
+          ),
         );
       },
     );
@@ -338,9 +392,9 @@ class DashboardList extends React.PureComponent<Props, State> {
       .then(({ json = {} }) => {
         this.setState({ dashboards: json.result, dashboardCount: json.count });
       })
-      .catch(() => {
+      .catch(e => {
         this.props.addDangerToast(
-          t('An error occurred while fetching Dashboards'),
+          t('An error occurred while fetching dashboards: %s', e.statusText),
         );
       })
       .finally(() => {
@@ -350,6 +404,39 @@ class DashboardList extends React.PureComponent<Props, State> {
 
   updateFilters = () => {
     const { filterOperators, owners } = this.state;
+
+    if (this.isNewUIEnabled) {
+      return this.setState({
+        filters: [
+          {
+            Header: 'Owner',
+            id: 'owners',
+            input: 'select',
+            operator: 'rel_m_m',
+            unfilteredLabel: 'All',
+            selects: owners.map(({ text: label, value }) => ({ label, value })),
+          },
+          {
+            Header: 'Published',
+            id: 'published',
+            input: 'select',
+            operator: 'eq',
+            unfilteredLabel: 'Any',
+            selects: [
+              { label: 'Published', value: true },
+              { label: 'Unpublished', value: false },
+            ],
+          },
+          {
+            Header: 'Search',
+            id: 'dashboard_title',
+            input: 'search',
+            operator: 'title_or_slug',
+          },
+        ],
+      });
+    }
+
     const convertFilter = ({
       name: label,
       operator,
@@ -358,7 +445,7 @@ class DashboardList extends React.PureComponent<Props, State> {
       operator: string;
     }) => ({ label, value: operator });
 
-    this.setState({
+    return this.setState({
       filters: [
         {
           Header: 'Dashboard',
@@ -388,59 +475,78 @@ class DashboardList extends React.PureComponent<Props, State> {
   };
 
   render() {
-    const { dashboards, dashboardCount, loading, filters } = this.state;
+    const {
+      dashboards,
+      dashboardCount,
+      loading,
+      filters,
+      dashboardToEdit,
+    } = this.state;
 
     return (
       <div className="container welcome">
         <Panel>
-          <ConfirmStatusChange
-            title={t('Please confirm')}
-            description={t(
-              'Are you sure you want to delete the selected dashboards?',
-            )}
-            onConfirm={this.handleBulkDashboardDelete}
-          >
-            {confirmDelete => {
-              const bulkActions = [];
-              if (this.canDelete) {
-                bulkActions.push({
-                  key: 'delete',
-                  name: (
-                    <>
-                      <i className="fa fa-trash" /> Delete
-                    </>
-                  ),
-                  onSelect: confirmDelete,
-                });
-              }
-              if (this.canExport) {
-                bulkActions.push({
-                  key: 'export',
-                  name: (
-                    <>
-                      <i className="fa fa-database" /> Export
-                    </>
-                  ),
-                  onSelect: this.handleBulkDashboardExport,
-                });
-              }
-              return (
-                <ListView
-                  className="dashboard-list-view"
-                  title={'Dashboards'}
-                  columns={this.columns}
-                  data={dashboards}
-                  count={dashboardCount}
-                  pageSize={PAGE_SIZE}
-                  fetchData={this.fetchData}
-                  loading={loading}
-                  initialSort={this.initialSort}
-                  filters={filters}
-                  bulkActions={bulkActions}
-                />
-              );
-            }}
-          </ConfirmStatusChange>
+          <Panel.Body>
+            <ConfirmStatusChange
+              title={t('Please confirm')}
+              description={t(
+                'Are you sure you want to delete the selected dashboards?',
+              )}
+              onConfirm={this.handleBulkDashboardDelete}
+            >
+              {confirmDelete => {
+                const bulkActions = [];
+                if (this.canDelete) {
+                  bulkActions.push({
+                    key: 'delete',
+                    name: (
+                      <>
+                        <i className="fa fa-trash" /> Delete
+                      </>
+                    ),
+                    onSelect: confirmDelete,
+                  });
+                }
+                if (this.canExport) {
+                  bulkActions.push({
+                    key: 'export',
+                    name: (
+                      <>
+                        <i className="fa fa-database" /> Export
+                      </>
+                    ),
+                    onSelect: this.handleBulkDashboardExport,
+                  });
+                }
+                return (
+                  <>
+                    {dashboardToEdit && (
+                      <PropertiesModal
+                        show
+                        dashboardId={dashboardToEdit.id}
+                        onHide={() => this.setState({ dashboardToEdit: null })}
+                        onDashboardSave={this.handleDashboardEdit}
+                      />
+                    )}
+                    <ListView
+                      className="dashboard-list-view"
+                      title={'Dashboards'}
+                      columns={this.columns}
+                      data={dashboards}
+                      count={dashboardCount}
+                      pageSize={PAGE_SIZE}
+                      fetchData={this.fetchData}
+                      loading={loading}
+                      initialSort={this.initialSort}
+                      filters={filters}
+                      bulkActions={bulkActions}
+                      useNewUIFilters={this.isNewUIEnabled}
+                    />
+                  </>
+                );
+              }}
+            </ConfirmStatusChange>
+          </Panel.Body>
         </Panel>
       </div>
     );

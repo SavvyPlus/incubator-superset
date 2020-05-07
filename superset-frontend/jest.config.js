@@ -34,6 +34,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   globals: {
     'ts-jest': {
+      babelConfig: true,
       diagnostics: {
         warnOnly: true,
       },

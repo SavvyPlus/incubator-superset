@@ -15,14 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 import unittest.mock as mock
+from typing import Optional
 
 from sqlalchemy import column, table
 from sqlalchemy.dialects import mssql
-from sqlalchemy.sql import select
+from sqlalchemy.dialects.mssql import DATE, NTEXT, NVARCHAR, TEXT, VARCHAR
+from sqlalchemy.sql import select, Select
 from sqlalchemy.types import String, UnicodeText
 
 from superset.db_engine_specs.base import BaseEngineSpec
 from superset.db_engine_specs.mssql import MssqlEngineSpec
+from superset.extensions import db
+from superset.models.core import Database
 from tests.db_engine_specs.base_tests import DbEngineSpecTestCase
 
 
@@ -75,21 +79,82 @@ class MssqlEngineSpecTest(DbEngineSpecTestCase):
 
     def test_convert_dttm(self):
         dttm = self.get_dttm()
-
-        self.assertEqual(
-            MssqlEngineSpec.convert_dttm("DATE", dttm),
-            "CONVERT(DATE, '2019-01-02', 23)",
+        test_cases = (
+            (
+                MssqlEngineSpec.convert_dttm("DATE", dttm),
+                "CONVERT(DATE, '2019-01-02', 23)",
+            ),
+            (
+                MssqlEngineSpec.convert_dttm("DATETIME", dttm),
+                "CONVERT(DATETIME, '2019-01-02T03:04:05.678', 126)",
+            ),
+            (
+                MssqlEngineSpec.convert_dttm("SMALLDATETIME", dttm),
+                "CONVERT(SMALLDATETIME, '2019-01-02 03:04:05', 20)",
+            ),
         )
 
-        self.assertEqual(
-            MssqlEngineSpec.convert_dttm("DATETIME", dttm),
-            "CONVERT(DATETIME, '2019-01-02T03:04:05.678', 126)",
-        )
+        for actual, expected in test_cases:
+            self.assertEqual(actual, expected)
 
-        self.assertEqual(
-            MssqlEngineSpec.convert_dttm("SMALLDATETIME", dttm),
-            "CONVERT(SMALLDATETIME, '2019-01-02 03:04:05', 20)",
+    def test_apply_limit(self):
+        def compile_sqla_query(qry: Select, schema: Optional[str] = None) -> str:
+            return str(
+                qry.compile(
+                    dialect=mssql.dialect(), compile_kwargs={"literal_binds": True}
+                )
+            )
+
+        database = Database(
+            database_name="mssql_test",
+            sqlalchemy_uri="mssql+pymssql://sa:Password_123@localhost:1433/msdb",
         )
+        db.session.add(database)
+        db.session.commit()
+
+        with mock.patch.object(database, "compile_sqla_query", new=compile_sqla_query):
+            test_sql = "SELECT COUNT(*) FROM FOO_TABLE"
+
+            limited_sql = MssqlEngineSpec.apply_limit_to_sql(test_sql, 1000, database)
+
+            expected_sql = (
+                "SELECT TOP 1000 * \n"
+                "FROM (SELECT COUNT(*) AS COUNT_1 FROM FOO_TABLE) AS inner_qry"
+            )
+            self.assertEqual(expected_sql, limited_sql)
+
+            test_sql = "SELECT COUNT(*), SUM(id) FROM FOO_TABLE"
+            limited_sql = MssqlEngineSpec.apply_limit_to_sql(test_sql, 1000, database)
+
+            expected_sql = (
+                "SELECT TOP 1000 * \n"
+                "FROM (SELECT COUNT(*) AS COUNT_1, SUM(id) AS SUM_2 FROM FOO_TABLE) "
+                "AS inner_qry"
+            )
+            self.assertEqual(expected_sql, limited_sql)
+
+            test_sql = "SELECT COUNT(*), FOO_COL1 FROM FOO_TABLE GROUP BY FOO_COL1"
+            limited_sql = MssqlEngineSpec.apply_limit_to_sql(test_sql, 1000, database)
+
+            expected_sql = (
+                "SELECT TOP 1000 * \n"
+                "FROM (SELECT COUNT(*) AS COUNT_1, "
+                "FOO_COL1 FROM FOO_TABLE GROUP BY FOO_COL1)"
+                " AS inner_qry"
+            )
+            self.assertEqual(expected_sql, limited_sql)
+
+            test_sql = "SELECT COUNT(*), COUNT(*) FROM FOO_TABLE"
+            limited_sql = MssqlEngineSpec.apply_limit_to_sql(test_sql, 1000, database)
+            expected_sql = (
+                "SELECT TOP 1000 * \n"
+                "FROM (SELECT COUNT(*) AS COUNT_1, COUNT(*) AS COUNT_2 FROM FOO_TABLE)"
+                " AS inner_qry"
+            )
+            self.assertEqual(expected_sql, limited_sql)
+
+        db.session.delete(database)
+        db.session.commit()
 
     @mock.patch.object(
         MssqlEngineSpec, "pyodbc_rows_to_tuples", return_value="converted"
@@ -102,3 +167,19 @@ class MssqlEngineSpecTest(DbEngineSpecTestCase):
             result = MssqlEngineSpec.fetch_data(None, 0)
             mock_pyodbc_rows_to_tuples.assert_called_once_with(data)
             self.assertEqual(result, "converted")
+
+    def test_column_datatype_to_string(self):
+        test_cases = (
+            (DATE(), "DATE"),
+            (VARCHAR(length=255), "VARCHAR(255)"),
+            (VARCHAR(length=255, collation="utf8_general_ci"), "VARCHAR(255)"),
+            (NVARCHAR(length=128), "NVARCHAR(128)"),
+            (TEXT(), "TEXT"),
+            (NTEXT(collation="utf8_general_ci"), "NTEXT"),
+        )
+
+        for original, expected in test_cases:
+            actual = MssqlEngineSpec.column_datatype_to_string(
+                original, mssql.dialect()
+            )
+            self.assertEqual(actual, expected)

@@ -14,14 +14,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import logging
 import re
 from datetime import datetime
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, TYPE_CHECKING
 
-from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.types import String, TypeEngine, UnicodeText
 
 from superset.db_engine_specs.base import BaseEngineSpec, LimitMethod
+from superset.sql_parse import ParsedQuery
+
+if TYPE_CHECKING:
+    from superset.models.core import Database  # pylint: disable=unused-import
+
+logger = logging.getLogger(__name__)
 
 
 class MssqlEngineSpec(BaseEngineSpec):
@@ -66,10 +72,10 @@ class MssqlEngineSpec(BaseEngineSpec):
         # Lists of `pyodbc.Row` need to be unpacked further
         return cls.pyodbc_rows_to_tuples(data)
 
-    column_types = [
+    column_types = (
         (String(), re.compile(r"^(?<!N)((VAR){0,1}CHAR|TEXT|STRING)", re.IGNORECASE)),
         (UnicodeText(), re.compile(r"^N((VAR){0,1}CHAR|TEXT)", re.IGNORECASE)),
-    ]
+    )
 
     @classmethod
     def get_sqla_column_type(cls, type_: str) -> Optional[TypeEngine]:
@@ -79,14 +85,6 @@ class MssqlEngineSpec(BaseEngineSpec):
         return None
 
     @classmethod
-    def column_datatype_to_string(
-        cls, sqla_column_type: TypeEngine, dialect: Dialect
-    ) -> str:
-        datatype = super().column_datatype_to_string(sqla_column_type, dialect)
-        # MSSQL returns long overflowing datatype
-        # as in 'VARCHAR(255) COLLATE SQL_LATIN1_GENERAL_CP1_CI_AS'
-        # and we don't need the verbose collation type
-        str_cutoff = " COLLATE "
-        if str_cutoff in datatype:
-            datatype = datatype.split(str_cutoff)[0]
-        return datatype
+    def apply_limit_to_sql(cls, sql: str, limit: int, database: "Database") -> str:
+        new_sql = ParsedQuery(sql).set_alias()
+        return super().apply_limit_to_sql(new_sql, limit, database)

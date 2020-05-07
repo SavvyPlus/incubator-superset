@@ -25,6 +25,8 @@ from superset.extensions import (
     cache_manager,
     db,
     event_logger,
+    simulation_logger,
+    celery_app,
     feature_flag_manager,
     jinja_context_manager,
     manifest_processor,
@@ -43,7 +45,7 @@ app: Flask = current_app
 cache = LocalProxy(lambda: cache_manager.cache)
 conf = LocalProxy(lambda: current_app.config)
 get_feature_flags = feature_flag_manager.get_feature_flags
-get_css_manifest_files = manifest_processor.get_css_manifest_files
+get_manifest_files = manifest_processor.get_manifest_files
 is_feature_enabled = feature_flag_manager.is_feature_enabled
 jinja_base_context = jinja_context_manager.base_context
 results_backend = LocalProxy(lambda: results_backend_manager.results_backend)
@@ -51,3 +53,4 @@ results_backend_use_msgpack = LocalProxy(
     lambda: results_backend_manager.should_use_msgpack
 )
 tables_cache = LocalProxy(lambda: cache_manager.tables_cache)
+thumbnail_cache = LocalProxy(lambda: cache_manager.thumbnail_cache)

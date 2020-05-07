@@ -33,6 +33,7 @@ const propTypes = {
       path: PropTypes.string.isRequired,
       icon: PropTypes.string.isRequired,
       alt: PropTypes.string.isRequired,
+      width: PropTypes.string.isRequired,
     }).isRequired,
     navbar_right: PropTypes.shape({
       bug_report_url: PropTypes.string,

@@ -19,11 +19,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Label, OverlayTrigger } from 'react-bootstrap';
+import { t } from '@superset-ui/translation';
 
 import AdhocFilterEditPopover from './AdhocFilterEditPopover';
 import AdhocFilter from '../AdhocFilter';
 import columnType from '../propTypes/columnType';
 import adhocMetricType from '../propTypes/adhocMetricType';
+import InfoTooltipWithTrigger from '../../components/InfoTooltipWithTrigger';
 
 const propTypes = {
   adhocFilter: PropTypes.instanceOf(AdhocFilter).isRequired,
@@ -36,6 +38,7 @@ const propTypes = {
     ]),
   ).isRequired,
   datasource: PropTypes.object,
+  partitionColumn: PropTypes.string,
 };
 
 export default class AdhocFilterOption extends React.PureComponent {
@@ -78,9 +81,9 @@ export default class AdhocFilterOption extends React.PureComponent {
         onClose={this.closeFilterEditOverlay}
         options={this.props.options}
         datasource={this.props.datasource}
+        partitionColumn={this.props.partitionColumn}
       />
     );
-
     return (
       <OverlayTrigger
         ref="overlay"
@@ -93,18 +96,31 @@ export default class AdhocFilterOption extends React.PureComponent {
         onEntered={this.onOverlayEntered}
         onExited={this.onOverlayExited}
       >
-        <Label className="adhoc-filter-option">
-          <div onMouseDownCapture={this.onMouseDown}>
-            <span className="m-r-5 option-label">
-              {adhocFilter.getDefaultLabel()}
-              <i
-                className={`glyphicon glyphicon-triangle-${
-                  this.state.overlayShown ? 'left' : 'right'
-                } adhoc-label-arrow`}
-              />
-            </span>
-          </div>
-        </Label>
+        <div>
+          {adhocFilter.isExtra && (
+            <InfoTooltipWithTrigger
+              icon="exclamation-triangle"
+              placement="top"
+              className="m-r-5 text-muted"
+              tooltip={t(`
+                This filter was inherited from the dashboard's context.
+                It won't be saved when saving the chart.
+              `)}
+            />
+          )}
+          <Label className="adhoc-filter-option">
+            <div onMouseDownCapture={this.onMouseDown}>
+              <span className="m-r-5 option-label">
+                {adhocFilter.getDefaultLabel()}
+                <i
+                  className={`glyphicon glyphicon-triangle-${
+                    this.state.overlayShown ? 'left' : 'right'
+                  } adhoc-label-arrow`}
+                />
+              </span>
+            </div>
+          </Label>
+        </div>
       </OverlayTrigger>
     );
   }

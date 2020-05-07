@@ -42,7 +42,7 @@ from superset.extensions import (
 )
 from superset.security import SupersetSecurityManager
 from superset.utils.core import pessimistic_connection_handling
-from superset.utils.log import DBEventLogger, get_event_logger_from_cfg_value
+from superset.utils.log import DBEventLogger, get_event_logger_from_cfg_value, get_simulation_logger
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +131,7 @@ class SupersetAppInitializer:
             Druid,
         )
         from superset.datasets.api import DatasetRestApi
+        from superset.queries.api import QueryRestApi
         from superset.connectors.sqla.views import (
             TableColumnInlineView,
             SqlMetricInlineView,
@@ -150,9 +151,9 @@ class SupersetAppInitializer:
             CssTemplateModelView,
             CssTemplateAsyncModelView,
         )
-        from superset.views.chart.api import ChartRestApi
+        from superset.charts.api import ChartRestApi
         from superset.views.chart.views import SliceModelView, SliceAsync
-        from superset.views.dashboard.api import DashboardRestApi
+        from superset.dashboards.api import DashboardRestApi
         from superset.views.dashboard.views import (
             DashboardModelView,
             Dashboard,
@@ -161,6 +162,12 @@ class SupersetAppInitializer:
         from superset.views.database.api import DatabaseRestApi
         from superset.views.database.views import DatabaseView, CsvToDatabaseView
         from superset.views.datasource import Datasource
+        from superset.views.simulation.views import (
+            UploadAssumptionView,
+            AssumptionModelView,
+            SimulationModelView,
+            SimulationLogModelView,
+        )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
         from superset.views.schedules import (
@@ -184,6 +191,7 @@ class SupersetAppInitializer:
         appbuilder.add_api(DashboardRestApi)
         appbuilder.add_api(DatabaseRestApi)
         appbuilder.add_api(DatasetRestApi)
+        appbuilder.add_api(QueryRestApi)
         #
         # Setup regular views
         #
@@ -240,6 +248,30 @@ class SupersetAppInitializer:
             category="",
             category_icon="",
         )
+        # Assumption
+        appbuilder.add_view(
+            AssumptionModelView,
+            "Assumptions",
+            label=__("Assumptions"),
+            icon="fa-dashboard",
+            category="Simulation",
+            category_icon="fa-wrench",
+        )
+        appbuilder.add_view(
+            SimulationModelView,
+            "Simulations",
+            label=__("Simulations"),
+            icon="fa-dashboard",
+            category="Simulation",
+        )
+        appbuilder.add_view(
+            SimulationLogModelView,
+            'Simulation Logs',
+            label=__("Simulation Logs"),
+            icon="fa-list-ol",
+            category="Simulation",
+        )
+        appbuilder.add_separator("Simulation")
         appbuilder.add_view(
             CssTemplateModelView,
             "CSS Templates",
@@ -273,6 +305,7 @@ class SupersetAppInitializer:
         appbuilder.add_view_no_menu(Api)
         appbuilder.add_view_no_menu(CssTemplateAsyncModelView)
         appbuilder.add_view_no_menu(CsvToDatabaseView)
+        appbuilder.add_view_no_menu(UploadAssumptionView)
         appbuilder.add_view_no_menu(Dashboard)
         appbuilder.add_view_no_menu(DashboardModelViewAsync)
         appbuilder.add_view_no_menu(Datasource)
@@ -338,6 +371,17 @@ class SupersetAppInitializer:
             icon="fa-upload",
             category="Sources",
             category_label=__("Sources"),
+            category_icon="fa-wrench",
+        )
+
+        # Upload assumption file
+        appbuilder.add_link(
+            "Upload assumtion file",
+            label="Upload Assumption excel",
+            href="/upload_assumption_file/form",
+            icon="fa-upload",
+            category="Simulation",
+            category_label="Simulation",
             category_icon="fa-wrench",
         )
 
@@ -490,6 +534,7 @@ class SupersetAppInitializer:
         _event_logger["event_logger"] = get_event_logger_from_cfg_value(
             self.flask_app.config.get("EVENT_LOGGER", DBEventLogger())
         )
+        _event_logger['simulation_logger'] = get_simulation_logger()
 
     def configure_data_sources(self):
         # Registering sources

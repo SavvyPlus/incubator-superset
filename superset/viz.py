@@ -45,9 +45,13 @@ from geopy.point import Point
 from markdown import markdown
 from pandas.tseries.frequencies import to_offset
 
-from superset import app, cache, get_css_manifest_files, security_manager
+from superset import app, cache, get_manifest_files, security_manager
 from superset.constants import NULL_STRING
-from superset.exceptions import NullValueException, SpatialException
+from superset.exceptions import (
+    NullValueException,
+    QueryObjectValidationError,
+    SpatialException,
+)
 from superset.models.helpers import QueryResult
 from superset.typing import VizData
 from superset.utils import core as utils
@@ -118,6 +122,8 @@ class BaseViz:
         self.results: Optional[QueryResult] = None
         self.error_message: Optional[str] = None
         self.force = force
+        self.from_dttm: Optional[datetime] = None
+        self.to_dttm: Optional[datetime] = None
 
         # Keeping track of whether some data came from cache
         # this is useful to trigger the <CachedLabel /> when
@@ -324,7 +330,9 @@ class BaseViz:
         from_dttm = None if since is None else (since - self.time_shift)
         to_dttm = None if until is None else (until - self.time_shift)
         if from_dttm and to_dttm and from_dttm > to_dttm:
-            raise Exception(_("From date cannot be larger than to date"))
+            raise QueryObjectValidationError(
+                _("From date cannot be larger than to date")
+            )
 
         self.from_dttm = from_dttm
         self.to_dttm = to_dttm
@@ -335,7 +343,7 @@ class BaseViz:
             "druid_time_origin": form_data.get("druid_time_origin", ""),
             "having": form_data.get("having", ""),
             "having_druid": form_data.get("having_filters", []),
-            "time_grain_sqla": form_data.get("time_grain_sqla", ""),
+            "time_grain_sqla": form_data.get("time_grain_sqla"),
             "time_range_endpoints": form_data.get("time_range_endpoints"),
             "where": form_data.get("where", ""),
         }
@@ -396,7 +404,11 @@ class BaseViz:
         cache_dict["time_range"] = self.form_data.get("time_range")
         cache_dict["datasource"] = self.datasource.uid
         cache_dict["extra_cache_keys"] = self.datasource.get_extra_cache_keys(query_obj)
-        cache_dict["rls"] = security_manager.get_rls_ids(self.datasource)
+        cache_dict["rls"] = (
+            security_manager.get_rls_ids(self.datasource)
+            if config["ENABLE_ROW_LEVEL_SECURITY"]
+            else []
+        )
         cache_dict["changed_on"] = self.datasource.changed_on
         json_data = self.json_dumps(cache_dict, sort_keys=True)
         return hashlib.md5(json_data.encode("utf-8")).hexdigest()
@@ -437,10 +449,10 @@ class BaseViz:
                     self.status = utils.QueryStatus.SUCCESS
                     is_loaded = True
                     stats_logger.incr("loaded_from_cache")
-                except Exception as e:
-                    logger.exception(e)
+                except Exception as ex:
+                    logger.exception(ex)
                     logger.error(
-                        "Error reading cache: " + utils.error_msg_from_exception(e)
+                        "Error reading cache: " + utils.error_msg_from_exception(ex)
                     )
                 logger.info("Serving from cache")
 
@@ -449,11 +461,13 @@ class BaseViz:
                 df = self.get_df(query_obj)
                 if self.status != utils.QueryStatus.FAILED:
                     stats_logger.incr("loaded_from_source")
+                    if not self.force:
+                        stats_logger.incr("loaded_from_source_without_force")
                     is_loaded = True
-            except Exception as e:
-                logger.exception(e)
+            except Exception as ex:
+                logger.exception(ex)
                 if not self.error_message:
-                    self.error_message = "{}".format(e)
+                    self.error_message = "{}".format(ex)
                 self.status = utils.QueryStatus.FAILED
                 stacktrace = utils.get_stacktrace()
 
@@ -473,11 +487,11 @@ class BaseViz:
 
                     stats_logger.incr("set_cache_key")
                     cache.set(cache_key, cache_value, timeout=self.cache_timeout)
-                except Exception as e:
+                except Exception as ex:
                     # cache.set call can fail if the backend is down or if
                     # the key is too large or whatever other reasons
                     logger.warning("Could not cache key {}".format(cache_key))
-                    logger.exception(e)
+                    logger.exception(ex)
                     cache.delete(cache_key)
         return {
             "cache_key": self._any_cache_key,
@@ -488,6 +502,8 @@ class BaseViz:
             "form_data": self.form_data,
             "is_cached": self._any_cache_key is not None,
             "query": self.query,
+            "from_dttm": self.from_dttm,
+            "to_dttm": self.to_dttm,
             "status": self.status,
             "stacktrace": stacktrace,
             "rowcount": len(df.index) if df is not None else 0,
@@ -546,7 +562,7 @@ class TableViz(BaseViz):
             fd.get("granularity_sqla") and fd.get("time_grain_sqla")
         )
         if fd.get("include_time") and not conditions_met:
-            raise Exception(
+            raise QueryObjectValidationError(
                 _("Pick a granularity in the Time section or " "uncheck 'Include Time'")
             )
         return fd.get("include_time")
@@ -558,7 +574,7 @@ class TableViz(BaseViz):
         if fd.get("all_columns") and (
             fd.get("groupby") or fd.get("metrics") or fd.get("percent_metrics")
         ):
-            raise Exception(
+            raise QueryObjectValidationError(
                 _(
                     "Choose either fields to [Group By] and [Metrics] and/or "
                     "[Percentage Metrics], or [Columns], not both"
@@ -627,17 +643,18 @@ class TableViz(BaseViz):
             self.form_data.get("percent_metrics") or []
         )
 
-        df = pd.concat(
-            [
-                df[non_percent_metric_columns],
-                (
-                    df[percent_metric_columns]
-                    .div(df[percent_metric_columns].sum())
-                    .add_prefix("%")
-                ),
-            ],
-            axis=1,
-        )
+        if not df.empty:
+            df = pd.concat(
+                [
+                    df[non_percent_metric_columns],
+                    (
+                        df[percent_metric_columns]
+                        .div(df[percent_metric_columns].sum())
+                        .add_prefix("%")
+                    ),
+                ],
+                axis=1,
+            )
 
         data = self.handle_js_int_overflow(
             dict(records=df.to_dict(orient="records"), columns=list(df.columns))
@@ -665,10 +682,10 @@ class TimeTableViz(BaseViz):
         fd = self.form_data
 
         if not fd.get("metrics"):
-            raise Exception(_("Pick at least one metric"))
+            raise QueryObjectValidationError(_("Pick at least one metric"))
 
         if fd.get("groupby") and len(fd.get("metrics")) > 1:
-            raise Exception(
+            raise QueryObjectValidationError(
                 _("When using 'Group By' you are limited to use a single metric")
             )
         return d
@@ -713,9 +730,11 @@ class PivotTableViz(BaseViz):
         if not groupby:
             groupby = []
         if not groupby:
-            raise Exception(_("Please choose at least one 'Group by' field "))
+            raise QueryObjectValidationError(
+                _("Please choose at least one 'Group by' field ")
+            )
         if transpose and not columns:
-            raise Exception(
+            raise QueryObjectValidationError(
                 _(
                     (
                         "Please choose at least one 'Columns' field when "
@@ -724,9 +743,9 @@ class PivotTableViz(BaseViz):
                 )
             )
         if not metrics:
-            raise Exception(_("Please choose at least one metric"))
+            raise QueryObjectValidationError(_("Please choose at least one metric"))
         if set(groupby) & set(columns):
-            raise Exception(_("Group By' and 'Columns' can't overlap"))
+            raise QueryObjectValidationError(_("Group By' and 'Columns' can't overlap"))
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
@@ -792,7 +811,7 @@ class MarkupViz(BaseViz):
         code = self.form_data.get("code", "")
         if markup_type == "markdown":
             code = markdown(code)
-        return dict(html=code, theme_css=get_css_manifest_files("theme"))
+        return dict(html=code, theme_css=get_manifest_files("theme", "css"))
 
 
 class SeparatorViz(MarkupViz):
@@ -884,7 +903,9 @@ class CalHeatmapViz(BaseViz):
             until=form_data.get("until"),
         )
         if not start or not end:
-            raise Exception("Please provide both time bounds (Since and Until)")
+            raise QueryObjectValidationError(
+                "Please provide both time bounds (Since and Until)"
+            )
         domain = form_data.get("domain_granularity")
         diff_delta = rdelta.relativedelta(end, start)
         diff_secs = (end - start).total_seconds()
@@ -1120,9 +1141,6 @@ class BoxPlotFinViz(BoxPlotViz):
         for metric_dic in self.query_obj()['metrics']:
             if metric_dic != 'count' and metric_dic['label'] not in ['PPACFD', 'MWSoldCFD', 'NonFirmingContributionMargin', 'ContributionMargin', 'FixedOM', 'EBIT', 'CapitalExpenditure', 'TerminalValue', 'PPACFDAnnual', 'MWSoldCFDAnnual', 'EBITDiscounted', 'NetPresentValue']:
                 group_column.append(metric_dic['label'])
-        # # Drill down by percentile if not 100
-        # if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
-        #     df = self.filter_by_percentile(df, int(form_data['percentile_picker']), group_column)
 
         # conform to NVD3 names
         def Q1(series):  # need to be named functions - can't use lambdas
@@ -1197,26 +1215,200 @@ class BoxPlotFinStrViz(BoxPlotViz):
         d = super().query_obj()
         d['metrics'] = []
 
+        group_column = []
         if self.form_data['fin_period_picker']:
             d['filter'].append({'col': 'Period', 'op': 'in',
                                 'val': self.form_data['fin_period_picker']})
+            group_column.append('Period')
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Period',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Period'})
 
-        if self.form_data['fin_tech_picker']:
+        if self.form_data['fin_str_tech_picker']:
             d['filter'].append({'col': 'Technology', 'op': 'in',
-                                'val': self.form_data['fin_tech_picker']})
+                                'val': self.form_data['fin_str_tech_picker']})
+            group_column.append('Technology')
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Technology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Technology'})
 
         if self.form_data['fin_scenario_picker']:
             d['filter'].append({'col': 'Scenario', 'op': 'in',
                                 'val': self.form_data['fin_scenario_picker']})
+            group_column.append('Scenario')
+        # else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'Scenario',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'Scenario'})
 
         if self.form_data['fin_firm_tech_picker']:
+            d['metrics'].append({'expressionType': 'SQL',
+                                 'sqlExpression': 'FirmingTechnology',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'FirmingTechnology'})
             d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
                                 'val': self.form_data['fin_firm_tech_picker']})
+            group_column.append('FirmingTechnology')
+
+        if self.form_data['fin_strategy_picker']:
+            d['filter'].append({'col': 'Strategy', 'op': 'in',
+                                'val': self.form_data['fin_strategy_picker']})
+        # else:
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Percentile',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Percentile'})
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Strategy',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Strategy'})
+        group_column.append('Strategy')
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Metric',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Metric'})
+
+        d['metrics'].append({'expressionType': 'SQL',
+                             'sqlExpression': 'Value',
+                             'column': None,
+                             'aggregate': None,
+                             'hasCustomLabel': False,
+                             'fromFormData': True,
+                             'label': 'Value'})
 
         # metric = self.form_data['fin_metric_picker']
-        metrics = generate_default_metrics()
-        d['metrics'] = metrics
+        # metrics = generate_default_metrics()
+
+        if self.form_data['fin_str_metric_picker']:
+            d['filter'].append({'col': 'Metric', 'op': 'in',
+                                'val': self.form_data['fin_str_metric_picker']})
+            group_column.append('Metric')
+
+        d['filter'].append({
+            'col': 'Percentile',
+            'op': 'in',
+            'val': ['0', '0.25', '0.5', '0.75', '1']
+        })
+
+        self.form_data['group_column'] = group_column
         return d
+
+    def to_series(self, df, classed="", title_suffix=""):
+        label_sep = " "
+        chart_data = []
+        for index_value, row in zip(df.index, df.to_dict(orient="records")):
+            if isinstance(index_value, tuple):
+                index_value = label_sep.join([index_value[2], index_value[-2], index_value[-1]])
+            boxes = defaultdict(dict)
+            for (label, key), value in row.items():
+                if key == "nanmedian":
+                    key = "Q2"
+                boxes[label][key] = value
+            for label, box in boxes.items():
+                if len(self.form_data.get("metrics")) > 1:
+                    # need to render data labels with metrics
+                    # chart_label = label_sep.join([str(index_value), label])
+                    # hide metrics on the label
+                    chart_label = label_sep.join([str(index_value)])
+                else:
+                    chart_label = index_value
+                chart_data.append({"label": chart_label, "values": box})
+        return chart_data
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        if len(df) == 0:
+            raise Exception('No data is fetched. Please adjust your time range and conditions.')
+
+        form_data = self.form_data
+        group_column = form_data['group_column']
+
+        # conform to NVD3 names
+        def Q1(series):  # need to be named functions - can't use lambdas
+            return np.nanpercentile(series, 25)
+
+        def Q3(series):
+            return np.nanpercentile(series, 75)
+
+        whisker_type = form_data.get("whisker_options")
+        if whisker_type == "Tukey":
+
+            def whisker_high(series):
+                upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
+                return series[series <= upper_outer_lim].max()
+
+            def whisker_low(series):
+                lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
+                return series[series >= lower_outer_lim].min()
+
+        elif whisker_type == "Min/max (no outliers)":
+
+            def whisker_high(series):
+                return series.max()
+
+            def whisker_low(series):
+                return series.min()
+
+        elif " percentiles" in whisker_type:  # type: ignore
+            low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
+                "/"
+            )
+
+            def whisker_high(series):
+                return np.nanpercentile(series, int(high))
+
+            def whisker_low(series):
+                return np.nanpercentile(series, int(low))
+
+        else:
+            raise ValueError("Unknown whisker type: {}".format(whisker_type))
+
+        def outliers(series):
+            above = series[series > whisker_high(series)]
+            below = series[series < whisker_low(series)]
+            # pandas sometimes doesn't like getting lists back here
+            return set(above.tolist() + below.tolist())
+
+        aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
+
+        # if group_column:
+        try:
+            df = df.groupby(group_column).agg(aggregate)
+        except ValueError as e:
+            if str(e) == "No group keys passed!":
+                raise ValueError("Please choose at least one of followings filters: Scenario, Firming Technology, Period or Technology.")
+        # else:
+        #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
+        chart_data = self.to_series(df)
+        return chart_data
 
 
 class BoxPlotVizRunComp(BoxPlotViz):
@@ -1232,6 +1424,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
     def query_obj(self) -> Dict[str, Any]:
         d = super(BoxPlotVizRunComp, self).query_obj()
         fd = self.form_data
+        group_column = []
         if 'data_type_picker' in fd.keys():
             if fd['data_type_picker'] == 'SpotPrice':
                 d['metrics'] = [{'expressionType': 'SQL',
@@ -1240,8 +1433,23 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                  'aggregate': None,
                                  'hasCustomLabel': False,
                                  'fromFormData': True,
-                                 'label': 'SpotPrice',
-                                 'optionName': 'metric_fk548mk5nw_h2fyj2n9w3o'}]
+                                 'label': 'SpotPrice'}]
+            elif fd['data_type_picker'] == 'LGCPrice':
+                d['metrics'] = [{'expressionType': 'SQL',
+                                 'sqlExpression': 'LGCPrice',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'LGCPrice'}]
+            elif fd['data_type_picker'] == 'ForwardPrice':
+                d['metrics'] = [{'expressionType': 'SQL',
+                                 'sqlExpression': 'ForwardPrice',
+                                 'column': None,
+                                 'aggregate': None,
+                                 'hasCustomLabel': False,
+                                 'fromFormData': True,
+                                 'label': 'ForwardPrice'}]
         # if len(d['metrics']) == 1:
         #     if 'count' in fd['metrics'] or 'SpotPrice' in fd['metrics']:
         #         raise Exception("Please input 'SpotPrice' in Metrics as CustomSQL")
@@ -1256,6 +1464,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                          'label': period_type,
                                          'optionName': 'metric_qrp5w8ukl5e_ewbvmoss415',
                                          'sqlExpression': period_type})
+                    group_column.append(period_type)
         if self.form_data['run_picker'] != [] and 'RunComb' not in list(metric['label'] for metric in d['metrics']):
             d['metrics'].append({'aggregate': None,
                                   'column': None,
@@ -1265,16 +1474,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
                                   'label': 'RunComb',
                                   'optionName': 'metric_0co5gnmglhew_liwkucr3sel',
                                   'sqlExpression': 'RunComb'})
-        # if self.form_data['daylike_picker'] != [] and 'DayLike' not in list(metric['label'] for metric in d['metrics']):
-        #     d['metrics'].append({'aggregate': None,
-        #                           'column': None,
-        #                           'expressionType': 'SQL',
-        #                           'fromFormData': True,
-        #                           'hasCustomLabel': False,
-        #                           'label': 'DayLike',
-        #                           'optionName': 'metric_0lo5gnmglhew_liwkucr4sel',
-        #                           'sqlExpression': 'DayLike'})
-
+            group_column.append('RunComb')
         if self.form_data['run_picker']:
             # for scenario in self.form_data['run_picker']:
             d['filter'].append({'col':'RunComb','op':'in','val':self.form_data['run_picker']})
@@ -1287,7 +1487,8 @@ class BoxPlotVizRunComp(BoxPlotViz):
         # if self.form_data['daylike_picker'] and self.form_data['daylike_picker'] != 'All':
         #     d['filter'].append({'col': 'DayLike', 'op': 'in', 'val': self.form_data['daylike_picker']})
 
-        self.form_data['metrics'] = d['metrics']
+        # self.form_data['metrics'] = d['metrics']
+        self.form_data['group_column'] = group_column
         return d
 
     def to_series(self, df, classed="", title_suffix=""):
@@ -1336,10 +1537,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         if len(df) == 0:
             raise Exception('No data is fetched. Please adjust your time range and conditions.')
         form_data = self.form_data
-        group_column = []
-        for metric_dic in self.query_obj()['metrics']:
-            if metric_dic != 'count' and metric_dic['sqlExpression'] != 'SpotPrice':
-                group_column.append(metric_dic['sqlExpression'])
+        group_column = form_data['group_column']
 
         # Drill down by percentile if not 100
         if int(form_data['percentile_picker']) != 100 and form_data['percentile_picker']!= None:
@@ -1428,9 +1626,9 @@ class BubbleViz(NVD3Viz):
 
         d["metrics"] = [self.z_metric, self.x_metric, self.y_metric]
         if len(set(self.metric_labels)) < 3:
-            raise Exception(_("Please use 3 different metric labels"))
+            raise QueryObjectValidationError(_("Please use 3 different metric labels"))
         if not all(d["metrics"] + [self.entity]):
-            raise Exception(_("Pick a metric for x, y and size"))
+            raise QueryObjectValidationError(_("Pick a metric for x, y and size"))
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
@@ -1481,7 +1679,7 @@ class BulletViz(NVD3Viz):
 
         d["metrics"] = [self.metric]
         if not self.metric:
-            raise Exception(_("Pick a metric to display"))
+            raise QueryObjectValidationError(_("Pick a metric to display"))
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
@@ -1511,7 +1709,7 @@ class BigNumberViz(BaseViz):
         d = super().query_obj()
         metric = self.form_data.get("metric")
         if not metric:
-            raise Exception(_("Pick a metric!"))
+            raise QueryObjectValidationError(_("Pick a metric!"))
         d["metrics"] = [self.form_data.get("metric")]
         self.form_data["metric"] = metric
         return d
@@ -1521,8 +1719,8 @@ class BigNumberViz(BaseViz):
             index=DTTM_ALIAS,
             columns=[],
             values=self.metric_labels,
-            fill_value=0,
-            aggfunc=sum,
+            dropna=False,
+            aggfunc=np.min,  # looking for any (only) value, preserving `None`
         )
         df = self.apply_rolling(df)
         df[DTTM_ALIAS] = df.index
@@ -1542,7 +1740,7 @@ class BigNumberTotalViz(BaseViz):
         d = super().query_obj()
         metric = self.form_data.get("metric")
         if not metric:
-            raise Exception(_("Pick a metric!"))
+            raise QueryObjectValidationError(_("Pick a metric!"))
         d["metrics"] = [self.form_data.get("metric")]
         self.form_data["metric"] = metric
 
@@ -1620,7 +1818,9 @@ class NVD3TimeSeriesViz(NVD3Viz):
     def process_data(self, df: pd.DataFrame, aggregate: bool = False) -> VizData:
         fd = self.form_data
         if fd.get("granularity") == "all":
-            raise Exception(_("Pick a time granularity for your time series"))
+            raise QueryObjectValidationError(
+                _("Pick a time granularity for your time series")
+            )
 
         if df.empty:
             return df
@@ -1674,7 +1874,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
             query_object["inner_to_dttm"] = query_object["to_dttm"]
 
             if not query_object["from_dttm"] or not query_object["to_dttm"]:
-                raise Exception(
+                raise QueryObjectValidationError(
                     _(
                         "`Since` and `Until` time bounds should be specified "
                         "when using the `Time Shift` feature."
@@ -1722,7 +1922,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
                 elif comparison_type == "ratio":
                     diff = df / df2
                 else:
-                    raise Exception(
+                    raise QueryObjectValidationError(
                         "Invalid `comparison_type`: {0}".format(comparison_type)
                     )
 
@@ -1785,11 +1985,11 @@ class NVD3DualLineViz(NVD3Viz):
         m2 = self.form_data.get("metric_2")
         d["metrics"] = [m1, m2]
         if not m1:
-            raise Exception(_("Pick a metric for left axis!"))
+            raise QueryObjectValidationError(_("Pick a metric for left axis!"))
         if not m2:
-            raise Exception(_("Pick a metric for right axis!"))
+            raise QueryObjectValidationError(_("Pick a metric for right axis!"))
         if m1 == m2:
-            raise Exception(
+            raise QueryObjectValidationError(
                 _("Please choose different metrics" " on left and right axis")
             )
         return d
@@ -1832,7 +2032,9 @@ class NVD3DualLineViz(NVD3Viz):
         fd = self.form_data
 
         if self.form_data.get("granularity") == "all":
-            raise Exception(_("Pick a time granularity for your time series"))
+            raise QueryObjectValidationError(
+                _("Pick a time granularity for your time series")
+            )
 
         metric = utils.get_metric_name(fd.get("metric"))
         metric_2 = utils.get_metric_name(fd.get("metric_2"))
@@ -1950,7 +2152,9 @@ class HistogramViz(BaseViz):
         d["row_limit"] = self.form_data.get("row_limit", int(config["VIZ_ROW_LIMIT"]))
         numeric_columns = self.form_data.get("all_columns_x")
         if numeric_columns is None:
-            raise Exception(_("Must have at least one numeric column specified"))
+            raise QueryObjectValidationError(
+                _("Must have at least one numeric column specified")
+            )
         self.columns = numeric_columns
         d["columns"] = numeric_columns + self.groupby
         # override groupby entry to avoid aggregation
@@ -2004,11 +2208,13 @@ class DistributionBarViz(DistributionPieViz):
         if len(d["groupby"]) < len(fd.get("groupby") or []) + len(
             fd.get("columns") or []
         ):
-            raise Exception(_("Can't have overlap between Series and Breakdowns"))
+            raise QueryObjectValidationError(
+                _("Can't have overlap between Series and Breakdowns")
+            )
         if not fd.get("metrics"):
-            raise Exception(_("Pick at least one metric"))
+            raise QueryObjectValidationError(_("Pick at least one metric"))
         if not fd.get("groupby"):
-            raise Exception(_("Pick at least one field for [Series]"))
+            raise QueryObjectValidationError(_("Pick at least one field for [Series]"))
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
@@ -2068,12 +2274,15 @@ class SunburstViz(BaseViz):
     def get_data(self, df: pd.DataFrame) -> VizData:
         fd = self.form_data
         cols = fd.get("groupby") or []
+        cols.extend(["m1", "m2"])
         metric = utils.get_metric_name(fd.get("metric"))
         secondary_metric = utils.get_metric_name(fd.get("secondary_metric"))
         if metric == secondary_metric or secondary_metric is None:
             df.rename(columns={df.columns[-1]: "m1"}, inplace=True)
             df["m2"] = df["m1"]
-            cols.extend(["m1", "m2"])
+        else:
+            df.rename(columns={df.columns[-2]: "m1"}, inplace=True)
+            df.rename(columns={df.columns[-1]: "m2"}, inplace=True)
 
         # Re-order the columns as the query result set column ordering may differ from
         # that listed in the hierarchy.
@@ -2102,7 +2311,9 @@ class SankeyViz(BaseViz):
     def query_obj(self):
         qry = super().query_obj()
         if len(qry["groupby"]) != 2:
-            raise Exception(_("Pick exactly 2 columns as [Source / Target]"))
+            raise QueryObjectValidationError(
+                _("Pick exactly 2 columns as [Source / Target]")
+            )
         qry["metrics"] = [self.form_data["metric"]]
         return qry
 
@@ -2134,7 +2345,7 @@ class SankeyViz(BaseViz):
 
         cycle = find_cycle(hierarchy)
         if cycle:
-            raise Exception(
+            raise QueryObjectValidationError(
                 _(
                     "There's a loop in your Sankey, please provide a tree. "
                     "Here's a faulty link: {}"
@@ -2155,7 +2366,7 @@ class DirectedForceViz(BaseViz):
     def query_obj(self):
         qry = super().query_obj()
         if len(self.form_data["groupby"]) != 2:
-            raise Exception(_("Pick exactly 2 columns to 'Group By'"))
+            raise QueryObjectValidationError(_("Pick exactly 2 columns to 'Group By'"))
         qry["metrics"] = [self.form_data["metric"]]
         return qry
 
@@ -2263,8 +2474,8 @@ class WorldMapViz(BaseViz):
         for row in d:
             country = None
             if isinstance(row["country"], str):
-                country = countries.get(fd.get("country_fieldtype"), row["country"])
-
+                if "country_fieldtype" in fd:
+                    country = countries.get(fd["country_fieldtype"], row["country"])
             if country:
                 row["country"] = country["cca3"]
                 row["latitude"] = country["lat"]
@@ -2297,7 +2508,7 @@ class FilterBoxViz(BaseViz):
         for flt in filters:
             col = flt.get("column")
             if not col:
-                raise Exception(
+                raise QueryObjectValidationError(
                     _("Invalid filter configuration, please select a column")
                 )
             qry["groupby"] = [col]
@@ -2460,12 +2671,14 @@ class MapboxViz(BaseViz):
 
         if not fd.get("groupby"):
             if fd.get("all_columns_x") is None or fd.get("all_columns_y") is None:
-                raise Exception(_("[Longitude] and [Latitude] must be set"))
+                raise QueryObjectValidationError(
+                    _("[Longitude] and [Latitude] must be set")
+                )
             d["columns"] = [fd.get("all_columns_x"), fd.get("all_columns_y")]
 
             if label_col and len(label_col) >= 1:
                 if label_col[0] == "count":
-                    raise Exception(
+                    raise QueryObjectValidationError(
                         _(
                             "Must have a [Group By] column to have 'count' as the "
                             + "[Label]"
@@ -2485,19 +2698,21 @@ class MapboxViz(BaseViz):
                 and label_col[0] != "count"
                 and label_col[0] not in fd.get("groupby")
             ):
-                raise Exception(_("Choice of [Label] must be present in [Group By]"))
+                raise QueryObjectValidationError(
+                    _("Choice of [Label] must be present in [Group By]")
+                )
 
             if fd.get("point_radius") != "Auto" and fd.get(
                 "point_radius"
             ) not in fd.get("groupby"):
-                raise Exception(
+                raise QueryObjectValidationError(
                     _("Choice of [Point Radius] must be present in [Group By]")
                 )
 
             if fd.get("all_columns_x") not in fd.get("groupby") or fd.get(
                 "all_columns_y"
             ) not in fd.get("groupby"):
-                raise Exception(
+                raise QueryObjectValidationError(
                     _(
                         "[Longitude] and [Latitude] columns must be present in "
                         + "[Group By]"

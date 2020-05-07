@@ -22,8 +22,6 @@ import setupPluginsExtra from './setupPluginsExtra';
 
 import Area from '../explore/controlPanels/Area';
 import Bar from '../explore/controlPanels/Bar';
-import BigNumber from '../explore/controlPanels/BigNumber';
-import BigNumberTotal from '../explore/controlPanels/BigNumberTotal';
 import BoxPlot from '../explore/controlPanels/BoxPlot';
 import BoxPlotRunComp from '../explore/controlPanels/BoxPlotRunComp';
 import BoxPlotFin from '../explore/controlPanels/BoxPlotFin';
@@ -79,8 +77,6 @@ export default function setupPlugins() {
   getChartControlPanelRegistry()
     .registerValue('area', Area)
     .registerValue('bar', Bar)
-    .registerValue('big_number', BigNumber)
-    .registerValue('big_number_total', BigNumberTotal)
     .registerValue('box_plot', BoxPlot)
     .registerValue('box_plot_run_comp', BoxPlotRunComp)
     .registerValue('box_plot_fin', BoxPlotFin)

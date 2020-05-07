@@ -17,7 +17,19 @@
  * under the License.
  */
 import { t } from '@superset-ui/translation';
-import { nonEmpty } from '../validators';
+import { validateNonEmpty } from '@superset-ui/validator';
+import {
+  formatSelectOptionsForRange,
+  formatSelectOptions,
+} from '../../modules/utils';
+import { columnChoices } from '../controls';
+
+const sortAxisChoices = [
+  ['alpha_asc', t('Axis ascending')],
+  ['alpha_desc', t('Axis descending')],
+  ['value_asc', t('Metric ascending')],
+  ['value_desc', t('Metric descending')],
+];
 
 export default {
   controlPanelSections: [
@@ -25,7 +37,34 @@ export default {
       label: t('Query'),
       expanded: true,
       controlSetRows: [
-        ['all_columns_x', 'all_columns_y'],
+        [
+          {
+            name: 'all_columns_x',
+            config: {
+              type: 'SelectControl',
+              label: 'X',
+              default: null,
+              description: t('Columns to display'),
+              mapStateToProps: state => ({
+                choices: columnChoices(state.datasource),
+              }),
+              validators: [validateNonEmpty],
+            },
+          },
+          {
+            name: 'all_columns_y',
+            config: {
+              type: 'SelectControl',
+              label: 'Y',
+              default: null,
+              description: t('Columns to display'),
+              mapStateToProps: state => ({
+                choices: columnChoices(state.datasource),
+              }),
+              validators: [validateNonEmpty],
+            },
+          },
+        ],
         ['metric'],
         ['adhoc_filters'],
         ['row_limit'],
@@ -36,34 +75,214 @@ export default {
       expanded: true,
       controlSetRows: [
         ['linear_color_scheme'],
-        ['xscale_interval', 'yscale_interval'],
-        ['canvas_image_rendering', 'normalize_across'],
-        ['left_margin', 'bottom_margin'],
-        ['y_axis_bounds', 'y_axis_format'],
-        ['show_legend', 'show_perc'],
-        ['show_values', 'normalized'],
-        ['sort_x_axis', 'sort_y_axis'],
+        [
+          {
+            name: 'xscale_interval',
+            config: {
+              type: 'SelectControl',
+              label: t('XScale Interval'),
+              renderTrigger: true,
+              choices: formatSelectOptionsForRange(1, 50),
+              default: '1',
+              clearable: false,
+              description: t(
+                'Number of steps to take between ticks when displaying the X scale',
+              ),
+            },
+          },
+          {
+            name: 'yscale_interval',
+            config: {
+              type: 'SelectControl',
+              label: t('YScale Interval'),
+              choices: formatSelectOptionsForRange(1, 50),
+              default: '1',
+              clearable: false,
+              renderTrigger: true,
+              description: t(
+                'Number of steps to take between ticks when displaying the Y scale',
+              ),
+            },
+          },
+        ],
+        [
+          {
+            name: 'canvas_image_rendering',
+            config: {
+              type: 'SelectControl',
+              label: t('Rendering'),
+              renderTrigger: true,
+              choices: [
+                ['pixelated', 'pixelated (Sharp)'],
+                ['auto', 'auto (Smooth)'],
+              ],
+              default: 'pixelated',
+              description: t(
+                'image-rendering CSS attribute of the canvas object that ' +
+                  'defines how the browser scales up the image',
+              ),
+            },
+          },
+          {
+            name: 'normalize_across',
+            config: {
+              type: 'SelectControl',
+              label: t('Normalize Across'),
+              choices: [
+                ['heatmap', 'heatmap'],
+                ['x', 'x'],
+                ['y', 'y'],
+              ],
+              default: 'heatmap',
+              description: t(
+                'Color will be rendered based on a ratio ' +
+                  'of the cell against the sum of across this ' +
+                  'criteria',
+              ),
+            },
+          },
+        ],
+        [
+          {
+            name: 'left_margin',
+            config: {
+              type: 'SelectControl',
+              freeForm: true,
+              clearable: false,
+              label: t('Left Margin'),
+              choices: formatSelectOptions([
+                'auto',
+                50,
+                75,
+                100,
+                125,
+                150,
+                200,
+              ]),
+              default: 'auto',
+              renderTrigger: true,
+              description: t(
+                'Left margin, in pixels, allowing for more room for axis labels',
+              ),
+            },
+          },
+          {
+            name: 'bottom_margin',
+            config: {
+              type: 'SelectControl',
+              clearable: false,
+              freeForm: true,
+              label: t('Bottom Margin'),
+              choices: formatSelectOptions([
+                'auto',
+                50,
+                75,
+                100,
+                125,
+                150,
+                200,
+              ]),
+              default: 'auto',
+              renderTrigger: true,
+              description: t(
+                'Bottom margin, in pixels, allowing for more room for axis labels',
+              ),
+            },
+          },
+        ],
+        [
+          {
+            name: 'y_axis_bounds',
+            config: {
+              type: 'BoundsControl',
+              label: t('Value bounds'),
+              renderTrigger: true,
+              default: [null, null],
+              description: t(
+                'Hard value bounds applied for color coding. Is only relevant ' +
+                  'and applied when the normalization is applied against the whole heatmap.',
+              ),
+            },
+          },
+          'y_axis_format',
+        ],
+        [
+          {
+            name: 'show_legend',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Legend'),
+              renderTrigger: true,
+              default: true,
+              description: t('Whether to display the legend (toggles)'),
+            },
+          },
+          {
+            name: 'show_perc',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Show percentage'),
+              renderTrigger: true,
+              description: t(
+                'Whether to include the percentage in the tooltip',
+              ),
+              default: true,
+            },
+          },
+        ],
+        [
+          {
+            name: 'show_values',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Show Values'),
+              renderTrigger: true,
+              default: false,
+              description: t(
+                'Whether to display the numerical values within the cells',
+              ),
+            },
+          },
+          {
+            name: 'normalized',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Normalized'),
+              renderTrigger: true,
+              description: t('Whether to normalize the histogram'),
+              default: false,
+            },
+          },
+        ],
+        [
+          {
+            name: 'sort_x_axis',
+            config: {
+              type: 'SelectControl',
+              label: t('Sort X Axis'),
+              choices: sortAxisChoices,
+              clearable: false,
+              default: 'alpha_asc',
+            },
+          },
+          {
+            name: 'sort_y_axis',
+            config: {
+              type: 'SelectControl',
+              label: t('Sort Y Axis'),
+              choices: sortAxisChoices,
+              clearable: false,
+              default: 'alpha_asc',
+            },
+          },
+        ],
       ],
     },
   ],
   controlOverrides: {
-    all_columns_x: {
-      validators: [nonEmpty],
-    },
-    all_columns_y: {
-      validators: [nonEmpty],
-    },
     normalized: t(
       'Whether to apply a normal distribution based on rank on the color scale',
     ),
-    y_axis_bounds: {
-      label: t('Value bounds'),
-      renderTrigger: true,
-      description: t(
-        'Hard value bounds applied for color coding. Is only relevant ' +
-          'and applied when the normalization is applied against the whole heatmap.',
-      ),
-    },
     y_axis_format: {
       label: t('Value Format'),
     },

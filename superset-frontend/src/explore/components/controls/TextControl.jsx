@@ -19,7 +19,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FormGroup, FormControl } from 'react-bootstrap';
-import * as v from '../../validators';
+import {
+  legacyValidateNumber,
+  legacyValidateInteger,
+} from '@superset-ui/validator';
 import ControlHeader from '../ControlHeader';
 
 const propTypes = {
@@ -51,15 +54,15 @@ export default class TextControl extends React.Component {
     // Validation & casting
     const errors = [];
     if (value !== '' && this.props.isFloat) {
-      const error = v.numeric(value);
+      const error = legacyValidateNumber(value);
       if (error) {
         errors.push(error);
       } else {
-        value = parseFloat(value);
+        value = value.match(/.*(\.)$/g) ? value : parseFloat(value);
       }
     }
     if (value !== '' && this.props.isInt) {
-      const error = v.integer(value);
+      const error = legacyValidateInteger(value);
       if (error) {
         errors.push(error);
       } else {

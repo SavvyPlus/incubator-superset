@@ -20,6 +20,7 @@ import random
 import time
 import uuid
 from datetime import datetime, timedelta
+from typing import Dict, TYPE_CHECKING  # pylint: disable=unused-import
 
 import celery
 from dateutil.relativedelta import relativedelta
@@ -30,6 +31,12 @@ from werkzeug.local import LocalProxy
 
 from superset.utils.cache_manager import CacheManager
 from superset.utils.feature_flag_manager import FeatureFlagManager
+
+# Avoid circular import
+if TYPE_CHECKING:
+    from superset.jinja_context import (  # pylint: disable=unused-import
+        BaseTemplateProcessor,
+    )
 
 
 class JinjaContextManager:
@@ -42,13 +49,19 @@ class JinjaContextManager:
             "timedelta": timedelta,
             "uuid": uuid,
         }
+        self._template_processors = {}  # type: Dict[str, BaseTemplateProcessor]
 
     def init_app(self, app):
         self._base_context.update(app.config["JINJA_CONTEXT_ADDONS"])
+        self._template_processors.update(app.config["CUSTOM_TEMPLATE_PROCESSORS"])
 
     @property
     def base_context(self):
         return self._base_context
+
+    @property
+    def template_processors(self):
+        return self._template_processors
 
 
 class ResultsBackendManager:
@@ -82,11 +95,18 @@ class UIManifestProcessor:
 
         @app.context_processor
         def get_manifest():  # pylint: disable=unused-variable
+            loaded_chunks = set()
+
+            def get_files(bundle, asset_type="js"):
+                files = self.get_manifest_files(bundle, asset_type)
+                filtered_files = [f for f in files if f not in loaded_chunks]
+                for f in filtered_files:
+                    loaded_chunks.add(f)
+                return filtered_files
+
             return dict(
-                loaded_chunks=set(),
-                get_unloaded_chunks=self.get_unloaded_chunks,
-                js_manifest=self.get_js_manifest_files,
-                css_manifest=self.get_css_manifest_files,
+                js_manifest=lambda bundle: get_files(bundle, "js"),
+                css_manifest=lambda bundle: get_files(bundle, "css"),
             )
 
     def parse_manifest_json(self):
@@ -99,36 +119,22 @@ class UIManifestProcessor:
         except Exception:  # pylint: disable=broad-except
             pass
 
-    def get_js_manifest_files(self, filename):
+    def get_manifest_files(self, bundle, asset_type):
         if self.app.debug:
             self.parse_manifest_json()
-        entry_files = self.manifest.get(filename, {})
-        return entry_files.get("js", [])
-
-    def get_css_manifest_files(self, filename):
-        if self.app.debug:
-            self.parse_manifest_json()
-        entry_files = self.manifest.get(filename, {})
-        return entry_files.get("css", [])
-
-    @staticmethod
-    def get_unloaded_chunks(files, loaded_chunks):
-        filtered_files = [f for f in files if f not in loaded_chunks]
-        for f in filtered_files:
-            loaded_chunks.add(f)
-        return filtered_files
+        return self.manifest.get(bundle, {}).get(asset_type, [])
 
 
 APP_DIR = os.path.dirname(__file__)
-
 appbuilder = AppBuilder(update_perms=False)
 cache_manager = CacheManager()
 celery_app = celery.Celery()
 db = SQLA()
 _event_logger: dict = {}
 event_logger = LocalProxy(lambda: _event_logger.get("event_logger"))
+simulation_logger = LocalProxy(lambda: _event_logger.get("simulation_logger"))
 feature_flag_manager = FeatureFlagManager()
-jinja_context_manager = JinjaContextManager()
+jinja_context_manager = JinjaContextManager()  # type: JinjaContextManager
 manifest_processor = UIManifestProcessor(APP_DIR)
 migrate = Migrate()
 results_backend_manager = ResultsBackendManager()

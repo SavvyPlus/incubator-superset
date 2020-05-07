@@ -18,6 +18,7 @@
 
 import json
 import logging
+from typing import Any, Dict, List, Optional, Union
 from urllib import request
 from urllib.error import URLError
 
@@ -31,12 +32,15 @@ from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
 from superset.models.tags import Tag, TaggedObject
 from superset.utils.core import parse_human_datetime
+from superset.views.utils import build_extra_filters
 
 logger = get_task_logger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def get_form_data(chart_id, dashboard=None):
+def get_form_data(
+    chart_id: int, dashboard: Optional[Dashboard] = None
+) -> Dict[str, Any]:
     """
     Build `form_data` for chart GET request from dashboard's `default_filters`.
 
@@ -44,7 +48,7 @@ def get_form_data(chart_id, dashboard=None):
     filters in the GET request for charts.
 
     """
-    form_data = {"slice_id": chart_id}
+    form_data: Dict[str, Any] = {"slice_id": chart_id}
 
     if dashboard is None or not dashboard.json_metadata:
         return form_data
@@ -54,27 +58,23 @@ def get_form_data(chart_id, dashboard=None):
     if not default_filters:
         return form_data
 
-    # do not apply filters if chart is immune to them
-    immune_fields = []
     filter_scopes = json_metadata.get("filter_scopes", {})
-    if filter_scopes:
-        for scopes in filter_scopes.values():
-            for (field, scope) in scopes.items():
-                if chart_id in scope.get("immune", []):
-                    immune_fields.append(field)
-
-    extra_filters = []
-    for filters in default_filters.values():
-        for col, val in filters.items():
-            if col not in immune_fields:
-                extra_filters.append({"col": col, "op": "in", "val": val})
+    layout = json.loads(dashboard.position_json or "{}")
+    if (
+        isinstance(layout, dict)
+        and isinstance(filter_scopes, dict)
+        and isinstance(default_filters, dict)
+    ):
+        extra_filters = build_extra_filters(
+            layout, filter_scopes, default_filters, chart_id
+        )
     if extra_filters:
         form_data["extra_filters"] = extra_filters
 
     return form_data
 
 
-def get_url(chart):
+def get_url(chart: Slice, extra_filters: Optional[Dict[str, Any]] = None) -> str:
     """Return external URL for warming up a given chart/table cache."""
     with app.test_request_context():
         baseurl = (
@@ -82,7 +82,7 @@ def get_url(chart):
             "{SUPERSET_WEBSERVER_ADDRESS}:"
             "{SUPERSET_WEBSERVER_PORT}".format(**app.config)
         )
-        return f"{baseurl}{chart.url}"
+        return f"{baseurl}{chart.get_explore_url(overrides=extra_filters)}"
 
 
 class Strategy:
@@ -108,10 +108,10 @@ class Strategy:
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def get_urls(self):
+    def get_urls(self) -> List[str]:
         raise NotImplementedError("Subclasses must implement get_urls!")
 
 
@@ -133,7 +133,7 @@ class DummyStrategy(Strategy):
 
     name = "dummy"
 
-    def get_urls(self):
+    def get_urls(self) -> List[str]:
         session = db.create_scoped_session()
         charts = session.query(Slice).all()
 
@@ -160,12 +160,12 @@ class TopNDashboardsStrategy(Strategy):
 
     name = "top_n_dashboards"
 
-    def __init__(self, top_n=5, since="7 days ago"):
+    def __init__(self, top_n: int = 5, since: str = "7 days ago") -> None:
         super(TopNDashboardsStrategy, self).__init__()
         self.top_n = top_n
         self.since = parse_human_datetime(since)
 
-    def get_urls(self):
+    def get_urls(self) -> List[str]:
         urls = []
         session = db.create_scoped_session()
 
@@ -181,7 +181,8 @@ class TopNDashboardsStrategy(Strategy):
         dashboards = session.query(Dashboard).filter(Dashboard.id.in_(dash_ids)).all()
         for dashboard in dashboards:
             for chart in dashboard.slices:
-                urls.append(get_url(chart))
+                form_data_with_filters = get_form_data(chart.id, dashboard)
+                urls.append(get_url(chart, form_data_with_filters))
 
         return urls
 
@@ -204,11 +205,11 @@ class DashboardTagsStrategy(Strategy):
 
     name = "dashboard_tags"
 
-    def __init__(self, tags=None):
+    def __init__(self, tags: Optional[List[str]] = None) -> None:
         super(DashboardTagsStrategy, self).__init__()
         self.tags = tags or []
 
-    def get_urls(self):
+    def get_urls(self) -> List[str]:
         urls = []
         session = db.create_scoped_session()
 
@@ -255,7 +256,9 @@ strategies = [DummyStrategy, TopNDashboardsStrategy, DashboardTagsStrategy]
 
 
 @celery_app.task(name="cache-warmup")
-def cache_warmup(strategy_name, *args, **kwargs):
+def cache_warmup(
+    strategy_name: str, *args: Any, **kwargs: Any
+) -> Union[Dict[str, List[str]], str]:
     """
     Warm up cache.
 
@@ -265,7 +268,7 @@ def cache_warmup(strategy_name, *args, **kwargs):
     logger.info("Loading strategy")
     class_ = None
     for class_ in strategies:
-        if class_.name == strategy_name:
+        if class_.name == strategy_name:  # type: ignore
             break
     else:
         message = f"No strategy {strategy_name} found!"
@@ -281,7 +284,7 @@ def cache_warmup(strategy_name, *args, **kwargs):
         logger.exception(message)
         return message
 
-    results = {"success": [], "errors": []}
+    results: Dict[str, List[str]] = {"success": [], "errors": []}
     for url in strategy.get_urls():
         try:
             logger.info(f"Fetching {url}")

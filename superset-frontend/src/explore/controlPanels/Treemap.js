@@ -17,6 +17,7 @@
  * under the License.
  */
 import { t } from '@superset-ui/translation';
+import { D3_FORMAT_OPTIONS, D3_FORMAT_DOCS } from '../controls';
 
 export default {
   controlPanelSections: [
@@ -35,8 +36,33 @@ export default {
       expanded: true,
       controlSetRows: [
         ['color_scheme', 'label_colors'],
-        ['treemap_ratio'],
-        ['number_format'],
+        [
+          {
+            name: 'treemap_ratio',
+            config: {
+              type: 'TextControl',
+              label: t('Ratio'),
+              renderTrigger: true,
+              isFloat: true,
+              default: 0.5 * (1 + Math.sqrt(5)), // d3 default, golden ratio
+              description: t('Target aspect ratio for treemap tiles.'),
+            },
+          },
+        ],
+        [
+          {
+            name: 'number_format',
+            config: {
+              type: 'SelectControl',
+              freeForm: true,
+              label: t('Number format'),
+              renderTrigger: true,
+              default: 'SMART_NUMBER',
+              choices: D3_FORMAT_OPTIONS,
+              description: D3_FORMAT_DOCS,
+            },
+          },
+        ],
       ],
     },
   ],
