@@ -36,7 +36,7 @@ from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
 from .forms import UploadAssumptionForm
 from .assumption_process import process_assumptions, upload_assumption_file
-from .util import get_obg_s3_url
+from .util import get_download_url
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
     chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
@@ -94,8 +94,8 @@ class UploadAssumptionView(SimpleFormView):
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.excel_file.data, path)
-            download_link = upload_assumption_file(path, name)
-            handle_assumption_process.apply_async(args=[path, name])
+            download_link, s3_link = upload_assumption_file(path, name)
+            handle_assumption_process.apply_async(args=[s3_link, name])
             assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
             if not assumption_file:
                 assumption_file = Assumption()
