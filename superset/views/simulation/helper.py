@@ -238,7 +238,7 @@ def process_wind_solar_data(project_ref_dic, proxy_capacity_dic, ref_start_date,
         historical_generation_one_day = dict()
         for key in project_ref_dic:
             historical_generation_one_day[key] = \
-                list(project_dic[key][test_day].ix[:, 0])  # a list of 48 half hour generation data
+                list(project_dic[key][test_day].iloc[:, 0])  # a list of 48 half hour generation data
         write_pickle_to_s3(historical_generation_one_day,
                            bucket_inputs,
                            projects_gen_data_s3_pickle_path.format(assumptions_version, test_day_str))

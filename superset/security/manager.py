@@ -128,6 +128,7 @@ class SupersetSecurityManager(SecurityManager):
         "LogModelView",
         "Security",
         "RowLevelSecurityFiltersModelView",
+        "Simulation",
     } | USER_MODEL_VIEWS
 
     ALPHA_ONLY_VIEW_MENUS = {"Upload a CSV"}

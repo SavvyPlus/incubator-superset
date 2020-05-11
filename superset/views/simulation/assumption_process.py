@@ -127,7 +127,7 @@ def update_renewable_prop(filename, assumptions_version):
 
 
 def prepare_proxy(filename, assumptions_version):
-    start_time = time.time()
+    # start_time = time.time()
     ref_start_date = datestr2date(start_date_str)
     ref_end_date = datestr2date(end_date_str)
     project_assumption = projects_wind_solar_assumption(filename)
@@ -157,5 +157,9 @@ def process_assumptions(file_path, assumptions_version):
     update_renewable_prop(file_path, assumptions_version)
     prepare_proxy(file_path, assumptions_version)
     update_small_battery(file_path, assumptions_version)
+
+
+def upload_assumption_file(file_path, assumptions_version):
     put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version))
-    return get_obg_s3_url(bucket_test, excel_path.format(assumptions_version))
+    return get_download_url(bucket_test, excel_path.format(assumptions_version)), \
+           get_s3_url(bucket_test, excel_path.format(assumptions_version))
