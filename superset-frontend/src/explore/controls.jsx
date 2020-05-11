@@ -127,6 +127,7 @@ const timeColumnOption = {
 
 const groupByControl = {
   type: 'SelectControl',
+  controlGroup: 'groupby',
   multi: true,
   freeForm: true,
   label: t('Group by'),
@@ -158,6 +159,7 @@ const groupByControl = {
 
 const metrics = {
   type: 'MetricsControl',
+  controlGroup: 'metrics',
   multi: true,
   label: t('Metrics'),
   validators: [validateNonEmpty],
