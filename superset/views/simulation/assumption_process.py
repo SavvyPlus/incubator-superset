@@ -127,7 +127,7 @@ def update_renewable_prop(filename, assumptions_version):
 
 
 def prepare_proxy(filename, assumptions_version):
-    start_time = time.time()
+    # start_time = time.time()
     ref_start_date = datestr2date(start_date_str)
     ref_end_date = datestr2date(end_date_str)
     project_assumption = projects_wind_solar_assumption(filename)

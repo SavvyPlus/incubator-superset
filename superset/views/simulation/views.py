@@ -70,6 +70,7 @@ def handle_assumption_process(path, name):
         db.session.commit()
         g.result = 'Failed'
         g.detail = str(e)
+        traceback.print_exc()
 
 class UploadAssumptionView(SimpleFormView):
     route_base = '/upload_assumption_file'
