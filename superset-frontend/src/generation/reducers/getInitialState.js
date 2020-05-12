@@ -28,5 +28,6 @@ export default function (bootstrapData) {
 
   return {
     user,
+    messageToasts: [],
   };
 }
