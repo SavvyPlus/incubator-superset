@@ -365,7 +365,7 @@ def get_gas_price_escalation_assumption(file_path, state):
     """
     escalation_dict = dict()
     escalation_df = read_file_sheet(file_path, sheet_escalation)
-    escalation_df = rename_header_with_top_row(escalation_df)
+    # escalation_df = rename_header_with_top_row(escalation_df)
     escalation_df = escalation_df.query(f"`State`=='{state}'")
     year_list = escalation_df['Year'].tolist()
     for year in range(len(year_list)):
