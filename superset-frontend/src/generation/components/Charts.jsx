@@ -74,6 +74,13 @@ class Charts extends React.Component {
           },
         },
         plotOptions: {
+          series: {
+            point: {
+              events: {
+                mouseOver: this.setHoverData.bind(this),
+              },
+            },
+          },
           area: {
             stacking: 'normal',
             lineColor: '#666666',
@@ -381,6 +388,10 @@ class Charts extends React.Component {
     });
   }
 
+  setHoverData = e => {
+    console.log(e.target.category);
+  };
+
   render() {
     return (
       <div id="container">
@@ -388,6 +399,7 @@ class Charts extends React.Component {
           highcharts={Highcharts}
           options={this.state.options1}
         />
+        <div style={{ height: 30 }} />
         <HighchartsReact
           highcharts={Highcharts}
           options={this.state.options2}

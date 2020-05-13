@@ -41,19 +41,25 @@ export default function HeadSelect({
   const handleRange = (event, newRange) => {
     if (newRange !== null) {
       setRange(newRange);
-    }
 
-    if (newRange === '3D' || newRange === '7D') {
-      setGranularity('30m');
-    } else if (newRange === '1Y') {
-      setGranularity('Week');
-    } else if (newRange === 'ALL') {
-      setGranularity('Month');
+      if (newRange === '1D') {
+        setGranularity('5m');
+      } else if (newRange === '3D' || newRange === '7D') {
+        setGranularity('30m');
+      } else if (newRange === '30D') {
+        setGranularity('Day');
+      } else if (newRange === '1Y') {
+        setGranularity('Week');
+      } else if (newRange === 'ALL') {
+        setGranularity('Month');
+      }
     }
   };
 
   const handleGranularity = (event, newGranularity) => {
-    setGranularity(newGranularity);
+    if (newGranularity !== null) {
+      setGranularity(newGranularity);
+    }
   };
 
   const classes = useStyles();
@@ -113,6 +119,7 @@ export default function HeadSelect({
         >
           {granularity2.map(g => (
             <ToggleButton
+              key={g}
               classes={{ root: classes.button, selected: classes.selected }}
               value={g}
               aria-label={g}
