@@ -21,19 +21,42 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Col, Row, Tabs, Tab, Panel } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
+import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
+import RegionSelect from './RegionSelect';
+import HeadSelect from './HeadSelect';
+import Charts from './Charts';
+
+const theme = createMuiTheme({
+  palette: {
+    primary: {
+      main: '#c74523',
+    },
+    secondary: {
+      main: '#fff',
+    },
+  },
+  typography: {
+    button: {
+      color: '#c74523',
+    },
+  },
+});
 
 function App({ username, firstName, lastName }) {
   return (
-    <div className="container app">
-      <Row>
-        <Col md={9}>
-          <h1>{username}</h1>
-          <h3>
-            {firstName} {lastName}
-          </h3>
-        </Col>
-      </Row>
-    </div>
+    <ThemeProvider theme={theme}>
+      <div className="container app">
+        <Row>
+          <RegionSelect />
+        </Row>
+        <Row>
+          <HeadSelect />
+        </Row>
+        <Row>
+          <Charts />
+        </Row>
+      </div>
+    </ThemeProvider>
   );
 }
 

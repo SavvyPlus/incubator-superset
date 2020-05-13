@@ -16,20 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/* eslint-disable camelcase */
-import { isString } from 'lodash';
-import shortid from 'shortid';
+export const SET_REGION = 'SET_REGION';
+export function setRegion(region) {
+  return { type: SET_REGION, region };
+}
 
-export default function (bootstrapData) {
-  const { user } = bootstrapData;
+export const SET_RANGE = 'SET_RANGE';
+export function setRange(range) {
+  return { type: SET_RANGE, range };
+}
 
-  return {
-    user,
-    generation: {
-      region: 'nem',
-      range: '7D',
-      granularity: '30m',
-    },
-    messageToasts: [],
-  };
+export const SET_GRANULARITY = 'SET_GRANULARITY';
+export function retRegion(granularity) {
+  return { type: SET_GRANULARITY, granularity };
 }

@@ -71,7 +71,7 @@ class NemModelView(
 
         return self.render_template(
             "superset/basic.html",
-            title=_("NEM Energy"),
+            title=_("NEM Generation"),
             entry="generation",
             bootstrap_data=json.dumps(
                 payload, default=utils.pessimistic_json_iso_dttm_ser

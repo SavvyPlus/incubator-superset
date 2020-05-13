@@ -19,9 +19,11 @@
 import { combineReducers } from 'redux';
 
 import user from './user';
+import generation from './generation';
 import messageToasts from '../../messageToasts/reducers';
 
 export default combineReducers({
   user,
+  generation,
   messageToasts,
 });
