@@ -17,6 +17,7 @@
  * under the License.
  */
 import React from 'react';
+import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Col, Row, Tabs, Tab, Panel } from 'react-bootstrap';
@@ -25,6 +26,7 @@ import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import RegionSelect from './RegionSelect';
 import HeadSelect from './HeadSelect';
 import Charts from './Charts';
+import * as Actions from '../actions/generation';
 
 const theme = createMuiTheme({
   palette: {
@@ -42,18 +44,28 @@ const theme = createMuiTheme({
   },
 });
 
-function App({ username, firstName, lastName }) {
+function App({ actions, generation }) {
   return (
     <ThemeProvider theme={theme}>
       <div className="container app">
         <Row>
-          <RegionSelect />
+          <RegionSelect
+            region={generation.region}
+            setRegion={actions.setRegion}
+          />
         </Row>
         <Row>
-          <HeadSelect />
+          <HeadSelect
+            range={generation.range}
+            setRange={actions.setRange}
+            granularity={generation.granularity}
+            setGranularity={actions.setGranularity}
+          />
         </Row>
         <Row>
-          <Charts />
+          <Col md={8}>
+            <Charts />
+          </Col>
         </Row>
       </div>
     </ThemeProvider>
@@ -61,13 +73,17 @@ function App({ username, firstName, lastName }) {
 }
 
 function mapStateToProps(state) {
-  const { user } = state;
-
+  const { generation } = state;
   return {
-    username: user.username,
-    firstName: user.firstName,
-    lastName: user.lastName,
+    generation,
   };
 }
 
-export default connect(mapStateToProps)(App);
+function mapDispatchToProps(dispatch) {
+  return {
+    actions: bindActionCreators(Actions, dispatch),
+  };
+}
+
+export { App };
+export default connect(mapStateToProps, mapDispatchToProps)(App);

@@ -1212,7 +1212,6 @@ class Charts extends React.Component {
   }
 
   render() {
-    console.log(this.props.actions);
     return (
       <div id="container">
         <HighchartsReact

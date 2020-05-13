@@ -27,6 +27,6 @@ export function setRange(range) {
 }
 
 export const SET_GRANULARITY = 'SET_GRANULARITY';
-export function retRegion(granularity) {
+export function setGranularity(granularity) {
   return { type: SET_GRANULARITY, granularity };
 }

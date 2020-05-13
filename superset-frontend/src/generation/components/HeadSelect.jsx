@@ -32,10 +32,12 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export default function HeadSelect() {
-  const [range, setRange] = React.useState('7D');
-  const [granularity, setGranularity] = React.useState('30m');
-
+export default function HeadSelect({
+  range,
+  setRange,
+  granularity,
+  setGranularity,
+}) {
   const handleRange = (event, newRange) => {
     if (newRange !== null) {
       setRange(newRange);
@@ -79,6 +81,7 @@ export default function HeadSelect() {
         >
           {granularity1.map(g => (
             <ToggleButton
+              key={g}
               classes={{ root: classes.button, selected: classes.selected }}
               value={g}
               aria-label={g}

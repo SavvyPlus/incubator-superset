@@ -6,7 +6,6 @@ import Select from '@material-ui/core/Select';
 
 const useStyles = makeStyles(theme => ({
   formControl: {
-    margin: theme.spacing(1),
     minWidth: 120,
   },
   selectEmpty: {
@@ -14,9 +13,8 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export default function RegionSelect() {
+export default function RegionSelect({ region, setRegion }) {
   const classes = useStyles();
-  const [region, setRegion] = React.useState('nem');
 
   const handleChange = event => {
     setRegion(event.target.value);
