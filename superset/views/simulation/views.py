@@ -57,6 +57,7 @@ def handle_assumption_process(path, name):
         process_assumptions(path, name)
         assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
         assumption_file.status = "Success"
+        assumption_file.status_detail = None
         # assumption_file.download_link = obj_url
         db.session.merge(assumption_file)
         db.session.commit()
@@ -230,17 +231,67 @@ class EmpowerModelView(SupersetModelView):
             return None
 
 
-class AssumptionModelView(SupersetModelView):
+class AssumptionModelView(EmpowerModelView):
     route_base = "/assuptionmodelview"
     datamodel = SQLAInterface(Assumption)
-    include_route_methods = {RouteMethod.LIST, RouteMethod.EDIT, RouteMethod.DELETE, RouteMethod.INFO, RouteMethod.SHOW}
+    include_route_methods = RouteMethod.CRUD_SET
     list_widget = AssumptionListWidget
 
     order_columns = ['name']
     list_columns = ['name', 'status', 'status_detail', 'download_link']
+    add_exclude_columns = ['status','status_detail']
     label_columns = {'name':'Name','status':'Status','status_detail':'Status Detail', 'download_link':'Download'}
     edit_exclude_columns = ['status','status_detail','download_link']
     show_exclude_columns = ['download_link']
+
+
+    add_form = UploadAssumptionForm
+
+    @simulation_logger.log_simulation(action_name='upload assumption')
+    def add_item(self, form, exclude_cols):
+        import time
+        time1 = time.time()
+        excel_filename = form.download_link.data.filename
+        extension = os.path.splitext(excel_filename)[1].lower()
+        path = tempfile.NamedTemporaryFile(
+            dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
+        ).name
+
+        form.download_link.data.filename = path
+        name = form.name.data
+        g.action_object = name
+        g.action_object_type = 'Assumption'
+        try:
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
+            upload_stream_write(form.download_link.data, path)
+            download_link, s3_link = upload_assumption_file(path, name)
+            handle_assumption_process.apply_async(args=[s3_link, name])
+            assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+            if not assumption_file:
+                assumption_file = Assumption()
+            assumption_file.name = name
+            assumption_file.status = "Processing"
+            assumption_file.download_link = download_link
+            db.session.merge(assumption_file)
+            db.session.commit()
+            message = "Upload success"
+            style = 'info'
+            g.result = 'Success'
+            g.detail = None
+        except Exception as e:
+            traceback.print_exc()
+            db.session.rollback()
+            message = "Upload failed:" + str(e)
+            style = 'danger'
+            g.result = 'Failed'
+            g.detail = message
+        finally:
+            os.remove(path)
+        # os.remove(path)
+        flash(message, style)
+        flash("Time used:{}".format(time.time() - time1), 'info')
+        return None
+
 
 
 class SimulationModelView(
