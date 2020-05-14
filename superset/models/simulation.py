@@ -40,6 +40,7 @@ class Assumption(
     __tablename__ = "assumption"
     id = Column(Integer, primary_key=True)
     name = Column(String(200))
+    description = Column(String(200))
     status = Column(String(10))
     status_detail = Column(String(500))
     download_link = Column(String(200))
