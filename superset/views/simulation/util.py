@@ -32,8 +32,12 @@ def put_file_to_s3(filename, bucket, key):
         response = client.upload_fileobj(f, bucket, key)
     return response
 
-def get_obg_s3_url(bucket, key):
+def get_download_url(bucket, key):
     return "https://{}.s3-ap-southeast-2.amazonaws.com/{}".format(bucket, key)
+
+def get_s3_url(bucket, key):
+    return "s3://{}/{}".format(bucket, key)
+
 
 def put_object_to_s3(binary_data, bucket, key):
     client.put_object(Body=binary_data,

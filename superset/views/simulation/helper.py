@@ -3,10 +3,7 @@ import pandas as pd
 # from spot_price_simulation_lp.s3_utils import write_pickle_to_s3
 import datetime
 import calendar
-from .simulation_config import bucket_inputs, wind_solar_path, gen_closure_path, \
-    sheet_generation_closure, sheet_pv_forecast, sheet_pv_history, sheet_demand_growth, sheet_project_list, \
-    sheet_project_proxy, projects_gen_data_s3_pickle_path, sheet_new_power_stations, sheet_renewable_proportion, \
-    sheet_floor_price, sheet_strategic_behaviour
+from .simulation_config import *
 
 
 def read_file_sheet(filename, sheet_name):
@@ -221,15 +218,6 @@ def process_wind_solar_data(project_ref_dic, proxy_capacity_dic, ref_start_date,
                                                                          project))
         proxy_dic = get_df_map(gen_data_df, ref_start_date, ref_end_date)
         proxy_data_dic[project] = proxy_dic
-    # make a dictionary and its keys are the projects in ProjectList
-    project_dic = dict()
-    for key in project_ref_dic:
-        print(key)
-        project_dic[key] = dict()
-        for k, v in proxy_data_dic[project_ref_dic[key]['proxy']].items():
-            ratio = project_ref_dic[key]['capacity'] / proxy_capacity_dic[project_ref_dic[key]['proxy']]['capacity']
-            v = v * ratio
-        project_dic[key] = proxy_data_dic[project_ref_dic[key]['proxy']]
 
     # historical_generation = dict()
     for i in range((ref_end_date - ref_start_date).days + 1):
@@ -237,8 +225,10 @@ def process_wind_solar_data(project_ref_dic, proxy_capacity_dic, ref_start_date,
         test_day_str = test_day.strftime("%Y-%m-%d")
         historical_generation_one_day = dict()
         for key in project_ref_dic:
+            ratio = project_ref_dic[key]['capacity'] / proxy_capacity_dic[project_ref_dic[key]['proxy']]['capacity']
+            # a list of 48 half hour generation data
             historical_generation_one_day[key] = \
-                list(project_dic[key][test_day].ix[:, 0])  # a list of 48 half hour generation data
+                list(proxy_data_dic[project_ref_dic[key]['proxy']][test_day].iloc[:, 0] * ratio)
         write_pickle_to_s3(historical_generation_one_day,
                            bucket_inputs,
                            projects_gen_data_s3_pickle_path.format(assumptions_version, test_day_str))
@@ -363,87 +353,23 @@ def get_new_power_stations_assumption(file_path, state):
         new_ps_dict[nps_id] = new_ps_tmp_dict
     return new_ps_dict
 
-#
-# def get_gas_price_escalation_assumption(file_path, state):
-#     """
-#     make a dictionary like the following structure from the gas price escalation information of current state.
-#     :param file_path:
-#     :param state:
-#     :return: dictionary{year: [case1, case2, ..., case9],
-#                         ...,
-#                         }
-#     """
-#     escalation_dict = dict()
-#     escalation_df = read_file_sheet(file_path, sheet_escalation)
-#     escalation_df = rename_header_with_top_row(escalation_df)
-#     escalation_df = escalation_df.query(f"`State`=='{state}'")
-#     year_list = escalation_df['Year'].tolist()
-#     for year in range(len(year_list)):
-#         escalation_factor = escalation_df.iloc[year, 2:].tolist()
-#         escalation_dict[year_list[year]] = escalation_factor
-#     return escalation_dict
 
-#
-# def get_negative_adjustment_assumption(file_path, state):
-#     """
-#     make a dictionary like the following structure from the negatives adjustment information for current state.
-#     :param file_path:
-#     :param state:
-#     :return: dictionary{year:
-#                             [
-#                             {'proportion': xxx,
-#                              'lower': xxx,
-#                              'upper': xxx,
-#                              'mean': xxx,
-#                              'standard deviation': xxx},
-#                             {},
-#                             ...
-#                             ],
-#                         ...
-#                         }
-#     """
-#     negatives_adjustment_dict = dict()
-#     negatives_adjustment_df = read_file_sheet(file_path, sheet_negatives)
-#     negatives_adjustment_df = rename_header_with_top_row(negatives_adjustment_df)
-#     negatives_adjustment_df = negatives_adjustment_df.query(f"`State`=='{state}'")
-#     year_list = negatives_adjustment_df['Year'].unique().tolist()
-#     for year in year_list:
-#         price_band_df = negatives_adjustment_df[negatives_adjustment_df['Year'] == year]
-#         price_band_yearly = []
-#         for i in range(len(price_band_df)):
-#             tmp = {'proportion': price_band_df['Proportion'].iloc[i],
-#                    'lower': price_band_df['PriceBandLower'].iloc[i],
-#                    'upper': price_band_df['PriceBandUpper'].iloc[i],
-#                    'mean': price_band_df['Mean'].iloc[i],
-#                    'standard deviation': price_band_df['StandardDeviation'].iloc[i]}
-#             price_band_yearly.append(tmp)
-#         negatives_adjustment_dict[year] = price_band_yearly
-#     return negatives_adjustment_dict
+def get_gas_price_escalation_assumption(file_path, state):
+    """
+    make a dictionary like the following structure from the gas price escalation information of current state.
+    :param file_path:
+    :param state:
+    :return: dictionary{year: [case1, case2, ..., case9],
+                        ...,
+                        }
+    """
+    escalation_dict = dict()
+    escalation_df = read_file_sheet(file_path, sheet_escalation)
+    # escalation_df = rename_header_with_top_row(escalation_df)
+    escalation_df = escalation_df.query(f"`State`=='{state}'")
+    year_list = escalation_df['Year'].tolist()
+    for year in range(len(year_list)):
+        escalation_factor = escalation_df.iloc[year, 2:].tolist()
+        escalation_dict[year_list[year]] = escalation_factor
+    return escalation_dict
 
-
-# def get_interconnector_extras(file_path):
-#     """
-#     make a dictionary like the following structure from the new power stations information of current state.
-#     :param file_path:
-#     :param state:
-#     :return: dictionary{
-#                             Interconnecotr: {
-#                                 'start': start date,
-#                                 'end': end date,
-#                                 'Extra to A': xxx,
-#                                 'Extra to B': xxx
-#                             },
-#                             ...
-#                         }
-#     """
-#     interconnector_extras_dict = dict()
-#     interconnector_extras_df = read_file_sheet(file_path, sheet_interconnectors)
-#     interconnector_extras_df = rename_header_with_top_row(interconnector_extras_df)
-#     interconnector_id = interconnector_extras_df[interconnector_extras_df.columns[0]].unique().tolist()
-#     for i in interconnector_id:
-#         tmp_df = interconnector_extras_df[interconnector_extras_df['Link'] == i]
-#         interconnector_extras_dict[i] = {'start': tmp_df['StartDate'].iloc[0],
-#                                          'end': tmp_df['EndDate'].iloc[0],
-#                                          'Extra to A': tmp_df['Extra to A'].iloc[0],
-#                                          'Extra to B': tmp_df['Extra to B'].iloc[0]}
-#     return interconnector_extras_dict
