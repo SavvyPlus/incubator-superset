@@ -547,11 +547,6 @@ SQLLAB_DEFAULT_DBID = None
 # by celery.
 SQLLAB_ASYNC_TIME_LIMIT_SEC = 60 * 60 * 6
 
-# On Redis
-from werkzeug.contrib.cache import RedisCache  # noqa
-RESULTS_BACKEND = RedisCache(
-    host='localhost', port=6379, key_prefix='superset_results')
-
 # Some databases support running EXPLAIN queries that allow users to estimate
 # query costs before they run. These EXPLAIN queries should have a small
 # timeout.
