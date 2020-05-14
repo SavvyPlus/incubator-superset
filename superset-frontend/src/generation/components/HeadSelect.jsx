@@ -139,6 +139,7 @@ export default function HeadSelect({
       >
         {granularity3.map(g => (
           <ToggleButton
+            key={g}
             classes={{ root: classes.button, selected: classes.selected }}
             value={g}
             aria-label={g}

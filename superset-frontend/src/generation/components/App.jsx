@@ -26,17 +26,19 @@ import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import RegionSelect from './RegionSelect';
 import HeadSelect from './HeadSelect';
 import Charts from './Charts';
+import DataTable from './DataTable';
 import * as Actions from '../actions/generation';
+import '../App.less';
 
 const theme = createMuiTheme({
-  palette: {
-    primary: {
-      main: '#c74523',
-    },
-    secondary: {
-      main: '#fff',
-    },
-  },
+  // palette: {
+  //   primary: {
+  //     main: '#c74523',
+  //   },
+  //   secondary: {
+  //     main: '#fff',
+  //   },
+  // },
   typography: {
     button: {
       color: '#c74523',
@@ -47,7 +49,7 @@ const theme = createMuiTheme({
 function App({ actions, generation }) {
   return (
     <ThemeProvider theme={theme}>
-      <div className="container app">
+      <div className="generation-container app">
         <Row>
           <RegionSelect
             region={generation.region}
@@ -65,6 +67,9 @@ function App({ actions, generation }) {
         <Row>
           <Col md={8}>
             <Charts />
+          </Col>
+          <Col md={4}>
+            <DataTable />
           </Col>
         </Row>
       </div>
