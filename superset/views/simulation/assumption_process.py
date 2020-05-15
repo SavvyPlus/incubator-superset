@@ -1,11 +1,10 @@
-from .helper import pv_assumption, pv_get_forecast_dic, pv_get_history_dic, max_renewable_proportion, \
-    get_df_map, get_pv_forecast_delta, projects_wind_solar_assumption, process_wind_solar_data, proxy_assumption
+from .helper import *
 from .util import *
 from .simulation_config import start_date_str, end_date_str, sim_start_date_str, sim_end_date_str, \
     states, bucket_inputs, rooftop_pv_path, existing_generation_path, existing_generation_s3_pickle_path, \
     pv_data_s3_pickle_path, pv_forecast_s3_new_pickle_path, pv_history_s3_new_pickle_path, new_projects_pickle_path, \
     retirement_s3_pickle_path, demand_growth_rate_s3_pickle_path, renewable_proportion_s3_pickle_path, excel_path, bucket_test, \
-    projects_gen_data_s3_pickle_path, small_battery_capacity_s3_pickle_path
+    projects_gen_data_s3_pickle_path, small_battery_capacity_s3_pickle_path, sheet_demand_adjustment
 import time
 import datetime
 import pandas as pd
@@ -46,25 +45,13 @@ def process_pv_data(state, ref_start, ref_end):
     return pv_dic
 
 
-def update_existing_generation_pickle(state, ref_start, ref_end, version):
-    existing_generation_df = read_from_s3(bucket_inputs, existing_generation_path.format(state))
-    existing_generation_dic = get_df_map(existing_generation_df, ref_start, ref_end)
-    write_pickle_to_s3(existing_generation_dic, bucket_inputs,
-                       existing_generation_s3_pickle_path.format(version, state))
-
-
-# def update_total_demand_pickle(state, ref_start, ref_end, version):
-#     total_demand_df = read_from_s3(bucket_inputs, total_demand_adjusted_path.format(state))
-#     total_demand_dic = get_df_map(total_demand_df, ref_start, ref_end)
-#     write_pickle_to_s3(total_demand_dic, bucket_inputs, total_demand_adjusted_s3_pickle_path.format(version, state))
-
 def update_pv_data_and_assumption_pickle(file_path, assumptions_version):
     pv_data = dict()
     pv_history = dict()
     pv_forecast = dict()
     for current_state in states:
         start_time = time.time()
-        # print(current_state)
+        print(current_state)
         ref_start_date = datestr2date(start_date_str)
         ref_end_date = datestr2date(end_date_str)
         sim_start_date = datestr2date(sim_start_date_str)
@@ -127,7 +114,7 @@ def update_renewable_prop(filename, assumptions_version):
 
 
 def prepare_proxy(filename, assumptions_version):
-    start_time = time.time()
+    # start_time = time.time()
     ref_start_date = datestr2date(start_date_str)
     ref_end_date = datestr2date(end_date_str)
     project_assumption = projects_wind_solar_assumption(filename)
@@ -149,6 +136,38 @@ def update_small_battery(filename, assumptions_version):
                        small_battery_capacity_s3_pickle_path.format(assumptions_version))
 
 
+def update_strategic_behaviour(filename, assumptions_version):
+    strategic_behaviour_dict = dict()
+    for state in states:
+        strategic_behaviour_dict[state] = get_strategic_behaviour_assumption(filename, state)
+    write_pickle_to_s3(strategic_behaviour_dict, bucket_inputs,
+                       strategic_behaviour_s3_pickle_path.format(assumptions_version))
+
+
+def adjust_demand(filename):
+    adjustment = pd.read_excel(filename, sheet_name=sheet_demand_adjustment)
+    affected_dates_lst = [day.date() for day in set(adjustment.to_dict(orient='list')['Date'])]
+    for day in affected_dates_lst:
+        original_demand = read_pickle_from_s3(bucket_inputs, actual_total_demand_5_mins_path.format(day))
+        curr_day_adj = \
+            adjustment[adjustment['Date'] == datetime.datetime(day.year, day.month, day.day, 0, 0)].to_dict('record')
+        for adj in curr_day_adj:
+            fm = adj['SETTLEMENTDATE']
+            region = adj['REGIONID']
+            adjusted = adj['TOTALDEMAND_ADJUSTED']
+            original_demand[fm][region] = adjusted
+        write_pickle_to_s3(original_demand, bucket_inputs, adjusted_total_demand_5_mins_path.format(day))
+        print(day)
+
+
+def update_gas_price_escalation(filename, assumptions_version):
+    for state in states:
+        escalation_dict = get_gas_price_escalation_assumption(filename, state)
+        write_pickle_to_s3(escalation_dict,
+                           bucket_inputs,
+                           gas_price_escalation_s3_pickle_path.format(assumptions_version, state))
+
+
 def process_assumptions(file_path, assumptions_version):
     update_pv_data_and_assumption_pickle(file_path, assumptions_version)
     update_new_projects_pickle(file_path, assumptions_version)
@@ -157,5 +176,12 @@ def process_assumptions(file_path, assumptions_version):
     update_renewable_prop(file_path, assumptions_version)
     prepare_proxy(file_path, assumptions_version)
     update_small_battery(file_path, assumptions_version)
+    update_strategic_behaviour(file_path, assumptions_version)
+    adjust_demand(file_path)
+    update_gas_price_escalation(file_path, assumptions_version)
+
+
+def upload_assumption_file(file_path, assumptions_version):
     put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version))
-    return get_obg_s3_url(bucket_test, excel_path.format(assumptions_version))
+    return get_download_url(bucket_test, excel_path.format(assumptions_version)), \
+           get_s3_url(bucket_test, excel_path.format(assumptions_version))
