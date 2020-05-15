@@ -490,11 +490,11 @@ WARNING_MSG = None
 
 class CeleryConfig:  # pylint: disable=too-few-public-methods
     # BROKER_URL = "sqla+sqlite:///celerydb.sqlite"
-    BROKER_URL = "redis://redis:6379/0"
+    BROKER_URL = "redis://localhost:6379/0"
     CELERY_IMPORTS = ("superset.sql_lab", "superset.tasks")
 
     # CELERY_RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
-    CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+    CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
     CELERYD_LOG_LEVEL = "DEBUG"
     CELERYD_PREFETCH_MULTIPLIER = 1
     CELERY_ACKS_LATE = False
