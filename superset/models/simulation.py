@@ -33,6 +33,27 @@ from superset.models.tags import ChartUpdater
 from superset.utils import core as utils
 from superset.viz import BaseViz, viz_types
 
+class Client(Model):
+    __tablename__ = "client"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    description = Column(String(500))
+
+    def __repr__(self):
+        return self.name
+
+
+class Project(Model):
+    __tablename__ = "project"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    description = Column(String(500))
+    client_id = Column(Integer, ForeignKey("client.id"))
+    client = relationship("Client", foreign_keys=[client_id], backref="projects")
+
+    def __repr__(self):
+        return self.name
+
 
 class Assumption(
     Model
@@ -59,15 +80,18 @@ class Simulation(
     description = Column(String(200))
     assumption_id = Column(Integer, ForeignKey("assumption.id"))
     assumption = relationship("Assumption", foreign_keys=[assumption_id])
+    project_id = Column(Integer, ForeignKey("project.id"))
+    project = relationship("Project", foreign_keys=[project_id], backref="simulation")
+    generation_model = Column(String(20))
     run_no = Column(Integer)
     start_date = Column(Date)
     end_date = Column(Date)
+    report_type = Column(String(200))
     status = Column(String(10))
     status_detail = Column(String(500))
 
     def __repr__(self):
         return self.name
-
 
 
 class SimulationLog(Model):

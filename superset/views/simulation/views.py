@@ -30,7 +30,7 @@ from flask_babel import lazy_gettext as _
 from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
-from superset.models.simulation import Assumption, Simulation, SimulationLog
+from superset.models.simulation import *
 from superset.utils import core as utils
 from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
@@ -66,11 +66,11 @@ def handle_assumption_process(path, name):
     except Exception as e:
         assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
         assumption_file.status = "Error"
-        assumption_file.status_detail = str(e)
+        assumption_file.status_detail = repr(e)
         db.session.merge(assumption_file)
         db.session.commit()
         g.result = 'Failed'
-        g.detail = str(e)
+        g.detail = repr(e)
         traceback.print_exc()
 
 class UploadAssumptionView(SimpleFormView):
@@ -230,6 +230,26 @@ class EmpowerModelView(SupersetModelView):
         finally:
             return None
 
+class ClientModelView(EmpowerModelView):
+
+    class ClientListWidget(ListWidget):
+        template = "empower/widgets/list_client.html"
+
+
+    route_base = "/clientmodelview"
+    datamodel = SQLAInterface(Client)
+    include_route_methods = RouteMethod.CRUD_SET
+    list_columns = ['name','description','projects']
+    order_columns = ['name']
+
+    list_widget = ClientListWidget
+
+
+class ProjectModelView(EmpowerModelView):
+    route_base = "/projectmodelview"
+    datamodel = SQLAInterface(Project)
+    include_route_methods = RouteMethod.CRUD_SET
+
 
 class AssumptionModelView(EmpowerModelView):
     route_base = "/assuptionmodelview"
@@ -291,6 +311,7 @@ class AssumptionModelView(EmpowerModelView):
         flash(message, style)
         flash("Time used:{}".format(time.time() - time1), 'info')
         return None
+
 
 
 

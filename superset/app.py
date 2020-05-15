@@ -164,6 +164,8 @@ class SupersetAppInitializer:
         from superset.views.datasource import Datasource
         from superset.views.simulation.views import (
             UploadAssumptionView,
+            ClientModelView,
+            ProjectModelView,
             AssumptionModelView,
             SimulationModelView,
             SimulationLogModelView,
@@ -250,12 +252,28 @@ class SupersetAppInitializer:
         )
         # Assumption
         appbuilder.add_view(
+            ClientModelView,
+            "Clients",
+            label=__("Clients"),
+            icon="fa-dashboard",
+            category="Modeling",
+            category_icon="fa-wrench",
+        )
+        appbuilder.add_view(
+            ProjectModelView,
+            "Projects",
+            label=__("Projects"),
+            icon="fa-dashboard",
+            category="Modeling",
+            # category_icon="fa-wrench",
+        )
+        appbuilder.add_view(
             AssumptionModelView,
             "Scenario",
             label=__("Scenario"),
             icon="fa-dashboard",
             category="Modeling",
-            category_icon="fa-wrench",
+            # category_icon="fa-wrench",
         )
         appbuilder.add_view(
             SimulationModelView,
