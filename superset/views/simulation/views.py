@@ -277,7 +277,7 @@ class ClientModelView(EmpowerModelView):
         project_dict = {}
         for client in lst:
             projects = client.projects
-            project_dict[client.name] = list({project.id: project.name} for project in projects)
+            project_dict[client.name] = list({'id': project.id, 'name': project.name} for project in projects)
         # serialize composite pks
         pks = [self._serialize_pk_if_composite(pk) for pk in pks]
 

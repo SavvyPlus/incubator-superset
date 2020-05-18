@@ -67,16 +67,17 @@
                     {% if item[value] %}
                         <td>
                             <button class="btn btn-primary btn-sm" data-toggle="modal"
-                                    data-target="#projectsModal" data-whatever="@mdo">View
+                                    data-target="#projectsModal{{ item['name']|string }}" data-client="{{ item['name'] }}">
+                                View
                             </button>
-                            <div class="modal fade" id="projectsModal" tabindex="-1"
+                            <div class="modal fade" id="projectsModal{{ item['name']|string }}" tabindex="-1"
                                  role="dialog" aria-labelledby="exampleModalLabel"
                                  aria-hidden="true">
                                 <div class="modal-dialog" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header">
                                             <h5 class="modal-title"
-                                                id="exampleModalLabel">New message</h5>
+                                                id="modalLabel">New message</h5>
                                             <button type="button" class="close"
                                                     data-dismiss="modal"
                                                     aria-label="Close">
@@ -88,26 +89,23 @@
                                                 <table class="table table-bordered table-hover" style="background-color: white">
                                                     <thead>
                                                     <tr>
-                                                        <th>
-                                                            <a href="/clientmodelview/list/?_oc_ClientModelView=name&amp;_od_ClientModelView=asc"
-                                                               data-original-title=""
-                                                               title="">Name
-                                                                <i class="fa fa-arrows-v pull-right"></i></a>
-                                                        </th>
-                                                        <th>Description</th>
-                                                        <th>Projects</th>
+                                                        <th>id</th>
+                                                        <th>Project name</th>
+                                                        <th>To</th>
                                                     </tr>
                                                     </thead>
                                                     <tbody>
-                                                    <tr>
-                                                        <td>Colin</td>
-                                                        <td>colin's first</td>
-                                                        <td>
-                                                            <button class="btn btn-primary btn-sm">
-                                                                View
-                                                            </button>
-                                                        </td>
-                                                    </tr>
+                                                    {% for project in project_dict[item['name']] %}
+                                                        <tr>
+                                                            <td class="project-id">{{ project['id'] }}</td>
+                                                            <td class="project-name">{{ project['name'] }}</td>
+                                                            <td class="project-url">
+                                                                <a>
+                                                                    <i class="fa fa-external-link" aria-hidden="true"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -116,9 +114,6 @@
                                             <button type="button"
                                                     class="btn btn-secondary"
                                                     data-dismiss="modal">Close
-                                            </button>
-                                            <button type="button" class="btn btn-primary">
-                                                Send message
                                             </button>
                                         </div>
                                     </div>
@@ -149,14 +144,11 @@
 {% block tail_js %}
     <script>
         $(document).ready(function () {
-            $('#projectsModal').on('show.bs.modal', function (event) {
+            $('[id^=projectsModal]').on('show.bs.modal', function (event) {
                 var button = $(event.relatedTarget) // Button that triggered the modal
-                var recipient = button.data('whatever') // Extract info from data-* attributes
-                // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
-                // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
-                var modal = $(this)
-                modal.find('.modal-title').text('New message to ' + recipient)
-                modal.find('.modal-body input').val(recipient)
+                const client = button.data('client') // Extract info from data-* attributes
+                const modal = $(this)
+                modal.find('.modal-title').text(client + "'s projects")
             });
 
             {#$('.update-team-info').click(function () {#}
