@@ -81,7 +81,7 @@ class Simulation(
     assumption_id = Column(Integer, ForeignKey("assumption.id"))
     assumption = relationship("Assumption", foreign_keys=[assumption_id])
     project_id = Column(Integer, ForeignKey("project.id"))
-    project = relationship("Project", foreign_keys=[project_id], backref="simulation")
+    project = relationship("Project", foreign_keys=[project_id], backref="simulations")
     generation_model = Column(String(20))
     run_no = Column(Integer)
     start_date = Column(Date)

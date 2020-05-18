@@ -57,11 +57,7 @@
                 {% endif %}
                 {% for value in include_columns %}
                     {% if value == "projects" %}
-                        {% if item[value]  %}
-                            <td><button class="btn btn-primary btn-sm">View</button></td>
-                        {% else %}
-                            <td>Not available</td>
-                        {% endif %}
+                        <td><button class="btn btn-primary btn-sm">View</button></td>
                     {% else %}
                         {% set formatter = formatters_columns.get(value) %}
                         {% if formatter %}
