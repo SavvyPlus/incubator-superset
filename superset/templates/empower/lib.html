@@ -1,0 +1,28 @@
+{% macro render_simulation_assumption(field, begin_sep_label='', end_sep_label='', begin_sep_field='', end_sep_field='') %}
+
+    {{begin_sep_label|safe}}
+        <label for="{{field.id}}" control-label>
+            {{ field.label.text }}
+            {% if field.flags.required %}
+                <strong style="color: red">&#42;</strong>
+            {% endif %}
+        </label>
+    {{end_sep_label|safe}}
+    {{begin_sep_field|safe}}
+        <input type="radio" name="assumption-type" value="exist" id="assumption-choice1">
+        <label for="assumption-choice1">Select from uploaded scenarios</label>
+        {{ field(**kwargs)|safe }}
+        <input type="radio" name="assumption-type" value="upload" id="assumption-choice2">
+        <label for="assumption-choice2">Upload new assumption template</label>
+        <input type="file" id="assumption-file">
+
+            <span class="help-block">{{ field.description }}</span>
+        {% if field.errors %}
+            <div class="alert alert-danger">
+            {% for error in field.errors %}
+              {{ _(error) }}
+            {% endfor %}
+            </div>
+        {% endif %}
+    {{end_sep_field|safe}}
+{% endmacro %}

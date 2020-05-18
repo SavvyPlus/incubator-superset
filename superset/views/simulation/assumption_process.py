@@ -180,6 +180,18 @@ def process_assumptions(file_path, assumptions_version):
     adjust_demand(file_path)
     update_gas_price_escalation(file_path, assumptions_version)
 
+def check_assumption(file_path, assumtpions_version):
+    import xlrd
+    xls = xlrd.open_workbook(file_path, on_demand=True)
+    print(xls.sheet_names())
+    for sheet in sheet_name_list:
+        pass
+    return True
+
+def check_proxy(file_path):
+    return True
+
+
 
 def upload_assumption_file(file_path, assumptions_version):
     put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version))
