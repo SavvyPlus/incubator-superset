@@ -35,7 +35,13 @@ class UploadAssumptionForm(DynamicForm):
         validators=[DataRequired()],
         widget=BS3TextFieldWidget(),
     )
-    excel_file = FileField(
+    description = StringField(
+        _("Description"),
+        description=_("Description of the assumption"),
+        widget=BS3TextFieldWidget(),
+    )
+
+    download_link = FileField(
         _("Excel File"),
         description=_("Select the assumption template excel file."),
         validators=[

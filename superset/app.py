@@ -164,6 +164,8 @@ class SupersetAppInitializer:
         from superset.views.datasource import Datasource
         from superset.views.simulation.views import (
             UploadAssumptionView,
+            ClientModelView,
+            ProjectModelView,
             AssumptionModelView,
             SimulationModelView,
             SimulationLogModelView,
@@ -251,28 +253,44 @@ class SupersetAppInitializer:
         )
         # Assumption
         appbuilder.add_view(
-            AssumptionModelView,
-            "Assumptions",
-            label=__("Assumptions"),
+            ClientModelView,
+            "Clients",
+            label=__("Clients"),
             icon="fa-dashboard",
-            category="Simulation",
+            category="Modeling",
             category_icon="fa-wrench",
         )
         appbuilder.add_view(
-            SimulationModelView,
-            "Simulations",
-            label=__("Simulations"),
+            ProjectModelView,
+            "Projects",
+            label=__("Projects"),
             icon="fa-dashboard",
-            category="Simulation",
+            category="Modeling",
+            # category_icon="fa-wrench",
         )
         appbuilder.add_view(
-            SimulationLogModelView,
-            'Simulation Logs',
-            label=__("Simulation Logs"),
-            icon="fa-list-ol",
-            category="Simulation",
+            AssumptionModelView,
+            "Scenario",
+            label=__("Scenario"),
+            icon="fa-dashboard",
+            category="Modeling",
+            # category_icon="fa-wrench",
         )
-        appbuilder.add_separator("Simulation")
+        appbuilder.add_view(
+            SimulationModelView,
+            "Modeling",
+            label=__("Modeling"),
+            icon="fa-dashboard",
+            category="Modeling",
+        )
+        appbuilder.add_separator("Modeling")
+        appbuilder.add_view(
+            SimulationLogModelView,
+            'Logs',
+            label=__("Logs"),
+            icon="fa-list-ol",
+            category="Modeling",
+        )
         appbuilder.add_view(
             CssTemplateModelView,
             "CSS Templates",
@@ -314,7 +332,7 @@ class SupersetAppInitializer:
         appbuilder.add_view_no_menu(Api)
         appbuilder.add_view_no_menu(CssTemplateAsyncModelView)
         appbuilder.add_view_no_menu(CsvToDatabaseView)
-        appbuilder.add_view_no_menu(UploadAssumptionView)
+        # appbuilder.add_view_no_menu(UploadAssumptionView)
         appbuilder.add_view_no_menu(Dashboard)
         appbuilder.add_view_no_menu(DashboardModelViewAsync)
         appbuilder.add_view_no_menu(Datasource)
@@ -383,16 +401,16 @@ class SupersetAppInitializer:
             category_icon="fa-wrench",
         )
 
-        # Upload assumption file
-        appbuilder.add_link(
-            "Upload assumtion file",
-            label="Upload Assumption excel",
-            href="/upload_assumption_file/form",
-            icon="fa-upload",
-            category="Simulation",
-            category_label="Simulation",
-            category_icon="fa-wrench",
-        )
+        # # Upload assumption file
+        # appbuilder.add_link(
+        #     "Upload assumtion file",
+        #     label="Upload Assumption excel",
+        #     href="/upload_assumption_file/form",
+        #     icon="fa-upload",
+        #     category="Simulation",
+        #     category_label="Simulation",
+        #     category_icon="fa-wrench",
+        # )
 
         #
         # Conditionally setup log views
