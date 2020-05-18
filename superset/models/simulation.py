@@ -36,7 +36,7 @@ from superset.viz import BaseViz, viz_types
 class Client(Model):
     __tablename__ = "client"
     id = Column(Integer, primary_key=True)
-    name = Column(String(200), nullable=False)
+    name = Column(String(200), nullable=False, unique=True)
     description = Column(String(500))
 
     def __repr__(self):
