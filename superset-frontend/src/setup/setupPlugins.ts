@@ -26,9 +26,9 @@ import BoxPlot from '../explore/controlPanels/BoxPlot';
 import BoxPlotRunComp from '../explore/controlPanels/BoxPlotRunComp';
 import BoxPlotFin from '../explore/controlPanels/BoxPlotFin';
 import BoxPlotFinStr from '../explore/controlPanels/BoxPlotFinStr';
+import BoxPlot300Cap from '../explore/controlPanels/BoxPlot300Cap';
 import Bubble from '../explore/controlPanels/Bubble';
 import Bullet from '../explore/controlPanels/Bullet';
-import CalHeatmap from '../explore/controlPanels/CalHeatmap';
 import Chord from '../explore/controlPanels/Chord';
 import Compare from '../explore/controlPanels/Compare';
 import CountryMap from '../explore/controlPanels/CountryMap';
@@ -62,12 +62,10 @@ import PivotTable from '../explore/controlPanels/PivotTable';
 import Rose from '../explore/controlPanels/Rose';
 import Sankey from '../explore/controlPanels/Sankey';
 import Separator from '../explore/controlPanels/Separator';
-import Sunburst from '../explore/controlPanels/Sunburst';
 import Table from '../explore/controlPanels/Table';
 import TimePivot from '../explore/controlPanels/TimePivot';
 import TimeTable from '../explore/controlPanels/TimeTable';
 import Treemap from '../explore/controlPanels/Treemap';
-import WordCloud from '../explore/controlPanels/WordCloud';
 import WorldMap from '../explore/controlPanels/WorldMap';
 
 export default function setupPlugins() {
@@ -81,9 +79,9 @@ export default function setupPlugins() {
     .registerValue('box_plot_run_comp', BoxPlotRunComp)
     .registerValue('box_plot_fin', BoxPlotFin)
     .registerValue('box_plot_fin_str', BoxPlotFinStr)
+    .registerValue('box_plot_300_cap', BoxPlot300Cap)
     .registerValue('bubble', Bubble)
     .registerValue('bullet', Bullet)
-    .registerValue('cal_heatmap', CalHeatmap)
     .registerValue('chord', Chord)
     .registerValue('compare', Compare)
     .registerValue('country_map', CountryMap)
@@ -108,12 +106,10 @@ export default function setupPlugins() {
     .registerValue('rose', Rose)
     .registerValue('sankey', Sankey)
     .registerValue('separator', Separator)
-    .registerValue('sunburst', Sunburst)
     .registerValue('table', Table)
     .registerValue('time_pivot', TimePivot)
     .registerValue('time_table', TimeTable)
     .registerValue('treemap', Treemap)
-    .registerValue('word_cloud', WordCloud)
     .registerValue('world_map', WorldMap)
     .registerValue('deck_arc', DeckArc)
     .registerValue('deck_geojson', DeckGeojson)

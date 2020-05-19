@@ -121,6 +121,9 @@ const plugins = [
     { copyUnmodified: true },
   ),
 ];
+if (!process.env.CI) {
+  plugins.push(new webpack.ProgressPlugin());
+}
 if (!isDevMode) {
   // text loading (webpack 4+)
   plugins.push(
@@ -180,6 +183,7 @@ const config = {
     sqllab: addPreamble('/src/SqlLab/index.jsx'),
     welcome: addPreamble('/src/welcome/index.jsx'),
     profile: addPreamble('/src/profile/index.jsx'),
+    generation: addPreamble('/src/generation/index.jsx'),
     showSavedQuery: [path.join(APP_DIR, '/src/showSavedQuery/index.jsx')],
   },
   output,
