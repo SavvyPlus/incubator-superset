@@ -27,6 +27,7 @@ from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
+
 from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
@@ -34,7 +35,7 @@ from superset.models.simulation import *
 from superset.utils import core as utils
 from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
-from .forms import UploadAssumptionForm
+from .forms import UploadAssumptionForm, AddSimulationForm
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
 from .util import get_download_url
 
@@ -389,10 +390,13 @@ class SimulationModelView(
     include_route_methods = RouteMethod.CRUD_SET
 
     list_columns = ['run_id', 'name','assumption', 'project', 'status']
+    # add_columns = ['name','run_id','description','assumption_choice1','assumption_choice2','generation_model',
+    #                'run_no','start_date','end_date','report_type']
     add_exclude_columns = ['status','status_detail']
     label_columns = {'run_no':'No. of simulation run'}
 
     add_widget = SimulationAddWidget
+    # add_form = AddSimulationForm
 
     @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):
@@ -436,6 +440,38 @@ class SimulationModelView(
         finally:
             return None
 
+
+
+    def _get_add_widget(self, form, exclude_cols=None, widgets=None):
+        exclude_cols = exclude_cols or []
+        widgets = widgets or {}
+        widgets["add"] = self.add_widget(
+            form=form,
+            include_cols=self.add_columns,
+            exclude_cols=exclude_cols,
+            fieldsets=self.add_fieldsets,
+        )
+        return widgets
+
+    @expose("/upload_assumption_ajax", methods=["GET","POST"])
+    def upload(self):
+        return "200 OK"
+
+    def _add(self):
+        is_valid_form = True
+        get_filter_args(self._filters)
+        exclude_cols = self._filters.get_relation_cols()
+        assumption_choice1 = self.appbuilder.session.query(Assumption).all()
+        form = self.add_form(assumption_choice1=assumption_choice1)
+        if request.method == "POST":
+            if form.validate():
+                # Calling add simulation
+                self.add_item(form, exclude_cols)
+            else:
+                is_valid_form = False
+        if is_valid_form:
+            self.update_redirect()
+        return self._get_add_widget(form=form, exclude_cols=exclude_cols)
 
 class SimulationLogModelView(SupersetModelView):
     route_base = "/simulationlog"
