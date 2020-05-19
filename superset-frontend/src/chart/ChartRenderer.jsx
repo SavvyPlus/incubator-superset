@@ -21,10 +21,11 @@ import { snakeCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { SuperChart } from '@superset-ui/chart';
+// import echarts from 'echarts';
 import ReactEcharts from 'echarts-for-react';
-import { prepareBoxplotData } from 'echarts/extension/dataTool';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
-import { formatter } from '../utils/boxPlotUtils';
+import { getBoxPlotOption } from '../utils/boxPlotUtils';
+// import worldland from '../utils/worldland.json';
 
 const propTypes = {
   annotationData: PropTypes.object,
@@ -61,6 +62,8 @@ const defaultProps = {
   triggerRender: false,
 };
 
+// echarts.registerTheme('my_theme', worldland);
+
 class ChartRenderer extends React.Component {
   constructor(props) {
     super(props);
@@ -70,8 +73,6 @@ class ChartRenderer extends React.Component {
     this.handleRenderSuccess = this.handleRenderSuccess.bind(this);
     this.handleRenderFailure = this.handleRenderFailure.bind(this);
     this.handleSetControlValue = this.handleSetControlValue.bind(this);
-    // Functions for Echarts
-    this.getOption = this.getOption.bind(this);
 
     this.hooks = {
       onAddFilter: this.handleAddFilter,
@@ -122,110 +123,6 @@ class ChartRenderer extends React.Component {
       }
     }
     return false;
-  }
-
-  getOption(queryResponse) {
-    // const data = prepareBoxplotData(queryResponse.data);
-    const data = [];
-    for (let seriesIndex = 0; seriesIndex < 3; seriesIndex++) {
-      const seriesData = [];
-      for (let i = 0; i < 18; i++) {
-        const cate = [];
-        for (let j = 0; j < 100; j++) {
-          cate.push(Math.random() * 200);
-        }
-        seriesData.push(cate);
-      }
-      data.push(prepareBoxplotData(seriesData));
-    }
-    console.log(data);
-    return {
-      title: {
-        text: 'Multiple Categories',
-        left: 'center',
-      },
-      legend: {
-        top: '10%',
-        data: ['NSW', 'VIC', 'QLD'],
-        selected: {
-          NSW: true,
-          VIC: false,
-          QLD: false,
-        },
-      },
-      tooltip: {
-        trigger: 'item',
-        axisPointer: {
-          type: 'shadow',
-        },
-      },
-      grid: {
-        left: '10%',
-        top: '20%',
-        right: '10%',
-        bottom: '15%',
-      },
-      xAxis: {
-        type: 'category',
-        data: data[0].axisData,
-        boundaryGap: true,
-        nameGap: 30,
-        splitArea: {
-          show: true,
-        },
-        axisLabel: {
-          formatter: 'Cal-{value}',
-        },
-        splitLine: {
-          show: false,
-        },
-      },
-      yAxis: {
-        type: 'value',
-        name: 'Value',
-        min: -200,
-        max: 400,
-        splitArea: {
-          show: false,
-        },
-      },
-      dataZoom: [
-        {
-          type: 'inside',
-          start: 0,
-          end: 20,
-        },
-        {
-          show: true,
-          height: 20,
-          type: 'slider',
-          top: '90%',
-          xAxisIndex: [0],
-          start: 0,
-          end: 20,
-        },
-      ],
-      series: [
-        {
-          name: 'NSW',
-          type: 'boxplot',
-          data: data[0].boxData,
-          tooltip: { formatter },
-        },
-        {
-          name: 'VIC',
-          type: 'boxplot',
-          data: data[1].boxData,
-          tooltip: { formatter },
-        },
-        {
-          name: 'QLD',
-          type: 'boxplot',
-          data: data[2].boxData,
-          tooltip: { formatter },
-        },
-      ],
-    };
   }
 
   handleAddFilter(col, vals, merge = true, refresh = true) {
@@ -353,7 +250,7 @@ class ChartRenderer extends React.Component {
               process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
             }`}
             id={`chart-id-${chartId}`}
-            option={this.getOption(queryResponse)}
+            option={getBoxPlotOption(queryResponse)}
             style={{ height: `${height}px`, width: `${width}px` }}
             theme="light"
           />

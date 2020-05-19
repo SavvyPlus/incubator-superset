@@ -16,28 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-export function prepareBoxplotData(data) {
-  const boxData = [];
-  const outliers = [];
-  const axisData = [];
-  for (let i = 0; i < data.length; i++) {
-    const { values, label } = data[i];
-    boxData.push([
-      values.whisker_low,
-      values.Q1,
-      values.Q2,
-      values.Q3,
-      values.whisker_high,
-    ]);
-    axisData.push(label);
-  }
-  return {
-    boxData,
-    outliers,
-    axisData,
-  };
-}
+import { prepareBoxplotData } from 'echarts/extension/dataTool';
+// export function prepareBoxplotData(data) {
+//   const boxData = [];
+//   const outliers = [];
+//   const axisData = [];
+//   for (let i = 0; i < data.length; i++) {
+//     const { values, label } = data[i];
+//     boxData.push([
+//       values.whisker_low,
+//       values.Q1,
+//       values.Q2,
+//       values.Q3,
+//       values.whisker_high,
+//     ]);
+//     axisData.push(label);
+//   }
+//   return {
+//     boxData,
+//     outliers,
+//     axisData,
+//   };
+// }
 
 export function formatter(param) {
   return [
@@ -48,4 +48,107 @@ export function formatter(param) {
     'Q3: ' + param.data[3],
     'lower: ' + param.data[4],
   ].join('<br/>');
+}
+
+export function getBoxPlotOption(queryResponse) {
+  // const data = prepareBoxplotData(queryResponse.data);
+  const data = [];
+  for (let seriesIndex = 0; seriesIndex < 3; seriesIndex++) {
+    const seriesData = [];
+    for (let i = 0; i < 18; i++) {
+      const cate = [];
+      for (let j = 0; j < 100; j++) {
+        cate.push(Math.random() * 200);
+      }
+      seriesData.push(cate);
+    }
+    data.push(prepareBoxplotData(seriesData));
+  }
+  return {
+    title: {
+      text: 'Multiple Categories',
+      left: 'center',
+    },
+    legend: {
+      top: '10%',
+      data: ['NSW', 'VIC', 'QLD'],
+      selected: {
+        NSW: true,
+        VIC: false,
+        QLD: false,
+      },
+    },
+    tooltip: {
+      trigger: 'item',
+      axisPointer: {
+        type: 'shadow',
+      },
+    },
+    grid: {
+      left: '10%',
+      top: '20%',
+      right: '10%',
+      bottom: '15%',
+    },
+    xAxis: {
+      type: 'category',
+      data: data[0].axisData,
+      boundaryGap: true,
+      nameGap: 30,
+      splitArea: {
+        show: true,
+      },
+      axisLabel: {
+        formatter: 'Cal-{value}',
+      },
+      splitLine: {
+        show: false,
+      },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Value',
+      min: -200,
+      max: 400,
+      splitArea: {
+        show: false,
+      },
+    },
+    dataZoom: [
+      {
+        type: 'inside',
+        start: 0,
+        end: 20,
+      },
+      {
+        show: true,
+        height: 20,
+        type: 'slider',
+        top: '90%',
+        xAxisIndex: [0],
+        start: 0,
+        end: 20,
+      },
+    ],
+    series: [
+      {
+        name: 'NSW',
+        type: 'boxplot',
+        data: data[0].boxData,
+        tooltip: { formatter },
+      },
+      {
+        name: 'VIC',
+        type: 'boxplot',
+        data: data[1].boxData,
+        tooltip: { formatter },
+      },
+      {
+        name: 'QLD',
+        type: 'boxplot',
+        data: data[2].boxData,
+        tooltip: { formatter },
+      },
+    ],
+  };
 }

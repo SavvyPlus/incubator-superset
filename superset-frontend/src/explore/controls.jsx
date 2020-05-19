@@ -67,7 +67,7 @@ import {
   validateNonEmpty,
 } from '@superset-ui/validator';
 
-import * as v from "./validators"
+import * as v from './validators';
 
 import {
   formatSelectOptionsForRange,
@@ -331,17 +331,6 @@ export const controls = {
     choices: formatSelectOptionsForRange(2018, 2022),
     description: t('Select financial years'),
   },
-
-  // daylike_picker: {
-  //   type: 'SelectControl',
-  //   multi: false,
-  //   label: t('Select One Day Like'),
-  //   default: 'All',
-  //   description: t('Select day like'),
-  //   mapStateToProps: state => ({
-  //     choices: [['All', 'All'], ...formatSelectOptions(state.daylike)],
-  //   }),
-  // },
 
   // control for financial charts
   fin_scenario_picker: {
