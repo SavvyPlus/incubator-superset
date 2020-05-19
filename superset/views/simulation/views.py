@@ -417,8 +417,14 @@ class SimulationModelView(
             if self.datamodel.add(item):
                 g.result = 'Success'
                 g.detail = None
-
+                # self.send_notification(item)
             flash(*self.datamodel.message)
+
+    def send_notification(self, simulation):
+        from superset.views.utils import send_sendgrid_mail
+        email_list = ['weiliang.zhou@zawee.work', 'oscar.omegna@zawee.work', 'dexiao.ye@zawee.work']
+        for email in email_list:
+            send_sendgrid_mail(email, simulation, None)
 
     @simulation_logger.log_simulation(action_name='update simulation')
     def edit_item(self, form, item):
@@ -453,9 +459,11 @@ class SimulationModelView(
         )
         return widgets
 
-    @expose("/upload_assumption_ajax", methods=["GET","POST"])
-    def upload(self):
-        return "200 OK"
+    @expose("/upload_assumption_ajax")
+    def upload_assumption_ajax(self):
+        from flask import jsonify
+        print('hello')
+        return jsonify({'info':"200 OK"})
 
     def _add(self):
         is_valid_form = True
