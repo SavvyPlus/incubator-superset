@@ -100,6 +100,10 @@ class ChartRenderer extends React.Component {
       return true;
     }
 
+    if (nextProps.vizType === 'spot_price_histogram') {
+      return true;
+    }
+
     const resultsReady =
       nextProps.queryResponse &&
       ['success', 'rendered'].indexOf(nextProps.chartStatus) > -1 &&

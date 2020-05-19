@@ -102,6 +102,7 @@ const DEFAULT_ORDER = [
   'box_plot_fin',
   'box_plot_fin_str',
   'box_plot_300_cap',
+  'spot_price_histogram',
 ];
 
 const typesWithDefaultOrder = new Set(DEFAULT_ORDER);
@@ -182,6 +183,9 @@ export default class VizTypeControl extends React.PureComponent {
       rows.push(
         <Row key={`row-${i}`}>
           {filteredTypes.slice(i, i + IMAGE_PER_ROW).map(entry => {
+            if (entry.key === 'histogram') {
+              entry.value.name = 'Histogram';
+            }
             if (entry.key === 'box_plot_run_comp') {
               entry.value.name = 'Spot-Rev-Gen BoxPlot';
             }
@@ -193,6 +197,9 @@ export default class VizTypeControl extends React.PureComponent {
             }
             if (entry.key === 'box_plot_300_cap') {
               entry.value.name = 'Box Plot For $300 Cap';
+            }
+            if (entry.key === 'spot_price_histogram') {
+              entry.value.name = 'Spot Price Chart';
             }
             return (
               <Col md={12 / IMAGE_PER_ROW} key={`grid-col-${entry.key}`}>

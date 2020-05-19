@@ -1607,7 +1607,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         return chart_data
 
 
-class BoxPlot300Cap(BoxPlotViz):
+class BoxPlot300CapViz(BoxPlotViz):
     """tmp testing new chart"""
     viz_type = "box_plot_300_cap"
     verbose_name = _("Box Plot For $300 Cap")
@@ -1810,6 +1810,61 @@ class BoxPlot300Cap(BoxPlotViz):
         chart_data = self.to_series(df)
         return chart_data
 
+
+class SpotPriceHistogramViz(BaseViz):
+
+    """Spot Price Histogram"""
+
+    viz_type = "spot_price_histogram"
+    verbose_name = _("Spot Price Histogram")
+    is_timeseries = False
+
+    def query_obj(self):
+        """Returns the query object for this visualization"""
+        d = super().query_obj()
+        d["row_limit"] = self.form_data.get("row_limit", int(config["VIZ_ROW_LIMIT"]))
+        numeric_columns = self.form_data.get("all_columns_x")
+        if numeric_columns is None:
+            raise QueryObjectValidationError(
+                _("Must have at least one numeric column specified")
+            )
+        self.columns = numeric_columns
+        d["columns"] = numeric_columns + self.groupby
+        # override groupby entry to avoid aggregation
+        d["groupby"] = []
+        return d
+
+    def labelify(self, keys, column):
+        if isinstance(keys, str):
+            keys = (keys,)
+        # removing undesirable characters
+        labels = [re.sub(r"\W+", r"_", k) for k in keys]
+        if len(self.columns) > 1 or not self.groupby:
+            # Only show numeric column in label if there are many
+            labels = [column] + labels
+        return "__".join(labels)
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        """Returns the chart data"""
+        if df.empty:
+            return None
+
+        chart_data = []
+        if len(self.groupby) > 0:
+            groups = df.groupby(self.groupby)
+        else:
+            groups = [((), df)]
+        for keys, data in groups:
+            chart_data.extend(
+                [
+                    {
+                        "key": self.labelify(keys, column),
+                        "values": data[column].tolist(),
+                    }
+                    for column in self.columns
+                ]
+            )
+        return chart_data
 
 
 class BubbleViz(NVD3Viz):

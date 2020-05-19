@@ -48,6 +48,7 @@ import EventFlow from '../explore/controlPanels/EventFlow';
 import FilterBox from '../explore/controlPanels/FilterBox';
 import Heatmap from '../explore/controlPanels/Heatmap';
 import Histogram from '../explore/controlPanels/Histogram';
+import SpotPriceHistogram from '../explore/controlPanels/SpotPriceHistogram';
 import Horizon from '../explore/controlPanels/Horizon';
 import Iframe from '../explore/controlPanels/Iframe';
 import Line from '../explore/controlPanels/Line';
@@ -92,6 +93,7 @@ export default function setupPlugins() {
     .registerValue('filter_box', FilterBox)
     .registerValue('heatmap', Heatmap)
     .registerValue('histogram', Histogram)
+    .registerValue('spot_price_histogram', SpotPriceHistogram)
     .registerValue('horizon', Horizon)
     .registerValue('iframe', Iframe)
     .registerValue('line', Line)
