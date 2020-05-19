@@ -164,6 +164,8 @@ class SupersetAppInitializer:
         from superset.views.datasource import Datasource
         from superset.views.simulation.views import (
             UploadAssumptionView,
+            ClientModelView,
+            ProjectModelView,
             AssumptionModelView,
             SimulationModelView,
             SimulationLogModelView,
@@ -183,6 +185,7 @@ class SupersetAppInitializer:
             SqlLab,
         )
         from superset.views.tags import TagView
+        from superset.views.nem.views import NemModelView
 
         #
         # Setup API views
@@ -250,12 +253,28 @@ class SupersetAppInitializer:
         )
         # Assumption
         appbuilder.add_view(
+            ClientModelView,
+            "Clients",
+            label=__("Clients"),
+            icon="fa-dashboard",
+            category="Modeling",
+            category_icon="fa-wrench",
+        )
+        appbuilder.add_view(
+            ProjectModelView,
+            "Projects",
+            label=__("Projects"),
+            icon="fa-dashboard",
+            category="Modeling",
+            # category_icon="fa-wrench",
+        )
+        appbuilder.add_view(
             AssumptionModelView,
             "Scenario",
             label=__("Scenario"),
             icon="fa-dashboard",
             category="Modeling",
-            category_icon="fa-wrench",
+            # category_icon="fa-wrench",
         )
         appbuilder.add_view(
             SimulationModelView,
@@ -288,6 +307,14 @@ class SupersetAppInitializer:
             category="Manage",
             category_label=__("Manage"),
             icon="fa-search",
+        )
+        appbuilder.add_view(
+            NemModelView,
+            "NEM",
+            label=__("NEM"),
+            icon="fa-bolt",
+            category="",
+            category_icon="",
         )
         if self.config["ENABLE_ROW_LEVEL_SECURITY"]:
             appbuilder.add_view(
