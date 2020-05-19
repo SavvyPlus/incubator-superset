@@ -89,8 +89,8 @@
                                                 <table class="table table-bordered table-hover" style="background-color: white">
                                                     <thead>
                                                     <tr>
-                                                        <th>id</th>
-                                                        <th>Project name</th>
+                                                        <th>Project ID</th>
+                                                        <th>Project Name</th>
                                                         <th>To</th>
                                                     </tr>
                                                     </thead>
@@ -113,7 +113,8 @@
                                         <div class="modal-footer">
                                             <button type="button"
                                                     class="btn btn-secondary"
-                                                    data-dismiss="modal">Close
+                                                    data-dismiss="modal">
+                                                Close
                                             </button>
                                         </div>
                                     </div>
@@ -121,7 +122,7 @@
                             </div>
                         </td>
                     {% else %}
-                        <td>Not available</td>
+                        <td>No project available</td>
                     {% endif %}
                 {% else %}
                     {% set formatter = formatters_columns.get(value) %}

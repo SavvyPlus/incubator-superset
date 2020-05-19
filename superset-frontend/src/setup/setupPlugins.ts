@@ -26,6 +26,7 @@ import BoxPlot from '../explore/controlPanels/BoxPlot';
 import BoxPlotRunComp from '../explore/controlPanels/BoxPlotRunComp';
 import BoxPlotFin from '../explore/controlPanels/BoxPlotFin';
 import BoxPlotFinStr from '../explore/controlPanels/BoxPlotFinStr';
+import BoxPlot300Cap from '../explore/controlPanels/BoxPlot300Cap';
 import Bubble from '../explore/controlPanels/Bubble';
 import Bullet from '../explore/controlPanels/Bullet';
 import Chord from '../explore/controlPanels/Chord';
@@ -78,6 +79,7 @@ export default function setupPlugins() {
     .registerValue('box_plot_run_comp', BoxPlotRunComp)
     .registerValue('box_plot_fin', BoxPlotFin)
     .registerValue('box_plot_fin_str', BoxPlotFinStr)
+    .registerValue('box_plot_300_cap', BoxPlot300Cap)
     .registerValue('bubble', Bubble)
     .registerValue('bullet', Bullet)
     .registerValue('chord', Chord)
