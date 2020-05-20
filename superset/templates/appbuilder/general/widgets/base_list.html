@@ -46,6 +46,9 @@
     {% block end_content scoped %}
     {% endblock %}
 
+    {% block tail_js %}
+    {% endblock %}
+
 <div class="form-actions-container">
     {{ lib.render_actions(actions, modelview_name) }}
 </div>

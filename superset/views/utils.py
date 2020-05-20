@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib import parse
 import os
 import simplejson as json
-from flask import g, request
+from flask import request
 
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -35,7 +35,8 @@ from superset.models.slice import Slice
 from superset.utils.core import QueryStatus, TimeRangeEndpoint
 
 # Sendgrid client
-sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
+# sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
+sendgrid_client = None
 
 
 if is_feature_enabled("SIP_38_VIZ_REARCHITECTURE"):
@@ -117,10 +118,6 @@ def get_form_data(
     # request params can overwrite the body
     if request_args_data:
         form_data.update(json.loads(request_args_data))
-
-    # Fallback to using the Flask globals (used for cache warmup) if defined.
-    if not form_data and hasattr(g, "form_data"):
-        form_data = getattr(g, "form_data")
 
     url_id = request.args.get("r")
     if url_id:

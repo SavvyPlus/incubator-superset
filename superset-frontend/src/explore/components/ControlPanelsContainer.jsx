@@ -212,15 +212,21 @@ class ControlPanelsContainer extends React.Component {
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
     allSectionsToRender.forEach(section => {
-      if (viz_type === 'box_plot_run_comp' && section.label === 'Time') {
+      if (
+        (viz_type === 'box_plot_run_comp' ||
+          viz_type === 'box_plot_fin' ||
+          viz_type === 'box_plot_fin_str' ||
+          viz_type === 'box_plot_300_cap') &&
+        section.label === 'Time'
+      ) {
         return;
       }
-      if (viz_type === 'box_plot_fin' && section.label === 'Time') {
-        return;
-      }
-      if (viz_type === 'box_plot_fin_str' && section.label === 'Time') {
-        return;
-      }
+      // if (viz_type === 'box_plot_fin' && section.label === 'Time') {
+      //   return;
+      // }
+      // if (viz_type === 'box_plot_fin_str' && section.label === 'Time') {
+      //   return;
+      // }
       // if at least one control in the secion is not `renderTrigger`
       // or asks to be displayed at the Data tab
       if (
@@ -238,7 +244,8 @@ class ControlPanelsContainer extends React.Component {
         if (
           (viz_type === 'box_plot_run_comp' ||
             viz_type === 'box_plot_fin' ||
-            viz_type === 'box_plot_fin_str') &&
+            viz_type === 'box_plot_fin_str' ||
+            viz_type === 'box_plot_300_cap') &&
           section.label === 'Empower'
         ) {
           const s1 = {

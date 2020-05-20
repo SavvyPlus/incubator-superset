@@ -2,81 +2,191 @@
 {% extends 'appbuilder/general/widgets/base_list.html' %}
 
 
-    {% block begin_content scoped %}
-        <div class="table-responsive">
-        <table class="table table-bordered table-hover">
-    {% endblock %}
+{% block begin_content scoped %}
+    <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+{% endblock %}
 
-    {% block begin_loop_header scoped %}
-        <thead>
-        <tr>
+{% block begin_loop_header scoped %}
+    <thead>
+    <tr>
         {% if actions %}
-        <th class="action_checkboxes">
-            <input id="check_all" class="action_check_all" name="check_all" type="checkbox">
-        </th>
+            <th class="action_checkboxes">
+                <input id="check_all" class="action_check_all" name="check_all"
+                       type="checkbox">
+            </th>
         {% endif %}
 
         {% if can_show or can_edit or can_delete %}
-            <th class="col-md-1 col-lg-1 col-sm-1" ></th>
+            <th class="col-md-1 col-lg-1 col-sm-1"></th>
         {% endif %}
 
         {% for item in include_columns %}
             {% if item in order_columns %}
                 {% set res = item | get_link_order(modelview_name) %}
-                    {% if res == 2 %}
-                    <th><a href={{ item | link_order(modelview_name) }}>{{label_columns.get(item)}}
-                    <i class="fa fa-chevron-up pull-right"></i></a></th>
+                {% if res == 2 %}
+                    <th>
+                        <a href={{ item | link_order(modelview_name) }}>{{ label_columns.get(item) }}
+                            <i class="fa fa-chevron-up pull-right"></i></a></th>
                 {% elif res == 1 %}
-                    <th><a href={{ item | link_order(modelview_name) }}>{{label_columns.get(item)}}
-                    <i class="fa fa-chevron-down pull-right"></i></a></th>
+                    <th>
+                        <a href={{ item | link_order(modelview_name) }}>{{ label_columns.get(item) }}
+                            <i class="fa fa-chevron-down pull-right"></i></a></th>
                 {% else %}
-                    <th><a href={{ item | link_order(modelview_name) }}>{{label_columns.get(item)}}
-                    <i class="fa fa-arrows-v pull-right"></i></a></th>
+                    <th>
+                        <a href={{ item | link_order(modelview_name) }}>{{ label_columns.get(item) }}
+                            <i class="fa fa-arrows-v pull-right"></i></a></th>
                 {% endif %}
             {% else %}
-                <th>{{label_columns.get(item)}}</th>
+                <th>{{ label_columns.get(item) }}</th>
             {% endif %}
         {% endfor %}
-        </tr>
-        </thead>
-    {% endblock %}
+    </tr>
+    </thead>
+{% endblock %}
 
-    {% block begin_loop_values %}
-        {% for item in value_columns %}
-            {% set pk = pks[loop.index-1] %}
-            <tr>
-                {% if actions %}
+{% block begin_loop_values %}
+    {% for item in value_columns %}
+        {% set pk = pks[loop.index-1] %}
+        <tr>
+            {% if actions %}
                 <td>
-                    <input id="{{pk}}" class="action_check" name="rowid" value="{{pk}}" type="checkbox">
+                    <input id="{{ pk }}" class="action_check" name="rowid"
+                           value="{{ pk }}" type="checkbox">
                 </td>
-                {% endif %}
-                {% if can_show or can_edit or can_delete %}
-                    <td><center>
-                    {{ lib.btn_crud(can_show, can_edit, can_delete, pk, modelview_name, filters) }}
-                    </center></td>
-                {% endif %}
-                {% for value in include_columns %}
-                    {% if value == "projects" %}
-                        <td><button class="btn btn-primary btn-sm">View</button></td>
+            {% endif %}
+            {% if can_show or can_edit or can_delete %}
+                <td>
+                    <center>
+                        {{ lib.btn_crud(can_show, can_edit, can_delete, pk, modelview_name, filters) }}
+                    </center>
+                </td>
+            {% endif %}
+            {% for value in include_columns %}
+                {% if value == "projects" %}
+                    {% if item[value] %}
+                        <td>
+                            <button class="btn btn-primary btn-sm" data-toggle="modal"
+                                    data-target="#projectsModal{{ item['name']|string }}" data-client="{{ item['name'] }}">
+                                View
+                            </button>
+                            <div class="modal fade" id="projectsModal{{ item['name']|string }}" tabindex="-1"
+                                 role="dialog" aria-labelledby="exampleModalLabel"
+                                 aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title"
+                                                id="modalLabel">New message</h5>
+                                            <button type="button" class="close"
+                                                    data-dismiss="modal"
+                                                    aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered table-hover" style="background-color: white">
+                                                    <thead>
+                                                    <tr>
+                                                        <th>Project ID</th>
+                                                        <th>Project Name</th>
+                                                        <th>To</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    {% for project in project_dict[item['name']] %}
+                                                        <tr>
+                                                            <td class="project-id">{{ project['id'] }}</td>
+                                                            <td class="project-name">{{ project['name'] }}</td>
+                                                            <td class="project-url">
+                                                                <a>
+                                                                    <i class="fa fa-external-link" aria-hidden="true"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button"
+                                                    class="btn btn-secondary"
+                                                    data-dismiss="modal">
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                     {% else %}
-                        {% set formatter = formatters_columns.get(value) %}
-                        {% if formatter %}
-                            <td>{{ formatter(item[value]) }}</td>
-                        {% else %}
-                            <td>{{ item[value] }}</td>
-                        {% endif %}
+                        <td>No project available</td>
                     {% endif %}
-                {% endfor %}
-            </tr>
-        {% endfor %}
-    {% endblock %}
+                {% else %}
+                    {% set formatter = formatters_columns.get(value) %}
+                    {% if formatter %}
+                        <td>{{ formatter(item[value]) }}</td>
+                    {% else %}
+                        <td>{{ item[value] }}</td>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </tr>
+    {% endfor %}
+{% endblock %}
 
-    {% block end_content scoped %}
-        </table>
-        </div>
-    {% endblock %}
+{% block end_content scoped %}
+    </table>
+    </div>
+{% endblock %}
 
-    {% block tail_js %}
+{% block tail_js %}
+    <script>
+        $(document).ready(function () {
+            $('[id^=projectsModal]').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget) // Button that triggered the modal
+                const client = button.data('client') // Extract info from data-* attributes
+                const modal = $(this)
+                modal.find('.modal-title').text(client + "'s projects")
+            });
 
-    {% endblock %}
+            {#$('.update-team-info').click(function () {#}
+            {#    $("#team_name").removeClass('is-invalid');#}
+            {#    if (!$("#team_name").val()) {#}
+            {#        return $("#team_name").addClass('is-invalid');#}
+            {#    }#}
+            {#    const user_info = {#}
+            {#        team_name: $("#team_name").val(),#}
+            {#        business_name: $("#business_name").val(),#}
+            {#        website: $("#team_website").val(),#}
+            {#        team_email: $("#team_email").val(),#}
+            {#    };#}
+            {#    let csrf_token = "{{ csrf_token() if csrf_token else '' }}";#}
+            {#    $(this).replaceWith('<img src="/static/assets/images/loading.gif" style="width: 40px; margin: 0 20px; float: right">');#}
+            {#    $.ajaxSetup({#}
+            {#        beforeSend: function (xhr, settings) {#}
+            {#            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {#}
+            {#                xhr.setRequestHeader("X-CSRFToken", csrf_token);#}
+            {#            }#}
+            {#        }#}
+            {#    });#}
+            {#    $.ajax({#}
+            {#        type: "POST",#}
+            {#        url: "{{ url_for('SolarBIModelView.update_team_info') }}",#}
+            {#        data: JSON.stringify(user_info),#}
+            {#        contentType: 'application/json;charset=UTF-8',#}
+            {#        success: function (data) {#}
+            {#            if (data.redirect) {#}
+            {#                window.location.replace(data.redirect)#}
+            {#            }#}
+            {#        }#}
+            {#    });#}
+            {#});
+        #}
 
+        })
+        ;
+    </script>
+{% endblock %}

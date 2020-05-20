@@ -35,7 +35,7 @@ def upgrade():
 
     op.drop_table('simulation_assumption')
 
-    op.add_column('simulation', sa.Column('assumption_id', sa.Integer(), nullable=True))
+    op.add_column('simulation', sa.Column('assumption_id', sa.Integer(), nullable=False))
     op.create_foreign_key(None, 'simulation', 'assumption', ['assumption_id'], ['id'])
 
     # ### end Alembic commands ###

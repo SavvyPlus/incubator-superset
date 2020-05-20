@@ -43,6 +43,7 @@ from sqlalchemy.orm.query import Query
 from superset import sql_parse
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
+from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.exceptions import SupersetSecurityException
 from superset.utils.core import DatasourceName
 
@@ -292,6 +293,25 @@ class SupersetSecurityManager(SecurityManager):
 
         return conf.get("PERMISSION_INSTRUCTIONS_LINK")
 
+    def get_datasource_access_error_object(
+        self, datasource: "BaseDatasource"
+    ) -> SupersetError:
+        """
+        Return the error object for the denied Superset datasource.
+
+        :param datasource: The denied Superset datasource
+        :returns: The error object
+        """
+        return SupersetError(
+            error_type=SupersetErrorType.DATASOURCE_SECURITY_ACCESS_ERROR,
+            message=self.get_datasource_access_error_msg(datasource),
+            level=ErrorLevel.ERROR,
+            extra={
+                "link": self.get_datasource_access_link(datasource),
+                "datasource": datasource.name,
+            },
+        )
+
     def get_table_access_error_msg(self, tables: Set["Table"]) -> str:
         """
         Return the error message for the denied SQL tables.
@@ -303,6 +323,23 @@ class SupersetSecurityManager(SecurityManager):
         quoted_tables = [f"`{table}`" for table in tables]
         return f"""You need access to the following tables: {", ".join(quoted_tables)},
             `all_database_access` or `all_datasource_access` permission"""
+
+    def get_table_access_error_object(self, tables: Set["Table"]) -> SupersetError:
+        """
+        Return the error object for the denied SQL tables.
+
+        :param tables: The set of denied SQL tables
+        :returns: The error object
+        """
+        return SupersetError(
+            error_type=SupersetErrorType.TABLE_SECURITY_ACCESS_ERROR,
+            message=self.get_table_access_error_msg(tables),
+            level=ErrorLevel.ERROR,
+            extra={
+                "link": self.get_table_access_link(tables),
+                "tables": [str(table) for table in tables],
+            },
+        )
 
     def get_table_access_link(self, tables: Set["Table"]) -> Optional[str]:
         """
@@ -334,7 +371,7 @@ class SupersetSecurityManager(SecurityManager):
         if self.database_access(database) or self.all_datasource_access():
             return True
 
-        schema_perm = self.get_schema_perm(database, schema)
+        schema_perm = self.get_schema_perm(database, schema=table.schema or schema)
         if schema_perm and self.can_access("schema_access", schema_perm):
             return True
 
@@ -357,7 +394,6 @@ class SupersetSecurityManager(SecurityManager):
         :param schema: The SQL database schema
         :returns: The rejected tables
         """
-
         query = sql_parse.ParsedQuery(sql)
 
         return {
@@ -830,8 +866,7 @@ class SupersetSecurityManager(SecurityManager):
 
         if not self.datasource_access(datasource):
             raise SupersetSecurityException(
-                self.get_datasource_access_error_msg(datasource),
-                self.get_datasource_access_link(datasource),
+                self.get_datasource_access_error_object(datasource),
             )
 
     def assert_query_context_permission(self, query_context: "QueryContext") -> None:
