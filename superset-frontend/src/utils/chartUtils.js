@@ -45,30 +45,32 @@ export function formatter(param) {
   return [
     'Whiker Type: Min/Max',
     'Region: ' + param.name,
-    'Minimum: ' + param.data[1],
-    'Q1: ' + param.data[2],
-    'Median: ' + param.data[3],
-    'Q3: ' + param.data[4],
-    'Maximum: ' + param.data[5],
+    'Minimum: ' + param.data[1].toFixed(3),
+    'Q1: ' + param.data[2].toFixed(3),
+    'Median: ' + param.data[3].toFixed(3),
+    'Q3: ' + param.data[4].toFixed(3),
+    'Maximum: ' + param.data[5].toFixed(3),
   ].join('<br/>');
 }
 
 export function getOption(queryResponse) {
   if (queryResponse.form_data.viz_type === 'box_plot_300_cap') {
-    console.log(JSON. stringify(queryResponse.data))
-    // const data = prepareBoxplotData(queryResponse.data);
-    const data = [];
-    for (let seriesIndex = 0; seriesIndex < 3; seriesIndex++) {
-      const seriesData = [];
-      for (let i = 0; i < 18; i++) {
-        const cate = [];
-        for (let j = 0; j < 100; j++) {
-          cate.push(Math.random() * 200);
-        }
-        seriesData.push(cate);
-      }
-      data.push(prepareBoxplotData(seriesData));
-    }
+    const queryData = queryResponse.data;
+    const regions = Object.keys(queryData);
+    const data = Object.values(queryData);
+
+    // const data = [];
+    // for (let seriesIndex = 0; seriesIndex < 3; seriesIndex++) {
+    //   const seriesData = [];
+    //   for (let i = 0; i < 18; i++) {
+    //     const cate = [];
+    //     for (let j = 0; j < 100; j++) {
+    //       cate.push(Math.random() * 200);
+    //     }
+    //     seriesData.push(cate);
+    //   }
+    //   data.push(prepareBoxplotData(seriesData));
+    // }
     return {
       title: {
         text: '$300/MWh Cap Payout',
@@ -76,7 +78,7 @@ export function getOption(queryResponse) {
       },
       legend: {
         top: '10%',
-        data: ['NSW', 'VIC', 'QLD'],
+        data: regions,
         selected: {
           NSW: true,
           VIC: false,
@@ -111,7 +113,7 @@ export function getOption(queryResponse) {
           show: true,
         },
         axisLabel: {
-          formatter: 'Cal-{value}',
+          formatter: '{value}',
         },
         splitLine: {
           show: false,
@@ -120,8 +122,8 @@ export function getOption(queryResponse) {
       yAxis: {
         type: 'value',
         name: 'Value',
-        min: -200,
-        max: 400,
+        min: 0,
+        max: 50,
         splitArea: {
           show: false,
         },
@@ -142,26 +144,12 @@ export function getOption(queryResponse) {
           end: 20,
         },
       ],
-      series: [
-        {
-          name: 'NSW',
-          type: 'boxplot',
-          data: data[0].boxData,
-          tooltip: { formatter },
-        },
-        {
-          name: 'VIC',
-          type: 'boxplot',
-          data: data[1].boxData,
-          tooltip: { formatter },
-        },
-        {
-          name: 'QLD',
-          type: 'boxplot',
-          data: data[2].boxData,
-          tooltip: { formatter },
-        },
-      ],
+      series: data.map((d, i) => ({
+        name: regions[i],
+        type: 'boxplot',
+        data: d.boxData,
+        tooltip: { formatter },
+      })),
     };
   } else if (queryResponse.form_data.viz_type === 'spot_price_histogram') {
     return {

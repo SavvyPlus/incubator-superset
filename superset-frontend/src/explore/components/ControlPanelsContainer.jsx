@@ -203,7 +203,9 @@ class ControlPanelsContainer extends React.Component {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
                 } else if (name === 'period_quarterly_picker') {
-                  if (controls.period_type_static_picker.value === 'Quarterly') {
+                  if (
+                    controls.period_type_static_picker.value === 'Quarterly'
+                  ) {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
                 } else {

@@ -1672,7 +1672,6 @@ class BoxPlot300CapViz(BoxPlotViz):
             'val': ['0', '0.25', '0.5', '0.75', '0.95', '1']
         })
             
-        
         self.form_data['groupby'] = group_column
         return d
     

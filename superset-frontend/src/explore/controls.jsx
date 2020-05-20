@@ -311,19 +311,18 @@ export const controls = {
       ['QLD1', 'QLD'],
       ['TAS1', 'TAS'],
       ['SA1', 'SA'],
-    ]
+    ],
   },
 
   period_type_static_picker: {
     type: 'SelectControl',
     multi: false,
-    label: t('Period Type'),    
+    label: t('Period Type'),
     default: ['CalYear'],
     validators: [validateNonEmpty],
     choices: formatSelectOptions(['CalYear', 'FinYear', 'Quarterly']),
     // description: t('Select the period type'),
   },
-
 
   period_type: {
     type: 'SelectControl',
@@ -367,7 +366,6 @@ export const controls = {
       choices: formatSelectOptions(state.period_quarterly),
     }),
   },
-
 
   cal_years: {
     type: 'SelectControl',
