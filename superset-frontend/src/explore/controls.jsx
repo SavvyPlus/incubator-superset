@@ -302,9 +302,16 @@ export const controls = {
     multi: true,
     label: t('Region'),
     default: ['VIC'],
-    validators: [validateNonEmpty],
+    // validators: [validateNonEmpty],
     // description: t('Select Regions'),
-    choices: formatSelectOptions(['NSW', 'VIC', 'QLD', 'TAS', 'SA']),
+    // choices: formatSelectOptions(['NSW', 'VIC', 'QLD', 'TAS', 'SA']),
+    choices: [
+      ['NSW1', 'NSW'],
+      ['VIC1', 'VIC'],
+      ['QLD1', 'QLD'],
+      ['TAS1', 'TAS'],
+      ['SA1', 'SA'],
+    ]
   },
 
   period_type_static_picker: {
