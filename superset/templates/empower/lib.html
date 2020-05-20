@@ -14,27 +14,29 @@
 <!--        <input type="radio" name="assumption-type" value="exist" id="assumption-choice1" checked>-->
 <!--        <label for="assumption-choice1">Select from uploaded scenarios</label>-->
         {{ field(**kwargs)|safe }}
-        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="assumption-file-upload-modal" id="toggle-upload"
+        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#assumption-file-upload-modal" id="toggle-upload"
                 >Upload new assumption</button>
             <div class="modal fade" id="assumption-file-upload-modal" tabindex="-1" role="dialog" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="modal-title">Upload new Assumption</h5>
+
+                        </div>
+                        <div class="modal-body">
+                            <label for="assumption-file">Upload new assumption template</label>
+                            <input type="file" id="assumption-file" value="assumption-file" name="assumption">
+
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" id="upload-btn">Upload</button>
+                            <button class="btn btn-secondary" data-dismiss="modal" id="close-btn">
+                                Close
+                            </button>
+
                         </div>
                     </div>
-                    <div class="modal-body">
-                        <label for="assumption-file">Upload new assumption template</label>
-                        <input type="file" id="assumption-file" value="assumption-file" name="assumption">
-                        <button class="btn btn-primary btn-sm" id="upload-btn">Upload</button>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            Close
-                        </button>
-                    </div>
                 </div>
-
             </div>
 <!--        <input type="radio" name="assumption-type" value="upload" id="assumption-choice2">-->
 
@@ -52,7 +54,67 @@
         <script>
             $('#toggle-upload').click(function(e) {
                 e.preventDefault();
-                console.log('click')
+            })
+            $('#upload-btn').click(function(e) {
+                e.preventDefault();
+                // console.log()
+                if(document.getElementById('assumption-file').files.length < 0){
+                    alert('Please select a file!');
+                }
+                else{
+                    let file = document.getElementById('assumption-file').files[0];
+                    let formdata = new FormData();
+                    formdata.append("file", file, file.name);
+                    formdata.append("upload_file", true);
+
+                    $.ajax({
+                        type: "POST",
+                        url: "upload_assumption_ajax",
+                        xhr: function () {
+                            var myXhr = $.ajaxSettings.xhr();
+                            return myXhr;
+                        },
+                        success: function (data) {
+                            alert('upload success')
+                        },
+                        error: function (error) {
+                            alert('upload failed')
+                        },
+                        async: true,
+                        data: formdata,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        timeout: 60000
+                    });
+                }
+
+
+                // if ($(event.target).attr('data') != null) {
+                //     var url = $(event.target).attr('data');
+                //     var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                //     $.ajaxSetup({
+                //         beforeSend: function (xhr, settings) {
+                //             if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                //                 xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                //             }
+                //         }
+                //     });
+                //     $.ajax({
+                //         method: "GET",
+                //         url: url,
+                //         contentType: "application/json; charset=utf-8"
+                //     }).done(function (data) {
+                //         $(".site-widget").html(data)
+                //     }).fail(function (error) {
+                //         var respJSON = error.responseJSON;
+                //         var errorMsg = error.responseText;
+                //         if (respJSON && respJSON.message) {
+                //             errorMsg = respJSON.message;
+                //         }
+                //         alert("ERROR: " + errorMsg);
+                //     });
+                // }
             })
         </script>
     {% endblock %}
