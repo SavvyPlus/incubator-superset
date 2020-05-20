@@ -1643,11 +1643,12 @@ class BoxPlot300CapViz(BoxPlotViz):
                                 'hasCustomLabel': False,
                                 'fromFormData': True,
                                 'label': 'State'})
-        # filter state
-        if self.form_data['state_static_picker']:
+        # filter state done on fornt end
+        # # filter state
+        # if self.form_data['state_static_picker']:
             
-            d['filter'].append({'col': 'State', 'op': 'in',
-                                'val': self.form_data['state_static_picker']})
+        #     d['filter'].append({'col': 'State', 'op': 'in',
+        #                         'val': self.form_data['state_static_picker']})
         # filter period type (DataGroup)
         period_type = self.form_data['period_type_static_picker']
         if period_type:            
@@ -1676,28 +1677,56 @@ class BoxPlot300CapViz(BoxPlotViz):
         return d
     
     def to_series(self, df, classed="", title_suffix=""):
-        print(df.head(1000))
-
-
-        # orginal
-        label_sep = " - "
-        chart_data = []
+        """
+        """
+        echart_data = {}        
         for index_value, row in zip(df.index, df.to_dict(orient="records")):
-            if isinstance(index_value, tuple):
-                index_value = label_sep.join(list(str(x) for x in index_value))
-            boxes = defaultdict(dict)
-            for (label, key), value in row.items():
-                if key == "nanmedian":
-                    key = "Q2"
-                boxes[label][key] = value
-            for label, box in boxes.items():
-                if len(self.form_data.get("metrics")) > 1:
-                    # need to render data labels with metrics
-                    chart_label = label_sep.join([str(index_value), label])
-                else:
-                    chart_label = index_value
-                chart_data.append({"label": chart_label, "values": box})
-        return chart_data
+            state, axis_name = index_value
+            state = ''.join(i for i in state if not i.isdigit())
+            
+            if state not in echart_data:
+                echart_data[state] = {
+                    'axisData': [],
+                    'boxData': [],
+                    'outliers': []
+                }
+            echart_data[state]['axisData'].append(axis_name)
+
+            row_keys = [k for k in row.keys()]
+            for key in row_keys:
+                row[key[1]] = row.pop(key)      
+
+            echart_data[state]['boxData'].append([
+                row['whisker_low'],
+                row['Q1'],
+                row['nanmedian'],
+                row['Q3'],
+                row['whisker_high']
+            ])
+
+            echart_data[state]['outliers'].append(list(row['outliers']))                  
+
+        return echart_data
+
+        # # orginal
+        # label_sep = " - "
+        # chart_data = []
+        # for index_value, row in zip(df.index, df.to_dict(orient="records")):
+        #     if isinstance(index_value, tuple):
+        #         index_value = label_sep.join(list(str(x) for x in index_value))
+        #     boxes = defaultdict(dict)
+        #     for (label, key), value in row.items():
+        #         if key == "nanmedian":
+        #             key = "Q2"
+        #         boxes[label][key] = value
+        #     for label, box in boxes.items():
+        #         if len(self.form_data.get("metrics")) > 1:
+        #             # need to render data labels with metrics
+        #             chart_label = label_sep.join([str(index_value), label])
+        #         else:
+        #             chart_label = index_value
+        #         chart_data.append({"label": chart_label, "values": box})
+        # return chart_data
 
 
 

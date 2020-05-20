@@ -28,7 +28,7 @@ export default {
         ['adhoc_filters'],
         ['groupby'],
         ['whisker_options'],
-        ['state_static_picker'],
+        // ['state_static_picker'],
         ['period_type_static_picker'],
         ['period_finyear_picker'],
         ['period_calyear_picker'],

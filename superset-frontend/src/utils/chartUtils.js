@@ -54,6 +54,7 @@ export function formatter(param) {
 
 export function getOption(queryResponse) {
   if (queryResponse.form_data.viz_type === 'box_plot_300_cap') {
+    console.log(JSON. stringify(queryResponse.data))
     // const data = prepareBoxplotData(queryResponse.data);
     const data = [];
     for (let seriesIndex = 0; seriesIndex < 3; seriesIndex++) {
