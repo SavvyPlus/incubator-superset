@@ -46,9 +46,9 @@ class Client(Model):
 class Project(Model):
     __tablename__ = "project"
     id = Column(Integer, primary_key=True)
-    name = Column(String(200), nullable=False)
+    name = Column(String(200), nullable=False, unique=False)
     description = Column(String(500))
-    client_id = Column(Integer, ForeignKey("client.id"))
+    client_id = Column(Integer, ForeignKey("client.id"), nullable=False)
     client = relationship("Client", foreign_keys=[client_id], backref="projects")
 
     def __repr__(self):
@@ -60,7 +60,7 @@ class Assumption(
 ):
     __tablename__ = "assumption"
     id = Column(Integer, primary_key=True)
-    name = Column(String(200))
+    name = Column(String(200), nullable=False)
     description = Column(String(200))
     status = Column(String(10))
     status_detail = Column(String(500))
@@ -75,18 +75,18 @@ class Simulation(
 ):
     __tablename__ = "simulation"
     id = Column(Integer, primary_key=True)
-    run_id = Column(String(20))
-    name = Column(String(200))
+    run_id = Column(String(20), nullable=False)
+    name = Column(String(200), nullable=False)
     description = Column(String(200))
-    assumption_id = Column(Integer, ForeignKey("assumption.id"))
+    assumption_id = Column(Integer, ForeignKey("assumption.id"), nullable=False)
     assumption = relationship("Assumption", foreign_keys=[assumption_id])
-    project_id = Column(Integer, ForeignKey("project.id"))
+    project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     project = relationship("Project", foreign_keys=[project_id], backref="simulations")
     generation_model = Column(String(20))
-    run_no = Column(Integer)
-    start_date = Column(Date)
-    end_date = Column(Date)
-    report_type = Column(String(200))
+    run_no = Column(Integer, nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    report_type = Column(String(200), nullable=False)
     status = Column(String(10))
     status_detail = Column(String(500))
 
