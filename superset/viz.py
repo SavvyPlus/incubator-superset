@@ -1614,113 +1614,113 @@ class BoxPlot300CapViz(BoxPlotViz):
     sort_series = False
     is_timeseries = False
 
-    def query_obj(self):
-        d = super().query_obj()
-        d['metrics'] = []
+    # def query_obj(self):
+    #     d = super().query_obj()
+    #     d['metrics'] = []
 
-        group_column = []
-        if self.form_data['fin_period_picker']:
-            d['filter'].append({'col': 'Period', 'op': 'in',
-                                'val': self.form_data['fin_period_picker']})
-            group_column.append('Period')
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Period',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Period'})
+    #     group_column = []
+    #     if self.form_data['fin_period_picker']:
+    #         d['filter'].append({'col': 'Period', 'op': 'in',
+    #                             'val': self.form_data['fin_period_picker']})
+    #         group_column.append('Period')
+    #     # else:
+    #         d['metrics'].append({'expressionType': 'SQL',
+    #                              'sqlExpression': 'Period',
+    #                              'column': None,
+    #                              'aggregate': None,
+    #                              'hasCustomLabel': False,
+    #                              'fromFormData': True,
+    #                              'label': 'Period'})
 
-        if self.form_data['fin_str_tech_picker']:
-            d['filter'].append({'col': 'Technology', 'op': 'in',
-                                'val': self.form_data['fin_str_tech_picker']})
-            group_column.append('Technology')
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Technology',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Technology'})
+    #     if self.form_data['fin_str_tech_picker']:
+    #         d['filter'].append({'col': 'Technology', 'op': 'in',
+    #                             'val': self.form_data['fin_str_tech_picker']})
+    #         group_column.append('Technology')
+    #     # else:
+    #         d['metrics'].append({'expressionType': 'SQL',
+    #                              'sqlExpression': 'Technology',
+    #                              'column': None,
+    #                              'aggregate': None,
+    #                              'hasCustomLabel': False,
+    #                              'fromFormData': True,
+    #                              'label': 'Technology'})
 
-        if self.form_data['fin_scenario_picker']:
-            d['filter'].append({'col': 'Scenario', 'op': 'in',
-                                'val': self.form_data['fin_scenario_picker']})
-            group_column.append('Scenario')
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Scenario',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Scenario'})
+    #     if self.form_data['fin_scenario_picker']:
+    #         d['filter'].append({'col': 'Scenario', 'op': 'in',
+    #                             'val': self.form_data['fin_scenario_picker']})
+    #         group_column.append('Scenario')
+    #     # else:
+    #         d['metrics'].append({'expressionType': 'SQL',
+    #                              'sqlExpression': 'Scenario',
+    #                              'column': None,
+    #                              'aggregate': None,
+    #                              'hasCustomLabel': False,
+    #                              'fromFormData': True,
+    #                              'label': 'Scenario'})
 
-        if self.form_data['fin_firm_tech_picker']:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'FirmingTechnology',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'FirmingTechnology'})
-            d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
-                                'val': self.form_data['fin_firm_tech_picker']})
-            group_column.append('FirmingTechnology')
+    #     if self.form_data['fin_firm_tech_picker']:
+    #         d['metrics'].append({'expressionType': 'SQL',
+    #                              'sqlExpression': 'FirmingTechnology',
+    #                              'column': None,
+    #                              'aggregate': None,
+    #                              'hasCustomLabel': False,
+    #                              'fromFormData': True,
+    #                              'label': 'FirmingTechnology'})
+    #         d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
+    #                             'val': self.form_data['fin_firm_tech_picker']})
+    #         group_column.append('FirmingTechnology')
 
-        if self.form_data['fin_strategy_picker']:
-            d['filter'].append({'col': 'Strategy', 'op': 'in',
-                                'val': self.form_data['fin_strategy_picker']})
-        # else:
+    #     if self.form_data['fin_strategy_picker']:
+    #         d['filter'].append({'col': 'Strategy', 'op': 'in',
+    #                             'val': self.form_data['fin_strategy_picker']})
+    #     # else:
 
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Percentile',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Percentile'})
+    #     d['metrics'].append({'expressionType': 'SQL',
+    #                          'sqlExpression': 'Percentile',
+    #                          'column': None,
+    #                          'aggregate': None,
+    #                          'hasCustomLabel': False,
+    #                          'fromFormData': True,
+    #                          'label': 'Percentile'})
 
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Strategy',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Strategy'})
-        group_column.append('Strategy')
+    #     d['metrics'].append({'expressionType': 'SQL',
+    #                          'sqlExpression': 'Strategy',
+    #                          'column': None,
+    #                          'aggregate': None,
+    #                          'hasCustomLabel': False,
+    #                          'fromFormData': True,
+    #                          'label': 'Strategy'})
+    #     group_column.append('Strategy')
 
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Metric',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Metric'})
+    #     d['metrics'].append({'expressionType': 'SQL',
+    #                          'sqlExpression': 'Metric',
+    #                          'column': None,
+    #                          'aggregate': None,
+    #                          'hasCustomLabel': False,
+    #                          'fromFormData': True,
+    #                          'label': 'Metric'})
 
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Value',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Value'})
+    #     d['metrics'].append({'expressionType': 'SQL',
+    #                          'sqlExpression': 'Value',
+    #                          'column': None,
+    #                          'aggregate': None,
+    #                          'hasCustomLabel': False,
+    #                          'fromFormData': True,
+    #                          'label': 'Value'})
 
-        if self.form_data['fin_str_metric_picker']:
-            d['filter'].append({'col': 'Metric', 'op': 'in',
-                                'val': self.form_data['fin_str_metric_picker']})
-            group_column.append('Metric')
+    #     if self.form_data['fin_str_metric_picker']:
+    #         d['filter'].append({'col': 'Metric', 'op': 'in',
+    #                             'val': self.form_data['fin_str_metric_picker']})
+    #         group_column.append('Metric')
 
-        d['filter'].append({
-            'col': 'Percentile',
-            'op': 'in',
-            'val': ['0', '0.25', '0.5', '0.75', '1']
-        })
+    #     d['filter'].append({
+    #         'col': 'Percentile',
+    #         'op': 'in',
+    #         'val': ['0', '0.25', '0.5', '0.75', '1']
+    #     })
 
-        self.form_data['group_column'] = group_column
-        return d
+    #     self.form_data['group_column'] = group_column
+    #     return d
 
     def to_series(self, df, classed="", title_suffix=""):
         label_sep = " "

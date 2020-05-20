@@ -380,3 +380,7 @@ def send_sendgrid_mail(address_to, message_data, template_id):
     except Exception as e:
         return False
 
+
+def is_sublist(small, large):
+    check = all(item in large for item in small)
+    return check

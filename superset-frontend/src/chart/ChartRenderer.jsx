@@ -245,7 +245,7 @@ class ChartRenderer extends React.Component {
         fd.metrics = ['$'];
       }
     }
-
+    console.log(queryResponse)
     return (
       <>
         {formData.viz_type === 'box_plot_300_cap' ||
