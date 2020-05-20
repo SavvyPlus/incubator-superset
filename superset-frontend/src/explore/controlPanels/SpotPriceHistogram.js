@@ -17,6 +17,9 @@
  * under the License.
  */
 import { t } from '@superset-ui/translation';
+import { validateNonEmpty } from '@superset-ui/validator';
+import { columnChoices } from '../controls';
+import { formatSelectOptions } from '../../modules/utils';
 
 export default {
   controlPanelSections: [
@@ -24,38 +27,26 @@ export default {
       label: t('Query'),
       expanded: true,
       controlSetRows: [
-        ['groupby'],
-        ['metric'],
-        ['secondary_metric'],
+        [
+          {
+            name: 'all_columns_x',
+            config: {
+              type: 'SelectControl',
+              label: t('Numeric Columns'),
+              default: null,
+              description: t(
+                'Select the numeric columns to draw the histogram',
+              ),
+              mapStateToProps: state => ({
+                choices: columnChoices(state.datasource),
+              }),
+              multi: true,
+              validators: [validateNonEmpty],
+            },
+          },
+        ],
         ['adhoc_filters'],
-        ['row_limit'],
       ],
     },
-    {
-      label: t('Chart Options'),
-      expanded: true,
-      controlSetRows: [['color_scheme', 'label_colors']],
-    },
   ],
-  controlOverrides: {
-    metric: {
-      label: t('Primary Metric'),
-      description: t(
-        'The primary metric is used to define the arc segment sizes',
-      ),
-    },
-    secondary_metric: {
-      label: t('Secondary Metric'),
-      default: null,
-      description: t(
-        '[optional] this secondary metric is used to ' +
-          'define the color as a ratio against the primary metric. ' +
-          'When omitted, the color is categorical and based on labels',
-      ),
-    },
-    groupby: {
-      label: t('Hierarchy'),
-      description: t('This defines the level of the hierarchy'),
-    },
-  },
 };

@@ -187,8 +187,7 @@ class SupersetTestCase(unittest.TestCase):
     # SHOW TABLES ((FROM | IN) qualifiedName)? (LIKE pattern=STRING)?
     def test_show_tables(self):
         query = "SHOW TABLES FROM s1 like '%order%'"
-        # TODO: figure out what should code do here
-        self.assertEqual({Table("s1")}, self.extract_tables(query))
+        self.assertEqual(set(), self.extract_tables(query))
 
     # SHOW COLUMNS (FROM | IN) qualifiedName
     def test_show_columns(self):
@@ -533,6 +532,17 @@ class SupersetTestCase(unittest.TestCase):
         statements = parsed.get_statements()
         self.assertEqual(len(statements), 2)
         expected = ["SELECT * FROM birth_names", "SELECT * FROM birth_names LIMIT 1"]
+        self.assertEqual(statements, expected)
+
+    def test_comment_breakdown_statements(self):
+        multi_sql = """
+        SELECT * FROM birth_names;
+        -- some comment
+        """
+        parsed = ParsedQuery(multi_sql)
+        statements = parsed.get_statements()
+        self.assertEqual(len(statements), 1)
+        expected = ["SELECT * FROM birth_names"]
         self.assertEqual(statements, expected)
 
     def test_messy_breakdown_statements(self):

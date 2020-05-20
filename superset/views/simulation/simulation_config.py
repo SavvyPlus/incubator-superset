@@ -40,12 +40,15 @@ sheet_generation_closure = 'Retirement'
 sheet_demand_growth = 'Demand_Growth'
 sheet_project_list = 'NewFormat'
 sheet_project_proxy = 'Project_Proxy'
-sheet_new_power_stations = "New_Power_Stations"
+# sheet_new_power_stations = "New_Power_Stations"
 sheet_strategic_behaviour = "Strategic_Behaviour"
-sheet_floor_price = "LGC_Floor_Price"
+# sheet_floor_price = "LGC_Floor_Price"
 sheet_renewable_proportion = "Renewable_Proportion"
 sheet_demand_adjustment = 'Demand_Adjustments'
 sheet_escalation = 'Gas_Price_Escalation'
+sheet_name_list = [sheet_pv_forecast, sheet_pv_history, sheet_generation_closure, sheet_demand_growth, sheet_project_list,
+                   sheet_project_proxy, sheet_strategic_behaviour,
+                   sheet_renewable_proportion, sheet_demand_adjustment, sheet_escalation]
 
 # MSSQL data source
 # db_host = "AWS2-SVR-DB-002"

@@ -1,0 +1,112 @@
+{% import 'appbuilder/general/lib.html' as lib %}
+
+{% macro render_simulation_assumption(field, begin_sep_label='', end_sep_label='', begin_sep_field='', end_sep_field='') %}
+
+    {{begin_sep_label|safe}}
+        <label for="{{field.id}}" control-label>
+            {{ field.label.text }}
+            {% if field.flags.required %}
+                <strong style="color: red">&#42;</strong>
+            {% endif %}
+        </label>
+    {{end_sep_label|safe}}
+    {{begin_sep_field|safe}}
+<!--        <input type="radio" name="assumption-type" value="exist" id="assumption-choice1" checked>-->
+<!--        <label for="assumption-choice1">Select from uploaded scenarios</label>-->
+        {{ field(**kwargs)|safe }}
+        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="assumption-file-upload-modal" id="toggle-upload"
+                >Upload new assumption</button>
+            <div class="modal fade" id="assumption-file-upload-modal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modal-title">Upload new Assumption</h5>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <label for="assumption-file">Upload new assumption template</label>
+                        <input type="file" id="assumption-file" value="assumption-file" name="assumption">
+                        <button class="btn btn-primary btn-sm" id="upload-btn">Upload</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            Close
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+<!--        <input type="radio" name="assumption-type" value="upload" id="assumption-choice2">-->
+
+
+            <span class="help-block">{{ field.description }}</span>
+        {% if field.errors %}
+            <div class="alert alert-danger">
+            {% for error in field.errors %}
+              {{ _(error) }}
+            {% endfor %}
+            </div>
+        {% endif %}
+    {{end_sep_field|safe}}
+    {% block tail_js %}
+        <script>
+            $('#toggle-upload').click(function(e) {
+                e.preventDefault();
+                console.log('click')
+            })
+        </script>
+    {% endblock %}
+
+{% endmacro %}
+
+
+{% macro render_form_controls() %}
+    <div class="well well-sm">
+        <button id="submit_button" type="submit" class="btn  btn-sm btn-primary">{{_("Save")}}
+            <i class="fa fa-save"></i></button>
+        {{ lib.lnk_back() }}
+        <script>
+            $('#submit_button').click( function(e) {
+                e.preventDefault();
+                let assumption_choice;
+                if(document.getElementById('assumption-choice1').checked)
+                {
+                    assumption_choice=1
+                }
+                else{
+                    if(document.getElementById('assumption-choice2').checked)
+                    {
+                        assumption_choice=2
+                        form = document.getElementById('model_form');
+
+                        let assumption_file = document.createElement('input');
+                        assumption_file.type = 'hidden';
+
+                        assumption_file.files = document.getElementById('assumption-file').files;
+                        assumption_file.name = 'assumption-file'
+
+                        form.appendChild(assumption_file)
+                        console.log(form)
+                        console.log(assumption_file)
+                    }
+                }
+                console.log(assumption_choice)
+                // list = []
+                // table = document.getElementById('sites_table')
+                // for(var i = 0, row; row = table.rows[i]; i++) {
+                //     if (row.id != ''){
+                //         list.push(row.id);
+                //     }
+                // }
+                // form = document.getElementById('model_form');
+                // var sites_list = document.createElement("input");
+                // sites_list.type = 'hidden';
+                // sites_list.name = 'sites';
+                // sites_list.id = 'sites';
+                // sites_list.value = list;
+                // form.appendChild(sites_list);
+                form.submit()
+            })
+        </script>
+    </div>
+{% endmacro %}

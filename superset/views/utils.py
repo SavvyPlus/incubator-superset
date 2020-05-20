@@ -18,9 +18,12 @@ from collections import defaultdict
 from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 from urllib import parse
-
+import os
 import simplejson as json
-from flask import g, request
+from flask import request
+
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 import superset.models.core as models
 from superset import app, db, is_feature_enabled
@@ -30,6 +33,10 @@ from superset.legacy import update_time_range
 from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
 from superset.utils.core import QueryStatus, TimeRangeEndpoint
+
+# Sendgrid client
+sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
+
 
 if is_feature_enabled("SIP_38_VIZ_REARCHITECTURE"):
     from superset import viz_sip38 as viz  # type: ignore
@@ -110,10 +117,6 @@ def get_form_data(
     # request params can overwrite the body
     if request_args_data:
         form_data.update(json.loads(request_args_data))
-
-    # Fallback to using the Flask globals (used for cache warmup) if defined.
-    if not form_data and hasattr(g, "form_data"):
-        form_data = getattr(g, "form_data")
 
     url_id = request.args.get("r")
     if url_id:
@@ -361,3 +364,19 @@ def is_slice_in_container(layout: Dict, container_id: str, slice_id: int) -> boo
         )
 
     return False
+
+
+# Sendgrid email sender
+def send_sendgrid_mail(address_to, message_data, template_id):
+    message = Mail(
+        from_email=("no_reply@empoweranalytics.com.au", "Empower Analytics"),
+        to_emails=address_to
+    )
+    message.dynamic_template_data = message_data
+    message.template_id = template_id
+    try:
+        sendgrid_client.send(message)
+        return True
+    except Exception as e:
+        return False
+

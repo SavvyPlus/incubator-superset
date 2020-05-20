@@ -21,7 +21,11 @@ import { snakeCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { SuperChart } from '@superset-ui/chart';
+// import echarts from 'echarts';
+import ReactEcharts from 'echarts-for-react';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
+import { getOption } from '../utils/chartUtils';
+// import worldland from '../utils/worldland.json';
 
 const propTypes = {
   annotationData: PropTypes.object,
@@ -58,6 +62,8 @@ const defaultProps = {
   triggerRender: false,
 };
 
+// echarts.registerTheme('my_theme', worldland);
+
 class ChartRenderer extends React.Component {
   constructor(props) {
     super(props);
@@ -87,6 +93,14 @@ class ChartRenderer extends React.Component {
     }
 
     if (nextProps.vizType === 'box_plot_fin_str') {
+      return true;
+    }
+
+    if (nextProps.vizType === 'box_plot_300_cap') {
+      return true;
+    }
+
+    if (nextProps.vizType === 'spot_price_histogram') {
       return true;
     }
 
@@ -233,25 +247,40 @@ class ChartRenderer extends React.Component {
     }
 
     return (
-      <SuperChart
-        disableErrorBoundary
-        key={`${chartId}${
-          process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
-        }`}
-        id={`chart-id-${chartId}`}
-        className={chartClassName}
-        chartType={vizType}
-        width={width}
-        height={height}
-        annotationData={annotationData}
-        datasource={datasource}
-        initialValues={initialValues}
-        formData={fd}
-        hooks={this.hooks}
-        queryData={queryResponse}
-        onRenderSuccess={this.handleRenderSuccess}
-        onRenderFailure={this.handleRenderFailure}
-      />
+      <>
+        {formData.viz_type === 'box_plot_300_cap' ||
+        formData.viz_type === 'spot_price_histogram' ? (
+          <ReactEcharts
+            key={`${chartId}${
+              process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
+            }`}
+            id={`chart-id-${chartId}`}
+            option={getOption(queryResponse)}
+            style={{ height: `${height}px`, width: `${width}px` }}
+            theme="light"
+          />
+        ) : (
+          <SuperChart
+            disableErrorBoundary
+            key={`${chartId}${
+              process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
+            }`}
+            id={`chart-id-${chartId}`}
+            className={chartClassName}
+            chartType={vizType}
+            width={width}
+            height={height}
+            annotationData={annotationData}
+            datasource={datasource}
+            initialValues={initialValues}
+            formData={fd}
+            hooks={this.hooks}
+            queryData={queryResponse}
+            onRenderSuccess={this.handleRenderSuccess}
+            onRenderFailure={this.handleRenderFailure}
+          />
+        )}
+      </>
     );
   }
 }

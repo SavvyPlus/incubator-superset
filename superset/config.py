@@ -342,7 +342,7 @@ CACHE_CONFIG: CacheConfig = {
     'CACHE_TYPE': 'redis',
     'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
     'CACHE_KEY_PREFIX': 'superset_results',
-    'CACHE_REDIS_URL': 'redis://redis:6379/0'
+    'CACHE_REDIS_URL': 'redis://localhost:6379/0'
 }
 TABLE_NAMES_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
@@ -490,11 +490,11 @@ WARNING_MSG = None
 
 class CeleryConfig:  # pylint: disable=too-few-public-methods
     # BROKER_URL = "sqla+sqlite:///celerydb.sqlite"
-    BROKER_URL = "redis://redis:6379/0"
+    BROKER_URL = "redis://localhost:6379/0"
     CELERY_IMPORTS = ("superset.sql_lab", "superset.tasks")
 
     # CELERY_RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
-    CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+    CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
     CELERYD_LOG_LEVEL = "DEBUG"
     CELERYD_PREFETCH_MULTIPLIER = 1
     CELERY_ACKS_LATE = False
@@ -547,11 +547,6 @@ SQLLAB_DEFAULT_DBID = None
 # by celery.
 SQLLAB_ASYNC_TIME_LIMIT_SEC = 60 * 60 * 6
 
-# On Redis
-from werkzeug.contrib.cache import RedisCache  # noqa
-RESULTS_BACKEND = RedisCache(
-    host='localhost', port=6379, key_prefix='superset_results')
-
 # Some databases support running EXPLAIN queries that allow users to estimate
 # query costs before they run. These EXPLAIN queries should have a small
 # timeout.
@@ -583,7 +578,7 @@ SQLLAB_CTAS_SCHEMA_NAME_FUNC: Optional[
     Callable[["Database", "models.User", str, str], str]
 ] = None
 
-# An instantiated derivative of werkzeug.contrib.cache.BaseCache
+# An instantiated derivative of cachelib.base.BaseCache
 # if enabled, it can be used to store the results of long-running queries
 # in SQL Lab by using the "Run Async" button/feature
 RESULTS_BACKEND = None
@@ -766,6 +761,11 @@ WEBDRIVER_CONFIGURATION: Dict[Any, Any] = {}
 
 # The base URL to query for accessing the user interface
 WEBDRIVER_BASEURL = "http://0.0.0.0:8080/"
+# The base URL for the email report hyperlinks.
+WEBDRIVER_BASEURL_USER_FRIENDLY = WEBDRIVER_BASEURL
+# Time in seconds, selenium will wait for the page to load
+# and render for the email report.
+EMAIL_PAGE_RENDER_WAIT = 30
 
 # Send user to a link where they can report bugs
 BUG_REPORT_URL = None
