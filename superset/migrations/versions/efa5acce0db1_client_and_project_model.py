@@ -42,12 +42,12 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.String(length=500), nullable=True),
-    sa.Column('client_id', sa.Integer(), nullable=True),
+    sa.Column('client_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['client_id'], ['client.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.add_column('simulation', sa.Column('generation_model', sa.String(length=20), nullable=True))
-    op.add_column('simulation', sa.Column('project_id', sa.Integer(), nullable=True))
+    op.add_column('simulation', sa.Column('project_id', sa.Integer(), nullable=False))
     op.add_column('simulation', sa.Column('report_type', sa.String(length=200), nullable=True))
     op.create_foreign_key(None, 'simulation', 'project', ['project_id'], ['id'])
     # ### end Alembic commands ###

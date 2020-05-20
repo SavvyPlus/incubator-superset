@@ -36,21 +36,21 @@ def upgrade():
     op.alter_column('assumption', 'name',
                existing_type=mysql.VARCHAR(length=200),
                nullable=False)
-    op.alter_column('project', 'client_id',
-               existing_type=mysql.INTEGER(display_width=11),
-               nullable=False)
-    op.alter_column('simulation', 'assumption_id',
-               existing_type=mysql.INTEGER(display_width=11),
-               nullable=False)
+    # op.alter_column('project', 'client_id',
+    #            existing_type=mysql.INTEGER(display_width=11),
+    #            nullable=False)
+    # op.alter_column('simulation', 'assumption_id',
+    #            existing_type=mysql.INTEGER(display_width=11),
+    #            nullable=False)
     op.alter_column('simulation', 'end_date',
                existing_type=sa.DATE(),
                nullable=False)
     op.alter_column('simulation', 'name',
                existing_type=mysql.VARCHAR(length=200),
                nullable=False)
-    op.alter_column('simulation', 'project_id',
-               existing_type=mysql.INTEGER(display_width=11),
-               nullable=False)
+    # op.alter_column('simulation', 'project_id',
+    #            existing_type=mysql.INTEGER(display_width=11),
+    #            nullable=False)
     op.alter_column('simulation', 'report_type',
                existing_type=mysql.VARCHAR(length=200),
                nullable=False)
@@ -80,21 +80,21 @@ def downgrade():
     op.alter_column('simulation', 'report_type',
                existing_type=mysql.VARCHAR(length=200),
                nullable=True)
-    op.alter_column('simulation', 'project_id',
-               existing_type=mysql.INTEGER(display_width=11),
-               nullable=True)
+    # op.alter_column('simulation', 'project_id',
+    #            existing_type=mysql.INTEGER(display_width=11),
+    #            nullable=True)
     op.alter_column('simulation', 'name',
                existing_type=mysql.VARCHAR(length=200),
                nullable=True)
     op.alter_column('simulation', 'end_date',
                existing_type=sa.DATE(),
                nullable=True)
-    op.alter_column('simulation', 'assumption_id',
-               existing_type=mysql.INTEGER(display_width=11),
-               nullable=True)
-    op.alter_column('project', 'client_id',
-               existing_type=mysql.INTEGER(display_width=11),
-               nullable=True)
+    # op.alter_column('simulation', 'assumption_id',
+    #            existing_type=mysql.INTEGER(display_width=11),
+    #            nullable=True)
+    # op.alter_column('project', 'client_id',
+    #            existing_type=mysql.INTEGER(display_width=11),
+    #            nullable=True)
     op.alter_column('assumption', 'name',
                existing_type=mysql.VARCHAR(length=200),
                nullable=True)
