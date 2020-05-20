@@ -194,6 +194,18 @@ class ControlPanelsContainer extends React.Component {
                   if (controls.period_type.value === 'FinYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
+                } else if (name === 'period_finyear_picker') {
+                  if (controls.period_type_static_picker.value === 'FinYear') {
+                    return this.renderControl(name, controlConfigs[name], true);
+                  }
+                } else if (name === 'period_calyear_picker') {
+                  if (controls.period_type_static_picker.value === 'CalYear') {
+                    return this.renderControl(name, controlConfigs[name], true);
+                  }
+                } else if (name === 'period_quarterly_picker') {
+                  if (controls.period_type_static_picker.value === 'Quarterly') {
+                    return this.renderControl(name, controlConfigs[name], true);
+                  }
                 } else {
                   return this.renderControl(name, controlConfigs[name], true);
                 }

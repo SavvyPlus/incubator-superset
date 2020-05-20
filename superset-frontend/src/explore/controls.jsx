@@ -297,6 +297,34 @@ export const controls = {
     }),
   },
 
+  state_static_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Region'),
+    default: ['VIC'],
+    // validators: [validateNonEmpty],
+    // description: t('Select Regions'),
+    // choices: formatSelectOptions(['NSW', 'VIC', 'QLD', 'TAS', 'SA']),
+    choices: [
+      ['NSW1', 'NSW'],
+      ['VIC1', 'VIC'],
+      ['QLD1', 'QLD'],
+      ['TAS1', 'TAS'],
+      ['SA1', 'SA'],
+    ]
+  },
+
+  period_type_static_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Period Type'),    
+    default: ['CalYear'],
+    validators: [validateNonEmpty],
+    choices: formatSelectOptions(['CalYear', 'FinYear', 'Quarterly']),
+    // description: t('Select the period type'),
+  },
+
+
   period_type: {
     type: 'SelectControl',
     freeForm: false,
@@ -306,6 +334,40 @@ export const controls = {
     choices: formatSelectOptions(['CalYear', 'FinYear']),
     description: t('Select the period type'),
   },
+
+  period_calyear_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Period'),
+    default: null,
+    // description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.period_calyear),
+    }),
+  },
+
+  period_finyear_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Period'),
+    default: null,
+    // description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.period_finyear),
+    }),
+  },
+
+  period_quarterly_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Period'),
+    default: null,
+    // description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.period_quarterly),
+    }),
+  },
+
 
   cal_years: {
     type: 'SelectControl',
