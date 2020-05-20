@@ -43,12 +43,13 @@ import { prepareBoxplotData } from 'echarts/extension/dataTool';
 
 export function formatter(param) {
   return [
-    'Experiment ' + param.name + ': ',
-    'upper: ' + param.data[0],
-    'Q1: ' + param.data[1],
-    'median: ' + param.data[2],
-    'Q3: ' + param.data[3],
-    'lower: ' + param.data[4],
+    'Whiker Type: Min/Max',
+    'Region: ' + param.name,
+    'Minimum: ' + param.data[1],
+    'Q1: ' + param.data[2],
+    'Median: ' + param.data[3],
+    'Q3: ' + param.data[4],
+    'Maximum: ' + param.data[5],
   ].join('<br/>');
 }
 
@@ -69,7 +70,7 @@ export function getOption(queryResponse) {
     }
     return {
       title: {
-        text: 'Multiple Categories',
+        text: '$300/MWh Cap Payout',
         left: 'center',
       },
       legend: {
