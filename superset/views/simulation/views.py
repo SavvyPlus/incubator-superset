@@ -21,11 +21,12 @@ import logging
 import os
 import tempfile
 from flask import flash, redirect, g, request, abort
-from flask_appbuilder.widgets import ListWidget
+from flask_appbuilder.widgets import ListWidget, FormWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
 from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
+
 
 from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.connectors.connector_registry import ConnectorRegistry
@@ -34,8 +35,8 @@ from superset.models.simulation import *
 from superset.utils import core as utils
 from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
-from .forms import UploadAssumptionForm
-from .assumption_process import process_assumptions, upload_assumption_file
+from .forms import UploadAssumptionForm, AddSimulationForm
+from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
 from .util import get_download_url
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
@@ -230,85 +231,6 @@ class EmpowerModelView(SupersetModelView):
         finally:
             return None
 
-class ClientModelView(EmpowerModelView):
-
-    class ClientListWidget(ListWidget):
-        template = "empower/widgets/list_client.html"
-
-
-    route_base = "/clientmodelview"
-    datamodel = SQLAInterface(Client)
-    include_route_methods = RouteMethod.CRUD_SET
-    list_columns = ['name','description','projects']
-    add_exclude_columns = ['projects']
-    order_columns = ['name']
-
-    list_widget = ClientListWidget
-
-    def _get_list_widget(
-        self,
-        filters,
-        actions=None,
-        order_column="",
-        order_direction="",
-        page=None,
-        page_size=None,
-        widgets=None,
-        **args,
-    ):
-        """ get joined base filter and current active filter for query """
-        widgets = widgets or {}
-        actions = actions or self.actions
-        page_size = page_size or self.page_size
-        if not order_column and self.base_order:
-            order_column, order_direction = self.base_order
-        joined_filters = filters.get_joined_filters(self._base_filters)
-        count, lst = self.datamodel.query(
-            joined_filters,
-            order_column,
-            order_direction,
-            page=page,
-            page_size=page_size,
-        )
-        pks = self.datamodel.get_keys(lst)
-
-        # dict of clients and projects, each client has a list of projects where each project is a dict of id and name
-        # can be used to create link for edit project later
-        project_dict = {}
-        for client in lst:
-            projects = client.projects
-            project_dict[client.name] = list({'id': project.id, 'name': project.name} for project in projects)
-        # serialize composite pks
-        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
-
-        widgets["list"] = self.list_widget(
-            label_columns=self.label_columns,
-            include_columns=self.list_columns,
-            value_columns=self.datamodel.get_values(lst, self.list_columns),
-            order_columns=self.order_columns,
-            formatters_columns=self.formatters_columns,
-            page=page,
-            project_dict=project_dict,
-            page_size=page_size,
-            count=count,
-            pks=pks,
-            actions=actions,
-            filters=filters,
-            modelview_name=self.__class__.__name__,
-        )
-        return widgets
-
-
-
-class ProjectModelView(EmpowerModelView):
-    route_base = "/projectmodelview"
-    datamodel = SQLAInterface(Project)
-    include_route_methods = RouteMethod.CRUD_SET
-
-    add_exclude_columns = ['simulations']
-    list_columns = ['name', 'description', 'client']
-    order_columns = ['name','client']
-
 
 class AssumptionModelView(EmpowerModelView):
     route_base = "/assuptionmodelview"
@@ -344,7 +266,10 @@ class AssumptionModelView(EmpowerModelView):
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.download_link.data, path)
             download_link, s3_link = upload_assumption_file(path, name)
-            handle_assumption_process.apply_async(args=[s3_link, name])
+            msg =  check_assumption(path, name)
+            if msg != 'success':
+                raise Exception(msg)
+            # handle_assumption_process.apply_async(args=[s3_link, name])
             assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
             if not assumption_file:
                 assumption_file = Assumption()
@@ -377,13 +302,22 @@ class AssumptionModelView(EmpowerModelView):
 class SimulationModelView(
     EmpowerModelView
 ):
+
+    class SimulationAddWidget(FormWidget):
+        template = 'empower/widgets/add_simulation.html'
+
     route_base = "/simulationmodelview"
     datamodel = SQLAInterface(Simulation)
     include_route_methods = RouteMethod.CRUD_SET
 
     list_columns = ['run_id', 'name','assumption', 'project', 'status']
+    # add_columns = ['name','run_id','description','assumption_choice1','assumption_choice2','generation_model',
+    #                'run_no','start_date','end_date','report_type']
     add_exclude_columns = ['status','status_detail']
     label_columns = {'run_no':'No. of simulation run'}
+
+    add_widget = SimulationAddWidget
+    # add_form = AddSimulationForm
 
     @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):
@@ -404,8 +338,22 @@ class SimulationModelView(
             if self.datamodel.add(item):
                 g.result = 'Success'
                 g.detail = None
-
+                # self.send_notification(item)
             flash(*self.datamodel.message)
+
+    def send_notification(self, simulation):
+        from superset.views.utils import send_sendgrid_mail
+        email_list = [["Will", 'weiliang.zhou@zawee.work'],
+                      ["Oscar", 'oscar.omegna@zawee.work'],
+                      ["Dex", 'dexiao.ye@zawee.work']]
+        message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
+                        "simulation": simulation.name,
+                        "project": simulation.project.name,
+                        "client": simulation.project.client.name,
+                        }
+        for email in email_list:
+            message_dict['receiver'] = email[0]
+            send_sendgrid_mail(email[1], message_dict, 'd-a55f374a820b4aa08ebc6eb132504151 ')
 
     @simulation_logger.log_simulation(action_name='update simulation')
     def edit_item(self, form, item):
@@ -426,6 +374,121 @@ class SimulationModelView(
             flash(*self.datamodel.message)
         finally:
             return None
+
+    #
+    #
+    # def _get_add_widget(self, form, exclude_cols=None, widgets=None):
+    #     exclude_cols = exclude_cols or []
+    #     widgets = widgets or {}
+    #     widgets["add"] = self.add_widget(
+    #         form=form,
+    #         include_cols=self.add_columns,
+    #         exclude_cols=exclude_cols,
+    #         fieldsets=self.add_fieldsets,
+    #     )
+    #     return widgets
+    #
+    # def _add(self):
+    #     is_valid_form = True
+    #     get_filter_args(self._filters)
+    #     exclude_cols = self._filters.get_relation_cols()
+    #     assumption_choice1 = self.appbuilder.session.query(Assumption).all()
+    #     form = self.add_form(assumption_choice1=assumption_choice1)
+    #     if request.method == "POST":
+    #         if form.validate():
+    #             # Calling add simulation
+    #             self.add_item(form, exclude_cols)
+    #         else:
+    #             is_valid_form = False
+    #     if is_valid_form:
+    #         self.update_redirect()
+    #     return self._get_add_widget(form=form, exclude_cols=exclude_cols)
+
+
+
+class ProjectModelView(EmpowerModelView):
+    route_base = "/projectmodelview"
+    datamodel = SQLAInterface(Project)
+    include_route_methods = RouteMethod.CRUD_SET
+
+    add_exclude_columns = ['simulations']
+    list_columns = ['name', 'description', 'client']
+    order_columns = ['name','client']
+
+    related_views = [SimulationModelView]
+
+class ClientModelView(EmpowerModelView):
+
+    class ClientListWidget(ListWidget):
+        template = "empower/widgets/list_client.html"
+
+
+    route_base = "/clientmodelview"
+    datamodel = SQLAInterface(Client)
+    include_route_methods = RouteMethod.CRUD_SET
+    list_columns = ['name','description','projects']
+    add_exclude_columns = ['projects']
+    order_columns = ['name']
+
+    related_views = [ProjectModelView]
+
+    list_widget = ClientListWidget
+
+    def _get_list_widget(
+        self,
+        filters,
+        actions=None,
+        order_column="",
+        order_direction="",
+        page=None,
+        page_size=None,
+        widgets=None,
+        **args,
+    ):
+        """ get joined base filter and current active filter for query """
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column, order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count, lst = self.datamodel.query(
+            joined_filters,
+            order_column,
+            order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        pks = self.datamodel.get_keys(lst)
+
+        # dict of clients and projects, each client has a list of projects where each project is a dict of id and name
+        # can be used to create link for edit project later
+        project_dict = {}
+        for client in lst:
+            projects = client.projects
+            project_dict[client.name] = list({'id':project.id, 'name': project.name} for project in projects)
+        # serialize composite pks
+        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+
+        widgets["list"] = self.list_widget(
+            label_columns=self.label_columns,
+            include_columns=self.list_columns,
+            value_columns=self.datamodel.get_values(lst, self.list_columns),
+            order_columns=self.order_columns,
+            formatters_columns=self.formatters_columns,
+            page=page,
+            project_dict=project_dict,
+            page_size=page_size,
+            count=count,
+            pks=pks,
+            actions=actions,
+            filters=filters,
+            modelview_name=self.__class__.__name__,
+        )
+        return widgets
+
+
+
 
 
 class SimulationLogModelView(SupersetModelView):
