@@ -93,7 +93,7 @@ from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
 from superset.utils.dates import now_as_float
 from superset.utils.decorators import etag_cache, stats_timing
 from superset.views.database.filters import DatabaseFilter
-from superset.views.utils import get_dashboard_extra_filters
+from superset.views.utils import get_dashboard_extra_filters, is_sublist
 
 from .base import (
     api,
@@ -903,6 +903,24 @@ class Superset(BaseSupersetView):
         fin_year = []
         daylike = []
 
+        period_calyear = []        
+        period_finyear = []
+        period_quarterly = []
+        # data for 300 charts
+        if is_sublist(['Period', 'DataGroup'], datasource.column_names):
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT Period FROM {} WHERE DataGroup='CalYear'".format(datasource.table_name))
+            for row in result:
+                period_calyear.append(row[0])
+            
+            result = engine.execute("SELECT DISTINCT Period FROM {} WHERE DataGroup='FinYear'".format(datasource.table_name))
+            for row in result:
+                period_finyear.append(row[0])
+            
+            result = engine.execute("SELECT DISTINCT Period FROM {} WHERE DataGroup='Quarterly'".format(datasource.table_name))
+            for row in result:
+                period_quarterly.append(row[0])
+
         # data for financial charts
         fin_scenarios = []
         if 'Scenario' in datasource.column_names:
@@ -957,6 +975,7 @@ class Superset(BaseSupersetView):
             result = engine.execute("SELECT DISTINCT State FROM {}".format(datasource.table_name))
             for row in result:
                 states.append(row[0])
+            states = [''.join(i for i in s if not i.isdigit()) for s in states]
         if has_year:
             engine = self.appbuilder.get_session.get_bind()
             result = engine.execute("SELECT DISTINCT CalYear FROM {}".format(datasource.table_name))
@@ -995,6 +1014,9 @@ class Superset(BaseSupersetView):
             "fin_techs": fin_techs,
             "fin_metric": fin_metric,
             "fin_strategy": fin_strategy,
+            "period_calyear": period_calyear,
+            "period_finyear": period_finyear,
+            "period_quarterly": period_quarterly,
         }
         table_name = (
             datasource.table_name

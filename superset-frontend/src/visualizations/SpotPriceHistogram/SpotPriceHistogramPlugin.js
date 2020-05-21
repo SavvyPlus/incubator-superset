@@ -17,23 +17,20 @@
  * under the License.
  */
 import { t } from '@superset-ui/translation';
+import { ChartMetadata, ChartPlugin } from '@superset-ui/chart';
+import thumbnail from './images/thumbnail.png';
 
-export default {
-  controlPanelSections: [
-    {
-      label: t('Empower'),
-      expanded: true,
-      controlSetRows: [
-        ['metrics'],
-        ['adhoc_filters'],
-        ['groupby'],
-        ['whisker_options'],
-        // ['state_static_picker'],
-        ['period_type_static_picker'],
-        ['period_finyear_picker'],
-        ['period_calyear_picker'],
-        ['period_quarterly_picker']        
-      ],
-    },
-  ],
-};
+const metadata = new ChartMetadata({
+  name: t('Spot Price Histogram'),
+  description: 'A multi interactive',
+  thumbnail,
+  useLegacyApi: true,
+});
+
+export default class FilterBoxChartPlugin extends ChartPlugin {
+  constructor() {
+    super({
+      metadata,
+    });
+  }
+}

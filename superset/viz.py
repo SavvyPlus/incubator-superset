@@ -1607,7 +1607,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         return chart_data
 
 
-class BoxPlot300Cap(BoxPlotViz):
+class BoxPlot300CapViz(BoxPlotViz):
     """tmp testing new chart"""
     viz_type = "box_plot_300_cap"
     verbose_name = _("Box Plot For $300 Cap")
@@ -1617,200 +1617,207 @@ class BoxPlot300Cap(BoxPlotViz):
     def query_obj(self):
         d = super().query_obj()
         d['metrics'] = []
+        periods = []
+        period_type = None
 
-        group_column = []
-        if self.form_data['fin_period_picker']:
+        group_column = ['State', 'Period']
+
+        d['metrics'].append({'expressionType': 'SQL',
+                            'sqlExpression': 'CapPayouts',
+                            'column': None,
+                            'aggregate': None,
+                            'hasCustomLabel': False,
+                            'fromFormData': True,
+                            'label': 'CapPayouts'})
+        d['metrics'].append({'expressionType': 'SQL',
+                                'sqlExpression': 'Period',
+                                'column': None,
+                                'aggregate': None,
+                                'hasCustomLabel': False,
+                                'fromFormData': True,
+                                'label': 'Period'})        
+        d['metrics'].append({'expressionType': 'SQL',
+                                'sqlExpression': 'State',
+                                'column': None,
+                                'aggregate': None,
+                                'hasCustomLabel': False,
+                                'fromFormData': True,
+                                'label': 'State'})
+        # filter state done on fornt end
+        # # filter state
+        # if self.form_data['state_static_picker']:
+            
+        #     d['filter'].append({'col': 'State', 'op': 'in',
+        #                         'val': self.form_data['state_static_picker']})
+        # filter period type (DataGroup)
+        period_type = self.form_data['period_type_static_picker']
+        if period_type:            
+            d['filter'].append({'col': 'DataGroup', 'op': '==',
+                                'val': period_type})
+        # filter period 
+        if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
+            periods = self.form_data['period_finyear_picker']
+        if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
+            periods = self.form_data['period_calyear_picker']
+        if self.form_data['period_quarterly_picker'] and period_type == 'Quarterly':
+            periods = self.form_data['period_quarterly_picker']        
+        if periods:            
             d['filter'].append({'col': 'Period', 'op': 'in',
-                                'val': self.form_data['fin_period_picker']})
-            group_column.append('Period')
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Period',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Period'})
-
-        if self.form_data['fin_str_tech_picker']:
-            d['filter'].append({'col': 'Technology', 'op': 'in',
-                                'val': self.form_data['fin_str_tech_picker']})
-            group_column.append('Technology')
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Technology',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Technology'})
-
-        if self.form_data['fin_scenario_picker']:
-            d['filter'].append({'col': 'Scenario', 'op': 'in',
-                                'val': self.form_data['fin_scenario_picker']})
-            group_column.append('Scenario')
-        # else:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'Scenario',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'Scenario'})
-
-        if self.form_data['fin_firm_tech_picker']:
-            d['metrics'].append({'expressionType': 'SQL',
-                                 'sqlExpression': 'FirmingTechnology',
-                                 'column': None,
-                                 'aggregate': None,
-                                 'hasCustomLabel': False,
-                                 'fromFormData': True,
-                                 'label': 'FirmingTechnology'})
-            d['filter'].append({'col': 'FirmingTechnology', 'op': '==',
-                                'val': self.form_data['fin_firm_tech_picker']})
-            group_column.append('FirmingTechnology')
-
-        if self.form_data['fin_strategy_picker']:
-            d['filter'].append({'col': 'Strategy', 'op': 'in',
-                                'val': self.form_data['fin_strategy_picker']})
-        # else:
-
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Percentile',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Percentile'})
-
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Strategy',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Strategy'})
-        group_column.append('Strategy')
-
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Metric',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Metric'})
-
-        d['metrics'].append({'expressionType': 'SQL',
-                             'sqlExpression': 'Value',
-                             'column': None,
-                             'aggregate': None,
-                             'hasCustomLabel': False,
-                             'fromFormData': True,
-                             'label': 'Value'})
-
-        if self.form_data['fin_str_metric_picker']:
-            d['filter'].append({'col': 'Metric', 'op': 'in',
-                                'val': self.form_data['fin_str_metric_picker']})
-            group_column.append('Metric')
-
+                                'val': periods})
+        
+        # Select the percentitles for box plot to draw
         d['filter'].append({
             'col': 'Percentile',
             'op': 'in',
-            'val': ['0', '0.25', '0.5', '0.75', '1']
+            'val': ['0', '0.25', '0.5', '0.75', '0.95', '1']
         })
+            
+        self.form_data['groupby'] = group_column
+        return d
+    
+    def to_series(self, df, classed="", title_suffix=""):
+        """
+        """
+        echart_data = {}        
+        for index_value, row in zip(df.index, df.to_dict(orient="records")):
+            state, axis_name = index_value
+            state = ''.join(i for i in state if not i.isdigit())
+            
+            if state not in echart_data:
+                echart_data[state] = {
+                    'axisData': [],
+                    'boxData': [],
+                    'outliers': []
+                }
+            echart_data[state]['axisData'].append(axis_name)
 
-        self.form_data['group_column'] = group_column
+            row_keys = [k for k in row.keys()]
+            for key in row_keys:
+                row[key[1]] = row.pop(key)      
+
+            echart_data[state]['boxData'].append([
+                row['whisker_low'],
+                row['Q1'],
+                row['nanmedian'],
+                row['Q3'],
+                row['whisker_high']
+            ])
+
+            echart_data[state]['outliers'].append(list(row['outliers']))                  
+
+        return echart_data
+
+
+class SpotPriceHistogramViz(BaseViz):
+
+    """Spot Price Histogram"""
+
+    viz_type = "spot_price_histogram"
+    verbose_name = _("Spot Price Histogram")
+    is_timeseries = False
+
+    def query_obj(self):
+        """Returns the query object for this visualization"""
+        d = super().query_obj()
+        d["row_limit"] = self.form_data.get("row_limit", int(config["VIZ_ROW_LIMIT"]))
+        numeric_columns = self.form_data.get("all_columns_x")
+        if numeric_columns is None:
+            raise QueryObjectValidationError(
+                _("Must have at least one numeric column specified")
+            )
+        self.columns = numeric_columns
+        d["columns"] = numeric_columns + self.groupby
+        # override groupby entry to avoid aggregation
+        d["groupby"] = []
         return d
 
-    def to_series(self, df, classed="", title_suffix=""):
-        label_sep = " "
-        chart_data = []
-        for index_value, row in zip(df.index, df.to_dict(orient="records")):
-            if isinstance(index_value, tuple):
-                index_value = label_sep.join([index_value[2], index_value[-2], index_value[-1]])
-            boxes = defaultdict(dict)
-            for (label, key), value in row.items():
-                if key == "nanmedian":
-                    key = "Q2"
-                boxes[label][key] = value
-            for label, box in boxes.items():
-                if len(self.form_data.get("metrics")) > 1:
-                    # need to render data labels with metrics
-                    # chart_label = label_sep.join([str(index_value), label])
-                    # hide metrics on the label
-                    chart_label = label_sep.join([str(index_value)])
-                else:
-                    chart_label = index_value
-                chart_data.append({"label": chart_label, "values": box})
-        return chart_data
+    def labelify(self, keys, column):
+        if isinstance(keys, str):
+            keys = (keys,)
+        # removing undesirable characters
+        labels = [re.sub(r"\W+", r"_", k) for k in keys]
+        if len(self.columns) > 1 or not self.groupby:
+            # Only show numeric column in label if there are many
+            labels = [column] + labels
+        return "__".join(labels)
 
     def get_data(self, df: pd.DataFrame) -> VizData:
-        if len(df) == 0:
-            raise Exception('No data is fetched. Please adjust your time range and conditions.')
+        """Returns the chart data"""
+        if df.empty:
+            return None
 
-        form_data = self.form_data
-        group_column = form_data['group_column']
-
-        # conform to NVD3 names
-        def Q1(series):  # need to be named functions - can't use lambdas
-            return np.nanpercentile(series, 25)
-
-        def Q3(series):
-            return np.nanpercentile(series, 75)
-
-        whisker_type = form_data.get("whisker_options")
-        if whisker_type == "Tukey":
-
-            def whisker_high(series):
-                upper_outer_lim = Q3(series) + 1.5 * (Q3(series) - Q1(series))
-                return series[series <= upper_outer_lim].max()
-
-            def whisker_low(series):
-                lower_outer_lim = Q1(series) - 1.5 * (Q3(series) - Q1(series))
-                return series[series >= lower_outer_lim].min()
-
-        elif whisker_type == "Min/max (no outliers)":
-
-            def whisker_high(series):
-                return series.max()
-
-            def whisker_low(series):
-                return series.min()
-
-        elif " percentiles" in whisker_type:  # type: ignore
-            low, high = whisker_type.replace(" percentiles", "").split(  # type: ignore
-                "/"
-            )
-
-            def whisker_high(series):
-                return np.nanpercentile(series, int(high))
-
-            def whisker_low(series):
-                return np.nanpercentile(series, int(low))
-
+        chart_data = []
+        if len(self.groupby) > 0:
+            groups = df.groupby(self.groupby)
         else:
-            raise ValueError("Unknown whisker type: {}".format(whisker_type))
-
-        def outliers(series):
-            above = series[series > whisker_high(series)]
-            below = series[series < whisker_low(series)]
-            # pandas sometimes doesn't like getting lists back here
-            return set(above.tolist() + below.tolist())
-
-        aggregate = [Q1, np.nanmedian, Q3, whisker_high, whisker_low, outliers]
-
-        # if group_column:
-        try:
-            df = df.groupby(group_column).agg(aggregate)
-        except ValueError as e:
-            if str(e) == "No group keys passed!":
-                raise ValueError("Please choose at least one of followings filters: Scenario, Firming Technology, Period or Technology.")
-        # else:
-        #     df = df.groupby(form_data.get("groupby")).agg(aggregate)
-        chart_data = self.to_series(df)
+            groups = [((), df)]
+        for keys, data in groups:
+            chart_data.extend(
+                [
+                    {
+                        "key": self.labelify(keys, column),
+                        "values": data[column].tolist(),
+                    }
+                    for column in self.columns
+                ]
+            )
         return chart_data
 
 
+class SpotPriceDistributionHistogramViz(BaseViz):
+
+    """Spot Price Distribution Histogram"""
+
+    viz_type = "spot_price_dist_histogram"
+    verbose_name = _("Spot Price Distribution Histogram")
+    is_timeseries = False
+
+    def query_obj(self):
+        """Returns the query object for this visualization"""
+        d = super().query_obj()
+        d["row_limit"] = self.form_data.get("row_limit", int(config["VIZ_ROW_LIMIT"]))
+        numeric_columns = self.form_data.get("all_columns_x")
+        if numeric_columns is None:
+            raise QueryObjectValidationError(
+                _("Must have at least one numeric column specified")
+            )
+        self.columns = numeric_columns
+        d["columns"] = numeric_columns + self.groupby
+        # override groupby entry to avoid aggregation
+        d["groupby"] = []
+        return d
+
+    def labelify(self, keys, column):
+        if isinstance(keys, str):
+            keys = (keys,)
+        # removing undesirable characters
+        labels = [re.sub(r"\W+", r"_", k) for k in keys]
+        if len(self.columns) > 1 or not self.groupby:
+            # Only show numeric column in label if there are many
+            labels = [column] + labels
+        return "__".join(labels)
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        """Returns the chart data"""
+        if df.empty:
+            return None
+
+        chart_data = []
+        if len(self.groupby) > 0:
+            groups = df.groupby(self.groupby)
+        else:
+            groups = [((), df)]
+        for keys, data in groups:
+            chart_data.extend(
+                [
+                    {
+                        "key": self.labelify(keys, column),
+                        "values": data[column].tolist(),
+                    }
+                    for column in self.columns
+                ]
+            )
+        return chart_data
 
 class BubbleViz(NVD3Viz):
 
