@@ -63,8 +63,6 @@ import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
 import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPlugin';
 
-console.log(new SpotPriceHistogramPlugin());
-
 export default class MainPreset extends Preset {
   constructor() {
     super({
