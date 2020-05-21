@@ -42,14 +42,14 @@ function getYMax(allBoxData) {
 
 export function formatter(param) {
   return [
-    'Whiker Type: Min/Max',
-    'Region: ' + param.seriesName,
-    'Period: ' + param.name,
-    'Minimum: ' + param.data[1].toFixed(3),
-    'Q1: ' + param.data[2].toFixed(3),
-    'Median: ' + param.data[3].toFixed(3),
-    'Q3: ' + param.data[4].toFixed(3),
-    'Maximum: ' + param.data[5].toFixed(3),
+    'Whiker Type: <strong>Min/Max</strong>',
+    'Region: <strong>' + param.seriesName + '</strong>',
+    'Period: <strong>' + param.name + '</strong>',
+    'Minimum: <strong>' + param.data[1].toFixed(2) + '</strong>',
+    'Q1: <strong>' + param.data[2].toFixed(2) + '</strong>',
+    'Median: <strong>' + param.data[3].toFixed(2) + '</strong>',
+    'Q3: <strong>' + param.data[4].toFixed(2) + '</strong>',
+    'Maximum: <strong>' + param.data[5].toFixed(2) + '</strong>',
   ].join('<br/>');
 }
 
