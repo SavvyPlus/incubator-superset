@@ -16,30 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { t } from '@superset-ui/translation';
+import Select from 'react-select';
+import Async from 'react-select/async';
+import Creatable from 'react-select/creatable';
+import AsyncCreatable from 'react-select/async-creatable';
+import windowed from './windowed';
 
-export default {
-  controlPanelSections: [
-    {
-      label: t('Query'),
-      expanded: true,
-      controlSetRows: [
-        ['groupby'],
-        ['metric'],
-        ['adhoc_filters'],
-        ['row_limit'],
-      ],
-    },
-    {
-      label: t('Chart Options'),
-      expanded: true,
-      controlSetRows: [['color_scheme', 'label_colors']],
-    },
-  ],
-  controlOverrides: {
-    groupby: {
-      label: t('Source / Target'),
-      description: t('Choose a source and a target'),
-    },
-  },
-};
+export * from './windowed';
+
+export const WindowedSelect = windowed(Select);
+export const WindowedAsyncSelect = windowed(Async);
+export const WindowedCreatableSelect = windowed(Creatable);
+export const WindowedAsyncCreatableSelect = windowed(AsyncCreatable);
+export default WindowedSelect;

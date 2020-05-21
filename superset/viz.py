@@ -643,12 +643,6 @@ class TableViz(BaseViz):
             utils.get_metric_names(self.form_data.get("metrics") or [])
         )
 
-        timeseries_limit_metric = utils.get_metric_name(
-            self.form_data.get("timeseries_limit_metric")
-        )
-        if timeseries_limit_metric:
-            non_percent_metric_columns.append(timeseries_limit_metric)
-
         percent_metric_columns = utils.get_metric_names(
             self.form_data.get("percent_metrics") or []
         )
@@ -1804,6 +1798,9 @@ class BigNumberViz(BaseViz):
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
+
         df = df.pivot_table(
             index=DTTM_ALIAS,
             columns=[],
@@ -2539,6 +2536,9 @@ class WorldMapViz(BaseViz):
         return qry
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
+
         from superset.examples import countries
 
         fd = self.form_data
@@ -2613,7 +2613,7 @@ class FilterBoxViz(BaseViz):
             col = flt.get("column")
             metric = flt.get("metric")
             df = self.dataframes.get(col)
-            if df is not None:
+            if df is not None and not df.empty:
                 if metric:
                     df = df.sort_values(
                         utils.get_metric_name(metric), ascending=flt.get("asc")
@@ -2628,6 +2628,8 @@ class FilterBoxViz(BaseViz):
                         {"id": row[0], "text": row[0]}
                         for row in df.itertuples(index=False)
                     ]
+            else:
+                df[col] = []
         return d
 
 

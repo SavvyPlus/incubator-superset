@@ -16,33 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React from 'react';
-import { shallow } from 'enzyme';
+import { COLUMN_TYPE, CHART_TYPE, MARKDOWN_TYPE } from './componentTypes';
 
-import InfoTooltipWithTrigger from 'src/components/InfoTooltipWithTrigger';
-import OptionDescription from 'src/components/OptionDescription';
-
-const defaultProps = {
-  option: {
-    label: 'Some option',
-    description: 'Description for some option',
-  },
-};
-
-describe('OptionDescription', () => {
-  let wrapper;
-  let props;
-
-  beforeEach(() => {
-    props = { option: { ...defaultProps.option } };
-    wrapper = shallow(<OptionDescription {...props} />);
-  });
-
-  it('renders an InfoTooltipWithTrigger', () => {
-    expect(wrapper.find(InfoTooltipWithTrigger)).toHaveLength(1);
-  });
-
-  it('renders a span with the label', () => {
-    expect(wrapper.find('.option-label').text()).toBe('Some option');
-  });
-});
+export default function componentIsResizable(entity: { type: string }) {
+  return [COLUMN_TYPE, CHART_TYPE, MARKDOWN_TYPE].indexOf(entity.type) > -1;
+}

@@ -16,11 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-// These are control configurations that are shared ONLY within the BigNumber viz plugin repo.
-import { t } from '@superset-ui/translation';
-
-export const foo = {
-  name: 'foo_control',
-  config: {},
-};
+export * from './SupersetStyledSelect';
+export * from './styles';
+export { default } from './SupersetStyledSelect';
+export { default as OnPasteSelect } from './OnPasteSelect';
