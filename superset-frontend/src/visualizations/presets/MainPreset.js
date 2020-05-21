@@ -90,10 +90,7 @@ export default class MainPreset extends Preset {
         new ForceDirectedChartPlugin().configure({ key: 'directed_force' }),
         new HeatmapChartPlugin().configure({ key: 'heatmap' }),
         new HistogramChartPlugin().configure({ key: 'histogram' }),
-        new HistogramChartPlugin().configure({ key: 'spot_price_histogram' }),
-        new HistogramChartPlugin().configure({
-          key: 'spot_price_dist_histogram',
-        }),
+        new HistogramChartPlugin().configure({ key: 'spot_price_histogram' }),      
         new HorizonChartPlugin().configure({ key: 'horizon' }),
         new IframeChartPlugin().configure({ key: 'iframe' }),
         new LineChartPlugin().configure({ key: 'line' }),

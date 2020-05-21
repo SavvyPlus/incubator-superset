@@ -920,6 +920,15 @@ class Superset(BaseSupersetView):
             result = engine.execute("SELECT DISTINCT Period FROM {} WHERE DataGroup='Quarterly'".format(datasource.table_name))
             for row in result:
                 period_quarterly.append(row[0])
+        
+        # data for spot hist charts
+        price_bins = []
+        if 'PriceBucket' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT PriceBucket FROM {}".format(datasource.table_name))
+            for row in result:
+                price_bins.append(row[0])
+
 
         # data for financial charts
         fin_scenarios = []
@@ -1017,6 +1026,7 @@ class Superset(BaseSupersetView):
             "period_calyear": period_calyear,
             "period_finyear": period_finyear,
             "period_quarterly": period_quarterly,
+            "price_bins": price_bins,
         }
         table_name = (
             datasource.table_name

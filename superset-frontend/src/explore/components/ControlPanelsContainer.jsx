@@ -231,8 +231,7 @@ class ControlPanelsContainer extends React.Component {
           viz_type === 'box_plot_fin' ||
           viz_type === 'box_plot_fin_str' ||
           viz_type === 'box_plot_300_cap' ||
-          viz_type === 'spot_price_histogram' ||
-          viz_type === 'spot_price_dist_histogram') &&
+          viz_type === 'spot_price_histogram') &&
         section.label === 'Time'
       ) {
         return;
@@ -262,8 +261,7 @@ class ControlPanelsContainer extends React.Component {
             viz_type === 'box_plot_fin' ||
             viz_type === 'box_plot_fin_str' ||
             viz_type === 'box_plot_300_cap' ||
-            viz_type === 'spot_price_histogram' ||
-            viz_type === 'spot_price_dist_histogram') &&
+            viz_type === 'spot_price_histogram') &&
           section.label === 'Empower'
         ) {
           const s1 = {
