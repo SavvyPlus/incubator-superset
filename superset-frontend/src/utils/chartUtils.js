@@ -41,7 +41,6 @@ function getYMax(allBoxData) {
 }
 
 export function formatter(param) {
-  console.log(param);
   return [
     'Whiker Type: Min/Max',
     'Region: ' + param.seriesName,
@@ -70,7 +69,7 @@ export function getOption(queryResponse) {
         top: '10%',
         data: regions,
         selected: {
-          SA: false,
+          TAS: false,
           QLD: false,
         },
       },
@@ -110,7 +109,9 @@ export function getOption(queryResponse) {
       },
       yAxis: {
         type: 'value',
-        name: 'Value',
+        name: 'Nominal $/MWh',
+        nameLocation: 'middle',
+        nameGap: 25,
         min: 0,
         max: yMax,
         splitArea: {
