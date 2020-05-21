@@ -24,29 +24,37 @@ import { formatSelectOptions } from '../../modules/utils';
 export default {
   controlPanelSections: [
     {
-      label: t('Query'),
+      label: t('Empower'),
       expanded: true,
-      controlSetRows: [
-        [
-          {
-            name: 'all_columns_x',
-            config: {
-              type: 'SelectControl',
-              label: t('Numeric Columns'),
-              default: null,
-              description: t(
-                'Select the numeric columns to draw the histogram',
-              ),
-              mapStateToProps: state => ({
-                choices: columnChoices(state.datasource),
-              }),
-              multi: true,
-              validators: [validateNonEmpty],
-            },
-          },
-        ],
-        ['adhoc_filters'],
+      controlSetRows: [                
+        ['spot_hist_chart_type_picker'],
+        ['period_type_static_picker'],
+        ['price_bin_picker']
+        // ['period_finyear_picker'],
+        // ['period_calyear_picker'],
+        // ['period_quarterly_picker']        
       ],
+      // controlSetRows: [
+      //   [
+      //     {
+      //       name: 'all_columns_x',
+      //       config: {
+      //         type: 'SelectControl',
+      //         label: t('Numeric Columns'),
+      //         default: null,
+      //         description: t(
+      //           'Select the numeric columns to draw the histogram',
+      //         ),
+      //         mapStateToProps: state => ({
+      //           choices: columnChoices(state.datasource),
+      //         }),
+      //         multi: true,
+      //         validators: [validateNonEmpty],
+      //       },
+      //     },
+      //   ],
+      //   ['adhoc_filters'],
+      // ],
     },
   ],
 };

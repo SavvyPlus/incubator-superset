@@ -302,9 +302,6 @@ export const controls = {
     multi: true,
     label: t('Region'),
     default: ['VIC'],
-    // validators: [validateNonEmpty],
-    // description: t('Select Regions'),
-    // choices: formatSelectOptions(['NSW', 'VIC', 'QLD', 'TAS', 'SA']),
     choices: [
       ['NSW1', 'NSW'],
       ['VIC1', 'VIC'],
@@ -312,6 +309,29 @@ export const controls = {
       ['TAS1', 'TAS'],
       ['SA1', 'SA'],
     ],
+  },
+
+  spot_hist_chart_type_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Chart Type'),
+    default: 'value',   
+    validators: [validateNonEmpty],
+    choices: [
+      ['value', 'Spot Price Value Annual'],
+      ['percent', 'Spot Price Proportion Annual']      
+    ],
+  },
+
+  price_bin_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Price Bin'),
+    // default: null,
+    validators: [validateNonEmpty],
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.price_bins),
+    }),
   },
 
   period_type_static_picker: {
