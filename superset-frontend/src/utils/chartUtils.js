@@ -17,34 +17,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { prepareBoxplotData } from 'echarts/extension/dataTool';
 
-// export function prepareBoxplotData(data) {
-//   const boxData = [];
-//   const outliers = [];
-//   const axisData = [];
-//   for (let i = 0; i < data.length; i++) {
-//     const { values, label } = data[i];
-//     boxData.push([
-//       values.whisker_low,
-//       values.Q1,
-//       values.Q2,
-//       values.Q3,
-//       values.whisker_high,
-//     ]);
-//     axisData.push(label);
-//   }
-//   return {
-//     boxData,
-//     outliers,
-//     axisData,
-//   };
-// }
+// Round integers to nearest multiple of 10
+function RoundUp(toRound) {
+  if (toRound % 10 === 0) return toRound;
+  return 10 - (toRound % 10) + toRound;
+}
+
+function maxBoxData(data) {
+  // Map all boxData to a 2D array
+  const boxData2DArr = [].concat(...data.map(d => d.boxData));
+  // Get an array with each row's maximum value
+  const maxRow = boxData2DArr.map(function (row) {
+    return Math.max(...row);
+  });
+  // Get the maximum box data
+  const max = Math.max(...maxRow);
+  return max;
+}
+
+function getYMax(allBoxData) {
+  return RoundUp(maxBoxData(allBoxData));
+}
 
 export function formatter(param) {
+  console.log(param);
   return [
     'Whiker Type: Min/Max',
-    'Region: ' + param.name,
+    'Region: ' + param.seriesName,
+    'Period: ' + param.name,
     'Minimum: ' + param.data[1].toFixed(3),
     'Q1: ' + param.data[2].toFixed(3),
     'Median: ' + param.data[3].toFixed(3),
@@ -58,19 +59,8 @@ export function getOption(queryResponse) {
     const queryData = queryResponse.data;
     const regions = Object.keys(queryData);
     const data = Object.values(queryData);
+    const yMax = getYMax(data);
 
-    // const data = [];
-    // for (let seriesIndex = 0; seriesIndex < 3; seriesIndex++) {
-    //   const seriesData = [];
-    //   for (let i = 0; i < 18; i++) {
-    //     const cate = [];
-    //     for (let j = 0; j < 100; j++) {
-    //       cate.push(Math.random() * 200);
-    //     }
-    //     seriesData.push(cate);
-    //   }
-    //   data.push(prepareBoxplotData(seriesData));
-    // }
     return {
       title: {
         text: '$300/MWh Cap Payout',
@@ -80,8 +70,7 @@ export function getOption(queryResponse) {
         top: '10%',
         data: regions,
         selected: {
-          NSW: true,
-          VIC: false,
+          SA: false,
           QLD: false,
         },
       },
@@ -123,7 +112,7 @@ export function getOption(queryResponse) {
         type: 'value',
         name: 'Value',
         min: 0,
-        max: 50,
+        max: yMax,
         splitArea: {
           show: false,
         },
