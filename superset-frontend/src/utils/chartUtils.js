@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-template-curly-in-string */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -54,7 +55,8 @@ export function formatter(param) {
 }
 
 export function getOption(queryResponse) {
-  if (queryResponse.form_data.viz_type === 'box_plot_300_cap') {
+  const { viz_type } = queryResponse.form_data;
+  if (viz_type === 'box_plot_300_cap') {
     const queryData = queryResponse.data;
     const regions = Object.keys(queryData);
     const data = Object.values(queryData);
@@ -141,7 +143,110 @@ export function getOption(queryResponse) {
         tooltip: { formatter },
       })),
     };
-  } else if (queryResponse.form_data.viz_type === 'spot_price_histogram') {
+  } else if (viz_type === 'spot_price_histogram') {
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+        },
+      },
+      legend: {
+        data: [
+          '1.Below zero',
+          '2.Zero to $25/MWh',
+          '3.$25/MWh to $50/MWh',
+          '4.$50/MWh to $100/MWh',
+          '5.$100/MWh to $300/MWh',
+        ],
+      },
+      toolbox: {
+        feature: {
+          saveAsImage: {
+            title: 'Save as image',
+          },
+        },
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true,
+      },
+      yAxis: {
+        type: 'value',
+      },
+      xAxis: {
+        type: 'category',
+        data: [
+          'Cal-20',
+          'Cal-21',
+          'Cal-22',
+          'Cal-23',
+          'Cal-24',
+          'Cal-25',
+          'Cal-26',
+        ],
+      },
+      series: [
+        {
+          name: '1.Below zero',
+          type: 'bar',
+          stack: 'SpotPrice',
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: '${c}',
+          },
+          data: [320, 302, 301, 334, 390, 330, 320],
+        },
+        {
+          name: '2.Zero to $25/MWh',
+          type: 'bar',
+          stack: 'SpotPrice',
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: '${c}',
+          },
+          data: [120, 132, 101, 134, 90, 230, 210],
+        },
+        {
+          name: '3.$25/MWh to $50/MWh',
+          type: 'bar',
+          stack: 'SpotPrice',
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: '${c}',
+          },
+          data: [220, 182, 191, 234, 290, 330, 310],
+        },
+        {
+          name: '4.$50/MWh to $100/MWh',
+          type: 'bar',
+          stack: 'SpotPrice',
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: '${c}',
+          },
+          data: [150, 212, 201, 154, 190, 330, 410],
+        },
+        {
+          name: '5.$100/MWh to $300/MWh',
+          type: 'bar',
+          stack: 'SpotPrice',
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: '${c}',
+          },
+          data: [820, 832, 901, 934, 1290, 1330, 1320],
+        },
+      ],
+    };
+  } else if (viz_type === 'spot_price_dist_histogram') {
     return {
       tooltip: {
         trigger: 'axis',

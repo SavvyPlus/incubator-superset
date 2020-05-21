@@ -1707,27 +1707,6 @@ class BoxPlot300CapViz(BoxPlotViz):
 
         return echart_data
 
-        # # orginal
-        # label_sep = " - "
-        # chart_data = []
-        # for index_value, row in zip(df.index, df.to_dict(orient="records")):
-        #     if isinstance(index_value, tuple):
-        #         index_value = label_sep.join(list(str(x) for x in index_value))
-        #     boxes = defaultdict(dict)
-        #     for (label, key), value in row.items():
-        #         if key == "nanmedian":
-        #             key = "Q2"
-        #         boxes[label][key] = value
-        #     for label, box in boxes.items():
-        #         if len(self.form_data.get("metrics")) > 1:
-        #             # need to render data labels with metrics
-        #             chart_label = label_sep.join([str(index_value), label])
-        #         else:
-        #             chart_label = index_value
-        #         chart_data.append({"label": chart_label, "values": box})
-        # return chart_data
-
-
 
 class SpotPriceHistogramViz(BaseViz):
 
@@ -1784,6 +1763,61 @@ class SpotPriceHistogramViz(BaseViz):
             )
         return chart_data
 
+
+class SpotPriceDistributionHistogramViz(BaseViz):
+
+    """Spot Price Distribution Histogram"""
+
+    viz_type = "spot_price_dist_histogram"
+    verbose_name = _("Spot Price Distribution Histogram")
+    is_timeseries = False
+
+    def query_obj(self):
+        """Returns the query object for this visualization"""
+        d = super().query_obj()
+        d["row_limit"] = self.form_data.get("row_limit", int(config["VIZ_ROW_LIMIT"]))
+        numeric_columns = self.form_data.get("all_columns_x")
+        if numeric_columns is None:
+            raise QueryObjectValidationError(
+                _("Must have at least one numeric column specified")
+            )
+        self.columns = numeric_columns
+        d["columns"] = numeric_columns + self.groupby
+        # override groupby entry to avoid aggregation
+        d["groupby"] = []
+        return d
+
+    def labelify(self, keys, column):
+        if isinstance(keys, str):
+            keys = (keys,)
+        # removing undesirable characters
+        labels = [re.sub(r"\W+", r"_", k) for k in keys]
+        if len(self.columns) > 1 or not self.groupby:
+            # Only show numeric column in label if there are many
+            labels = [column] + labels
+        return "__".join(labels)
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        """Returns the chart data"""
+        if df.empty:
+            return None
+
+        chart_data = []
+        if len(self.groupby) > 0:
+            groups = df.groupby(self.groupby)
+        else:
+            groups = [((), df)]
+        for keys, data in groups:
+            chart_data.extend(
+                [
+                    {
+                        "key": self.labelify(keys, column),
+                        "values": data[column].tolist(),
+                    }
+                    for column in self.columns
+                ]
+            )
+        return chart_data
 
 class BubbleViz(NVD3Viz):
 
