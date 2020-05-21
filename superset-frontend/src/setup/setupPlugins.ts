@@ -93,7 +93,7 @@ export default function setupPlugins() {
     .registerValue('filter_box', FilterBox)
     .registerValue('heatmap', Heatmap)
     .registerValue('histogram', Histogram)
-    .registerValue('spot_price_histogram', HistogramSpotPrice)    
+    .registerValue('spot_price_histogram', HistogramSpotPrice)
     .registerValue('horizon', Horizon)
     .registerValue('iframe', Iframe)
     .registerValue('line', Line)

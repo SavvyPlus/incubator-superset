@@ -315,11 +315,11 @@ export const controls = {
     type: 'SelectControl',
     multi: false,
     label: t('Chart Type'),
-    default: 'value',   
+    default: 'value',
     validators: [validateNonEmpty],
     choices: [
       ['value', 'Spot Price Value Annual'],
-      ['percent', 'Spot Price Proportion Annual']      
+      ['percent', 'Spot Price Proportion Annual'],
     ],
   },
 
