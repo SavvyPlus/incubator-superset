@@ -18,19 +18,19 @@
  */
 import { t } from '@superset-ui/translation';
 import { ChartMetadata, ChartPlugin } from '@superset-ui/chart';
+import HistogramChartPlugin from '@superset-ui/legacy-plugin-chart-histogram';
 import thumbnail from './images/thumbnail.png';
 
 const metadata = new ChartMetadata({
   name: t('Spot Price Histogram'),
-  description: 'A multi interactive',
+  description: 'Stacked column histogram for Spot Price',
   thumbnail,
   useLegacyApi: true,
 });
 
-export default class FilterBoxChartPlugin extends ChartPlugin {
+export default class SpotPriceHistogramPlugin extends HistogramChartPlugin {
   constructor() {
-    super({
-      metadata,
-    });
+    super();
+    this.metadata = metadata;
   }
 }

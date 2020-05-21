@@ -180,15 +180,14 @@ export default class VizTypeControl extends React.PureComponent {
         registry.entries().filter(({ key }) => !typesWithDefaultOrder.has(key)),
       )
       .filter(entry => entry.value.name.toLowerCase().includes(filterString));
-    console.log('ft before:', filteredTypes);
     const rows = [];
     for (let i = 0; i <= filteredTypes.length; i += IMAGE_PER_ROW) {
       rows.push(
         <Row key={`row-${i}`}>
           {filteredTypes.slice(i, i + IMAGE_PER_ROW).map(entry => {
-            if (entry.key === 'histogram') {
-              entry.value.name = 'Histogram';
-            }
+            // if (entry.key === 'histogram') {
+            //   entry.value.name = 'Histogram';
+            // }
             if (entry.key === 'box_plot_run_comp') {
               entry.value.name = 'Spot-Rev-Gen BoxPlot';
             }
@@ -216,8 +215,6 @@ export default class VizTypeControl extends React.PureComponent {
         </Row>,
       );
     }
-
-    console.log('ft after:', filteredTypes);
 
     return (
       <div>

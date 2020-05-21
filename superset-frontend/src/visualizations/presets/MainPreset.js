@@ -61,6 +61,9 @@ import { DeckGLChartPreset } from '@superset-ui/legacy-preset-chart-deckgl';
 
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
+import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPlugin';
+
+console.log(new SpotPriceHistogramPlugin());
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -91,7 +94,7 @@ export default class MainPreset extends Preset {
         new HeatmapChartPlugin().configure({ key: 'heatmap' }),
         new HistogramChartPlugin().configure({ key: 'histogram' }),
         new HistogramChartPlugin().configure({ key: 'spot_price_histogram' }),
-        new HistogramChartPlugin().configure({
+        new SpotPriceHistogramPlugin().configure({
           key: 'spot_price_dist_histogram',
         }),
         new HorizonChartPlugin().configure({ key: 'horizon' }),
