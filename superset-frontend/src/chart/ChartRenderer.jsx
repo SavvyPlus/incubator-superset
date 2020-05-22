@@ -244,7 +244,7 @@ class ChartRenderer extends React.Component {
       } else {
         fd.metrics = ['$'];
       }
-    }    
+    }
     // console.log(JSON.stringify(queryResponse.data));
     return (
       <>

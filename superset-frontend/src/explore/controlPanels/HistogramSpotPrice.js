@@ -32,7 +32,7 @@ export default {
         ['period_type_static_picker'],
         ['period_finyear_picker'],
         ['period_calyear_picker'],
-        ['period_quarterly_picker']
+        ['period_quarterly_picker'],
         // ['price_bin_picker']
       ],
     },
