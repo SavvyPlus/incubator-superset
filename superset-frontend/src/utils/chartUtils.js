@@ -37,7 +37,7 @@ function maxBoxData(data) {
   return max;
 }
 
-function getYMax(allBoxData) {
+function getBoxPlotYMax(allBoxData) {
   return RoundUp(maxBoxData(allBoxData));
 }
 
@@ -60,7 +60,7 @@ export function getOption(queryResponse) {
     const queryData = queryResponse.data;
     const regions = Object.keys(queryData);
     const data = Object.values(queryData);
-    const yMax = getYMax(data);
+    const yMax = getBoxPlotYMax(data);
 
     return {
       title: {
