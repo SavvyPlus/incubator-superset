@@ -66,9 +66,8 @@ import {
   legacyValidateInteger,
   validateNonEmpty,
 } from '@superset-ui/validator';
-
-import * as v from './validators';
 import { ColumnOption } from '@superset-ui/control-utils';
+import * as v from './validators';
 import {
   formatSelectOptionsForRange,
   formatSelectOptions,

@@ -3593,6 +3593,7 @@ class SpotPriceHistogramViz(BaseViz):
         d = super().query_obj()
 
         d['metrics'] = []
+        periods = []
         col_value = None
 
         self.chart_type = self.form_data['spot_hist_chart_type_picker']
@@ -3646,6 +3647,17 @@ class SpotPriceHistogramViz(BaseViz):
         if period_type:
             d['filter'].append({'col': 'DataGroup', 'op': '==',
                                 'val': period_type})
+
+        # filter period
+        if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
+            periods = self.form_data['period_finyear_picker']
+        if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
+            periods = self.form_data['period_calyear_picker']
+        if self.form_data['period_quarterly_picker'] and period_type == 'Quarterly':
+            periods = self.form_data['period_quarterly_picker']
+        if periods:
+            d['filter'].append({'col': 'Period', 'op': 'in',
+                                'val': periods})
         # order by period
         d["orderby"] = [('Period', True)]
 

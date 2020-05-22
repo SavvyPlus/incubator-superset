@@ -27,11 +27,11 @@ export default {
         ['metrics'],
         ['adhoc_filters'],
         ['groupby'],
-        ['whisker_options'],        
+        ['whisker_options'],
         ['period_type_static_picker'],
         ['period_finyear_picker'],
         ['period_calyear_picker'],
-        ['period_quarterly_picker']        
+        ['period_quarterly_picker'],
       ],
     },
   ],
