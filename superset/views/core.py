@@ -93,7 +93,7 @@ from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
 from superset.utils.dates import now_as_float
 from superset.utils.decorators import etag_cache, stats_timing
 from superset.views.database.filters import DatabaseFilter
-from superset.views.utils import get_dashboard_extra_filters
+from superset.views.utils import get_dashboard_extra_filters, is_sublist
 
 from .base import (
     api,
@@ -636,10 +636,8 @@ class Superset(BaseSupersetView):
     def get_samples(self, viz_obj):
         return self.json_response({"data": viz_obj.get_samples()})
 
-    def generate_json(
-        self, viz_obj, csv=False, query=False, results=False, samples=False
-    ):
-        if csv:
+    def generate_json(self, viz_obj, response_type: Optional[str] = None) -> Response:
+        if response_type == utils.ChartDataResponseFormat.CSV:
             return CsvResponse(
                 viz_obj.get_csv(),
                 status=200,
@@ -647,13 +645,13 @@ class Superset(BaseSupersetView):
                 mimetype="application/csv",
             )
 
-        if query:
+        if response_type == utils.ChartDataResponseType.QUERY:
             return self.get_query_string_response(viz_obj)
 
-        if results:
+        if response_type == utils.ChartDataResponseType.RESULTS:
             return self.get_raw_results(viz_obj)
 
-        if samples:
+        if response_type == utils.ChartDataResponseType.SAMPLES:
             return self.get_samples(viz_obj)
 
         payload = viz_obj.get_payload()
@@ -715,11 +713,14 @@ class Superset(BaseSupersetView):
         payloads based on the request args in the first block
 
         TODO: break into one endpoint for each return shape"""
-        csv = request.args.get("csv") == "true"
-        query = request.args.get("query") == "true"
-        results = request.args.get("results") == "true"
-        samples = request.args.get("samples") == "true"
-        force = request.args.get("force") == "true"
+        response_type = utils.ChartDataResponseFormat.JSON.value
+        responses = [resp_format for resp_format in utils.ChartDataResponseFormat]
+        responses.extend([resp_type for resp_type in utils.ChartDataResponseType])
+        for response_option in responses:
+            if request.args.get(response_option) == "true":
+                response_type = response_option
+                break
+
         form_data = get_form_data()[0]
 
         try:
@@ -731,12 +732,10 @@ class Superset(BaseSupersetView):
                 datasource_type=datasource_type,
                 datasource_id=datasource_id,
                 form_data=form_data,
-                force=force,
+                force=request.args.get("force") == "true",
             )
 
-            return self.generate_json(
-                viz_obj, csv=csv, query=query, results=results, samples=samples
-            )
+            return self.generate_json(viz_obj, response_type)
         except SupersetException as ex:
             return json_error_response(utils.error_msg_from_exception(ex))
 
@@ -903,6 +902,33 @@ class Superset(BaseSupersetView):
         fin_year = []
         daylike = []
 
+        period_calyear = []        
+        period_finyear = []
+        period_quarterly = []
+        # data for 300 charts
+        if is_sublist(['Period', 'DataGroup'], datasource.column_names):
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT Period FROM {} WHERE DataGroup='CalYear'".format(datasource.table_name))
+            for row in result:
+                period_calyear.append(row[0])
+            
+            result = engine.execute("SELECT DISTINCT Period FROM {} WHERE DataGroup='FinYear'".format(datasource.table_name))
+            for row in result:
+                period_finyear.append(row[0])
+            
+            result = engine.execute("SELECT DISTINCT Period FROM {} WHERE DataGroup='Quarterly'".format(datasource.table_name))
+            for row in result:
+                period_quarterly.append(row[0])
+        
+        # data for spot hist charts
+        price_bins = []
+        if 'PriceBucket' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT PriceBucket FROM {}".format(datasource.table_name))
+            for row in result:
+                price_bins.append(row[0])
+
+
         # data for financial charts
         fin_scenarios = []
         if 'Scenario' in datasource.column_names:
@@ -957,6 +983,7 @@ class Superset(BaseSupersetView):
             result = engine.execute("SELECT DISTINCT State FROM {}".format(datasource.table_name))
             for row in result:
                 states.append(row[0])
+            states = [''.join(i for i in s if not i.isdigit()) for s in states]
         if has_year:
             engine = self.appbuilder.get_session.get_bind()
             result = engine.execute("SELECT DISTINCT CalYear FROM {}".format(datasource.table_name))
@@ -995,6 +1022,10 @@ class Superset(BaseSupersetView):
             "fin_techs": fin_techs,
             "fin_metric": fin_metric,
             "fin_strategy": fin_strategy,
+            "period_calyear": period_calyear,
+            "period_finyear": period_finyear,
+            "period_quarterly": period_quarterly,
+            "price_bins": price_bins,
         }
         table_name = (
             datasource.table_name
@@ -1038,6 +1069,7 @@ class Superset(BaseSupersetView):
         payload = json.dumps(
             datasource.values_for_column(column, config["FILTER_SELECT_ROW_LIMIT"]),
             default=utils.json_int_dttm_ser,
+            ignore_nan=True,
         )
         return json_success(payload)
 
@@ -1793,9 +1825,9 @@ class Superset(BaseSupersetView):
             if not table:
                 return json_error_response(
                     __(
-                        "Table %(t)s wasn't found in the database %(d)s",
-                        t=table_name,
-                        s=db_name,
+                        "Table %(table)s wasn't found in the database %(db)s",
+                        table=table_name,
+                        db=db_name,
                     ),
                     status=404,
                 )
@@ -2400,9 +2432,11 @@ class Superset(BaseSupersetView):
         except Exception as ex:
             logger.exception(ex)
             msg = _(
-                f"{validator.name} was unable to check your query.\n"
+                "%(validator)s was unable to check your query.\n"
                 "Please recheck your query.\n"
-                f"Exception: {ex}"
+                "Exception: %(ex)s",
+                validator=validator.name,
+                ex=ex,
             )
             # Return as a 400 if the database error message says we got a 4xx error
             if re.search(r"([\W]|^)4\d{2}([\W]|$)", str(ex)):
