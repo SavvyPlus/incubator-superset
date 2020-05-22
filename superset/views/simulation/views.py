@@ -37,7 +37,6 @@ from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
 from .forms import UploadAssumptionForm, AddSimulationForm
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
-from .util import get_download_url
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
     chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
@@ -74,6 +73,20 @@ def handle_assumption_process(path, name):
         g.detail = repr(e)
         traceback.print_exc()
 
+def upload_assumption_and_trigger_process(path, name):
+    download_link, s3_link = upload_assumption_file(path, name)
+    handle_assumption_process.apply_async(args=[s3_link, name])
+    assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+    if not assumption_file:
+        assumption_file = Assumption()
+    assumption_file.name = name
+    assumption_file.status = "Processing"
+    assumption_file.download_link = download_link
+    db.session.merge(assumption_file)
+    db.session.commit()
+    db.session.flush()
+    return assumption_file.id, assumption_file.name
+
 class UploadAssumptionView(SimpleFormView):
     route_base = '/upload_assumption_file'
     form = UploadAssumptionForm
@@ -97,16 +110,7 @@ class UploadAssumptionView(SimpleFormView):
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.excel_file.data, path)
-            download_link, s3_link = upload_assumption_file(path, name)
-            handle_assumption_process.apply_async(args=[s3_link, name])
-            assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
-            if not assumption_file:
-                assumption_file = Assumption()
-            assumption_file.name = name
-            assumption_file.status = "Processing"
-            assumption_file.download_link = download_link
-            db.session.merge(assumption_file)
-            db.session.commit()
+            upload_assumption_and_trigger_process(path, name)
             message = "Upload success"
             style = 'info'
             g.result = 'Success'
@@ -335,17 +339,18 @@ class SimulationModelView(
             flash(str(e), "danger")
             g.detail = str(e)
         else:
-            if self.datamodel.add(item):
-                g.result = 'Success'
-                g.detail = None
-                # self.send_notification(item)
+            # if self.datamodel.add(item):
+            g.result = 'Success'
+            g.detail = None
+            self.send_notification(item)
             flash(*self.datamodel.message)
 
     def send_notification(self, simulation):
         from superset.views.utils import send_sendgrid_mail
-        email_list = [["Will", 'weiliang.zhou@zawee.work'],
-                      ["Oscar", 'oscar.omegna@zawee.work'],
-                      ["Dex", 'dexiao.ye@zawee.work']]
+        # email_list = [["Will", 'weiliang.zhou@zawee.work'],
+        #               ["Oscar", 'oscar.omegna@zawee.work'],
+        #               ["Dex", 'dexiao.ye@zawee.work']]
+        email_list = [['Eric', 'bwhsdzf@gmail.com']]
         message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
                         "simulation": simulation.name,
                         "project": simulation.project.name,
@@ -353,7 +358,7 @@ class SimulationModelView(
                         }
         for email in email_list:
             message_dict['receiver'] = email[0]
-            send_sendgrid_mail(email[1], message_dict, 'd-a55f374a820b4aa08ebc6eb132504151 ')
+            send_sendgrid_mail(email[1], message_dict, 'd-a55f374a820b4aa08ebc6eb132504151')
 
     @simulation_logger.log_simulation(action_name='update simulation')
     def edit_item(self, form, item):
@@ -500,5 +505,6 @@ class SimulationLogModelView(SupersetModelView):
     order_columns = ['user', 'action_object', 'action_object_type','dttm']
 
     base_order = ('dttm', 'desc')
+    page_size = 20
 
 

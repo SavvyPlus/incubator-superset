@@ -86,8 +86,7 @@
                             return myXhr;
                         },
                         success: function (data) {
-                            alert('Upload successful, you can choose the uploaded assumption from the list now.')
-                            console.log(data)
+                            alert(data['message'])
                             document.getElementById('upload-btn').removeAttribute('disabled')
                             let new_option = document.createElement('option')
                             new_option.value = data['detail']['id']

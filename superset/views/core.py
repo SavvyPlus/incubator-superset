@@ -62,6 +62,7 @@ from superset import (
     sql_lab,
     talisman,
     viz,
+    simulation_logger,
 )
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.connectors.sqla.models import AnnotationDatasource
@@ -3010,16 +3011,22 @@ class Superset(BaseSupersetView):
                 "Please contact your Superset Admin!"
             )
 
+    @simulation_logger.log_simulation(action_name='upload assumption')
     @expose('/upload_assumption_ajax', methods=['POST'])
     def upload_assumption_ajax(self):
         import os
         from flask import jsonify
+        from superset.views.simulation.views import upload_assumption_and_trigger_process
         file = request.files['file']
         try:
-            # file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
-            message = 'success'
-            detail = {'name': file.filename,
-                      'id': 123}
+            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(path)
+            file_name = file.filename.split('.')[0]
+            id, name = upload_assumption_and_trigger_process(path, file_name)
+            message = 'Uploaded success. You can now choose the uploaded assumption in the list. The assumption ' + \
+                'processing is running on backend and will be ready soon.'
+            detail = {'name': name,
+                      'id': id}
         except Exception as e:
             message = 'failed'
             detail = repr(e)
