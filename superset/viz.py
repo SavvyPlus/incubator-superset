@@ -3637,18 +3637,22 @@ class SpotPriceHistogramViz(BaseViz):
                             'hasCustomLabel': False,
                             'fromFormData': True,
                             'label': 'Period'})
-        # filter price bins
-        price_bins = self.form_data['price_bin_picker']
-        if price_bins:
-            d['filter'].append({'col': 'PriceBucket', 'op': 'in',
-                                'val': price_bins})
+        # filter state
+        if self.form_data['state_static_picker']:
+            d['filter'].append({'col': 'State', 'op': '==',
+                                'val': self.form_data['state_static_picker']})
+        # # filter price bins
+        # price_bins = self.form_data['price_bin_picker']
+        # if price_bins:
+        #     d['filter'].append({'col': 'PriceBucket', 'op': 'in',
+        #                         'val': price_bins})
         # filter period type
         period_type = self.form_data['period_type_static_picker']
         if period_type:
             d['filter'].append({'col': 'DataGroup', 'op': '==',
                                 'val': period_type})
-
         # filter period
+        periods = []
         if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
             periods = self.form_data['period_finyear_picker']
         if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
@@ -3674,10 +3678,10 @@ class SpotPriceHistogramViz(BaseViz):
         records = df.to_dict(orient="records")
         for rec in records:
             state = rec['State']
-            state = ''.join(i for i in state if not i.isdigit())            
+            state = ''.join(i for i in state if not i.isdigit())
             if state not in echart_data['tmpdata']:
                 echart_data['tmpdata'][state] = {}
-            
+
             price_bin = rec['PriceBucket']
             if price_bin not in echart_data['tmpdata'][state]:
                 echart_data['tmpdata'][state][price_bin] = {
@@ -3685,10 +3689,10 @@ class SpotPriceHistogramViz(BaseViz):
                     'labels': [],
                     'values': []
                 }
-            
+
             echart_data['tmpdata'][state][price_bin]['labels'].append(rec['Period'])
             echart_data['tmpdata'][state][price_bin]['values'].append(rec['value'])
-        
+
         for sta in echart_data['tmpdata']:
             echart_data['data'][sta] = []
             for pb in echart_data['tmpdata'][sta]:
