@@ -415,6 +415,8 @@ class ProjectModelView(EmpowerModelView):
     include_route_methods = RouteMethod.CRUD_SET
 
     add_exclude_columns = ['simulations']
+    show_exclude_columns = ['simulations']
+    edit_exclude_columns = ['simulations']
     list_columns = ['name', 'description', 'client']
     order_columns = ['name','client']
 
@@ -447,6 +449,8 @@ class ClientModelView(EmpowerModelView):
     include_route_methods = RouteMethod.CRUD_SET
     list_columns = ['name','description','projects']
     add_exclude_columns = ['projects']
+    show_exclude_columns = ['projects']
+    edit_exclude_columns = ['projects']
     order_columns = ['name']
 
     related_views = [ProjectModelView]
