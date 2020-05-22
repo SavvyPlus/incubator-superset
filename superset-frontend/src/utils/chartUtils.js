@@ -54,8 +54,7 @@ export function boxplotFormatter(param) {
   ].join('<br/>');
 }
 
-function barValueFormatter(param) {
-  console.log(param);
+function barPropFormatter(param) {
   return [
     'Period: <strong>' + param.name + '</strong>',
     'Price Bucket: <strong>' + param.seriesName + '</strong>',
@@ -67,7 +66,7 @@ function barValueFormatter(param) {
   ].join('<br/>');
 }
 
-function barPropFormatter(param) {
+function barValueFormatter(param) {
   return [
     'Period: <strong>' + param.name + '</strong>',
     'Price Bucket: <strong>' + param.seriesName + '</strong>',
@@ -165,12 +164,13 @@ export function getOption(queryResponse) {
       })),
     };
   } else if (viz_type === 'spot_price_histogram') {
-    const { charType, state, data } = queryResponse.data;
+    const { chart_type, state, data } = queryResponse.data;
     const legendData = data.map(d => d.priceBin);
     const xAxisData = data[0].labels;
     return {
       tooltip: {
-        formatter: charType === 'value' ? barValueFormatter : barPropFormatter,
+        formatter:
+          chart_type === 'value' ? barValueFormatter : barPropFormatter,
       },
       legend: {
         data: legendData,
@@ -190,6 +190,15 @@ export function getOption(queryResponse) {
       },
       yAxis: {
         type: 'value',
+        name: chart_type === 'value' ? 'BucketSum' : 'Percentage',
+        nameLocation: 'middle',
+        nameGap: 45,
+        axisLabel: {
+          formatter:
+            chart_type === 'value'
+              ? value => '$' + value / Math.pow(10, 6) + 'M'
+              : value => value * 100 + '%',
+        },
       },
       xAxis: {
         type: 'category',
