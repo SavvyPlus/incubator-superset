@@ -3634,16 +3634,31 @@ class SpotPriceHistogramViz(BaseViz):
                             'hasCustomLabel': False,
                             'fromFormData': True,
                             'label': 'Period'})
-        # filter price bins
-        price_bins = self.form_data['price_bin_picker']
-        if price_bins:
-            d['filter'].append({'col': 'PriceBucket', 'op': 'in',
-                                'val': price_bins})
+        # filter state
+        if self.form_data['state_static_picker']:
+            d['filter'].append({'col': 'State', 'op': '==',
+                                'val': self.form_data['state_static_picker']})
+        # # filter price bins
+        # price_bins = self.form_data['price_bin_picker']
+        # if price_bins:
+        #     d['filter'].append({'col': 'PriceBucket', 'op': 'in',
+        #                         'val': price_bins})
         # filter period type
         period_type = self.form_data['period_type_static_picker']
         if period_type:
             d['filter'].append({'col': 'DataGroup', 'op': '==',
                                 'val': period_type})
+        # filter period
+        periods = []
+        if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
+            periods = self.form_data['period_finyear_picker']
+        if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
+            periods = self.form_data['period_calyear_picker']
+        if self.form_data['period_quarterly_picker'] and period_type == 'Quarterly':
+            periods = self.form_data['period_quarterly_picker']
+        if periods:
+            d['filter'].append({'col': 'Period', 'op': 'in',
+                                'val': periods})
         # order by period
         d["orderby"] = [('Period', True)]
 

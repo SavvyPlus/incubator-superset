@@ -26,13 +26,14 @@ export default {
     {
       label: t('Empower'),
       expanded: true,
-      controlSetRows: [                
+      controlSetRows: [            
         ['spot_hist_chart_type_picker'],
+        ['state_static_picker'],
         ['period_type_static_picker'],
-        ['price_bin_picker']
-        // ['period_finyear_picker'],
-        // ['period_calyear_picker'],
-        // ['period_quarterly_picker']        
+        ['period_finyear_picker'],
+        ['period_calyear_picker'],
+        ['period_quarterly_picker'] 
+        // ['price_bin_picker']        
       ],
       // controlSetRows: [
       //   [
