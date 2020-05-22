@@ -35,7 +35,8 @@ from superset.models.slice import Slice
 from superset.utils.core import QueryStatus, TimeRangeEndpoint
 
 # Sendgrid client
-sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
+# sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
+sendgrid_client = None
 
 
 if is_feature_enabled("SIP_38_VIZ_REARCHITECTURE"):

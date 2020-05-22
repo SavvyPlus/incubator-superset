@@ -3010,6 +3010,25 @@ class Superset(BaseSupersetView):
                 "Please contact your Superset Admin!"
             )
 
+    @expose('/upload_assumption_ajax', methods=['POST'])
+    def upload_assumption_ajax(self):
+        import os
+        from flask import jsonify
+        file = request.files['file']
+        try:
+            # file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+            message = 'success'
+            detail = {'name': file.filename,
+                      'id': 123}
+        except Exception as e:
+            message = 'failed'
+            detail = repr(e)
+        finally:
+            # os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+            return jsonify({
+                'message': message,
+                'detail': detail
+            })
 
 class CssTemplateModelView(SupersetModelView, DeleteMixin):
     datamodel = SQLAInterface(models.CssTemplate)
