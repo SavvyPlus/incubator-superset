@@ -194,6 +194,20 @@ class ControlPanelsContainer extends React.Component {
                   if (controls.period_type.value === 'FinYear') {
                     return this.renderControl(name, controlConfigs[name], true);
                   }
+                } else if (name === 'period_finyear_picker') {
+                  if (controls.period_type_static_picker.value === 'FinYear') {
+                    return this.renderControl(name, controlConfigs[name], true);
+                  }
+                } else if (name === 'period_calyear_picker') {
+                  if (controls.period_type_static_picker.value === 'CalYear') {
+                    return this.renderControl(name, controlConfigs[name], true);
+                  }
+                } else if (name === 'period_quarterly_picker') {
+                  if (
+                    controls.period_type_static_picker.value === 'Quarterly'
+                  ) {
+                    return this.renderControl(name, controlConfigs[name], true);
+                  }
                 } else {
                   return this.renderControl(name, controlConfigs[name], true);
                 }
@@ -216,7 +230,8 @@ class ControlPanelsContainer extends React.Component {
         (viz_type === 'box_plot_run_comp' ||
           viz_type === 'box_plot_fin' ||
           viz_type === 'box_plot_fin_str' ||
-          viz_type === 'box_plot_300_cap') &&
+          viz_type === 'box_plot_300_cap' ||
+          viz_type === 'spot_price_histogram') &&
         section.label === 'Time'
       ) {
         return;
@@ -245,7 +260,8 @@ class ControlPanelsContainer extends React.Component {
           (viz_type === 'box_plot_run_comp' ||
             viz_type === 'box_plot_fin' ||
             viz_type === 'box_plot_fin_str' ||
-            viz_type === 'box_plot_300_cap') &&
+            viz_type === 'box_plot_300_cap' ||
+            viz_type === 'spot_price_histogram') &&
           section.label === 'Empower'
         ) {
           const s1 = {
@@ -268,7 +284,6 @@ class ControlPanelsContainer extends React.Component {
         displaySectionsToRender.push(section);
       }
     });
-    // console.log('querySectionsToRender:', querySectionsToRender);
 
     return (
       <div className="scrollbar-container">

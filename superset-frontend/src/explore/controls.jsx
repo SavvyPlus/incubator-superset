@@ -66,15 +66,13 @@ import {
   legacyValidateInteger,
   validateNonEmpty,
 } from '@superset-ui/validator';
-
+import { ColumnOption } from '@superset-ui/control-utils';
 import * as v from './validators';
-
 import {
   formatSelectOptionsForRange,
   formatSelectOptions,
   mainMetric,
 } from '../modules/utils';
-import ColumnOption from '../components/ColumnOption';
 import { TIME_FILTER_LABELS } from './constants';
 
 const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
@@ -138,7 +136,7 @@ const groupByControl = {
   valueRenderer: c => <ColumnOption column={c} />,
   valueKey: 'column_name',
   allowAll: true,
-  filterOption: (opt, text) =>
+  filterOption: ({ label, value, data: opt }, text) =>
     (opt.column_name &&
       opt.column_name.toLowerCase().indexOf(text.toLowerCase()) >= 0) ||
     (opt.verbose_name &&
@@ -297,6 +295,53 @@ export const controls = {
     }),
   },
 
+  state_static_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Region'),
+    default: ['VIC'],
+    choices: [
+      ['NSW1', 'NSW'],
+      ['VIC1', 'VIC'],
+      ['QLD1', 'QLD'],
+      ['TAS1', 'TAS'],
+      ['SA1', 'SA'],
+    ],
+  },
+
+  spot_hist_chart_type_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Chart Type'),
+    default: 'value',
+    validators: [validateNonEmpty],
+    choices: [
+      ['value', 'Spot Price Value Annual'],
+      ['percent', 'Spot Price Proportion Annual'],
+    ],
+  },
+
+  price_bin_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Price Bin'),
+    // default: null,
+    validators: [validateNonEmpty],
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.price_bins),
+    }),
+  },
+
+  period_type_static_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Period Type'),
+    default: ['CalYear'],
+    validators: [validateNonEmpty],
+    choices: formatSelectOptions(['CalYear', 'FinYear', 'Quarterly']),
+    // description: t('Select the period type'),
+  },
+
   period_type: {
     type: 'SelectControl',
     freeForm: false,
@@ -305,6 +350,39 @@ export const controls = {
     default: 'CalYear',
     choices: formatSelectOptions(['CalYear', 'FinYear']),
     description: t('Select the period type'),
+  },
+
+  period_calyear_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Period'),
+    default: null,
+    // description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.period_calyear),
+    }),
+  },
+
+  period_finyear_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Period'),
+    default: null,
+    // description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.period_finyear),
+    }),
+  },
+
+  period_quarterly_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Period'),
+    default: null,
+    // description: t('Select states'),
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.period_quarterly),
+    }),
   },
 
   cal_years: {
@@ -687,6 +765,7 @@ export const controls = {
     type: 'MetricsControl',
     label: t('Sort By'),
     default: null,
+    clearable: true,
     description: t('Metric used to define the top series'),
     mapStateToProps: state => ({
       columns: state.datasource ? state.datasource.columns : [],

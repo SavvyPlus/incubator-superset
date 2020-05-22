@@ -102,6 +102,7 @@ const DEFAULT_ORDER = [
   'box_plot_fin',
   'box_plot_fin_str',
   'box_plot_300_cap',
+  'spot_price_histogram',
 ];
 
 const typesWithDefaultOrder = new Set(DEFAULT_ORDER);
