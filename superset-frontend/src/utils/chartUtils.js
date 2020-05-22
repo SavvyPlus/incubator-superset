@@ -41,7 +41,7 @@ function getBoxPlotYMax(allBoxData) {
   return RoundUp(maxBoxData(allBoxData));
 }
 
-export function formatter(param) {
+export function boxplotFormatter(param) {
   return [
     'Whiker Type: <strong>Min/Max</strong>',
     'Region: <strong>' + param.seriesName + '</strong>',
@@ -51,6 +51,27 @@ export function formatter(param) {
     'Median: <strong>' + param.data[3].toFixed(2) + '</strong>',
     'Q3: <strong>' + param.data[4].toFixed(2) + '</strong>',
     'Maximum: <strong>' + param.data[5].toFixed(2) + '</strong>',
+  ].join('<br/>');
+}
+
+function barValueFormatter(param) {
+  console.log(param);
+  return [
+    'Period: <strong>' + param.name + '</strong>',
+    'Price Bucket: <strong>' + param.seriesName + '</strong>',
+    'Percentage: <strong>' +
+      param.value.toFixed(2) +
+      ' (' +
+      (param.value * 100).toFixed(2) +
+      '%)</strong>',
+  ].join('<br/>');
+}
+
+function barPropFormatter(param) {
+  return [
+    'Period: <strong>' + param.name + '</strong>',
+    'Price Bucket: <strong>' + param.seriesName + '</strong>',
+    'BucketSum: <strong>$' + Math.round(param.value) + '</strong>',
   ].join('<br/>');
 }
 
@@ -140,25 +161,19 @@ export function getOption(queryResponse) {
         name: regions[i],
         type: 'boxplot',
         data: d.boxData,
-        tooltip: { formatter },
+        tooltip: { formatter: boxplotFormatter },
       })),
     };
   } else if (viz_type === 'spot_price_histogram') {
+    const { charType, state, data } = queryResponse.data;
+    const legendData = data.map(d => d.priceBin);
+    const xAxisData = data[0].labels;
     return {
       tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow',
-        },
+        formatter: charType === 'value' ? barValueFormatter : barPropFormatter,
       },
       legend: {
-        data: [
-          '1.Below zero',
-          '2.Zero to $25/MWh',
-          '3.$25/MWh to $50/MWh',
-          '4.$50/MWh to $100/MWh',
-          '5.$100/MWh to $300/MWh',
-        ],
+        data: legendData,
       },
       toolbox: {
         feature: {
@@ -178,73 +193,76 @@ export function getOption(queryResponse) {
       },
       xAxis: {
         type: 'category',
-        data: [
-          'Cal-20',
-          'Cal-21',
-          'Cal-22',
-          'Cal-23',
-          'Cal-24',
-          'Cal-25',
-          'Cal-26',
-        ],
+        data: xAxisData,
       },
-      series: [
-        {
-          name: '1.Below zero',
-          type: 'bar',
-          stack: 'SpotPrice',
-          label: {
-            show: true,
-            position: 'inside',
-            formatter: '${c}',
-          },
-          data: [320, 302, 301, 334, 390, 330, 320],
+      series: data.map(d => ({
+        name: d.priceBin,
+        type: 'bar',
+        stack: 'SpotPrice',
+        label: {
+          show: false,
+          // position: 'inside',
+          // formatter: '${c}',
         },
-        {
-          name: '2.Zero to $25/MWh',
-          type: 'bar',
-          stack: 'SpotPrice',
-          label: {
-            show: true,
-            position: 'inside',
-            formatter: '${c}',
-          },
-          data: [120, 132, 101, 134, 90, 230, 210],
-        },
-        {
-          name: '3.$25/MWh to $50/MWh',
-          type: 'bar',
-          stack: 'SpotPrice',
-          label: {
-            show: true,
-            position: 'inside',
-            formatter: '${c}',
-          },
-          data: [220, 182, 191, 234, 290, 330, 310],
-        },
-        {
-          name: '4.$50/MWh to $100/MWh',
-          type: 'bar',
-          stack: 'SpotPrice',
-          label: {
-            show: true,
-            position: 'inside',
-            formatter: '${c}',
-          },
-          data: [150, 212, 201, 154, 190, 330, 410],
-        },
-        {
-          name: '5.$100/MWh to $300/MWh',
-          type: 'bar',
-          stack: 'SpotPrice',
-          label: {
-            show: true,
-            position: 'inside',
-            formatter: '${c}',
-          },
-          data: [820, 832, 901, 934, 1290, 1330, 1320],
-        },
-      ],
+        data: d.values,
+      })),
+      // [
+      //   {
+      //     name: '1.Below zero',
+      //     type: 'bar',
+      //     stack: 'SpotPrice',
+      //     label: {
+      //       show: true,
+      //       position: 'inside',
+      //       formatter: '${c}',
+      //     },
+      //     data: [320, 302, 301, 334, 390, 330, 320],
+      //   },
+      //   {
+      //     name: '2.Zero to $25/MWh',
+      //     type: 'bar',
+      //     stack: 'SpotPrice',
+      //     label: {
+      //       show: true,
+      //       position: 'inside',
+      //       formatter: '${c}',
+      //     },
+      //     data: [120, 132, 101, 134, 90, 230, 210],
+      //   },
+      //   {
+      //     name: '3.$25/MWh to $50/MWh',
+      //     type: 'bar',
+      //     stack: 'SpotPrice',
+      //     label: {
+      //       show: true,
+      //       position: 'inside',
+      //       formatter: '${c}',
+      //     },
+      //     data: [220, 182, 191, 234, 290, 330, 310],
+      //   },
+      //   {
+      //     name: '4.$50/MWh to $100/MWh',
+      //     type: 'bar',
+      //     stack: 'SpotPrice',
+      //     label: {
+      //       show: true,
+      //       position: 'inside',
+      //       formatter: '${c}',
+      //     },
+      //     data: [150, 212, 201, 154, 190, 330, 410],
+      //   },
+      //   {
+      //     name: '5.$100/MWh to $300/MWh',
+      //     type: 'bar',
+      //     stack: 'SpotPrice',
+      //     label: {
+      //       show: true,
+      //       position: 'inside',
+      //       formatter: '${c}',
+      //     },
+      //     data: [820, 832, 901, 934, 1290, 1330, 1320],
+      //   },
+      // ],
     };
   }
   return {};
