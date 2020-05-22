@@ -20,7 +20,7 @@ import traceback
 import logging
 import os
 import tempfile
-from flask import flash, redirect, g, request, abort
+from flask import flash, redirect, g, request, abort, url_for
 from flask_appbuilder.widgets import ListWidget, FormWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
 from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
@@ -146,10 +146,12 @@ class EmpowerModelView(SupersetModelView):
         get_filter_args(self._filters)
         exclude_cols = self._filters.get_relation_cols()
         form = self.add_form.refresh()
+        form = self.prefill_form_add(form)
         if request.method == "POST":
             if form.validate():
                 # Calling add simulation
-                self.add_item(form, exclude_cols)
+                if self.add_item(form, exclude_cols):
+                    return None
             else:
                 is_valid_form = False
         if is_valid_form:
@@ -168,10 +170,19 @@ class EmpowerModelView(SupersetModelView):
         else:
             if self.datamodel.add(item):
                 self.post_add(item)
+                return True
             flash(*self.datamodel.message)
-        finally:
-            return None
+            return False
 
+    def prefill_form_add(self, form):
+        return form
+
+    def post_add_redirect(self):
+        return redirect(url_for('.show', pk=g.id))
+
+    def post_add(self, item):
+        db.session.flush()
+        g.id = item.id
 
     def _edit(self, pk):
         """
@@ -317,13 +328,14 @@ class SimulationModelView(
     list_columns = ['run_id', 'name','assumption', 'project', 'status']
     # add_columns = ['name','run_id','description','assumption_choice1','assumption_choice2','generation_model',
     #                'run_no','start_date','end_date','report_type']
+    edit_exclude_columns = ['status','status_detail']
     add_exclude_columns = ['status','status_detail']
     label_columns = {'run_no':'No. of simulation run'}
 
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
 
-    @simulation_logger.log_simulation(action_name='create simulation')
+    # @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):
         self._fill_form_exclude_cols(exclude_cols, form)
 
@@ -339,10 +351,10 @@ class SimulationModelView(
             flash(str(e), "danger")
             g.detail = str(e)
         else:
-            # if self.datamodel.add(item):
-            g.result = 'Success'
-            g.detail = None
-            self.send_notification(item)
+            if self.datamodel.add(item):
+                g.result = 'Success'
+                g.detail = None
+            # self.send_notification(item)
             flash(*self.datamodel.message)
 
     def send_notification(self, simulation):
@@ -380,35 +392,21 @@ class SimulationModelView(
         finally:
             return None
 
-    #
-    #
-    # def _get_add_widget(self, form, exclude_cols=None, widgets=None):
-    #     exclude_cols = exclude_cols or []
-    #     widgets = widgets or {}
-    #     widgets["add"] = self.add_widget(
-    #         form=form,
-    #         include_cols=self.add_columns,
-    #         exclude_cols=exclude_cols,
-    #         fieldsets=self.add_fieldsets,
-    #     )
-    #     return widgets
-    #
-    # def _add(self):
-    #     is_valid_form = True
-    #     get_filter_args(self._filters)
-    #     exclude_cols = self._filters.get_relation_cols()
-    #     assumption_choice1 = self.appbuilder.session.query(Assumption).all()
-    #     form = self.add_form(assumption_choice1=assumption_choice1)
-    #     if request.method == "POST":
-    #         if form.validate():
-    #             # Calling add simulation
-    #             self.add_item(form, exclude_cols)
-    #         else:
-    #             is_valid_form = False
-    #     if is_valid_form:
-    #         self.update_redirect()
-    #     return self._get_add_widget(form=form, exclude_cols=exclude_cols)
+    def prefill_form_add(self, form):
+        flt_dic = self.get_filter_args()
+        # print(form)
+        project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
+        form.project.data = project
+        return form
 
+    def get_filter_args(self):
+        import re
+        result = {}
+        for arg in request.args:
+            re_match = re.findall("_flt_0_project", arg)
+            if re_match:
+                result['project'] = request.args.get(re_match[0])
+        return result
 
 
 class ProjectModelView(EmpowerModelView):
@@ -421,6 +419,22 @@ class ProjectModelView(EmpowerModelView):
     order_columns = ['name','client']
 
     related_views = [SimulationModelView]
+
+    def prefill_form_add(self, form):
+        flt_dic = self.get_filter_args()
+        # print(form)
+        client = db.session.query(Client).filter_by(id=flt_dic['client']).one_or_none()
+        form.client.data = client
+        return form
+
+    def get_filter_args(self):
+        import re
+        result = {}
+        for arg in request.args:
+            re_match = re.findall("_flt_0_client", arg)
+            if re_match:
+                result['client'] = request.args.get(re_match[0])
+        return result
 
 class ClientModelView(EmpowerModelView):
 
@@ -491,7 +505,6 @@ class ClientModelView(EmpowerModelView):
             modelview_name=self.__class__.__name__,
         )
         return widgets
-
 
 
 
