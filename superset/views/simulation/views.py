@@ -395,8 +395,9 @@ class SimulationModelView(
     def prefill_form_add(self, form):
         flt_dic = self.get_filter_args()
         # print(form)
-        project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
-        form.project.data = project
+        if 'project' in flt_dic.keys():
+            project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
+            form.project.data = project
         return form
 
     def get_filter_args(self):
@@ -415,6 +416,8 @@ class ProjectModelView(EmpowerModelView):
     include_route_methods = RouteMethod.CRUD_SET
 
     add_exclude_columns = ['simulations']
+    show_exclude_columns = ['simulations']
+    edit_exclude_columns = ['simulations']
     list_columns = ['name', 'description', 'client']
     order_columns = ['name','client']
 
@@ -423,8 +426,9 @@ class ProjectModelView(EmpowerModelView):
     def prefill_form_add(self, form):
         flt_dic = self.get_filter_args()
         # print(form)
-        client = db.session.query(Client).filter_by(id=flt_dic['client']).one_or_none()
-        form.client.data = client
+        if 'client' in flt_dic.keys():
+            client = db.session.query(Client).filter_by(id=flt_dic['client']).one_or_none()
+            form.client.data = client
         return form
 
     def get_filter_args(self):
@@ -447,6 +451,8 @@ class ClientModelView(EmpowerModelView):
     include_route_methods = RouteMethod.CRUD_SET
     list_columns = ['name','description','projects']
     add_exclude_columns = ['projects']
+    show_exclude_columns = ['projects']
+    edit_exclude_columns = ['projects']
     order_columns = ['name']
 
     related_views = [ProjectModelView]
