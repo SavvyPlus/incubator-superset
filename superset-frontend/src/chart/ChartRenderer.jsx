@@ -104,10 +104,6 @@ class ChartRenderer extends React.Component {
       return true;
     }
 
-    if (nextProps.vizType === 'spot_price_dist_histogram') {
-      return true;
-    }
-
     const resultsReady =
       nextProps.queryResponse &&
       ['success', 'rendered'].indexOf(nextProps.chartStatus) > -1 &&
@@ -249,11 +245,11 @@ class ChartRenderer extends React.Component {
         fd.metrics = ['$'];
       }
     }
+    // console.log(JSON.stringify(queryResponse.data));
     return (
       <>
         {formData.viz_type === 'box_plot_300_cap' ||
-        formData.viz_type === 'spot_price_histogram' ||
-        formData.viz_type === 'spot_price_dist_histogram' ? (
+        formData.viz_type === 'spot_price_histogram' ? (
           <ReactEcharts
             key={`${chartId}${
               process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''

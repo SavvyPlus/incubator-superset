@@ -66,15 +66,13 @@ import {
   legacyValidateInteger,
   validateNonEmpty,
 } from '@superset-ui/validator';
-
+import { ColumnOption } from '@superset-ui/control-utils';
 import * as v from './validators';
-
 import {
   formatSelectOptionsForRange,
   formatSelectOptions,
   mainMetric,
 } from '../modules/utils';
-import ColumnOption from '../components/ColumnOption';
 import { TIME_FILTER_LABELS } from './constants';
 
 const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
@@ -138,7 +136,7 @@ const groupByControl = {
   valueRenderer: c => <ColumnOption column={c} />,
   valueKey: 'column_name',
   allowAll: true,
-  filterOption: (opt, text) =>
+  filterOption: ({ label, value, data: opt }, text) =>
     (opt.column_name &&
       opt.column_name.toLowerCase().indexOf(text.toLowerCase()) >= 0) ||
     (opt.verbose_name &&
@@ -299,12 +297,10 @@ export const controls = {
 
   state_static_picker: {
     type: 'SelectControl',
-    multi: true,
+    multi: false,
     label: t('Region'),
     default: ['VIC'],
-    // validators: [validateNonEmpty],
-    // description: t('Select Regions'),
-    // choices: formatSelectOptions(['NSW', 'VIC', 'QLD', 'TAS', 'SA']),
+    validators: [validateNonEmpty],
     choices: [
       ['NSW1', 'NSW'],
       ['VIC1', 'VIC'],
@@ -312,6 +308,29 @@ export const controls = {
       ['TAS1', 'TAS'],
       ['SA1', 'SA'],
     ],
+  },
+
+  spot_hist_chart_type_picker: {
+    type: 'SelectControl',
+    multi: false,
+    label: t('Chart Type'),
+    default: 'value',
+    validators: [validateNonEmpty],
+    choices: [
+      ['value', 'Spot Price Value Annual'],
+      ['percent', 'Spot Price Proportion Annual'],
+    ],
+  },
+
+  price_bin_picker: {
+    type: 'SelectControl',
+    multi: true,
+    label: t('Price Bin'),
+    // default: null,
+    validators: [validateNonEmpty],
+    mapStateToProps: state => ({
+      choices: formatSelectOptions(state.price_bins),
+    }),
   },
 
   period_type_static_picker: {
@@ -747,6 +766,7 @@ export const controls = {
     type: 'MetricsControl',
     label: t('Sort By'),
     default: null,
+    clearable: true,
     description: t('Metric used to define the top series'),
     mapStateToProps: state => ({
       columns: state.datasource ? state.datasource.columns : [],
