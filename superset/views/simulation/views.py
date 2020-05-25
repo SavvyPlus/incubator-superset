@@ -448,8 +448,10 @@ class SimulationModelView(
             if self.datamodel.add(item):
                 g.result = 'Success'
                 g.detail = None
+                return True
             # self.send_notification(item)
             flash(*self.datamodel.message)
+            return False
 
     def send_notification(self, simulation):
         from superset.views.utils import send_sendgrid_mail
@@ -539,6 +541,10 @@ class ProjectModelView(EmpowerModelView):
                 result['client'] = request.args.get(re_match[0])
         return result
 
+    def pre_delete(self, item):
+        if item.simulations is not None:
+            raise Exception('This project has modeling jobs associate with it. Please delete the models first.')
+
 
 class ClientModelView(EmpowerModelView):
 
@@ -614,7 +620,9 @@ class ClientModelView(EmpowerModelView):
         )
         return widgets
 
-
+    def pre_delete(self, item):
+        if item.projects is not None:
+            raise Exception("This client has projects associate with it. Please delete the projects first.")
 
 
 class SimulationLogModelView(SupersetModelView):
