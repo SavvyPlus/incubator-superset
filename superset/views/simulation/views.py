@@ -20,8 +20,8 @@ import traceback
 import logging
 import os
 import tempfile
-from flask import flash, redirect, g, request, abort
-from flask_appbuilder.widgets import ListWidget, FormWidget
+from flask import flash, redirect, g, request, abort, url_for
+from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
 from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
 from flask_appbuilder.models.sqla.interface import SQLAInterface
@@ -37,7 +37,6 @@ from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
 from .forms import UploadAssumptionForm, AddSimulationForm
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
-from .util import get_download_url
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
     chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
@@ -74,6 +73,20 @@ def handle_assumption_process(path, name):
         g.detail = repr(e)
         traceback.print_exc()
 
+def upload_assumption_and_trigger_process(path, name):
+    download_link, s3_link = upload_assumption_file(path, name)
+    handle_assumption_process.apply_async(args=[s3_link, name])
+    assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+    if not assumption_file:
+        assumption_file = Assumption()
+    assumption_file.name = name
+    assumption_file.status = "Processing"
+    assumption_file.download_link = download_link
+    db.session.merge(assumption_file)
+    db.session.commit()
+    db.session.flush()
+    return assumption_file.id, assumption_file.name
+
 class UploadAssumptionView(SimpleFormView):
     route_base = '/upload_assumption_file'
     form = UploadAssumptionForm
@@ -97,16 +110,7 @@ class UploadAssumptionView(SimpleFormView):
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.excel_file.data, path)
-            download_link, s3_link = upload_assumption_file(path, name)
-            handle_assumption_process.apply_async(args=[s3_link, name])
-            assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
-            if not assumption_file:
-                assumption_file = Assumption()
-            assumption_file.name = name
-            assumption_file.status = "Processing"
-            assumption_file.download_link = download_link
-            db.session.merge(assumption_file)
-            db.session.commit()
+            upload_assumption_and_trigger_process(path, name)
             message = "Upload success"
             style = 'info'
             g.result = 'Success'
@@ -137,15 +141,109 @@ class EmpowerModelView(SupersetModelView):
     The base model view for empower, with modified workflow of crud.
 
     """
+    """Customised show template, removed related views. Please create own show widget template 
+    to display the related widget"""
+    show_template = "empower/model/show.html"
+
+    """Changed the value column to use list, avoid using generator in template render and"""
+    def _get_list_widget(
+        self,
+        filters,
+        actions=None,
+        order_column="",
+        order_direction="",
+        page=None,
+        page_size=None,
+        widgets=None,
+        **args,
+    ):
+
+        """ get joined base filter and current active filter for query """
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column, order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count, lst = self.datamodel.query(
+            joined_filters,
+            order_column,
+            order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        pks = self.datamodel.get_keys(lst)
+
+        # serialize composite pks
+        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+
+        widgets["list"] = self.list_widget(
+            label_columns=self.label_columns,
+            include_columns=self.list_columns,
+            value_columns=list(self.datamodel.get_values(lst, self.list_columns)),
+            order_columns=self.order_columns,
+            formatters_columns=self.formatters_columns,
+            page=page,
+            page_size=page_size,
+            count=count,
+            pks=pks,
+            actions=actions,
+            filters=filters,
+            modelview_name=self.__class__.__name__,
+        )
+        return widgets
+
+    """Pass the related view widgets to show widget. Override the show widget to take the widget.get['related_views'] out"""
+    def _get_show_widget(
+        self, pk, item, widgets=None, actions=None, show_fieldsets=None
+    ):
+        widgets = widgets or {}
+        actions = actions or self.actions
+        show_fieldsets = show_fieldsets or self.show_fieldsets
+        return self.show_widget(
+            pk=pk,
+            label_columns=self.label_columns,
+            include_columns=self.show_columns,
+            value_columns=list(self.datamodel.get_values_item(item, self.show_columns)),
+            formatters_columns=self.formatters_columns,
+            actions=actions,
+            fieldsets=show_fieldsets,
+            modelview_name=self.__class__.__name__,
+            widgets=widgets,
+        )
+
+    """Override show logic, get related views first and used in show widget"""
+    def _show(self, pk):
+        """
+            show function logic, override to implement different logic
+            returns show and related list widget
+        """
+        pages = get_page_args()
+        page_sizes = get_page_size_args()
+        orders = get_order_args()
+
+        item = self.datamodel.get(pk, self._base_filters)
+        if not item:
+            abort(404)
+
+        self.update_redirect()
+        widgets = self._get_related_views_widgets(
+            item, orders=orders, pages=pages, page_sizes=page_sizes
+        )
+        widgets['show'] = self._get_show_widget(pk, item, widgets=widgets)
+        return widgets
+
+    """changed add workflow, separate post add, for logging"""
     def _add(self):
         is_valid_form = True
         get_filter_args(self._filters)
         exclude_cols = self._filters.get_relation_cols()
         form = self.add_form.refresh()
+        form = self.prefill_form_add(form)
         if request.method == "POST":
             if form.validate():
-                # Calling add simulation
-                self.add_item(form, exclude_cols)
+                if self.add_item(form, exclude_cols):
+                    return None
             else:
                 is_valid_form = False
         if is_valid_form:
@@ -164,11 +262,24 @@ class EmpowerModelView(SupersetModelView):
         else:
             if self.datamodel.add(item):
                 self.post_add(item)
+                return True
             flash(*self.datamodel.message)
-        finally:
-            return None
+            return False
 
+    """Prefill the add form if adding to related view models. Override to get param from url and fill in form"""
+    def prefill_form_add(self, form):
+        return form
 
+    """redirect to the show page, g.id is set in post add"""
+    def post_add_redirect(self):
+        return redirect(url_for('.show', pk=g.id))
+
+    """set g.id for post add redirect"""
+    def post_add(self, item):
+        db.session.flush()
+        g.id = item.id
+
+    """changed the edit workflow, to separate post edit and able to log activity """
     def _edit(self, pk):
         """
             Edit function logic, override to implement different logic
@@ -297,8 +408,6 @@ class AssumptionModelView(EmpowerModelView):
         return None
 
 
-
-
 class SimulationModelView(
     EmpowerModelView
 ):
@@ -313,13 +422,14 @@ class SimulationModelView(
     list_columns = ['run_id', 'name','assumption', 'project', 'status']
     # add_columns = ['name','run_id','description','assumption_choice1','assumption_choice2','generation_model',
     #                'run_no','start_date','end_date','report_type']
+    edit_exclude_columns = ['status','status_detail']
     add_exclude_columns = ['status','status_detail']
     label_columns = {'run_no':'No. of simulation run'}
 
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
 
-    @simulation_logger.log_simulation(action_name='create simulation')
+    # @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):
         self._fill_form_exclude_cols(exclude_cols, form)
 
@@ -338,14 +448,15 @@ class SimulationModelView(
             if self.datamodel.add(item):
                 g.result = 'Success'
                 g.detail = None
-                # self.send_notification(item)
+            # self.send_notification(item)
             flash(*self.datamodel.message)
 
     def send_notification(self, simulation):
         from superset.views.utils import send_sendgrid_mail
-        email_list = [["Will", 'weiliang.zhou@zawee.work'],
-                      ["Oscar", 'oscar.omegna@zawee.work'],
-                      ["Dex", 'dexiao.ye@zawee.work']]
+        # email_list = [["Will", 'weiliang.zhou@zawee.work'],
+        #               ["Oscar", 'oscar.omegna@zawee.work'],
+        #               ["Dex", 'dexiao.ye@zawee.work']]
+        email_list = [['Eric', 'bwhsdzf@gmail.com']]
         message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
                         "simulation": simulation.name,
                         "project": simulation.project.name,
@@ -353,7 +464,7 @@ class SimulationModelView(
                         }
         for email in email_list:
             message_dict['receiver'] = email[0]
-            send_sendgrid_mail(email[1], message_dict, 'd-a55f374a820b4aa08ebc6eb132504151 ')
+            send_sendgrid_mail(email[1], message_dict, 'd-a55f374a820b4aa08ebc6eb132504151')
 
     @simulation_logger.log_simulation(action_name='update simulation')
     def edit_item(self, form, item):
@@ -375,64 +486,80 @@ class SimulationModelView(
         finally:
             return None
 
-    #
-    #
-    # def _get_add_widget(self, form, exclude_cols=None, widgets=None):
-    #     exclude_cols = exclude_cols or []
-    #     widgets = widgets or {}
-    #     widgets["add"] = self.add_widget(
-    #         form=form,
-    #         include_cols=self.add_columns,
-    #         exclude_cols=exclude_cols,
-    #         fieldsets=self.add_fieldsets,
-    #     )
-    #     return widgets
-    #
-    # def _add(self):
-    #     is_valid_form = True
-    #     get_filter_args(self._filters)
-    #     exclude_cols = self._filters.get_relation_cols()
-    #     assumption_choice1 = self.appbuilder.session.query(Assumption).all()
-    #     form = self.add_form(assumption_choice1=assumption_choice1)
-    #     if request.method == "POST":
-    #         if form.validate():
-    #             # Calling add simulation
-    #             self.add_item(form, exclude_cols)
-    #         else:
-    #             is_valid_form = False
-    #     if is_valid_form:
-    #         self.update_redirect()
-    #     return self._get_add_widget(form=form, exclude_cols=exclude_cols)
+    def prefill_form_add(self, form):
+        flt_dic = self.get_filter_args()
+        # print(form)
+        if 'project' in flt_dic.keys():
+            project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
+            form.project.data = project
+        return form
 
+    def get_filter_args(self):
+        import re
+        result = {}
+        for arg in request.args:
+            re_match = re.findall("_flt_0_project", arg)
+            if re_match:
+                result['project'] = request.args.get(re_match[0])
+        return result
 
 
 class ProjectModelView(EmpowerModelView):
+
+    class ProjectShowWidget(ShowWidget):
+        template = "empower/widgets/show_project.html"
+
     route_base = "/projectmodelview"
     datamodel = SQLAInterface(Project)
     include_route_methods = RouteMethod.CRUD_SET
 
     add_exclude_columns = ['simulations']
+    edit_exclude_columns = ['simulations']
     list_columns = ['name', 'description', 'client']
-    order_columns = ['name','client']
+    order_columns = ['name']
+
+    show_widget = ProjectShowWidget
 
     related_views = [SimulationModelView]
+
+    def prefill_form_add(self, form):
+        flt_dic = self.get_filter_args()
+        # print(form)
+        if 'client' in flt_dic.keys():
+            client = db.session.query(Client).filter_by(id=flt_dic['client']).one_or_none()
+            form.client.data = client
+        return form
+
+    def get_filter_args(self):
+        import re
+        result = {}
+        for arg in request.args:
+            re_match = re.findall("_flt_0_client", arg)
+            if re_match:
+                result['client'] = request.args.get(re_match[0])
+        return result
+
 
 class ClientModelView(EmpowerModelView):
 
     class ClientListWidget(ListWidget):
         template = "empower/widgets/list_client.html"
 
+    class ClientShowWidget(ShowWidget):
+        template = "empower/widgets/show_client.html"
 
     route_base = "/clientmodelview"
     datamodel = SQLAInterface(Client)
     include_route_methods = RouteMethod.CRUD_SET
     list_columns = ['name','description','projects']
     add_exclude_columns = ['projects']
+    edit_exclude_columns = ['projects']
     order_columns = ['name']
 
     related_views = [ProjectModelView]
 
     list_widget = ClientListWidget
+    show_widget = ClientShowWidget
 
     def _get_list_widget(
         self,
@@ -490,7 +617,6 @@ class ClientModelView(EmpowerModelView):
 
 
 
-
 class SimulationLogModelView(SupersetModelView):
     route_base = "/simulationlog"
     datamodel = SQLAInterface(SimulationLog)
@@ -500,5 +626,6 @@ class SimulationLogModelView(SupersetModelView):
     order_columns = ['user', 'action_object', 'action_object_type','dttm']
 
     base_order = ('dttm', 'desc')
+    page_size = 20
 
 
