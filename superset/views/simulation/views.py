@@ -21,7 +21,7 @@ import logging
 import os
 import tempfile
 from flask import flash, redirect, g, request, abort, url_for
-from flask_appbuilder.widgets import ListWidget, FormWidget
+from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
 from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
 from flask_appbuilder.models.sqla.interface import SQLAInterface
@@ -141,6 +141,99 @@ class EmpowerModelView(SupersetModelView):
     The base model view for empower, with modified workflow of crud.
 
     """
+    """Customised show template, removed related views. Please create own show widget template 
+    to display the related widget"""
+    show_template = "empower/model/show.html"
+
+    """Changed the value column to use list, avoid using generator in template render and"""
+    def _get_list_widget(
+        self,
+        filters,
+        actions=None,
+        order_column="",
+        order_direction="",
+        page=None,
+        page_size=None,
+        widgets=None,
+        **args,
+    ):
+
+        """ get joined base filter and current active filter for query """
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column, order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count, lst = self.datamodel.query(
+            joined_filters,
+            order_column,
+            order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        pks = self.datamodel.get_keys(lst)
+
+        # serialize composite pks
+        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+
+        widgets["list"] = self.list_widget(
+            label_columns=self.label_columns,
+            include_columns=self.list_columns,
+            value_columns=list(self.datamodel.get_values(lst, self.list_columns)),
+            order_columns=self.order_columns,
+            formatters_columns=self.formatters_columns,
+            page=page,
+            page_size=page_size,
+            count=count,
+            pks=pks,
+            actions=actions,
+            filters=filters,
+            modelview_name=self.__class__.__name__,
+        )
+        return widgets
+
+    """Pass the related view widgets to show widget. Override the show widget to take the widget.get['related_views'] out"""
+    def _get_show_widget(
+        self, pk, item, widgets=None, actions=None, show_fieldsets=None
+    ):
+        widgets = widgets or {}
+        actions = actions or self.actions
+        show_fieldsets = show_fieldsets or self.show_fieldsets
+        return self.show_widget(
+            pk=pk,
+            label_columns=self.label_columns,
+            include_columns=self.show_columns,
+            value_columns=list(self.datamodel.get_values_item(item, self.show_columns)),
+            formatters_columns=self.formatters_columns,
+            actions=actions,
+            fieldsets=show_fieldsets,
+            modelview_name=self.__class__.__name__,
+            widgets=widgets,
+        )
+
+    """Override show logic, get related views first and used in show widget"""
+    def _show(self, pk):
+        """
+            show function logic, override to implement different logic
+            returns show and related list widget
+        """
+        pages = get_page_args()
+        page_sizes = get_page_size_args()
+        orders = get_order_args()
+
+        item = self.datamodel.get(pk, self._base_filters)
+        if not item:
+            abort(404)
+
+        self.update_redirect()
+        widgets = self._get_related_views_widgets(
+            item, orders=orders, pages=pages, page_sizes=page_sizes
+        )
+        widgets['show'] = self._get_show_widget(pk, item, widgets=widgets)
+        return widgets
+
+    """changed add workflow, separate post add, for logging"""
     def _add(self):
         is_valid_form = True
         get_filter_args(self._filters)
@@ -149,7 +242,6 @@ class EmpowerModelView(SupersetModelView):
         form = self.prefill_form_add(form)
         if request.method == "POST":
             if form.validate():
-                # Calling add simulation
                 if self.add_item(form, exclude_cols):
                     return None
             else:
@@ -174,16 +266,20 @@ class EmpowerModelView(SupersetModelView):
             flash(*self.datamodel.message)
             return False
 
+    """Prefill the add form if adding to related view models. Override to get param from url and fill in form"""
     def prefill_form_add(self, form):
         return form
 
+    """redirect to the show page, g.id is set in post add"""
     def post_add_redirect(self):
         return redirect(url_for('.show', pk=g.id))
 
+    """set g.id for post add redirect"""
     def post_add(self, item):
         db.session.flush()
         g.id = item.id
 
+    """changed the edit workflow, to separate post edit and able to log activity """
     def _edit(self, pk):
         """
             Edit function logic, override to implement different logic
@@ -312,8 +408,6 @@ class AssumptionModelView(EmpowerModelView):
         return None
 
 
-
-
 class SimulationModelView(
     EmpowerModelView
 ):
@@ -411,15 +505,20 @@ class SimulationModelView(
 
 
 class ProjectModelView(EmpowerModelView):
+
+    class ProjectShowWidget(ShowWidget):
+        template = "empower/widgets/show_project.html"
+
     route_base = "/projectmodelview"
     datamodel = SQLAInterface(Project)
     include_route_methods = RouteMethod.CRUD_SET
 
     add_exclude_columns = ['simulations']
-    show_exclude_columns = ['simulations']
     edit_exclude_columns = ['simulations']
     list_columns = ['name', 'description', 'client']
-    order_columns = ['name','client']
+    order_columns = ['name']
+
+    show_widget = ProjectShowWidget
 
     related_views = [SimulationModelView]
 
@@ -440,24 +539,27 @@ class ProjectModelView(EmpowerModelView):
                 result['client'] = request.args.get(re_match[0])
         return result
 
+
 class ClientModelView(EmpowerModelView):
 
     class ClientListWidget(ListWidget):
         template = "empower/widgets/list_client.html"
 
+    class ClientShowWidget(ShowWidget):
+        template = "empower/widgets/show_client.html"
 
     route_base = "/clientmodelview"
     datamodel = SQLAInterface(Client)
     include_route_methods = RouteMethod.CRUD_SET
     list_columns = ['name','description','projects']
     add_exclude_columns = ['projects']
-    show_exclude_columns = ['projects']
     edit_exclude_columns = ['projects']
     order_columns = ['name']
 
     related_views = [ProjectModelView]
 
     list_widget = ClientListWidget
+    show_widget = ClientShowWidget
 
     def _get_list_widget(
         self,
