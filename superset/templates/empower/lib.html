@@ -94,12 +94,13 @@
                             document.getElementById('assumption').appendChild(new_option)
                             console.log(document.getElementById('assumption'))
                         },
-                        error: function (error) {
-                            if (!error){
-                                console.log("Error: upload timeout. Please try again.")
+                        complete: function(x, s){
+                            if (s=='timeout'){
+                                alert('Timeout, please try again later.')
                             }
-                            alert(error['message'])
-                            // console.log(error)
+                            else if (s == 'error'){
+                                alert(error['message'])
+                            }
                             document.getElementById('upload-btn').removeAttribute('disabled')
                         },
                         async: true,

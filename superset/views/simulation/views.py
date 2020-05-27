@@ -457,10 +457,9 @@ class SimulationModelView(
 
     def send_notification(self, simulation):
         from superset.views.utils import send_sendgrid_mail
-        # email_list = [["Will", 'weiliang.zhou@zawee.work'],
-        #               ["Oscar", 'oscar.omegna@zawee.work'],
-        #               ["Dex", 'dexiao.ye@zawee.work']]
-        email_list = [['Eric', 'bwhsdzf@gmail.com']]
+        email_list = [["Will", 'weiliang.zhou@zawee.work'],
+                      ["Oscar", 'oscar.omegna@zawee.work'],
+                      ["Dex", 'dexiao.ye@zawee.work']]
         message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
                         "simulation": simulation.name,
                         "project": simulation.project.name,
