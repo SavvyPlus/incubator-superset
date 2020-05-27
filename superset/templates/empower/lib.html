@@ -95,9 +95,12 @@
                             console.log(document.getElementById('assumption'))
                         },
                         error: function (error) {
-                            alert('failed')
-                            console.log(error)
-                            console.log(document.getElementById('upload-btn').removeAttribute('disabled'))
+                            if (!error){
+                                console.log("Error: upload timeout. Please try again.")
+                            }
+                            alert(error['message'])
+                            // console.log(error)
+                            document.getElementById('upload-btn').removeAttribute('disabled')
                         },
                         async: true,
                         data: formdata,

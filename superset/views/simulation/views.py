@@ -423,6 +423,7 @@ class SimulationModelView(
     # add_columns = ['name','run_id','description','assumption_choice1','assumption_choice2','generation_model',
     #                'run_no','start_date','end_date','report_type']
     edit_exclude_columns = ['status','status_detail']
+    edit_columns = ['name','run_id','project','assumption','run_no','report_type','start_date','end_date']
     add_exclude_columns = ['status','status_detail']
     label_columns = {'run_no':'No. of simulation run'}
 
@@ -446,10 +447,11 @@ class SimulationModelView(
             g.detail = str(e)
         else:
             if self.datamodel.add(item):
+                self.post_add(item)
                 g.result = 'Success'
                 g.detail = None
+                self.send_notification(item)
                 return True
-            # self.send_notification(item)
             flash(*self.datamodel.message)
             return False
 
