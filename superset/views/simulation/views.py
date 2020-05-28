@@ -239,13 +239,15 @@ class EmpowerModelView(SupersetModelView):
         get_filter_args(self._filters)
         exclude_cols = self._filters.get_relation_cols()
         form = self.add_form.refresh()
-        form = self.prefill_form_add(form)
         if request.method == "POST":
+            form = self.prefill_hidden_field(form)
             if form.validate():
                 if self.add_item(form, exclude_cols):
                     return None
             else:
                 is_valid_form = False
+        else:
+            form = self.prefill_form_add(form)
         if is_valid_form:
             self.update_redirect()
         return self._get_add_widget(form=form, exclude_cols=exclude_cols)
@@ -265,6 +267,9 @@ class EmpowerModelView(SupersetModelView):
                 return True
             flash(*self.datamodel.message)
             return False
+
+    def prefill_hidden_field(self, form):
+        return form
 
     """Prefill the add form if adding to related view models. Override to get param from url and fill in form"""
     def prefill_form_add(self, form):
@@ -415,6 +420,9 @@ class SimulationModelView(
     class SimulationAddWidget(FormWidget):
         template = 'empower/widgets/add_simulation.html'
 
+    class SimulationListWidget(ListWidget):
+        template = 'empower/widgets/list_simulation.html'
+
     route_base = "/simulationmodelview"
     datamodel = SQLAInterface(Simulation)
     include_route_methods = RouteMethod.CRUD_SET
@@ -429,6 +437,64 @@ class SimulationModelView(
 
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
+    list_widget = SimulationListWidget
+
+    def _get_list_widget(
+            self,
+            filters,
+            actions=None,
+            order_column="",
+            order_direction="",
+            page=None,
+            page_size=None,
+            widgets=None,
+            **args,
+    ):
+
+        """ get joined base filter and current active filter for query """
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column, order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count, lst = self.datamodel.query(
+            joined_filters,
+            order_column,
+            order_direction,
+            page=page,
+            page_size=page_size,
+        )
+        pks = self.datamodel.get_keys(lst)
+        base_url = url_for('SimulationModelView.add')
+        projects = db.session.query(Project).all()
+        if len(joined_filters.filters) > 0:
+            for filter, value in zip(joined_filters.filters, joined_filters.values):
+                if filter.column_name == 'project':
+                    project = db.session.query(Project).filter_by(id=value).first()
+                    client = project.client
+                    projects = client.projects
+        # serialize composite pks
+        pks = [self._serialize_pk_if_composite(pk) for pk in pks]
+
+        widgets["list"] = self.list_widget(
+            label_columns=self.label_columns,
+            include_columns=self.list_columns,
+            value_columns=self.datamodel.get_values(lst, self.list_columns),
+            order_columns=self.order_columns,
+            formatters_columns=self.formatters_columns,
+            page=page,
+            page_size=page_size,
+            count=count,
+            pks=pks,
+            actions=actions,
+            filters=filters,
+            modelview_name=self.__class__.__name__,
+            projects=projects,
+            url=base_url,
+        )
+        return widgets
+
 
     # @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):
@@ -450,6 +516,7 @@ class SimulationModelView(
                 self.post_add(item)
                 g.result = 'Success'
                 g.detail = None
+                self.post_add(item)
                 self.send_notification(item)
                 return True
             flash(*self.datamodel.message)
@@ -491,6 +558,20 @@ class SimulationModelView(
 
     def prefill_form_add(self, form):
         flt_dic = self.get_filter_args()
+        if 'sim' in flt_dic.keys():
+            simulation = db.session.query(Simulation).filter_by(id=flt_dic['sim']).first()
+            form.assumption.data = simulation.assumption
+            form.description.data = 'Re run for simulation' + simulation.name
+            form.name.data = simulation.name + '_re_run'
+            form.report_type.data = simulation.report_type
+            form.start_date.data = simulation.start_date
+            form.end_date.data = simulation.end_date
+            form.run_no.data = simulation.run_no
+            form.run_id.data = simulation.run_id
+        return form
+
+    def prefill_hidden_field(self, form):
+        flt_dic = self.get_filter_args()
         # print(form)
         if 'project' in flt_dic.keys():
             project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
@@ -501,9 +582,12 @@ class SimulationModelView(
         import re
         result = {}
         for arg in request.args:
-            re_match = re.findall("_flt_0_project", arg)
-            if re_match:
-                result['project'] = request.args.get(re_match[0])
+            proj_match = re.findall("_flt_0_project", arg)
+            sim_match = re.findall("simID", arg)
+            if proj_match:
+                result['project'] = request.args.get(arg)
+            if sim_match:
+                result['sim'] = request.args.get(arg)
         return result
 
 
@@ -525,7 +609,7 @@ class ProjectModelView(EmpowerModelView):
 
     related_views = [SimulationModelView]
 
-    def prefill_form_add(self, form):
+    def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
         # print(form)
         if 'client' in flt_dic.keys():
