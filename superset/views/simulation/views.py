@@ -415,6 +415,9 @@ class SimulationModelView(
     class SimulationAddWidget(FormWidget):
         template = 'empower/widgets/add_simulation.html'
 
+    class SimulationListWidget(ListWidget):
+        template = 'empower/widgets/list_simulation.html'
+
     route_base = "/simulationmodelview"
     datamodel = SQLAInterface(Simulation)
     include_route_methods = RouteMethod.CRUD_SET
@@ -428,6 +431,7 @@ class SimulationModelView(
 
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
+    list_widget = SimulationListWidget
 
     # @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):

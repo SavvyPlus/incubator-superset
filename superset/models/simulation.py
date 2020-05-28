@@ -33,6 +33,16 @@ from superset.models.tags import ChartUpdater
 from superset.utils import core as utils
 from superset.viz import BaseViz, viz_types
 
+
+class Region(Model):
+    __tablename__ = "region"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(8), nullable=False, unique=True)
+    sql_repr = Column(String(8), nullable=False)
+
+    def __repr__(self):
+        return self.name
+
 class Client(Model):
     __tablename__ = "client"
     id = Column(Integer, primary_key=True)
@@ -42,6 +52,30 @@ class Client(Model):
     def __repr__(self):
         return self.name
 
+class JobType(Model):
+    __tablename__ = "job_type"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(128), nullable=False, unique=True)
+
+    def __repr__(self):
+        return self.name
+
+project_jobtype = Table(
+    "project_jobtype",
+    Model.metadata,
+    Column("id", Integer, primary_key=True),
+    Column("project_id", Integer, ForeignKey("project.id")),
+    Column("jobtype_id", Integer, ForeignKey("job_type.id")),
+)
+
+project_region = Table(
+    "project_region",
+    Model.metadata,
+    Column("id", Integer, primary_key=True),
+    Column("project_id", Integer, ForeignKey("project.id")),
+    Column("region_id", Integer, ForeignKey("region.id")),
+)
+
 
 class Project(Model):
     __tablename__ = "project"
@@ -50,6 +84,9 @@ class Project(Model):
     description = Column(String(500))
     client_id = Column(Integer, ForeignKey("client.id"), nullable=False)
     client = relationship("Client", foreign_keys=[client_id], backref="projects")
+    region = relationship("Region", secondary=project_region)
+    job_types = relationship("JobType", secondary=project_jobtype)
+    due_date = Column(Date, default='9999-12-31')
 
     def __repr__(self):
         return self.name
@@ -69,6 +106,14 @@ class Assumption(
     def __repr__(self):
         return self.name
 
+simulation_jobtype = Table(
+    "simulation_jobtype",
+    Model.metadata,
+    Column("id", Integer, primary_key=True),
+    Column("simulation_id", Integer, ForeignKey("simulation.id")),
+    Column("jobtype_id", Integer, ForeignKey("job_type.id")),
+)
+
 
 class Simulation(
     Model
@@ -76,18 +121,17 @@ class Simulation(
     __tablename__ = "simulation"
     id = Column(Integer, primary_key=True)
     run_id = Column(String(20), nullable=False)
-    name = Column(String(200), nullable=False)
+    name = Column(String(200), nullable=False, unique=True)
     description = Column(String(200))
     assumption_id = Column(Integer, ForeignKey("assumption.id"), nullable=False)
     assumption = relationship("Assumption", foreign_keys=[assumption_id])
     project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     project = relationship("Project", foreign_keys=[project_id], backref="simulations")
-    # client_id = Column(Integer, ForeignKey("client.id"), nullable=True)
-    # client = relationship("Client", foreign_keys=[client_id], backref="simulations")
     run_no = Column(Integer, nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
-    report_type = Column(String(200), nullable=False)
+    # report_type = Column(String(200), nullable=False)
+    report_type = relationship("JobType", secondary=simulation_jobtype)
     status = Column(String(10))
     status_detail = Column(String(500))
 
