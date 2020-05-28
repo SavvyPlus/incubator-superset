@@ -65,23 +65,26 @@
                 {% endif %}
             {% endfor %}
             <td><button class="btn btn-primary btn-sm" data-toggle="modal"
-                                data-target="#rerunModal{{ item['run_id']|string }}" data-client="{{ item['run_id'] }}">
+                                data-target="#rerunModal{{ pk }}" data-client="{{ pk }}">
                             Re run
                         </button>
-                <div class="modal fade" id="#rerunModal{{ item['run_id']|string }}" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal fade" id="rerunModal{{ pk }}" tabindex="-1" role="dialog" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="modal-title">Upload new Assumption</h5>
-
+                                <h5 class="modal-title" id="modal-title">Create re run</h5>
                             </div>
                             <div class="modal-body">
-                                <label for="assumption-file">Upload new assumption template</label>
-                                <input type="file" id="assumption-file" value="assumption-file" name="assumption-file">
+                                <label for="project-select-{{ pk }}">Choose to re run for which project</label>
+                                <select id="project-select-{{ pk }}" name="{{pk}}" class="select2-chosen">
+                                    {% for project in projects %}
+                                        <option value="{{project.id}}">{{ project.name }}</option>
+                                    {% endfor %}
+                                </select>
 
                             </div>
                             <div class="modal-footer">
-                                <button class="btn btn-primary" id="upload-btn">Upload</button>
+                                <button class="btn btn-primary" id="rerun-btn-{{pk}}" name="{{ pk }}">Create</button>
                                 <button class="btn btn-secondary" data-dismiss="modal" id="close-btn">
                                     Close
                                 </button>
@@ -97,5 +100,23 @@
 {% block end_content scoped %}
     </table>
     </div>
+{% endblock %}
+
+{% block tail_js %}
+    <script>
+
+        $('[id^=rerun-btn]').click(function(e) {
+            let href = '{{ url }}'
+            href = href + '?_flt_0_project='
+            let pk = this.name
+            let project_select = document.getElementById('project-select-'+pk)
+            let project_id = project_select.value
+            // console.log(project_id)
+            href = href + project_id + '&simID='
+            let sim_id = project_select.name
+            href = href + sim_id
+            window.location.href = href
+        })
+    </script>
 {% endblock %}
 
