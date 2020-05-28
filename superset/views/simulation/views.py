@@ -558,6 +558,9 @@ class SimulationModelView(
 
     def prefill_form_add(self, form):
         flt_dic = self.get_filter_args()
+        if 'project' in flt_dic.keys():
+            project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
+            form.report_type.data = project.job_types
         if 'sim' in flt_dic.keys():
             simulation = db.session.query(Simulation).filter_by(id=flt_dic['sim']).first()
             form.assumption.data = simulation.assumption
@@ -568,6 +571,7 @@ class SimulationModelView(
             form.end_date.data = simulation.end_date
             form.run_no.data = simulation.run_no
             form.run_id.data = simulation.run_id
+            form.report_type.data = simulation.report_type
         return form
 
     def prefill_hidden_field(self, form):
