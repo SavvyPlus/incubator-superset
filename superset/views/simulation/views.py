@@ -47,6 +47,20 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
                 break
             file_description.write(chunk)
 
+def send_notification(simulation, template_id):
+    from superset.views.utils import send_sendgrid_mail
+    email_list = [["Will", 'weiliang.zhou@zawee.work'],
+                  ["Oscar", 'oscar.omegna@zawee.work'],
+                  ["Dex", 'dexiao.ye@zawee.work']]
+    message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
+                    "simulation": simulation.name,
+                    "project": simulation.project.name,
+                    "client": simulation.project.client.name,
+                    }
+    for email in email_list:
+        message_dict['receiver'] = email[0]
+        send_sendgrid_mail(email[1], message_dict, template_id)
+
 @celery_app.task
 @simulation_logger.log_simulation(action_name='process assumption')
 def handle_assumption_process(path, name):
@@ -496,7 +510,7 @@ class SimulationModelView(
         return widgets
 
 
-    # @simulation_logger.log_simulation(action_name='create simulation')
+    @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):
         self._fill_form_exclude_cols(exclude_cols, form)
 
@@ -517,24 +531,10 @@ class SimulationModelView(
                 g.result = 'Success'
                 g.detail = None
                 self.post_add(item)
-                self.send_notification(item)
+                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
             flash(*self.datamodel.message)
             return False
-
-    def send_notification(self, simulation):
-        from superset.views.utils import send_sendgrid_mail
-        email_list = [["Will", 'weiliang.zhou@zawee.work'],
-                      ["Oscar", 'oscar.omegna@zawee.work'],
-                      ["Dex", 'dexiao.ye@zawee.work']]
-        message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
-                        "simulation": simulation.name,
-                        "project": simulation.project.name,
-                        "client": simulation.project.client.name,
-                        }
-        for email in email_list:
-            message_dict['receiver'] = email[0]
-            send_sendgrid_mail(email[1], message_dict, 'd-a55f374a820b4aa08ebc6eb132504151')
 
     @simulation_logger.log_simulation(action_name='update simulation')
     def edit_item(self, form, item):
@@ -552,6 +552,7 @@ class SimulationModelView(
             if self.datamodel.edit(item):
                 g.result = 'Success'
                 g.detail = None
+                # send_notification(item, '123')
             flash(*self.datamodel.message)
         finally:
             return None
@@ -612,6 +613,29 @@ class ProjectModelView(EmpowerModelView):
     show_widget = ProjectShowWidget
 
     related_views = [SimulationModelView]
+
+    @simulation_logger.log_simulation(action_name='update project')
+    def edit_item(self, form, item):
+        @simulation_logger.log_simulation(action_name='update simulation')
+        def edit_item(self, form, item):
+            g.action_object = item.name
+            g.action_object_type = 'Project'
+            g.result = 'Failed'
+            g.detail = None
+            try:
+                form.populate_obj(item)
+                self.pre_update(item)
+            except Exception as e:
+                g.detail = str(e)
+                flash(str(e), "danger")
+            else:
+                if self.datamodel.edit(item):
+                    g.result = 'Success'
+                    g.detail = None
+                    send_notification(item, '123')
+                flash(*self.datamodel.message)
+            finally:
+                return None
 
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
