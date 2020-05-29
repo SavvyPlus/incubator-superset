@@ -215,63 +215,6 @@ export function getOption(queryResponse) {
         },
         data: d.values,
       })),
-      // [
-      //   {
-      //     name: '1.Below zero',
-      //     type: 'bar',
-      //     stack: 'SpotPrice',
-      //     label: {
-      //       show: true,
-      //       position: 'inside',
-      //       formatter: '${c}',
-      //     },
-      //     data: [320, 302, 301, 334, 390, 330, 320],
-      //   },
-      //   {
-      //     name: '2.Zero to $25/MWh',
-      //     type: 'bar',
-      //     stack: 'SpotPrice',
-      //     label: {
-      //       show: true,
-      //       position: 'inside',
-      //       formatter: '${c}',
-      //     },
-      //     data: [120, 132, 101, 134, 90, 230, 210],
-      //   },
-      //   {
-      //     name: '3.$25/MWh to $50/MWh',
-      //     type: 'bar',
-      //     stack: 'SpotPrice',
-      //     label: {
-      //       show: true,
-      //       position: 'inside',
-      //       formatter: '${c}',
-      //     },
-      //     data: [220, 182, 191, 234, 290, 330, 310],
-      //   },
-      //   {
-      //     name: '4.$50/MWh to $100/MWh',
-      //     type: 'bar',
-      //     stack: 'SpotPrice',
-      //     label: {
-      //       show: true,
-      //       position: 'inside',
-      //       formatter: '${c}',
-      //     },
-      //     data: [150, 212, 201, 154, 190, 330, 410],
-      //   },
-      //   {
-      //     name: '5.$100/MWh to $300/MWh',
-      //     type: 'bar',
-      //     stack: 'SpotPrice',
-      //     label: {
-      //       show: true,
-      //       position: 'inside',
-      //       formatter: '${c}',
-      //     },
-      //     data: [820, 832, 901, 934, 1290, 1330, 1320],
-      //   },
-      // ],
     };
   }
   return {};
