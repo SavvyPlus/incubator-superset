@@ -124,14 +124,14 @@
 <!--                    {% else %}-->
 <!--                        <td>No project available</td>-->
 <!--                    {% endif %}-->
-                {% else %}
+<!--                {% else %}-->
                     {% set formatter = formatters_columns.get(value) %}
                     {% if formatter %}
                         <td>{{ formatter(item[value]) }}</td>
                     {% else %}
                         <td>{{ item[value] }}</td>
                     {% endif %}
-                {% endif %}
+<!--                {% endif %}-->
             {% endfor %}
         </tr>
     {% endfor %}
