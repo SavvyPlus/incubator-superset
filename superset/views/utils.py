@@ -35,8 +35,8 @@ from superset.models.slice import Slice
 from superset.utils.core import QueryStatus, TimeRangeEndpoint
 
 # Sendgrid client
-# sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
-sendgrid_client = None
+sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
+# sendgrid_client = None
 
 
 if is_feature_enabled("SIP_38_VIZ_REARCHITECTURE"):
@@ -379,6 +379,8 @@ def send_sendgrid_mail(address_to, message_data, template_id):
         sendgrid_client.send(message)
         return True
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return False
 
 
