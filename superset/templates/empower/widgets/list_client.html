@@ -63,67 +63,67 @@
                 </td>
             {% endif %}
             {% for value in include_columns %}
-                {% if value == "projects" %}
-                    {% if item[value] %}
-                        <td>
-                            <button class="btn btn-primary btn-sm" data-toggle="modal"
-                                    data-target="#projectsModal{{ item['name']|string }}" data-client="{{ item['name'] }}">
-                                View
-                            </button>
-                            <div class="modal fade" id="projectsModal{{ item['name']|string }}" tabindex="-1"
-                                 role="dialog" aria-labelledby="exampleModalLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title"
-                                                id="modalLabel">New message</h5>
-                                            <button type="button" class="close"
-                                                    data-dismiss="modal"
-                                                    aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="table-responsive">
-                                                <table class="table table-bordered table-hover" style="background-color: white">
-                                                    <thead>
-                                                    <tr>
-                                                        <th>Project ID</th>
-                                                        <th>Project Name</th>
-                                                        <th>To</th>
-                                                    </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                    {% for project in project_dict[item['name']] %}
-                                                        <tr>
-                                                            <td class="project-id">{{ project['id'] }}</td>
-                                                            <td class="project-name">{{ project['name'] }}</td>
-                                                            <td class="project-url">
-                                                                <a>
-                                                                    <i class="fa fa-external-link" aria-hidden="true"></i>
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                    {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button"
-                                                    class="btn btn-secondary"
-                                                    data-dismiss="modal">
-                                                Close
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    {% else %}
-                        <td>No project available</td>
-                    {% endif %}
+<!--                {% if value == "projects" %}-->
+<!--                    {% if item[value] %}-->
+<!--                        <td>-->
+<!--                            <button class="btn btn-primary btn-sm" data-toggle="modal"-->
+<!--                                    data-target="#projectsModal{{ item['name']|string }}" data-client="{{ item['name'] }}">-->
+<!--                                View-->
+<!--                            </button>-->
+<!--                            <div class="modal fade" id="projectsModal{{ item['name']|string }}" tabindex="-1"-->
+<!--                                 role="dialog" aria-labelledby="exampleModalLabel"-->
+<!--                                 aria-hidden="true">-->
+<!--                                <div class="modal-dialog" role="document">-->
+<!--                                    <div class="modal-content">-->
+<!--                                        <div class="modal-header">-->
+<!--                                            <h5 class="modal-title"-->
+<!--                                                id="modalLabel">New message</h5>-->
+<!--                                            <button type="button" class="close"-->
+<!--                                                    data-dismiss="modal"-->
+<!--                                                    aria-label="Close">-->
+<!--                                                <span aria-hidden="true">&times;</span>-->
+<!--                                            </button>-->
+<!--                                        </div>-->
+<!--                                        <div class="modal-body">-->
+<!--                                            <div class="table-responsive">-->
+<!--                                                <table class="table table-bordered table-hover" style="background-color: white">-->
+<!--                                                    <thead>-->
+<!--                                                    <tr>-->
+<!--                                                        <th>Project ID</th>-->
+<!--                                                        <th>Project Name</th>-->
+<!--                                                        <th>To</th>-->
+<!--                                                    </tr>-->
+<!--                                                    </thead>-->
+<!--                                                    <tbody>-->
+<!--                                                    {% for project in project_dict[item['name']] %}-->
+<!--                                                        <tr>-->
+<!--                                                            <td class="project-id">{{ project['id'] }}</td>-->
+<!--                                                            <td class="project-name">{{ project['name'] }}</td>-->
+<!--                                                            <td class="project-url">-->
+<!--                                                                <a>-->
+<!--                                                                    <i class="fa fa-external-link" aria-hidden="true"></i>-->
+<!--                                                                </a>-->
+<!--                                                            </td>-->
+<!--                                                        </tr>-->
+<!--                                                    {% endfor %}-->
+<!--                                                    </tbody>-->
+<!--                                                </table>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                        <div class="modal-footer">-->
+<!--                                            <button type="button"-->
+<!--                                                    class="btn btn-secondary"-->
+<!--                                                    data-dismiss="modal">-->
+<!--                                                Close-->
+<!--                                            </button>-->
+<!--                                        </div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </td>-->
+<!--                    {% else %}-->
+<!--                        <td>No project available</td>-->
+<!--                    {% endif %}-->
                 {% else %}
                     {% set formatter = formatters_columns.get(value) %}
                     {% if formatter %}

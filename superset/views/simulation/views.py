@@ -669,7 +669,7 @@ class ClientModelView(EmpowerModelView):
     route_base = "/clientmodelview"
     datamodel = SQLAInterface(Client)
     include_route_methods = RouteMethod.CRUD_SET
-    list_columns = ['name','description','projects']
+    list_columns = ['name','description']
     add_exclude_columns = ['projects']
     edit_exclude_columns = ['projects']
     order_columns = ['name']
