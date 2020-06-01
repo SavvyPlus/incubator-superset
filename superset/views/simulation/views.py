@@ -396,7 +396,7 @@ class AssumptionModelView(EmpowerModelView):
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.download_link.data, path)
             download_link, s3_link = upload_assumption_file(path, name)
-            msg =  check_assumption(path, name)
+            msg = check_assumption(path, name)
             if msg != 'success':
                 raise Exception(msg)
             # handle_assumption_process.apply_async(args=[s3_link, name])
@@ -616,7 +616,6 @@ class ProjectModelView(EmpowerModelView):
 
     @simulation_logger.log_simulation(action_name='update project')
     def edit_item(self, form, item):
-        @simulation_logger.log_simulation(action_name='update simulation')
         def edit_item(self, form, item):
             g.action_object = item.name
             g.action_object_type = 'Project'
@@ -632,7 +631,7 @@ class ProjectModelView(EmpowerModelView):
                 if self.datamodel.edit(item):
                     g.result = 'Success'
                     g.detail = None
-                    send_notification(item, '123')
+                    # send_notification(item, '123')
                 flash(*self.datamodel.message)
             finally:
                 return None
@@ -670,7 +669,7 @@ class ClientModelView(EmpowerModelView):
     route_base = "/clientmodelview"
     datamodel = SQLAInterface(Client)
     include_route_methods = RouteMethod.CRUD_SET
-    list_columns = ['name','description','projects']
+    list_columns = ['name','description']
     add_exclude_columns = ['projects']
     edit_exclude_columns = ['projects']
     order_columns = ['name']
