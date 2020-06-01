@@ -616,7 +616,6 @@ class ProjectModelView(EmpowerModelView):
 
     @simulation_logger.log_simulation(action_name='update project')
     def edit_item(self, form, item):
-        @simulation_logger.log_simulation(action_name='update simulation')
         def edit_item(self, form, item):
             g.action_object = item.name
             g.action_object_type = 'Project'
@@ -632,7 +631,7 @@ class ProjectModelView(EmpowerModelView):
                 if self.datamodel.edit(item):
                     g.result = 'Success'
                     g.detail = None
-                    send_notification(item, '123')
+                    # send_notification(item, '123')
                 flash(*self.datamodel.message)
             finally:
                 return None
