@@ -1720,9 +1720,9 @@ class BubbleViz(NVD3Viz):
         # dedup groupby if it happens to be the same
         d["groupby"] = list(dict.fromkeys(d["groupby"]))
 
-        self.x_metric = form_data.get("x")
-        self.y_metric = form_data.get("y")
-        self.z_metric = form_data.get("size")
+        self.x_metric = form_data["x"]
+        self.y_metric = form_data["y"]
+        self.z_metric = form_data["size"]
         self.entity = form_data.get("entity")
         self.series = form_data.get("series") or self.entity
         d["row_limit"] = form_data.get("limit")
@@ -1764,7 +1764,7 @@ class BulletViz(NVD3Viz):
     def query_obj(self):
         form_data = self.form_data
         d = super().query_obj()
-        self.metric = form_data.get("metric")
+        self.metric = form_data["metric"]
 
         d["metrics"] = [self.metric]
         if not self.metric:
@@ -2122,8 +2122,8 @@ class NVD3DualLineViz(NVD3Viz):
                 _("Pick a time granularity for your time series")
             )
 
-        metric = utils.get_metric_name(fd.get("metric"))
-        metric_2 = utils.get_metric_name(fd.get("metric_2"))
+        metric = utils.get_metric_name(fd["metric"])
+        metric_2 = utils.get_metric_name(fd["metric_2"])
         df = df.pivot_table(index=DTTM_ALIAS, values=[metric, metric_2])
 
         chart_data = self.to_series(df)
@@ -2178,7 +2178,7 @@ class NVD3TimePivotViz(NVD3TimeSeriesViz):
         df = df.pivot_table(
             index=DTTM_ALIAS,
             columns="series",
-            values=utils.get_metric_name(fd.get("metric")),
+            values=utils.get_metric_name(fd["metric"]),
         )
         chart_data = self.to_series(df)
         for serie in chart_data:
@@ -2361,8 +2361,12 @@ class SunburstViz(BaseViz):
         fd = self.form_data
         cols = fd.get("groupby") or []
         cols.extend(["m1", "m2"])
-        metric = utils.get_metric_name(fd.get("metric"))
-        secondary_metric = utils.get_metric_name(fd.get("secondary_metric"))
+        metric = utils.get_metric_name(fd["metric"])
+        secondary_metric = (
+            utils.get_metric_name(fd["secondary_metric"])
+            if "secondary_metric" in fd
+            else None
+        )
         if metric == secondary_metric or secondary_metric is None:
             df.rename(columns={df.columns[-1]: "m1"}, inplace=True)
             df["m2"] = df["m1"]
@@ -2543,8 +2547,12 @@ class WorldMapViz(BaseViz):
 
         fd = self.form_data
         cols = [fd.get("entity")]
-        metric = utils.get_metric_name(fd.get("metric"))
-        secondary_metric = utils.get_metric_name(fd.get("secondary_metric"))
+        metric = utils.get_metric_name(fd["metric"])
+        secondary_metric = (
+            utils.get_metric_name(fd["secondary_metric"])
+            if "secondary_metric" in fd
+            else None
+        )
         columns = ["country", "m1", "m2"]
         if metric == secondary_metric:
             ndf = df[cols]
@@ -3598,7 +3606,7 @@ class SpotPriceHistogramViz(BaseViz):
 
         self.chart_type = self.form_data['spot_hist_chart_type_picker']
         if self.chart_type == 'value':
-            col_value = 'ProportionByValue'
+            col_value = 'BucketSum'
         elif self.chart_type == 'percent':
             col_value = 'Percentage'
         else:
@@ -3637,18 +3645,22 @@ class SpotPriceHistogramViz(BaseViz):
                             'hasCustomLabel': False,
                             'fromFormData': True,
                             'label': 'Period'})
-        # filter price bins
-        price_bins = self.form_data['price_bin_picker']
-        if price_bins:
-            d['filter'].append({'col': 'PriceBucket', 'op': 'in',
-                                'val': price_bins})
+        # filter state
+        if self.form_data['state_static_picker']:
+            d['filter'].append({'col': 'State', 'op': '==',
+                                'val': self.form_data['state_static_picker']})
+        # # filter price bins
+        # price_bins = self.form_data['price_bin_picker']
+        # if price_bins:
+        #     d['filter'].append({'col': 'PriceBucket', 'op': 'in',
+        #                         'val': price_bins})
         # filter period type
         period_type = self.form_data['period_type_static_picker']
         if period_type:
             d['filter'].append({'col': 'DataGroup', 'op': '==',
                                 'val': period_type})
-
         # filter period
+        periods = []
         if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
             periods = self.form_data['period_finyear_picker']
         if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
@@ -3668,31 +3680,35 @@ class SpotPriceHistogramViz(BaseViz):
         """
         echart_data = {}
         echart_data['chart_type'] = self.chart_type
-        echart_data['data'] = {}
+        echart_data['state'] = ''
+        echart_data['data'] = []
         echart_data['tmpdata'] = {}
 
         records = df.to_dict(orient="records")
         for rec in records:
-            state = rec['State']
-            state = ''.join(i for i in state if not i.isdigit())            
-            if state not in echart_data['tmpdata']:
-                echart_data['tmpdata'][state] = {}
-            
+            if not echart_data['state']:
+                echart_data['state'] = ''.join(i for i in rec['State'] if not i.isdigit())
+            # state = rec['State']
+            # state = ''.join(i for i in state if not i.isdigit())
+
+            # if state not in echart_data['tmpdata']:
+            #     echart_data['tmpdata'][state] = {}
+
             price_bin = rec['PriceBucket']
-            if price_bin not in echart_data['tmpdata'][state]:
-                echart_data['tmpdata'][state][price_bin] = {
+            if price_bin == '10. Total':
+                continue
+            if price_bin not in echart_data['tmpdata']:
+                echart_data['tmpdata'][price_bin] = {
                     'priceBin': price_bin,
                     'labels': [],
                     'values': []
                 }
-            
-            echart_data['tmpdata'][state][price_bin]['labels'].append(rec['Period'])
-            echart_data['tmpdata'][state][price_bin]['values'].append(rec['value'])
-        
-        for sta in echart_data['tmpdata']:
-            echart_data['data'][sta] = []
-            for pb in echart_data['tmpdata'][sta]:
-                echart_data['data'][sta].append(echart_data['tmpdata'][sta][pb])
+
+            echart_data['tmpdata'][price_bin]['labels'].append(rec['Period'])
+            echart_data['tmpdata'][price_bin]['values'].append(rec['value'])
+
+        for pb in echart_data['tmpdata']:
+            echart_data['data'].append(echart_data['tmpdata'][pb])
 
         del echart_data['tmpdata']
 
