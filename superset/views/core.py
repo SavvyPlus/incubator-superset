@@ -3030,6 +3030,7 @@ class Superset(BaseSupersetView):
             detail = {'name': name,
                       'id': id}
             g.result = 'Success'
+            g.detail = None
         except Exception as e:
             message = 'Failed. {}'.format(repr(e))
             detail = repr(e)
