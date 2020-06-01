@@ -55,6 +55,9 @@
                 e.preventDefault();
                 // console.log(document.getElementById('assumption-file').files)
                 // console.log()
+                let button = this
+                // console.log(this)
+                button.innerHTML = 'Uploading'
                 if(document.getElementById('assumption-file').files.length < 1){
                     alert('Please select a file!');
                 }
@@ -93,22 +96,24 @@
                             new_option.innerHTML = data['detail']['name']
                             document.getElementById('assumption').appendChild(new_option)
                             console.log(document.getElementById('assumption'))
+                            button.innerHTML = 'Upload'
                         },
                         complete: function(x, s){
-                            if (s=='timeout'){
+                            if (s =='timeout'){
                                 alert('Timeout, please try again later.')
                             }
                             else if (s == 'error'){
                                 alert(error['message'])
                             }
                             document.getElementById('upload-btn').removeAttribute('disabled')
+                            button.innerHTML = 'Upload'
                         },
+                        timeout: 30000,
                         async: true,
                         data: formdata,
                         cache: false,
                         contentType: false,
                         processData: false,
-                        timeout: 60000
                     });
 
                 }
