@@ -47,6 +47,20 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
                 break
             file_description.write(chunk)
 
+def send_notification(simulation, template_id):
+    from superset.views.utils import send_sendgrid_mail
+    email_list = [["Will", 'weiliang.zhou@zawee.work'],
+                  ["Oscar", 'oscar.omegna@zawee.work'],
+                  ["Dex", 'dexiao.ye@zawee.work']]
+    message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
+                    "simulation": simulation.name,
+                    "project": simulation.project.name,
+                    "client": simulation.project.client.name,
+                    }
+    for email in email_list:
+        message_dict['receiver'] = email[0]
+        send_sendgrid_mail(email[1], message_dict, template_id)
+
 @celery_app.task
 @simulation_logger.log_simulation(action_name='process assumption')
 def handle_assumption_process(path, name):
@@ -382,7 +396,7 @@ class AssumptionModelView(EmpowerModelView):
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.download_link.data, path)
             download_link, s3_link = upload_assumption_file(path, name)
-            msg =  check_assumption(path, name)
+            msg = check_assumption(path, name)
             if msg != 'success':
                 raise Exception(msg)
             # handle_assumption_process.apply_async(args=[s3_link, name])
@@ -431,6 +445,7 @@ class SimulationModelView(
     # add_columns = ['name','run_id','description','assumption_choice1','assumption_choice2','generation_model',
     #                'run_no','start_date','end_date','report_type']
     edit_exclude_columns = ['status','status_detail']
+    edit_columns = ['name','run_id','project','assumption','run_no','report_type','start_date','end_date']
     add_exclude_columns = ['status','status_detail']
     label_columns = {'run_no':'No. of simulation run'}
 
@@ -495,7 +510,7 @@ class SimulationModelView(
         return widgets
 
 
-    # @simulation_logger.log_simulation(action_name='create simulation')
+    @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):
         self._fill_form_exclude_cols(exclude_cols, form)
 
@@ -512,28 +527,14 @@ class SimulationModelView(
             g.detail = str(e)
         else:
             if self.datamodel.add(item):
+                self.post_add(item)
                 g.result = 'Success'
                 g.detail = None
                 self.post_add(item)
+                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
-            # self.send_notification(item)
             flash(*self.datamodel.message)
             return False
-
-    def send_notification(self, simulation):
-        from superset.views.utils import send_sendgrid_mail
-        # email_list = [["Will", 'weiliang.zhou@zawee.work'],
-        #               ["Oscar", 'oscar.omegna@zawee.work'],
-        #               ["Dex", 'dexiao.ye@zawee.work']]
-        email_list = [['Eric', 'bwhsdzf@gmail.com']]
-        message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
-                        "simulation": simulation.name,
-                        "project": simulation.project.name,
-                        "client": simulation.project.client.name,
-                        }
-        for email in email_list:
-            message_dict['receiver'] = email[0]
-            send_sendgrid_mail(email[1], message_dict, 'd-a55f374a820b4aa08ebc6eb132504151')
 
     @simulation_logger.log_simulation(action_name='update simulation')
     def edit_item(self, form, item):
@@ -551,12 +552,16 @@ class SimulationModelView(
             if self.datamodel.edit(item):
                 g.result = 'Success'
                 g.detail = None
+                # send_notification(item, '123')
             flash(*self.datamodel.message)
         finally:
             return None
 
     def prefill_form_add(self, form):
         flt_dic = self.get_filter_args()
+        if 'project' in flt_dic.keys():
+            project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
+            form.report_type.data = project.job_types
         if 'sim' in flt_dic.keys():
             simulation = db.session.query(Simulation).filter_by(id=flt_dic['sim']).first()
             form.assumption.data = simulation.assumption
@@ -567,6 +572,7 @@ class SimulationModelView(
             form.end_date.data = simulation.end_date
             form.run_no.data = simulation.run_no
             form.run_id.data = simulation.run_id
+            form.report_type.data = simulation.report_type
         return form
 
     def prefill_hidden_field(self, form):
@@ -608,6 +614,28 @@ class ProjectModelView(EmpowerModelView):
 
     related_views = [SimulationModelView]
 
+    @simulation_logger.log_simulation(action_name='update project')
+    def edit_item(self, form, item):
+        def edit_item(self, form, item):
+            g.action_object = item.name
+            g.action_object_type = 'Project'
+            g.result = 'Failed'
+            g.detail = None
+            try:
+                form.populate_obj(item)
+                self.pre_update(item)
+            except Exception as e:
+                g.detail = str(e)
+                flash(str(e), "danger")
+            else:
+                if self.datamodel.edit(item):
+                    g.result = 'Success'
+                    g.detail = None
+                    # send_notification(item, '123')
+                flash(*self.datamodel.message)
+            finally:
+                return None
+
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
         # print(form)
@@ -641,7 +669,7 @@ class ClientModelView(EmpowerModelView):
     route_base = "/clientmodelview"
     datamodel = SQLAInterface(Client)
     include_route_methods = RouteMethod.CRUD_SET
-    list_columns = ['name','description','projects']
+    list_columns = ['name','description']
     add_exclude_columns = ['projects']
     edit_exclude_columns = ['projects']
     order_columns = ['name']

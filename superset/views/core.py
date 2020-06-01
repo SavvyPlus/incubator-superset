@@ -3019,6 +3019,8 @@ class Superset(BaseSupersetView):
         from superset.views.simulation.views import upload_assumption_and_trigger_process
         file = request.files['file']
         try:
+            g.action_object = file.filename
+            g.action_object_type = 'Assumption'
             path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(path)
             file_name = file.filename.split('.')[0]
@@ -3027,9 +3029,13 @@ class Superset(BaseSupersetView):
                 'processing is running on backend and will be ready soon.'
             detail = {'name': name,
                       'id': id}
+            g.result = 'Success'
+            g.detail = None
         except Exception as e:
-            message = 'failed'
+            message = 'Failed. {}'.format(repr(e))
             detail = repr(e)
+            g.result = 'Failed'
+            g.detail = detail
         finally:
             # os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
             return jsonify({

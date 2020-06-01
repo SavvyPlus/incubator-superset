@@ -186,7 +186,7 @@ def check_assumption(file_path, assumtpions_version):
     print(xls.sheet_names())
     for sheet in sheet_name_list:
         pass
-    return True
+    return 'success'
 
 def check_proxy(file_path):
     return True
