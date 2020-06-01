@@ -396,7 +396,7 @@ class AssumptionModelView(EmpowerModelView):
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.download_link.data, path)
             download_link, s3_link = upload_assumption_file(path, name)
-            msg =  check_assumption(path, name)
+            msg = check_assumption(path, name)
             if msg != 'success':
                 raise Exception(msg)
             # handle_assumption_process.apply_async(args=[s3_link, name])
