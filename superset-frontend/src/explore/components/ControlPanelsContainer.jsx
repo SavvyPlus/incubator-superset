@@ -236,12 +236,6 @@ class ControlPanelsContainer extends React.Component {
       ) {
         return;
       }
-      // if (viz_type === 'box_plot_fin' && section.label === 'Time') {
-      //   return;
-      // }
-      // if (viz_type === 'box_plot_fin_str' && section.label === 'Time') {
-      //   return;
-      // }
       // if at least one control in the secion is not `renderTrigger`
       // or asks to be displayed at the Data tab
       if (

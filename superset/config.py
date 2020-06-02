@@ -280,7 +280,7 @@ LANGUAGES = {
 # For example, DEFAULT_FEATURE_FLAGS = { 'FOO': True, 'BAR': False } here
 # and FEATURE_FLAGS = { 'BAR': True, 'BAZ': True } in superset_config.py
 # will result in combined feature flags of { 'FOO': True, 'BAR': True, 'BAZ': True }
-DEFAULT_FEATURE_FLAGS = {
+DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     # Experimental feature introducing a client (browser) cache
     "CLIENT_CACHE": False,
     "ENABLE_EXPLORE_JSON_CSRF_PROTECTION": False,
@@ -342,7 +342,7 @@ CACHE_CONFIG: CacheConfig = {
     'CACHE_TYPE': 'redis',
     'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
     'CACHE_KEY_PREFIX': 'superset_results',
-    'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+    'CACHE_REDIS_URL': 'redis://redis:6379/0'
 }
 TABLE_NAMES_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
@@ -490,11 +490,11 @@ WARNING_MSG = None
 
 class CeleryConfig:  # pylint: disable=too-few-public-methods
     # BROKER_URL = "sqla+sqlite:///celerydb.sqlite"
-    BROKER_URL = "redis://localhost:6379/0"
+    BROKER_URL = "redis://redis:6379/0"
     CELERY_IMPORTS = ("superset.sql_lab", "superset.tasks")
 
     # CELERY_RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
-    CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND = "redis://redis:6379/0"
     CELERYD_LOG_LEVEL = "DEBUG"
     CELERYD_PREFETCH_MULTIPLIER = 1
     CELERY_ACKS_LATE = False

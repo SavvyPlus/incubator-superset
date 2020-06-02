@@ -297,9 +297,10 @@ export const controls = {
 
   state_static_picker: {
     type: 'SelectControl',
-    multi: true,
+    multi: false,
     label: t('Region'),
     default: ['VIC'],
+    validators: [validateNonEmpty],
     choices: [
       ['NSW1', 'NSW'],
       ['VIC1', 'VIC'],
