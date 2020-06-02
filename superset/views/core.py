@@ -3044,12 +3044,12 @@ class Superset(BaseSupersetView):
                 'processing is running on backend and will be ready soon.'
             detail = {'name': name,
                       'id': id}
-            g.result = 'Success'
+            g.result = 'Upload success, processing'
             g.detail = None
         except Exception as e:
             message = 'Failed. {}'.format(repr(e))
             detail = repr(e)
-            g.result = 'Failed'
+            g.result = 'Upload failed'
             g.detail = detail
         finally:
             # os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
