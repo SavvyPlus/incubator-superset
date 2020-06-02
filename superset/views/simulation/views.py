@@ -75,15 +75,15 @@ def handle_assumption_process(path, name):
         # assumption_file.download_link = obj_url
         db.session.merge(assumption_file)
         db.session.commit()
-        g.result = 'Success'
-        g.detail = None
+        g.result = 'Process success'
+        g.detail = 'The assumption detail is now on S3 empower-simulation bucket'
     except Exception as e:
         assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
         assumption_file.status = "Error"
         assumption_file.status_detail = repr(e)
         db.session.merge(assumption_file)
         db.session.commit()
-        g.result = 'Failed'
+        g.result = 'Process failed'
         g.detail = repr(e)
         traceback.print_exc()
 
@@ -127,14 +127,14 @@ class UploadAssumptionView(SimpleFormView):
             upload_assumption_and_trigger_process(path, name)
             message = "Upload success"
             style = 'info'
-            g.result = 'Success'
+            g.result = 'Upload success, processing'
             g.detail = None
         except Exception as e:
             traceback.print_exc()
             db.session.rollback()
             message = "Upload failed:" + str(e)
             style = 'danger'
-            g.result = 'Failed'
+            g.result = 'Upload failed'
             g.detail = message
         finally:
             os.remove(path)
@@ -410,14 +410,14 @@ class AssumptionModelView(EmpowerModelView):
             db.session.commit()
             message = "Upload success"
             style = 'info'
-            g.result = 'Success'
+            g.result = 'Upload success, processing'
             g.detail = None
         except Exception as e:
             traceback.print_exc()
             db.session.rollback()
             message = "Upload failed:" + str(e)
             style = 'danger'
-            g.result = 'Failed'
+            g.result = 'Upload failed'
             g.detail = message
         finally:
             os.remove(path)
@@ -520,7 +520,7 @@ class SimulationModelView(
 
             g.action_object = item.name
             g.action_object_type = 'Simulation'
-            g.result = 'Failed'
+            g.result = 'Create simulation failed'
             g.detail = None
         except Exception as e:
             flash(str(e), "danger")
@@ -528,10 +528,10 @@ class SimulationModelView(
         else:
             if self.datamodel.add(item):
                 self.post_add(item)
-                g.result = 'Success'
+                g.result = 'Create simulation success'
                 g.detail = None
                 self.post_add(item)
-                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
+                # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
             flash(*self.datamodel.message)
             return False
@@ -540,7 +540,7 @@ class SimulationModelView(
     def edit_item(self, form, item):
         g.action_object = item.name
         g.action_object_type = 'Simulation'
-        g.result = 'Failed'
+        g.result = 'Update simulation failed'
         g.detail = None
         try:
             form.populate_obj(item)
@@ -550,7 +550,7 @@ class SimulationModelView(
             flash(str(e), "danger")
         else:
             if self.datamodel.edit(item):
-                g.result = 'Success'
+                g.result = 'Update simulation success'
                 g.detail = None
                 # send_notification(item, '123')
             flash(*self.datamodel.message)
@@ -616,25 +616,24 @@ class ProjectModelView(EmpowerModelView):
 
     @simulation_logger.log_simulation(action_name='update project')
     def edit_item(self, form, item):
-        def edit_item(self, form, item):
-            g.action_object = item.name
-            g.action_object_type = 'Project'
-            g.result = 'Failed'
-            g.detail = None
-            try:
-                form.populate_obj(item)
-                self.pre_update(item)
-            except Exception as e:
-                g.detail = str(e)
-                flash(str(e), "danger")
-            else:
-                if self.datamodel.edit(item):
-                    g.result = 'Success'
-                    g.detail = None
-                    # send_notification(item, '123')
-                flash(*self.datamodel.message)
-            finally:
-                return None
+        g.action_object = item.name
+        g.action_object_type = 'Project'
+        g.result = 'Update project failed'
+        g.detail = None
+        try:
+            form.populate_obj(item)
+            self.pre_update(item)
+        except Exception as e:
+            g.detail = str(e)
+            flash(str(e), "danger")
+        else:
+            if self.datamodel.edit(item):
+                g.result = 'Update project success'
+                g.detail = None
+                # send_notification(item, '123')
+            flash(*self.datamodel.message)
+        finally:
+            return None
 
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
