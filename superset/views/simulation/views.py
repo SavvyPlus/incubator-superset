@@ -467,7 +467,7 @@ class SimulationModelView(
     @event_logger.log_this
     @expose('/test/')
     def test(self):
-        csv_table = Table(table='test_s3_upload_6', schema=None)
+        csv_table = Table(table='test_s3_upload_7', schema=None)
         s3_file_path = 's3://empower-simulation/300.csv'
 
         try:
@@ -540,6 +540,11 @@ class SimulationModelView(
             added_sqla_table = (
                 db.session.query(SqlaTable).filter_by(table_name=csv_table.table).one()
             )
+        except ValueError as ve:
+            db.session.rollback()
+
+            flash(str(ve), "danger")
+            return redirect("/csvtodatabaseview/form")
         except Exception as ex:  # pylint: disable=broad-except
             db.session.rollback()
 
