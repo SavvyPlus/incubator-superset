@@ -582,7 +582,7 @@ class SimulationModelView(
     def upload_assumption_ajax(self):
         file = request.files['file']
         try:
-            g.action_object = file.filename
+            g.action_object = file.filename + '.xlsx'
             g.action_object_type = 'Assumption'
             path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(path)
@@ -629,20 +629,35 @@ class SimulationModelView(
     @simulation_logger.log_simulation(action_name='start run')
     @expose('/start_run/<id>/<run_type>/')
     def start_run(self,id,run_type):
+        from superset.views.simulation.util import get_s3_url
+        from superset.views.simulation.helper import excel_path, bucket_test
         simulation = db.session.query(Simulation).filter_by(id=id).one_or_none()
-        message = detail = None
+        message = None
         if not simulation:
             message = 'No simulation found for this run id, please refresh the page and try again.'
             g.result = 'Run failed'
             g.detail = message
-            detail = None
-        if run_type == 'test':
-            pass
         else:
-            pass
+            if simulation.assumption.status != 'Success':
+
+                g.result = 'Run failed'
+                if simulation.assumption.status == 'Processing':
+                    message = 'The assumption file of this simulation is in processing, please start run after finished.'
+                elif simulation.assumption.status == 'Errror':
+                    message = 'There is error during the processing of the assumption file, please choose another assumption.'
+                g.detail = message
+                pass
+            assumption_path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
+            msg = check_assumption(assumption_path, simulation.assumption.name)
+            if msg == 'success':
+                if run_type == 'test':
+                    message = 'Test run started'
+                else:
+                    message = 'Full run started'
+            else:
+                pass
         return jsonify({
             'message': message,
-            'detail': detail
         })
 
 
