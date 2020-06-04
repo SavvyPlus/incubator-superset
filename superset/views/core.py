@@ -3026,37 +3026,6 @@ class Superset(BaseSupersetView):
                 "Please contact your Superset Admin!"
             )
 
-    @simulation_logger.log_simulation(action_name='upload assumption')
-    @expose('/upload_assumption_ajax', methods=['POST'])
-    def upload_assumption_ajax(self):
-        import os
-        from flask import jsonify
-        from superset.views.simulation.views import upload_assumption_and_trigger_process
-        file = request.files['file']
-        try:
-            g.action_object = file.filename
-            g.action_object_type = 'Assumption'
-            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.save(path)
-            file_name = file.filename.split('.')[0]
-            id, name = upload_assumption_and_trigger_process(path, file_name)
-            message = 'Uploaded success. You can now choose the uploaded assumption in the list. The assumption ' + \
-                'processing is running on backend and will be ready soon.'
-            detail = {'name': name,
-                      'id': id}
-            g.result = 'Upload success, processing'
-            g.detail = None
-        except Exception as e:
-            message = 'Failed. {}'.format(repr(e))
-            detail = repr(e)
-            g.result = 'Upload failed'
-            g.detail = detail
-        finally:
-            # os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
-            return jsonify({
-                'message': message,
-                'detail': detail
-            })
 
 class CssTemplateModelView(SupersetModelView, DeleteMixin):
     datamodel = SQLAInterface(models.CssTemplate)

@@ -180,6 +180,10 @@ class SimulationLogger(AbstractEventLogger):
             @functools.wraps(f)
             def wrapped(*args, **kwargs):
                 user_id = None
+                g.action_object = None
+                g.action_object_type = None
+                g.result = None
+                g.detail = None
 
                 value = f(*args, **kwargs)
                 dttm = datetime.now()
@@ -187,22 +191,16 @@ class SimulationLogger(AbstractEventLogger):
                     user_id = g.user.get_id()
                 action_object = action_object_type = result = detail = None
 
-                try:
-                    if g.action_object:
-                        action_object = g.action_object
-                        action_object_type = g.action_object_type
-                except:
-                    pass
-                try:
-                    if g.result:
-                        result = g.result
-                except:
-                    pass
-                try:
-                    if g.detail:
-                        detail = g.detail
-                except:
-                    pass
+                if g.action_object:
+                    action_object = g.action_object
+                    action_object_type = g.action_object_type
+
+                if g.result:
+                    result = g.result
+
+                if g.detail:
+                    detail = g.detail
+
                 self.log(user_id=user_id, action=action_name,
                                      action_object=action_object,
                                      action_object_type=action_object_type,
