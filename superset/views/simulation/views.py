@@ -29,14 +29,17 @@ from flask_babel import lazy_gettext as _
 
 
 from superset import app, db, event_logger, simulation_logger, celery_app
-from superset.connectors.connector_registry import ConnectorRegistry
+import superset.models.core as models
 from superset.constants import RouteMethod
 from superset.models.simulation import *
+from superset.connectors.sqla.models import SqlaTable
 from superset.utils import core as utils
+from superset.sql_parse import Table
 from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
 from .forms import UploadAssumptionForm, AddSimulationForm
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
+
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
     chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
@@ -46,6 +49,7 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
             if not chunk:
                 break
             file_description.write(chunk)
+
 
 def send_notification(simulation, template_id):
     from superset.views.utils import send_sendgrid_mail
@@ -60,6 +64,7 @@ def send_notification(simulation, template_id):
     for email in email_list:
         message_dict['receiver'] = email[0]
         send_sendgrid_mail(email[1], message_dict, template_id)
+
 
 @celery_app.task
 @simulation_logger.log_simulation(action_name='process assumption')
@@ -87,6 +92,7 @@ def handle_assumption_process(path, name):
         g.detail = repr(e)
         traceback.print_exc()
 
+
 def upload_assumption_and_trigger_process(path, name):
     download_link, s3_link = upload_assumption_file(path, name)
     handle_assumption_process.apply_async(args=[s3_link, name])
@@ -100,6 +106,7 @@ def upload_assumption_and_trigger_process(path, name):
     db.session.commit()
     db.session.flush()
     return assumption_file.id, assumption_file.name
+
 
 class UploadAssumptionView(SimpleFormView):
     route_base = '/upload_assumption_file'
@@ -207,7 +214,8 @@ class EmpowerModelView(SupersetModelView):
         )
         return widgets
 
-    """Pass the related view widgets to show widget. Override the show widget to take the widget.get['related_views'] out"""
+    """Pass the related view widgets to show widget. Override the show widget to take the
+     widget.get['related_views'] out"""
     def _get_show_widget(
         self, pk, item, widgets=None, actions=None, show_fieldsets=None
     ):
@@ -285,7 +293,8 @@ class EmpowerModelView(SupersetModelView):
     def prefill_hidden_field(self, form):
         return form
 
-    """Prefill the add form if adding to related view models. Override to get param from url and fill in form"""
+    """Prefill the add form if adding to related view models. Override to get param from 
+    url and fill in form"""
     def prefill_form_add(self, form):
         return form
 
@@ -375,7 +384,6 @@ class AssumptionModelView(EmpowerModelView):
     edit_exclude_columns = ['status','status_detail','download_link']
     show_exclude_columns = ['download_link']
 
-
     add_form = UploadAssumptionForm
 
     @simulation_logger.log_simulation(action_name='upload assumption')
@@ -440,10 +448,13 @@ class SimulationModelView(
     route_base = "/simulationmodelview"
     datamodel = SQLAInterface(Simulation)
     include_route_methods = RouteMethod.CRUD_SET
+    # Add additional routes
+    include_route_methods.add('test')
 
     list_columns = ['run_id', 'name','assumption', 'project', 'status']
-    # add_columns = ['name','run_id','description','assumption_choice1','assumption_choice2','generation_model',
-    #                'run_no','start_date','end_date','report_type']
+    # add_columns = ['name','run_id','description','assumption_choice1',
+    # 'assumption_choice2','generation_model', 'run_no','start_date','end_date',
+    # 'report_type']
     edit_exclude_columns = ['status','status_detail']
     edit_columns = ['name','run_id','project','assumption','run_no','report_type','start_date','end_date']
     add_exclude_columns = ['status','status_detail']
@@ -452,6 +463,119 @@ class SimulationModelView(
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
     list_widget = SimulationListWidget
+
+    @event_logger.log_this
+    @expose('/test/')
+    def test(self):
+        csv_table = Table(table='test_s3_upload_6', schema=None)
+        s3_file_path = 's3://empower-simulation/300.csv'
+
+        try:
+            database = (
+                db.session.query(models.Database).filter_by(id=1).one()
+            )
+            csv_to_df_kwargs = {
+                "sep": ',',
+                "header": 0,
+                "index_col": None,
+                "mangle_dupe_cols": True,
+                "skipinitialspace": False,
+                "skiprows": None,
+                "nrows": None,
+                "skip_blank_lines": True,
+                "parse_dates": None,
+                "infer_datetime_format": True,
+                "chunksize": 1000,
+            }
+            df_to_sql_kwargs = {
+                "name": csv_table.table,
+                "if_exists": 'fail',
+                "index": False,
+                "index_label": None,
+                "chunksize": 1000,
+            }
+            database.db_engine_spec.create_table_from_csv(
+                s3_file_path,
+                csv_table,
+                database,
+                csv_to_df_kwargs,
+                df_to_sql_kwargs,
+            )
+
+            # Connect table to the database that should be used for exploration.
+            # E.g. if hive was used to upload a csv, presto will be a better option
+            # to explore the table.
+            expore_database = database
+            explore_database_id = database.get_extra().get("explore_database_id", None)
+            if explore_database_id:
+                expore_database = (
+                    db.session.query(models.Database)
+                    .filter_by(id=explore_database_id)
+                    .one_or_none()
+                    or database
+                )
+
+            sqla_table = (
+                db.session.query(SqlaTable)
+                .filter_by(
+                    table_name=csv_table.table,
+                    schema=csv_table.schema,
+                    database_id=expore_database.id,
+                )
+                .one_or_none()
+            )
+
+            if sqla_table:
+                sqla_table.fetch_metadata()
+            if not sqla_table:
+                sqla_table = SqlaTable(table_name=csv_table.table)
+                sqla_table.database = expore_database
+                sqla_table.database_id = database.id
+                sqla_table.user_id = g.user.id
+                sqla_table.schema = csv_table.schema
+                sqla_table.fetch_metadata()
+                db.session.add(sqla_table)
+            db.session.commit()
+
+            added_sqla_table = (
+                db.session.query(SqlaTable).filter_by(table_name=csv_table.table).one()
+            )
+        except Exception as ex:  # pylint: disable=broad-except
+            db.session.rollback()
+
+            message = _(
+                'Unable to upload CSV file to table '
+            )
+
+            flash(message, "danger")
+            return redirect("/csvtodatabaseview/form")
+
+        message = _(
+            'CSV file "%(csv_filename)s" uploaded to table "%(table_name)s" in '
+            'database "%(db_name)s"',
+            csv_filename=s3_file_path,
+            table_name=str(csv_table),
+            db_name=database.database_name,
+        )
+        flash(message, "info")
+
+        endpoint = "/superset/explore/?form_data={}".format(
+            parse.quote_plus(json.dumps({
+                "controlGroups":{"metrics":"metrics","groupby":"groupby"},
+                "datasource":str(added_sqla_table.id) + "__table",
+                "viz_type":"box_plot_300_cap",
+                "url_params":{},
+                "time_range_endpoints":["inclusive","exclusive"],
+                "granularity_sqla": None,
+                "time_range":"Last week","metrics":["count"],
+                "adhoc_filters":[],"groupby":[],
+                "whisker_options":"Min/max (no outliers)",
+                "period_type_static_picker":None,"period_finyear_picker":None,
+                "period_calyear_picker":None, "period_quarterly_picker":None},
+                separators=(',', ':')))
+        )
+        return redirect(endpoint)
+        # return '<h1>TEST</h1>'
 
     def _get_list_widget(
             self,
@@ -508,7 +632,6 @@ class SimulationModelView(
             url=base_url,
         )
         return widgets
-
 
     @simulation_logger.log_simulation(action_name='create simulation')
     def add_item(self, form, exclude_cols):
@@ -655,7 +778,8 @@ class ProjectModelView(EmpowerModelView):
 
     def pre_delete(self, item):
         if item.simulations is not None:
-            raise Exception('This project has modeling jobs associate with it. Please delete the models first.')
+            raise Exception('This project has modeling jobs associate with it. Please '
+                            'delete the models first.')
 
 
 class ClientModelView(EmpowerModelView):
@@ -734,7 +858,8 @@ class ClientModelView(EmpowerModelView):
 
     def pre_delete(self, item):
         if item.projects is not None:
-            raise Exception("This client has projects associate with it. Please delete the projects first.")
+            raise Exception("This client has projects associate with it. Please delete "
+                            "the projects first.")
 
 
 class SimulationLogModelView(SupersetModelView):
