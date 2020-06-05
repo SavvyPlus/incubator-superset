@@ -450,7 +450,7 @@ class SimulationModelView(
     include_route_methods = RouteMethod.CRUD_SET | {
         'upload_assumption_ajax',
         'start_run',
-        'test'
+        'load_results'
     }
 
     list_columns = ['run_id', 'name','assumption', 'project', 'status']
@@ -467,8 +467,8 @@ class SimulationModelView(
     list_widget = SimulationListWidget
 
     @event_logger.log_this
-    @expose('/test/')
-    def test(self):
+    @expose('/load-results/')
+    def load_results(self):
         csv_table = Table(table='test_s3_upload_7', schema=None)
         s3_file_path = 's3://empower-simulation/300.csv'
 
