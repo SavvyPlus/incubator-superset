@@ -147,11 +147,11 @@ class _memoized:
     should account for instance variable changes.
     """
 
-    def __init__(self, func: Callable, watch: Optional[List[str]] = None) -> None:
+    def __init__(self, func: Callable, watch: Optional[Tuple[str, ...]] = None) -> None:
         self.func = func
         self.cache: Dict[Any, Any] = {}
         self.is_method = False
-        self.watch = watch or []
+        self.watch = watch or ()
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         key = [args, frozenset(kwargs.items())]
@@ -181,7 +181,7 @@ class _memoized:
 
 
 def memoized(
-    func: Optional[Callable] = None, watch: Optional[List[str]] = None
+    func: Optional[Callable] = None, watch: Optional[Tuple[str, ...]] = None
 ) -> Callable:
     if func:
         return _memoized(func)
@@ -1022,7 +1022,7 @@ def get_since_until(
     time_shift: Optional[str] = None,
     relative_start: Optional[str] = None,
     relative_end: Optional[str] = None,
-) -> Tuple[datetime, datetime]:
+) -> Tuple[Optional[datetime], Optional[datetime]]:
     """Return `since` and `until` date time tuple from string representations of
     time_range, since, until and time_shift.
 
@@ -1078,8 +1078,8 @@ def get_since_until(
             since, until = time_range.split(separator, 1)
             if since and since not in common_time_frames:
                 since = add_ago_to_since(since)
-            since = parse_human_datetime(since)  # type: ignore
-            until = parse_human_datetime(until)  # type: ignore
+            since = parse_human_datetime(since) if since else None  # type: ignore
+            until = parse_human_datetime(until) if until else None  # type: ignore
         elif time_range in common_time_frames:
             since, until = common_time_frames[time_range]
         elif time_range == "No filter":
@@ -1100,7 +1100,7 @@ def get_since_until(
         since = since or ""
         if since:
             since = add_ago_to_since(since)
-        since = parse_human_datetime(since)  # type: ignore
+        since = parse_human_datetime(since) if since else None  # type: ignore
         until = parse_human_datetime(until) if until else relative_end  # type: ignore
 
     if time_shift:
@@ -1383,17 +1383,18 @@ class FilterOperator(str, Enum):
     REGEX = "REGEX"
 
 
-class ChartDataResponseType(str, Enum):
+class ChartDataResultType(str, Enum):
     """
     Chart data response type
     """
 
+    FULL = "full"
     QUERY = "query"
     RESULTS = "results"
     SAMPLES = "samples"
 
 
-class ChartDataResponseFormat(str, Enum):
+class ChartDataResultFormat(str, Enum):
     """
     Chart data response format
     """
