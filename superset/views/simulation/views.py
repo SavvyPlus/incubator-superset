@@ -96,6 +96,7 @@ def upload_assumption_and_trigger_process(path, name):
     assumption_file.name = name
     assumption_file.status = "Processing"
     assumption_file.download_link = download_link
+    assumption_file.s3_path = s3_link
     db.session.merge(assumption_file)
     db.session.commit()
     db.session.flush()
@@ -370,7 +371,7 @@ class AssumptionModelView(EmpowerModelView):
 
     order_columns = ['name']
     list_columns = ['name', 'status', 'status_detail', 'download_link']
-    add_exclude_columns = ['status','status_detail']
+    add_exclude_columns = ['status','status_detail', 's3_path']
     label_columns = {'name':'Name','status':'Status','status_detail':'Status Detail', 'download_link':'Download'}
     edit_exclude_columns = ['status','status_detail','download_link']
     show_exclude_columns = ['download_link']
@@ -396,18 +397,19 @@ class AssumptionModelView(EmpowerModelView):
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.download_link.data, path)
             download_link, s3_link = upload_assumption_file(path, name)
-            msg = check_assumption(path, name)
-            if msg != 'success':
-                raise Exception(msg)
-            # handle_assumption_process.apply_async(args=[s3_link, name])
+            # msg = check_assumption(path, name)
+            # if msg != 'success':
+            #     raise Exception(msg)
             assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
             if not assumption_file:
                 assumption_file = Assumption()
             assumption_file.name = name
             assumption_file.status = "Processing"
             assumption_file.download_link = download_link
+            assumption_file.s3_path = s3_link
             db.session.merge(assumption_file)
             db.session.commit()
+            handle_assumption_process.apply_async(args=[s3_link, name])
             message = "Upload success"
             style = 'info'
             g.result = 'Upload success, processing'
@@ -639,26 +641,30 @@ class SimulationModelView(
             g.detail = message
         else:
             if simulation.assumption.status != 'Success':
-
                 g.result = 'Run failed'
                 if simulation.assumption.status == 'Processing':
                     message = 'The assumption file of this simulation is in processing, please start run after finished.'
                 elif simulation.assumption.status == 'Error':
                     message = 'There is error during the processing of the assumption file, please choose another assumption.'
                 g.detail = message
-                pass
-            assumption_path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
-            try:
-                msg = check_assumption(assumption_path, simulation.assumption.name)
-                if msg == 'success':
-                    if run_type == 'test':
-                        message = 'Test run started'
+            elif simulation.assumption.s3_path == None:
+                g.result = 'Run failed'
+                message = 'The path of this file is missing, please reupload or choose another assumption.'
+                g.detail = message
+            else:
+                try:
+                    msg = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+                    if msg == 'success':
+                        if run_type == 'test':
+                            message = 'Test run started'
+                        else:
+                            message = 'Full run started'
                     else:
-                        message = 'Full run started'
-                else:
-                    pass
-            except Exception as e:
-                message = repr(e)
+                        pass
+                except Exception as e:
+                    g.result = 'Run failed'
+                    g.detail =repr(e)
+                    message = repr(e)
         return jsonify({
             'message': message,
         })

@@ -180,12 +180,29 @@ def process_assumptions(file_path, assumptions_version):
     adjust_demand(file_path)
     update_gas_price_escalation(file_path, assumptions_version)
 
-def check_assumption(file_path, assumtpions_version):
+def check_assumption(file_path, assumtpions_version, simulation):
     import xlrd
-    xls = xlrd.open_workbook(file_path, on_demand=True)
-    print(xls.sheet_names())
-    for sheet in sheet_name_list:
-        pass
+    # xls = xlrd.open_workbook(file_path, on_demand=True)
+
+    assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery',
+                                       'Negatives_Adjustment', 'MPC_CTP']
+    assumption_time_ref_year = ['Rooftop_Solar_History']
+    assumption_time_foreacast_date = ['Renewable_Proportion']
+    for sheet in assumption_time_forecast_year:
+        df = read_excel(file_path, sheet_name=sheet)
+        if df['Year'].min > simulation.start_date.year:
+            return 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
+        if df['Year'].max < simulation.end_date.year:
+            return 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
+    # for sheet in assumption_time_ref_date:
+    #     df = read_excel(file_path, sheet_name=sheet)
+    #     if df['Date'].max
+    for sheet in assumption_time_foreacast_date:
+        df = read_excel(file_path, sheet_name=sheet)
+        if df['Date'] > simulation.start_date:
+            return 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
+        if df['Date'].max < simulation.end_date:
+            return 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
     return 'success'
 
 def check_proxy(file_path):
