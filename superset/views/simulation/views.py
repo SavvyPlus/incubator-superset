@@ -469,7 +469,7 @@ class SimulationModelView(
     @event_logger.log_this
     @expose('/load-results/')
     def load_results(self):
-        csv_table = Table(table='test_s3_upload_7', schema=None)
+        csv_table = Table(table='test_s3_upload_1', schema=None)
         s3_file_path = 's3://empower-simulation/300.csv'
 
         try:
@@ -546,7 +546,7 @@ class SimulationModelView(
             db.session.rollback()
 
             flash(str(ve), "danger")
-            return redirect("/csvtodatabaseview/form")
+            return redirect("/simulationmodelview/list/")
         except Exception as ex:  # pylint: disable=broad-except
             db.session.rollback()
 
@@ -555,7 +555,7 @@ class SimulationModelView(
             )
 
             flash(message, "danger")
-            return redirect("/csvtodatabaseview/form")
+            return redirect("/simulationmodelview/list/")
 
         message = _(
             'CSV file "%(csv_filename)s" uploaded to table "%(table_name)s" in '
