@@ -37,7 +37,8 @@
             <th>{{label_columns.get(item)}}</th>
         {% endif %}
     {% endfor %}
-    <th>Re run</th>
+    <th>Start run</th>
+    <th>Create re-run</th>
     </tr>
     </thead>
 {% endblock %}
@@ -64,6 +65,35 @@
                     <td>{{ item[value] }}</td>
                 {% endif %}
             {% endfor %}
+            <td><button class="btn btn-primary btn-sm" data-toggle="modal"
+                    data-target="#startModal{{ pk }}" data-client="{{ pk }}">
+                Start
+            </button>
+                <div class="modal fade" id="startModal{{ pk }}" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modal-title-run">Start Run</h5>
+                                </div>
+                                <div class="modal-body">
+                                    <label for="project-select-{{ pk }}">Choose to start a test run or full run</label>
+                                    <select id="run-select-{{ pk }}" name="{{pk}}" class="select2-chosen">
+                                        <option value="test">Test run</option>
+                                        <option value="full">Full run</option>
+                                    </select>
+
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary" id="run-btn-{{pk}}" name="{{ pk }}">Start run</button>
+                                    <button class="btn btn-secondary" data-dismiss="modal" id="close-btn-1">
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
             <td><button class="btn btn-primary btn-sm" data-toggle="modal"
                                 data-target="#rerunModal{{ pk }}" data-client="{{ pk }}">
                             Re run
@@ -116,6 +146,55 @@
             let sim_id = project_select.name
             href = href + sim_id
             window.location.href = href
+        })
+
+        $('[id^=run-btn]').click(function(e) {
+            e.preventDefault();
+            let button = this
+            let href = '/simulationmodelview/start_run/'
+                // console.log(this)
+            button.innerHTML = 'Pre-run check in process'
+            this.setAttribute('disabled', true)
+            let pk = this.name
+            let run_select = document.getElementById('run-select-'+pk).value
+            var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+            href = href + pk + '/' + run_select + '/'
+            // $.ajaxSetup({
+            //     beforeSend: function (xhr, settings) {
+            //         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+            //             xhr.setRequestHeader("X-CSRFToken", csrf_token);
+            //         }
+            //     }
+            // });
+            $.ajax({
+                type: "GET",
+                url: href,
+                xhr: function () {
+                    var myXhr = $.ajaxSettings.xhr();
+                    return myXhr;
+                },
+                success: function (data) {
+                    alert(data['message'])
+                    button.removeAttribute('disabled')
+                    // console.log(document.getElementById('assumption'))
+                    button.innerHTML = 'Start run'
+                },
+                error: function(error, str){
+                    if (s =='timeout'){
+                        alert('Timeout, please try again later.')
+                    }
+                    else if (s == 'error'){
+                        alert(error['message'])
+                    }
+                    button.removeAttribute('disabled')
+                    button.innerHTML = 'Start run'
+                },
+                timeout: 30000,
+                async: true,
+                cache: false,
+                contentType: false,
+                processData: false,
+            });
         })
     </script>
 {% endblock %}

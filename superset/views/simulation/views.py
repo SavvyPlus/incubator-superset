@@ -20,7 +20,7 @@ import traceback
 import logging
 import os
 import tempfile
-from flask import flash, redirect, g, request, abort, url_for
+from flask import flash, redirect, g, request, abort, url_for, jsonify
 from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
 from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
@@ -80,15 +80,15 @@ def handle_assumption_process(path, name):
         # assumption_file.download_link = obj_url
         db.session.merge(assumption_file)
         db.session.commit()
-        g.result = 'Success'
-        g.detail = None
+        g.result = 'Process success'
+        g.detail = 'The assumption detail is now on S3 empower-simulation bucket'
     except Exception as e:
         assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
         assumption_file.status = "Error"
         assumption_file.status_detail = repr(e)
         db.session.merge(assumption_file)
         db.session.commit()
-        g.result = 'Failed'
+        g.result = 'Process failed'
         g.detail = repr(e)
         traceback.print_exc()
 
@@ -134,14 +134,14 @@ class UploadAssumptionView(SimpleFormView):
             upload_assumption_and_trigger_process(path, name)
             message = "Upload success"
             style = 'info'
-            g.result = 'Success'
+            g.result = 'Upload success, processing'
             g.detail = None
         except Exception as e:
             traceback.print_exc()
             db.session.rollback()
             message = "Upload failed:" + str(e)
             style = 'danger'
-            g.result = 'Failed'
+            g.result = 'Upload failed'
             g.detail = message
         finally:
             os.remove(path)
@@ -162,7 +162,7 @@ class EmpowerModelView(SupersetModelView):
     The base model view for empower, with modified workflow of crud.
 
     """
-    """Customised show template, removed related views. Please create own show widget template 
+    """Customised show template, removed related views. Please create own show widget template
     to display the related widget"""
     show_template = "empower/model/show.html"
 
@@ -293,7 +293,7 @@ class EmpowerModelView(SupersetModelView):
     def prefill_hidden_field(self, form):
         return form
 
-    """Prefill the add form if adding to related view models. Override to get param from 
+    """Prefill the add form if adding to related view models. Override to get param from
     url and fill in form"""
     def prefill_form_add(self, form):
         return form
@@ -418,14 +418,14 @@ class AssumptionModelView(EmpowerModelView):
             db.session.commit()
             message = "Upload success"
             style = 'info'
-            g.result = 'Success'
+            g.result = 'Upload success, processing'
             g.detail = None
         except Exception as e:
             traceback.print_exc()
             db.session.rollback()
             message = "Upload failed:" + str(e)
             style = 'danger'
-            g.result = 'Failed'
+            g.result = 'Upload failed'
             g.detail = message
         finally:
             os.remove(path)
@@ -447,9 +447,11 @@ class SimulationModelView(
 
     route_base = "/simulationmodelview"
     datamodel = SQLAInterface(Simulation)
-    include_route_methods = RouteMethod.CRUD_SET
-    # Add additional routes
-    include_route_methods.add('test')
+    include_route_methods = RouteMethod.CRUD_SET | {
+        'upload_assumption_ajax',
+        'start_run',
+        'test'
+    }
 
     list_columns = ['run_id', 'name','assumption', 'project', 'status']
     # add_columns = ['name','run_id','description','assumption_choice1',
@@ -648,7 +650,7 @@ class SimulationModelView(
 
             g.action_object = item.name
             g.action_object_type = 'Simulation'
-            g.result = 'Failed'
+            g.result = 'Create simulation failed'
             g.detail = None
         except Exception as e:
             flash(str(e), "danger")
@@ -656,10 +658,10 @@ class SimulationModelView(
         else:
             if self.datamodel.add(item):
                 self.post_add(item)
-                g.result = 'Success'
+                g.result = 'Create simulation success'
                 g.detail = None
                 self.post_add(item)
-                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
+                # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
             flash(*self.datamodel.message)
             return False
@@ -668,7 +670,7 @@ class SimulationModelView(
     def edit_item(self, form, item):
         g.action_object = item.name
         g.action_object_type = 'Simulation'
-        g.result = 'Failed'
+        g.result = 'Update simulation failed'
         g.detail = None
         try:
             form.populate_obj(item)
@@ -678,7 +680,7 @@ class SimulationModelView(
             flash(str(e), "danger")
         else:
             if self.datamodel.edit(item):
-                g.result = 'Success'
+                g.result = 'Update simulation success'
                 g.detail = None
                 # send_notification(item, '123')
             flash(*self.datamodel.message)
@@ -703,6 +705,35 @@ class SimulationModelView(
             form.report_type.data = simulation.report_type
         return form
 
+    @simulation_logger.log_simulation(action_name='upload assumption')
+    @expose('/upload_assumption_ajax', methods=['POST'])
+    def upload_assumption_ajax(self):
+        file = request.files['file']
+        try:
+            g.action_object = file.filename + '.xlsx'
+            g.action_object_type = 'Assumption'
+            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(path)
+            file_name = file.filename.split('.')[0]
+            id, name = upload_assumption_and_trigger_process(path, file_name)
+            message = 'Uploaded success. You can now choose the uploaded assumption in the list. The assumption ' + \
+                      'processing is running on backend and will be ready soon.'
+            detail = {'name': name,
+                      'id': id}
+            g.result = 'Upload success, processing'
+            g.detail = None
+        except Exception as e:
+            message = 'Failed. {}'.format(repr(e))
+            detail = repr(e)
+            g.result = 'Upload failed'
+            g.detail = detail
+        finally:
+            # os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+            return jsonify({
+                'message': message,
+                'detail': detail
+            })
+
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
         # print(form)
@@ -722,6 +753,42 @@ class SimulationModelView(
             if sim_match:
                 result['sim'] = request.args.get(arg)
         return result
+
+    @simulation_logger.log_simulation(action_name='start run')
+    @expose('/start_run/<id>/<run_type>/')
+    def start_run(self,id,run_type):
+        from superset.views.simulation.util import get_s3_url
+        from superset.views.simulation.helper import excel_path, bucket_test
+        simulation = db.session.query(Simulation).filter_by(id=id).one_or_none()
+        message = None
+        if not simulation:
+            message = 'No simulation found for this run id, please refresh the page and try again.'
+            g.result = 'Run failed'
+            g.detail = message
+        else:
+            if simulation.assumption.status != 'Success':
+
+                g.result = 'Run failed'
+                if simulation.assumption.status == 'Processing':
+                    message = 'The assumption file of this simulation is in processing, please start run after finished.'
+                elif simulation.assumption.status == 'Errror':
+                    message = 'There is error during the processing of the assumption file, please choose another assumption.'
+                g.detail = message
+                pass
+            assumption_path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
+            msg = check_assumption(assumption_path, simulation.assumption.name)
+            if msg == 'success':
+                if run_type == 'test':
+                    message = 'Test run started'
+                else:
+                    message = 'Full run started'
+            else:
+                pass
+        return jsonify({
+            'message': message,
+        })
+
+
 
 
 class ProjectModelView(EmpowerModelView):
@@ -744,25 +811,24 @@ class ProjectModelView(EmpowerModelView):
 
     @simulation_logger.log_simulation(action_name='update project')
     def edit_item(self, form, item):
-        def edit_item(self, form, item):
-            g.action_object = item.name
-            g.action_object_type = 'Project'
-            g.result = 'Failed'
-            g.detail = None
-            try:
-                form.populate_obj(item)
-                self.pre_update(item)
-            except Exception as e:
-                g.detail = str(e)
-                flash(str(e), "danger")
-            else:
-                if self.datamodel.edit(item):
-                    g.result = 'Success'
-                    g.detail = None
-                    # send_notification(item, '123')
-                flash(*self.datamodel.message)
-            finally:
-                return None
+        g.action_object = item.name
+        g.action_object_type = 'Project'
+        g.result = 'Update project failed'
+        g.detail = None
+        try:
+            form.populate_obj(item)
+            self.pre_update(item)
+        except Exception as e:
+            g.detail = str(e)
+            flash(str(e), "danger")
+        else:
+            if self.datamodel.edit(item):
+                g.result = 'Update project success'
+                g.detail = None
+                # send_notification(item, '123')
+            flash(*self.datamodel.message)
+        finally:
+            return None
 
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
@@ -877,5 +943,3 @@ class SimulationLogModelView(SupersetModelView):
 
     base_order = ('dttm', 'desc')
     page_size = 20
-
-

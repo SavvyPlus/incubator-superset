@@ -55,6 +55,9 @@
                 e.preventDefault();
                 // console.log(document.getElementById('assumption-file').files)
                 // console.log()
+                let button = this
+                // console.log(this)
+                button.innerHTML = 'Uploading'
                 if(document.getElementById('assumption-file').files.length < 1){
                     alert('Please select a file!');
                 }
@@ -80,7 +83,7 @@
                     });
                     $.ajax({
                         type: "POST",
-                        url: "/superset/upload_assumption_ajax",
+                        url: "/simulationmodelview/upload_assumption_ajax",
                         xhr: function () {
                             var myXhr = $.ajaxSettings.xhr();
                             return myXhr;
@@ -92,23 +95,24 @@
                             new_option.value = data['detail']['id']
                             new_option.innerHTML = data['detail']['name']
                             document.getElementById('assumption').appendChild(new_option)
-                            console.log(document.getElementById('assumption'))
+                            button.innerHTML = 'Upload'
                         },
-                        complete: function(x, s){
-                            if (s=='timeout'){
+                        error: function(x, s){
+                            if (s =='timeout'){
                                 alert('Timeout, please try again later.')
                             }
                             else if (s == 'error'){
                                 alert(error['message'])
                             }
                             document.getElementById('upload-btn').removeAttribute('disabled')
+                            button.innerHTML = 'Upload'
                         },
+                        timeout: 30000,
                         async: true,
                         data: formdata,
                         cache: false,
                         contentType: false,
                         processData: false,
-                        timeout: 60000
                     });
 
                 }
@@ -120,6 +124,37 @@
 
 
 {% macro render_form_controls() %}
+    <div class="well well-sm">
+        <button id="submit_button" type="submit" class="btn  btn-sm btn-primary">{{_("Save")}}
+            <i class="fa fa-save"></i></button>
+        {{ lib.lnk_back() }}
+        <script>
+            // $('#submit_button').click( function(e) {
+            //     e.preventDefault();
+            //     let assumption_choice;
+            //
+            //     // list = []
+            //     let assumption = document.getElementById('assumption')
+            //     console.log(assumption)
+            //     // for(var i = 0, row; row = table.rows[i]; i++) {
+            //     //     if (row.id != ''){
+            //     //         list.push(row.id);
+            //     //     }
+            //     // }
+            //     // form = document.getElementById('model_form');
+            //     // var sites_list = document.createElement("input");
+            //     // sites_list.type = 'hidden';
+            //     // sites_list.name = 'sites';
+            //     // sites_list.id = 'sites';
+            //     // sites_list.value = list;
+            //     // form.appendChild(sites_list);
+            //     form.submit()
+            // })
+        </script>
+    </div>
+{% endmacro %}
+
+{% macro render_save_run() %}
     <div class="well well-sm">
         <button id="submit_button" type="submit" class="btn  btn-sm btn-primary">{{_("Save")}}
             <i class="fa fa-save"></i></button>
