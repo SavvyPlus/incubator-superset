@@ -771,19 +771,22 @@ class SimulationModelView(
                 g.result = 'Run failed'
                 if simulation.assumption.status == 'Processing':
                     message = 'The assumption file of this simulation is in processing, please start run after finished.'
-                elif simulation.assumption.status == 'Errror':
+                elif simulation.assumption.status == 'Error':
                     message = 'There is error during the processing of the assumption file, please choose another assumption.'
                 g.detail = message
                 pass
             assumption_path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
-            msg = check_assumption(assumption_path, simulation.assumption.name)
-            if msg == 'success':
-                if run_type == 'test':
-                    message = 'Test run started'
+            try:
+                msg = check_assumption(assumption_path, simulation.assumption.name)
+                if msg == 'success':
+                    if run_type == 'test':
+                        message = 'Test run started'
+                    else:
+                        message = 'Full run started'
                 else:
-                    message = 'Full run started'
-            else:
-                pass
+                    pass
+            except Exception as e:
+                message = repr(e)
         return jsonify({
             'message': message,
         })
