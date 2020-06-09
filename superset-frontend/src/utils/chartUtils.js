@@ -76,7 +76,7 @@ function barValueFormatter(param) {
 
 export function getOption(queryResponse) {
   const { viz_type } = queryResponse.form_data;
-  if (viz_type === 'box_plot_300_cap') {
+  if (viz_type === 'multi_boxplot') {
     const queryData = queryResponse.data;
     const regions = Object.keys(queryData);
     const data = Object.values(queryData);
@@ -84,7 +84,9 @@ export function getOption(queryResponse) {
 
     return {
       title: {
-        text: '$300/MWh Cap Payout',
+        text: queryResponse.query.includes('SpotPrice')
+          ? 'Spot Price Forecast'
+          : '$300/MWh Cap Payout',
         left: 'center',
       },
       legend: {

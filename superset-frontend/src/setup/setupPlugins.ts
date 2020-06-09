@@ -23,7 +23,7 @@ import setupPluginsExtra from './setupPluginsExtra';
 import BoxPlotRunComp from '../explore/controlPanels/BoxPlotRunComp';
 import BoxPlotFin from '../explore/controlPanels/BoxPlotFin';
 import BoxPlotFinStr from '../explore/controlPanels/BoxPlotFinStr';
-import BoxPlot300Cap from '../explore/controlPanels/BoxPlot300Cap';
+import MultiBoxplot from '../explore/controlPanels/MultiBoxplot';
 import CountryMap from '../explore/controlPanels/CountryMap';
 import DeckArc from '../explore/controlPanels/DeckArc';
 import DeckGeojson from '../explore/controlPanels/DeckGeojson';
@@ -48,7 +48,7 @@ export default function setupPlugins() {
     .registerValue('box_plot_run_comp', BoxPlotRunComp)
     .registerValue('box_plot_fin', BoxPlotFin)
     .registerValue('box_plot_fin_str', BoxPlotFinStr)
-    .registerValue('box_plot_300_cap', BoxPlot300Cap)
+    .registerValue('multi_boxplot', MultiBoxplot)
     .registerValue('country_map', CountryMap)
     .registerValue('event_flow', EventFlow)
     .registerValue('filter_box', FilterBox)

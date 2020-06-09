@@ -1608,7 +1608,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
 
 class BoxPlot300CapViz(BoxPlotViz):
     """tmp testing new chart"""
-    viz_type = "box_plot_300_cap"
+    viz_type = "multi_boxplot"
     verbose_name = _("Box Plot For $300 Cap")
     sort_series = False
     is_timeseries = False
@@ -1621,13 +1621,23 @@ class BoxPlot300CapViz(BoxPlotViz):
 
         group_column = ['State', 'Period']
 
-        d['metrics'].append({'expressionType': 'SQL',
-                            'sqlExpression': 'CapPayouts',
-                            'column': None,
-                            'aggregate': None,
-                            'hasCustomLabel': False,
-                            'fromFormData': True,
-                            'label': 'CapPayouts'})
+        if self.datasource.datasource_name == 'spot_price_percentiles':
+            d['metrics'].append({'expressionType': 'SQL',
+                                'sqlExpression': 'SpotPrice',
+                                'column': None,
+                                'aggregate': None,
+                                'hasCustomLabel': False,
+                                'fromFormData': True,
+                                'label': 'SpotPrice'})
+        else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                'sqlExpression': 'CapPayouts',
+                                'column': None,
+                                'aggregate': None,
+                                'hasCustomLabel': False,
+                                'fromFormData': True,
+                                'label': 'CapPayouts'})
+
         d['metrics'].append({'expressionType': 'SQL',
                                 'sqlExpression': 'Period',
                                 'column': None,
@@ -1642,13 +1652,7 @@ class BoxPlot300CapViz(BoxPlotViz):
                                 'hasCustomLabel': False,
                                 'fromFormData': True,
                                 'label': 'State'})
-        # filter state done on fornt end
-        # # filter state
-        # if self.form_data['state_static_picker']:
 
-        #     d['filter'].append({'col': 'State', 'op': 'in',
-        #                         'val': self.form_data['state_static_picker']})
-        # filter period type (DataGroup)
         period_type = self.form_data['period_type_static_picker']
         if period_type:
             d['filter'].append({'col': 'DataGroup', 'op': '==',

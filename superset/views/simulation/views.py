@@ -469,7 +469,28 @@ class SimulationModelView(
     @event_logger.log_this
     @expose('/load-results/')
     def load_results(self):
-        csv_table = Table(table='test_s3_upload_1', schema=None)
+        # First check if the table has existed. If so, redirect to its chart
+        sqla_table = db.session.query(SqlaTable).filter_by(table_name='test_s3_upload_3').one_or_none()
+
+        if sqla_table:
+            endpoint = "/superset/explore/?form_data={}".format(
+                parse.quote_plus(json.dumps({
+                    "controlGroups": {"metrics": "metrics", "groupby": "groupby"},
+                    "datasource": str(sqla_table.id) + "__table",
+                    "viz_type": "multi_boxplot",
+                    "url_params": {},
+                    "time_range_endpoints": ["inclusive", "exclusive"],
+                    "granularity_sqla": None,
+                    "time_range": "Last week", "metrics": ["count"],
+                    "adhoc_filters": [], "groupby": [],
+                    "whisker_options": "Min/max (no outliers)",
+                    "period_type_static_picker": None, "period_finyear_picker": None,
+                    "period_calyear_picker": None, "period_quarterly_picker": None},
+                    separators=(',', ':')))
+            )
+            return redirect(endpoint)
+
+        csv_table = Table(table='test_s3_upload_3', schema=None)
         s3_file_path = 's3://empower-simulation/300.csv'
 
         try:
@@ -544,8 +565,8 @@ class SimulationModelView(
             )
         except ValueError as ve:
             db.session.rollback()
-
             flash(str(ve), "danger")
+
             return redirect("/simulationmodelview/list/")
         except Exception as ex:  # pylint: disable=broad-except
             db.session.rollback()
@@ -570,7 +591,7 @@ class SimulationModelView(
             parse.quote_plus(json.dumps({
                 "controlGroups":{"metrics":"metrics","groupby":"groupby"},
                 "datasource":str(added_sqla_table.id) + "__table",
-                "viz_type":"box_plot_300_cap",
+                "viz_type":"multi_boxplot",
                 "url_params":{},
                 "time_range_endpoints":["inclusive","exclusive"],
                 "granularity_sqla": None,
@@ -582,7 +603,6 @@ class SimulationModelView(
                 separators=(',', ':')))
         )
         return redirect(endpoint)
-        # return '<h1>TEST</h1>'
 
     def _get_list_widget(
             self,
