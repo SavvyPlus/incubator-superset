@@ -89,7 +89,6 @@ def handle_assumption_process(path, name):
 
 def upload_assumption_and_trigger_process(path, name):
     download_link, s3_link = upload_assumption_file(path, name)
-    handle_assumption_process.apply_async(args=[s3_link, name])
     assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
     if not assumption_file:
         assumption_file = Assumption()
@@ -99,8 +98,49 @@ def upload_assumption_and_trigger_process(path, name):
     assumption_file.s3_path = s3_link
     db.session.merge(assumption_file)
     db.session.commit()
+    handle_assumption_process.apply_async(args=[s3_link, name])
     db.session.flush()
     return assumption_file.id, assumption_file.name
+
+
+@celery_app.task
+@simulation_logger.log_simulation(action_name='invoke')
+def simulation_start_invoker(run_id, start_date, end_date, sim_name, sim_num):
+    import datetime
+    from .invoker import batch_invoke_solver, batch_invoke_merger_all, batch_invoke_merger_year
+    g.user = None
+    # print(start_date, end_date)
+    bucket_test = 'empower-simulation'
+    simulation = db.session.query(Simulation).filter_by(name=sim_name).first()
+    # bucket_inputs = '007-spot-price-forecast-physical'
+    # bucket_outputs = "dex-empower.test"
+    from .batch_parameters import generate_parameters_for_batch
+    # generate_parameters_for_batch(run_id, sim_num)
+    index_start = 0
+    index_end = sim_num  # exclusive
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    sim_tag = run_id
+    total_days = (start_date - end_date).days
+    output_days = total_days + 7 - total_days%7
+
+    g.action_object = sim_name
+    g.action_object_type = 'simulation'
+    try:
+        # batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=60)
+        # batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, output_days, year_start=simulation.start_date.year,
+        #                          year_end=simulation.end_date.year, interval=30)
+        # batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, output_count=11, interval=60)
+        simulation.status = 'Finished'
+        db.session.commit()
+        g.result = 'invoke success'
+    except Exception as e:
+        simulation.status = 'Run failed'
+        simulation.status_detail = repr(e)
+        db.session.commit()
+        g.result = 'invoke failed'
+        g.detrail = repr(e)
+        traceback.print_exc()
 
 class UploadAssumptionView(SimpleFormView):
     route_base = '/upload_assumption_file'
@@ -647,29 +687,36 @@ class SimulationModelView(
                 elif simulation.assumption.status == 'Error':
                     message = 'There is error during the processing of the assumption file, please choose another assumption.'
                 g.detail = message
-            elif simulation.assumption.s3_path == None:
-                g.result = 'Run failed'
-                message = 'The path of this file is missing, please reupload or choose another assumption.'
-                g.detail = message
             else:
+                if simulation.assumption.s3_path == None:
+                    path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
+                    simulation.assumption.s3_path = path
+                    db.session.commit()
                 try:
-                    msg = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
-                    if msg == 'success':
-                        if run_type == 'test':
-                            message = 'Test run started'
-                        else:
-                            message = 'Full run started'
-                    else:
-                        pass
+                    message = self.pre_run_check_process(simulation, run_type)
                 except Exception as e:
                     g.result = 'Run failed'
                     g.detail =repr(e)
                     message = repr(e)
+
         return jsonify({
             'message': message,
         })
 
-
+    def pre_run_check_process(self, simulation, run_type):
+        message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        if message == 'success':
+            if run_type == 'test':
+                sim_num = 10
+                message = 'Test run started'
+            else:
+                sim_num = simulation.run_no
+                message = 'Full run started'
+            simulation.status = 'Running'
+            db.session.commit()
+            simulation_start_invoker.apply_async(args=[simulation.run_id, str(simulation.start_date),
+                                                 str(simulation.end_date), simulation.name, sim_num])
+        return message
 
 
 class ProjectModelView(EmpowerModelView):

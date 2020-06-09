@@ -180,10 +180,10 @@
                     button.innerHTML = 'Start run'
                 },
                 error: function(error, str){
-                    if (s =='timeout'){
+                    if (str =='timeout'){
                         alert('Timeout, please try again later.')
                     }
-                    else if (s == 'error'){
+                    else if (str == 'error'){
                         alert(error['message'])
                     }
                     button.removeAttribute('disabled')
