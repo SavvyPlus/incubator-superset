@@ -1,5 +1,6 @@
 from datetime import datetime, date
 import time
+import json
 import s3fs
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -7,6 +8,7 @@ import pandas as pd
 import numpy as np
 import boto3
 import pickle
+from urllib import parse
 
 from .simulation_config import states
 
@@ -131,3 +133,42 @@ def df_state_error_checker(f):
 def read_excel(*args, **kwargs):
     df = pd.read_excel(*args, **kwargs)
     return df
+
+
+def get_redirect_endpoint(table_name: str, table_id: int) -> str:
+    if 'distribution' in table_name:
+        endpoint = "/superset/explore/?form_data={}".format(
+            parse.quote_plus(json.dumps({
+                "queryFields": {},
+                "datasource": str(table_id) + "__table",
+                "viz_type": "spot_price_histogram",
+                "url_params": {},
+                "time_range_endpoints": ["inclusive", "exclusive"],
+                "granularity_sqla": None,
+                "time_range": "Last week",
+                "spot_hist_chart_type_picker": "value",
+                "state_static_picker": "NSW1",
+                "period_type_static_picker": "CalYear",
+                "period_finyear_picker": None,
+                "period_calyear_picker": None,
+                "period_quarterly_picker": None},
+                separators=(',', ':')))
+        )
+    else:
+        endpoint = "/superset/explore/?form_data={}".format(
+            parse.quote_plus(json.dumps({
+                "queryFields": {"metrics": "metrics", "groupby": "groupby"},
+                "datasource": str(table_id) + "__table",
+                "viz_type": "multi_boxplot",
+                "url_params": {},
+                "time_range_endpoints": ["inclusive", "exclusive"],
+                "granularity_sqla": None,
+                "time_range": "Last week", "metrics": ["count"],
+                "adhoc_filters": [], "groupby": [],
+                "whisker_options": "Min/max (no outliers)",
+                "period_type_static_picker": "CalYear", "period_finyear_picker": None,
+                "period_calyear_picker": None, "period_quarterly_picker": None},
+                separators=(',', ':')))
+        )
+
+    return endpoint

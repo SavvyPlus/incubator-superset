@@ -1606,7 +1606,7 @@ class BoxPlotVizRunComp(BoxPlotViz):
         return chart_data
 
 
-class BoxPlot300CapViz(BoxPlotViz):
+class MultipleBoxPlotViz(BoxPlotViz):
     """tmp testing new chart"""
     viz_type = "multi_boxplot"
     verbose_name = _("Box Plot For $300 Cap")
@@ -1621,7 +1621,7 @@ class BoxPlot300CapViz(BoxPlotViz):
 
         group_column = ['State', 'Period']
 
-        if self.datasource.datasource_name == 'spot_price_percentiles':
+        if 'percentiles' in self.datasource.datasource_name:
             d['metrics'].append({'expressionType': 'SQL',
                                 'sqlExpression': 'SpotPrice',
                                 'column': None,

@@ -39,6 +39,7 @@ from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
 
 from .forms import UploadAssumptionForm, AddSimulationForm
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
+from .util import get_redirect_endpoint
 
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
@@ -467,31 +468,17 @@ class SimulationModelView(
     list_widget = SimulationListWidget
 
     @event_logger.log_this
-    @expose('/load-results/')
-    def load_results(self):
+    @expose('/load-results/<table_name>/')
+    def load_results(self, table_name):
         # First check if the table has existed. If so, redirect to its chart
-        sqla_table = db.session.query(SqlaTable).filter_by(table_name='test_s3_upload_3').one_or_none()
-
+        sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
         if sqla_table:
-            endpoint = "/superset/explore/?form_data={}".format(
-                parse.quote_plus(json.dumps({
-                    "controlGroups": {"metrics": "metrics", "groupby": "groupby"},
-                    "datasource": str(sqla_table.id) + "__table",
-                    "viz_type": "multi_boxplot",
-                    "url_params": {},
-                    "time_range_endpoints": ["inclusive", "exclusive"],
-                    "granularity_sqla": None,
-                    "time_range": "Last week", "metrics": ["count"],
-                    "adhoc_filters": [], "groupby": [],
-                    "whisker_options": "Min/max (no outliers)",
-                    "period_type_static_picker": None, "period_finyear_picker": None,
-                    "period_calyear_picker": None, "period_quarterly_picker": None},
-                    separators=(',', ':')))
-            )
+            endpoint = get_redirect_endpoint(table_name, sqla_table.id)
             return redirect(endpoint)
 
-        csv_table = Table(table='test_s3_upload_3', schema=None)
-        s3_file_path = 's3://empower-simulation/300.csv'
+        # If this is a new table
+        csv_table = Table(table=table_name, schema=None)
+        s3_file_path = 's3://empower-simulation/' + table_name + '.csv'
 
         try:
             database = (
@@ -587,21 +574,7 @@ class SimulationModelView(
         )
         flash(message, "info")
 
-        endpoint = "/superset/explore/?form_data={}".format(
-            parse.quote_plus(json.dumps({
-                "controlGroups":{"metrics":"metrics","groupby":"groupby"},
-                "datasource":str(added_sqla_table.id) + "__table",
-                "viz_type":"multi_boxplot",
-                "url_params":{},
-                "time_range_endpoints":["inclusive","exclusive"],
-                "granularity_sqla": None,
-                "time_range":"Last week","metrics":["count"],
-                "adhoc_filters":[],"groupby":[],
-                "whisker_options":"Min/max (no outliers)",
-                "period_type_static_picker":None,"period_finyear_picker":None,
-                "period_calyear_picker":None, "period_quarterly_picker":None},
-                separators=(',', ':')))
-        )
+        endpoint = get_redirect_endpoint(table_name, added_sqla_table.id)
         return redirect(endpoint)
 
     def _get_list_widget(
