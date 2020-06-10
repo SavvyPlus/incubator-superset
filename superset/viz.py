@@ -1621,15 +1621,7 @@ class MultipleBoxPlotViz(BoxPlotViz):
 
         group_column = ['State', 'Period']
 
-        if 'percentiles' in self.datasource.datasource_name:
-            d['metrics'].append({'expressionType': 'SQL',
-                                'sqlExpression': 'SpotPrice',
-                                'column': None,
-                                'aggregate': None,
-                                'hasCustomLabel': False,
-                                'fromFormData': True,
-                                'label': 'SpotPrice'})
-        else:
+        if '300' in self.datasource.datasource_name:
             d['metrics'].append({'expressionType': 'SQL',
                                 'sqlExpression': 'CapPayouts',
                                 'column': None,
@@ -1637,6 +1629,14 @@ class MultipleBoxPlotViz(BoxPlotViz):
                                 'hasCustomLabel': False,
                                 'fromFormData': True,
                                 'label': 'CapPayouts'})
+        else:
+            d['metrics'].append({'expressionType': 'SQL',
+                                'sqlExpression': 'SpotPrice',
+                                'column': None,
+                                'aggregate': None,
+                                'hasCustomLabel': False,
+                                'fromFormData': True,
+                                'label': 'SpotPrice'})
 
         d['metrics'].append({'expressionType': 'SQL',
                                 'sqlExpression': 'Period',

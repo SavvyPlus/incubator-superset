@@ -468,17 +468,17 @@ class SimulationModelView(
     list_widget = SimulationListWidget
 
     @event_logger.log_this
-    @expose('/load-results/<table_name>/')
-    def load_results(self, table_name):
+    @expose('/load-results/<run_id>/<table_name>/')
+    def load_results(self, run_id, table_name):
         # First check if the table has existed. If so, redirect to its chart
         sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
         if sqla_table:
             endpoint = get_redirect_endpoint(table_name, sqla_table.id)
             return redirect(endpoint)
 
-        # If this is a new table
+        # If this is a new table, load it into Superset and redirect to its chart
         csv_table = Table(table=table_name, schema=None)
-        s3_file_path = 's3://empower-simulation/' + table_name + '.csv'
+        s3_file_path = 's3://empower-simulation/result-spot-price-forecast-simulation-statistics/' + run_id + '/' + table_name + '.csv'
 
         try:
             database = (
@@ -568,7 +568,7 @@ class SimulationModelView(
         message = _(
             'CSV file "%(csv_filename)s" uploaded to table "%(table_name)s" in '
             'database "%(db_name)s"',
-            csv_filename=s3_file_path,
+            csv_filename=s3_file_path.split('/')[-1],
             table_name=str(csv_table),
             db_name=database.database_name,
         )
