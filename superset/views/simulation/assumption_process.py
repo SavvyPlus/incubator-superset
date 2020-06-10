@@ -194,9 +194,9 @@ def check_assumption(file_path, assumtpions_version, simulation):
             return 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
         if df['Year'].max < simulation.end_date.year:
             return 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
-    # for sheet in assumption_time_ref_date:
-    #     df = read_excel(file_path, sheet_name=sheet)
-    #     if df['Date'].max
+    # # for sheet in assumption_time_ref_date:
+    # #     df = read_excel(file_path, sheet_name=sheet)
+    # #     if df['Date'].max
     for sheet in assumption_time_foreacast_date:
         df = read_excel(file_path, sheet_name=sheet)
         if df['Date'] > simulation.start_date:

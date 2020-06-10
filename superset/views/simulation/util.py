@@ -28,6 +28,7 @@ def write_pickle_to_s3(data, bucket, path):
     client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
 def put_file_to_s3(filename, bucket, key):
+    bucket = "empower-simulation"
     with open(filename, "rb") as f:
         response = client.upload_fileobj(f, bucket, key)
     return response
