@@ -190,18 +190,18 @@ def check_assumption(file_path, assumtpions_version, simulation):
     assumption_time_foreacast_date = ['Renewable_Proportion']
     for sheet in assumption_time_forecast_year:
         df = read_excel(file_path, sheet_name=sheet)
-        if df['Year'].min > simulation.start_date.year:
+        if df['Year'].min() > simulation.start_date.year:
             return 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
-        if df['Year'].max < simulation.end_date.year:
+        if df['Year'].max() < simulation.end_date.year:
             return 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
     # # for sheet in assumption_time_ref_date:
     # #     df = read_excel(file_path, sheet_name=sheet)
     # #     if df['Date'].max
     for sheet in assumption_time_foreacast_date:
         df = read_excel(file_path, sheet_name=sheet)
-        if df['Date'] > simulation.start_date:
+        if df['Date'].min() > simulation.start_date:
             return 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
-        if df['Date'].max < simulation.end_date:
+        if df['Date'].max() < simulation.end_date:
             return 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
     return 'success'
 

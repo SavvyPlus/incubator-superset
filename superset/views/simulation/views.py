@@ -68,7 +68,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
     g.action_object = name
     g.action_object_type = 'Assumption'
     try:
-        # process_assumptions(path, run_id)
+        process_assumptions(path, run_id)
         assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
         assumption_file.status = "Processed"
         assumption_file.status_detail = None
@@ -86,8 +86,8 @@ def handle_assumption_process(path, name, run_id, sim_num):
         g.detail = repr(e)
         traceback.print_exc()
     finally:
-        # simulation_start_invoker.apply_async(args=[run_id, sim_num])
-        simulation_start_invoker(run_id, sim_num)
+        simulation_start_invoker.apply_async(args=[run_id, sim_num])
+        # simulation_start_invoker(run_id, sim_num)
 
 def upload_assumption(path, name):
     download_link, s3_link = upload_assumption_file(path, name)
@@ -661,10 +661,10 @@ class SimulationModelView(
                 message = 'Full run started'
             simulation.status = 'Running'
             db.session.commit()
-            # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
-            #                                             simulation.run_id, sim_num])
-            handle_assumption_process(simulation.assumption.s3_path, simulation.assumption.name,
-                                                        simulation.run_id, sim_num)
+            handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
+                                                        simulation.run_id, sim_num])
+            # handle_assumption_process(simulation.assumption.s3_path, simulation.assumption.name,
+            #                                             simulation.run_id, sim_num)
         return message
 
 
