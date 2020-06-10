@@ -125,7 +125,7 @@ def simulation_start_invoker(run_id, sim_num):
         pass
     else:
 
-        # generate_parameters_for_batch(run_id, sim_num)
+        generate_parameters_for_batch(run_id, sim_num)
         index_start = 0
         index_end = sim_num  # exclusive
         start_date = simulation.start_date
@@ -624,7 +624,6 @@ class SimulationModelView(
         from superset.views.simulation.util import get_s3_url
         from superset.views.simulation.helper import excel_path, bucket_test
         simulation = db.session.query(Simulation).filter_by(id=id).one_or_none()
-        message = None
         if not simulation:
             message = 'No simulation found for this run id, please refresh the page and try again.'
             g.result = 'Run failed'
@@ -641,6 +640,7 @@ class SimulationModelView(
                     db.session.commit()
                 try:
                     message = self.pre_run_check_process(simulation, run_type)
+
                 except Exception as e:
                     g.result = 'Run failed'
                     g.detail =repr(e)
@@ -651,8 +651,9 @@ class SimulationModelView(
         })
 
     def pre_run_check_process(self, simulation, run_type):
-        message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
-        if message == 'success':
+        pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        if pass_check:
+            g.result = 'Started, pre-process in progress'
             if run_type == 'test':
                 sim_num = 10
                 message = 'Test run started'
@@ -665,6 +666,9 @@ class SimulationModelView(
                                                         simulation.run_id, sim_num])
             # handle_assumption_process(simulation.assumption.s3_path, simulation.assumption.name,
             #                                             simulation.run_id, sim_num)
+        else:
+            g.result = 'Run failed'
+            g.detail = message
         return message
 
 
