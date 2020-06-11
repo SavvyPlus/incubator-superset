@@ -185,7 +185,8 @@ def check_assumption(file_path, assumtpions_version, simulation):
     # xls = xlrd.open_workbook(file_path, on_demand=True)
 
     assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery',
-                                       'Negatives_Adjustment', 'MPC_CTP']
+                                       'Negatives_Adjustment']
+    assumption_time_fin_year = ['MPC_CTP']
     assumption_time_ref_year = ['Rooftop_Solar_History']
     assumption_time_foreacast_date = ['Renewable_Proportion']
     for sheet in assumption_time_forecast_year:
