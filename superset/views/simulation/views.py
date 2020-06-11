@@ -35,7 +35,8 @@ from superset.models.simulation import *
 from superset.connectors.sqla.models import SqlaTable
 from superset.utils import core as utils
 from superset.sql_parse import Table
-from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
+from superset.views.base import json_success, DeleteMixin, SupersetModelView
+from superset.views.utils import send_sendgrid_mail
 
 from .forms import UploadAssumptionForm, AddSimulationForm
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
@@ -53,7 +54,7 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
 
 
 def send_notification(simulation, template_id):
-    from superset.views.utils import send_sendgrid_mail
+
     email_list = [["Will", 'weiliang.zhou@zawee.work'],
                   ["Oscar", 'oscar.omegna@zawee.work'],
                   ["Dex", 'dexiao.ye@zawee.work']]
@@ -451,7 +452,8 @@ class SimulationModelView(
     include_route_methods = RouteMethod.CRUD_SET | {
         'upload_assumption_ajax',
         'start_run',
-        'load_results'
+        'load_results',
+        'send_email',
     }
 
     list_columns = ['run_id', 'name','assumption', 'project', 'status']
@@ -576,6 +578,30 @@ class SimulationModelView(
 
         endpoint = get_redirect_endpoint(table_name, added_sqla_table.id)
         return redirect(endpoint)
+
+    @event_logger.log_this
+    @expose('/send-email/<run_id>/<sim_num>/')
+    def send_email(self, run_id, sim_num):
+        # Get the user email
+        email_to = 'chenyang.wang@zawee.work'
+
+        # Send the notification email
+        base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
+        dynamic_template_data = {
+            "run_id": run_id,
+            "spot_price_forecast": base_url + "spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "cap_of_300": base_url + "300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "spot_price_distribution": base_url + "spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
+        }
+        send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
+
+        return json_success(json.dumps({
+            'email_to': email_to,
+            'run_id': run_id,
+            'sim_num': sim_num
+        }))
 
     def _get_list_widget(
             self,
