@@ -8,14 +8,14 @@ import numpy as np
 import boto3
 import pickle
 import logging
-from .simulation_config import states
+from .simulation_config import states, sqs_url
 
 logging.getLogger('botocore').setLevel(logging.CRITICAL)
 logging.getLogger('boto3').setLevel(logging.CRITICAL)
 
 fs = s3fs.S3FileSystem()
 client = boto3.client('s3')
-
+sqs = boto3.client('sqs', region_name='ap-southeast-2')
 
 def read_pickle_from_s3(bucket, path):
     pickle_data = client.get_object(Bucket=bucket, Key=path)
@@ -54,8 +54,15 @@ def read_from_s3(bucket, path):
     df = table.to_pandas()
     return df
 
+def send_sqs_msg(message_body, delay=10,
+                        queue_url=sqs_url):
 
-
+    response = sqs.send_message(
+        QueueUrl=queue_url,
+        DelaySeconds=delay,
+        MessageBody=(message_body)
+    )
+    return response.get("MessageId", "")
 
 def write_to_s3(data, bucket, path):
     bucket_uri = f's3://{bucket}/{path}'

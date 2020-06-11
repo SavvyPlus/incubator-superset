@@ -58,10 +58,7 @@
             $('#upload-btn').click(function(e) {
                 e.preventDefault();
                 let button = this
-                if (document.getElementById('run_id').value === ""){
-                    alert('Please input the run id before uploading new assumption.')
-                }
-                else if (document.getElementById('assumption-name').value === ""){
+                if (document.getElementById('assumption-name').value === ""){
                     alert('Please input the name for the assumption.')
                 }
                 else if(document.getElementById('assumption-file').files.length < 1){

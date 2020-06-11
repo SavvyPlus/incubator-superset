@@ -14,7 +14,7 @@ s3 = boto3.client('s3', region_name='ap-southeast-2')
 
 
 
-def invoker(payload, function_name='spot-price-lp-v2'):
+def invoker(payload, function_name='spot-price-forecast-simulation-lp-solver'):
     response = client.invoke(
         FunctionName=function_name,
         InvocationType='Event',
