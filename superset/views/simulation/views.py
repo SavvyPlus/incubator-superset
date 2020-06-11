@@ -113,6 +113,7 @@ def simulation_start_invoker(run_id, sim_num):
     from .simulation_config import bucket_inputs
     print('start invoke')
     simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+    print('found simulation {}'.format(simulation.name))
     g.user = None
     g.action_object = simulation.name
     g.action_object_type = 'simulation'
@@ -125,9 +126,11 @@ def simulation_start_invoker(run_id, sim_num):
     if simulation.assumption.status != 'Processed':
         g.result = 'Run failed'
         g.detail = 'The assumption process failed, please check the detail of the assumption'
-        pass
+        simulation.status = 'Run failed'
+        simulation.status_detail = 'The assumption process failed, please check the detail of the assumption'
+        db.session.commit()
     else:
-
+        print('generate parameters')
         generate_parameters_for_batch(run_id, sim_num)
         index_start = 0
         index_end = sim_num  # exclusive
@@ -140,6 +143,7 @@ def simulation_start_invoker(run_id, sim_num):
 
         try:
             # TODO uncomment to invoke
+            print('invoking')
             # batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=60)
             # batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=30)
@@ -158,6 +162,8 @@ def simulation_start_invoker(run_id, sim_num):
             g.result = 'invoke failed'
             g.detail = repr(e)
             traceback.print_exc()
+        finally:
+            print('invoke finished')
 
 
 class AssumptionListWidget(ListWidget):

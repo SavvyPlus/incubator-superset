@@ -7,9 +7,11 @@ import pandas as pd
 import numpy as np
 import boto3
 import pickle
-
+import logging
 from .simulation_config import states
 
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+logging.getLogger('boto3').setLevel(logging.CRITICAL)
 
 fs = s3fs.S3FileSystem()
 client = boto3.client('s3')
