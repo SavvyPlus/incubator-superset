@@ -67,6 +67,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
     g.user = None
     g.action_object = name
     g.action_object_type = 'Assumption'
+    print('start preprocess')
     try:
         process_assumptions(path, run_id)
         assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
@@ -109,6 +110,8 @@ def upload_assumption(path, name):
 def simulation_start_invoker(run_id, sim_num):
     from .invoker import batch_invoke_solver, batch_invoke_merger_all, batch_invoke_merger_year
     from .batch_parameters import generate_parameters_for_batch
+    from .simulation_config import bucket_inputs
+    print('start invoke')
     simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
     g.user = None
     g.action_object = simulation.name
@@ -141,6 +144,10 @@ def simulation_start_invoker(run_id, sim_num):
             # batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=30)
             # batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, output_count=11, interval=60)
+            batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
+            # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
+            #                          year_end=simulation.end_date.year, interval=500)
+            # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
             simulation.status = 'Run finished'
             db.session.commit()
             g.result = 'invoke success'
@@ -438,7 +445,7 @@ class SimulationModelView(
         'upload_assumption_ajax',
         'start_run',
     }
-    add_columns = ['run_id','name', 'project', 'assumption', 'run_no', 'report_type', 'start_date', 'end_date']
+    add_columns = ['run_id','name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
     edit_exclude_columns = ['status','status_detail']
     add_exclude_columns = ['status','status_detail', 'run_id']
