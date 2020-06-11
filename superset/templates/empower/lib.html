@@ -22,6 +22,9 @@
 
                         </div>
                         <div class="modal-body">
+                            <label for="assumption-name">Assumption name:</label>
+                            <input id="assumption-name" name="assumption-name">
+                            <p style="color: red">Warning: Old assumption with same name will be replaced.</p>
                             <label for="assumption-file">Upload new assumption template</label>
                             <input type="file" id="assumption-file" value="assumption-file" name="assumption-file">
 
@@ -50,29 +53,36 @@
         <script>
             $('#toggle-upload').click(function(e) {
                 e.preventDefault();
+
             })
             $('#upload-btn').click(function(e) {
                 e.preventDefault();
-                // console.log(document.getElementById('assumption-file').files)
-                // console.log()
                 let button = this
-                // console.log(this)
-                button.innerHTML = 'Uploading'
-                if(document.getElementById('assumption-file').files.length < 1){
-                    alert('Please select a file!');
+                if (document.getElementById('run_id').value === ""){
+                    alert('Please input the run id before uploading new assumption.')
+                }
+                else if (document.getElementById('assumption-name').value === ""){
+                    alert('Please input the name for the assumption.')
+                }
+                else if(document.getElementById('assumption-file').files.length < 1){
+                    alert('Please select a file.');
                 }
                 else{
-                    document.getElementById('upload-btn').setAttribute('disabled', true)
+                    button.innerHTML = 'Uploading'
+                    button.setAttribute('disabled', true)
                     // let on_screen_msg = document.createElement('p')
                     // on_screen_msg.value = 'The validation process can take several minutes, please be patient.'
                     // on_screen_msg.id = 'msg'
                     // on_screen_msg.style.backgroundColor = "red"
                     // document.getElementsByClassName('modal-footer')[0].appendChild(on_screen_msg)
                     let file = document.getElementById('assumption-file').files[0];
+                    let name = document.getElementById('assumption-name').value
+                    let run_id = document.getElementById('run_id').value
                     let formdata = new FormData();
                     formdata.append("file", file, file.name);
                     formdata.append("upload_file", true);
-
+                    formdata.append("name",name)
+                    formdata.append("run_id", run_id)
                     var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
                     $.ajaxSetup({
                         beforeSend: function (xhr, settings) {
@@ -90,9 +100,11 @@
                         },
                         success: function (data) {
                             alert(data['message'])
+                            let new_name = data['detail']['name']
+                            let new_id = data['detail']['id']
                             document.getElementById('upload-btn').removeAttribute('disabled')
                             let new_option = document.createElement('option')
-                            new_option.value = data['detail']['id']
+                            new_option.value = new_id
                             new_option.innerHTML = data['detail']['name']
                             document.getElementById('assumption').appendChild(new_option)
                             button.innerHTML = 'Upload'
