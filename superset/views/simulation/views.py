@@ -29,13 +29,15 @@ from flask_babel import lazy_gettext as _
 
 
 from superset import app, db, event_logger, simulation_logger, celery_app
-from superset.connectors.connector_registry import ConnectorRegistry
 from superset.constants import RouteMethod
 from superset.models.simulation import *
 from superset.utils import core as utils
-from superset.views.base import check_ownership, DeleteMixin, SupersetModelView
+from superset.views.base import SupersetModelView
+from superset.views.simulation.util import get_s3_url
+from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
 
 from .forms import UploadAssumptionForm, AddSimulationForm
+from .util import send_sqs_msg
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
@@ -101,7 +103,8 @@ def upload_assumption(path, name):
     assumption_file.s3_path = s3_link
     db.session.merge(assumption_file)
     db.session.commit()
-    db.session.flush()
+    while assumption_file.id == None:
+        db.session.flush()
     return assumption_file.id, assumption_file.name
 
 
@@ -392,8 +395,8 @@ class AssumptionModelView(EmpowerModelView):
     list_columns = ['name', 'status', 'download_link']
     add_exclude_columns = ['status','status_detail', 's3_path']
     label_columns = {'name':'Name','status_detail':'Status Detail', 'download_link':'Download'}
-    edit_exclude_columns = ['status','status_detail','download_link']
-    show_exclude_columns = ['download_link']
+    edit_exclude_columns = ['status','status_detail','download_link', 's3_path']
+    show_exclude_columns = ['download_link', 's3_path']
 
     add_form = UploadAssumptionForm
 
@@ -450,11 +453,12 @@ class SimulationModelView(
     include_route_methods = RouteMethod.CRUD_SET | {
         'upload_assumption_ajax',
         'start_run',
+        'process_success',
+        'process_failed'
     }
-    add_columns = ['run_id','name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
+    add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
-    edit_exclude_columns = ['status','status_detail']
-    add_exclude_columns = ['status','status_detail', 'run_id']
+    edit_exclude_columns = ['status','status_detail', 'run_id']
     label_columns = {'run_no':'Number of simulation run'}
 
     add_widget = SimulationAddWidget
@@ -537,7 +541,6 @@ class SimulationModelView(
                 self.post_add(item)
                 g.result = 'Create simulation success'
                 g.detail = None
-                self.post_add(item)
                 # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
             flash(*self.datamodel.message)
@@ -611,12 +614,21 @@ class SimulationModelView(
                 'detail': detail
             })
 
+    '''Set run_id after id is got'''
+    def post_add(self, item):
+        db.session.flush()
+        g.id = item.id
+        item.run_id = item.id + 10000
+        db.session.commit()
+
+
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
         # print(form)
         if 'project' in flt_dic.keys():
             project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
             form.project.data = project
+        # generate unique uuid as run id
         return form
 
     def get_filter_args(self):
@@ -634,14 +646,14 @@ class SimulationModelView(
     @simulation_logger.log_simulation(action_name='start run')
     @expose('/start_run/<id>/<run_type>/')
     def start_run(self,id,run_type):
-        from superset.views.simulation.util import get_s3_url
-        from superset.views.simulation.helper import excel_path, bucket_test
         simulation = db.session.query(Simulation).filter_by(id=id).one_or_none()
         if not simulation:
             message = 'No simulation found for this run id, please refresh the page and try again.'
             g.result = 'Run failed'
             g.detail = message
         else:
+            g.action_object = simulation.name
+            g.action_object_type = 'Simulation'
             if simulation.assumption.status != 'Uploaded' and simulation.assumption.status != 'Processed':
                 g.result = 'Run failed'
                 message = 'The assumption is not uploaded successfully, please reupload or use another one.'
@@ -665,6 +677,7 @@ class SimulationModelView(
 
     def pre_run_check_process(self, simulation, run_type):
         pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        # pass_check, message = True, ''
         if pass_check:
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
@@ -675,14 +688,60 @@ class SimulationModelView(
                 message = 'Full run started'
             simulation.status = 'Running'
             db.session.commit()
+
+            msg = {
+                'excelKey': excel_path.format(simulation.assumption.name),
+                'runNo': simulation.run_id,
+                'processName': [],
+                'bucket': bucket_test,
+                'histBucket': bucket_inputs,
+                'startDate': '2017-01-01',
+                'endDate': '2019-07-31',
+                'simStartDate': simulation.start_date.strftime('%Y-%m-%d'),
+                'simEndDate': simulation.end_date.strftime('%Y-%m-%d')
+            }
+            # send_sqs_msg(json.dumps(msg))
             handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
                                                         simulation.run_id, sim_num])
-            # handle_assumption_process(simulation.assumption.s3_path, simulation.assumption.name,
-            #                                             simulation.run_id, sim_num)
+
         else:
             g.result = 'Run failed'
             g.detail = message
         return message
+
+    @simulation_logger.log_simulation(action_name='process assumption')
+    @expose('/process_success', methods=['GET', 'POST'])
+    def process_success(self):
+        print('receive process success')
+        g.user = None
+        data = json.loads(request.data.decode())
+        run_id = data['runNo']
+        simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+
+        simulation.assumption.status = 'Processed'
+        g.action_object = simulation.assumption.name
+        g.action_object_type = 'Assumption'
+        g.result = 'Process success'
+        db.session.commit()
+
+        return '200 OK'
+
+    @simulation_logger.log_simulation(action_name='process assumption')
+    @expose('/process_failed', methods=['GET', 'POST'])
+    def process_failed(self):
+        print('received process failed')
+        g.user = None
+        data = json.loads(request.data.decode())
+        run_id = data['runNo']
+        error_msg = data['procStatus']
+        simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+        simulation.assumption.status = 'Error'
+        g.action_object = simulation.assumption.name
+        g.action_object_type = 'Assumption'
+        g.result = 'Process failed'
+        g.detail = error_msg.replace('\n', ' ')
+        db.session.commit()
+        return '200 OK'
 
 
 class ProjectModelView(EmpowerModelView):

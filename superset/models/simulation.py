@@ -121,7 +121,7 @@ class Simulation(
 ):
     __tablename__ = "simulation"
     id = Column(Integer, primary_key=True)
-    run_id = Column(String(20), nullable=False)
+    run_id = Column(String(20))
     name = Column(String(200), nullable=False, unique=True)
     description = Column(String(200))
     assumption_id = Column(Integer, ForeignKey("assumption.id"), nullable=False)
