@@ -686,10 +686,9 @@ class SimulationModelView(
         if pass_check:
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
-                sim_num = 10
+                sim_num = 5
                 message = 'Test run started'
             else:
-                sim_num = simulation.run_no
                 message = 'Full run started'
             simulation.status = 'Running'
             db.session.commit()
@@ -708,9 +707,9 @@ class SimulationModelView(
                 'runType': run_type,
                 'supersetURL': ip,
             }
-            # send_sqs_msg(json.dumps(msg))
-            handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
-                                                        simulation.run_id, sim_num])
+            send_sqs_msg(json.dumps(msg))
+            # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
+            #                                             simulation.run_id, sim_num])
 
         else:
             g.result = 'Run failed'
