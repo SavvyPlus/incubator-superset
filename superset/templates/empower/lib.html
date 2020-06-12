@@ -74,12 +74,10 @@
                     // document.getElementsByClassName('modal-footer')[0].appendChild(on_screen_msg)
                     let file = document.getElementById('assumption-file').files[0];
                     let name = document.getElementById('assumption-name').value
-                    let run_id = document.getElementById('run_id').value
                     let formdata = new FormData();
                     formdata.append("file", file, file.name);
                     formdata.append("upload_file", true);
                     formdata.append("name",name)
-                    formdata.append("run_id", run_id)
                     var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
                     $.ajaxSetup({
                         beforeSend: function (xhr, settings) {
