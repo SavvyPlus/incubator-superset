@@ -7,18 +7,20 @@ import pandas as pd
 import numpy as np
 import boto3
 import pickle
+import logging
+from requests import get
+from .simulation_config import states, sqs_url
 
-from .simulation_config import states
-
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+logging.getLogger('boto3').setLevel(logging.CRITICAL)
 
 fs = s3fs.S3FileSystem()
 client = boto3.client('s3')
-
+sqs = boto3.client('sqs', region_name='ap-southeast-2')
 
 def read_pickle_from_s3(bucket, path):
     pickle_data = client.get_object(Bucket=bucket, Key=path)
     return pickle.loads(pickle_data['Body'].read())
-
 
 def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
@@ -28,6 +30,7 @@ def write_pickle_to_s3(data, bucket, path):
     client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
 def put_file_to_s3(filename, bucket, key):
+    bucket = "empower-simulation"
     with open(filename, "rb") as f:
         response = client.upload_fileobj(f, bucket, key)
     return response
@@ -51,8 +54,15 @@ def read_from_s3(bucket, path):
     df = table.to_pandas()
     return df
 
+def send_sqs_msg(message_body, delay=10,
+                        queue_url=sqs_url):
 
-
+    response = sqs.send_message(
+        QueueUrl=queue_url,
+        DelaySeconds=delay,
+        MessageBody=(message_body)
+    )
+    return response.get("MessageId", "")
 
 def write_to_s3(data, bucket, path):
     bucket_uri = f's3://{bucket}/{path}'
@@ -131,3 +141,6 @@ def df_state_error_checker(f):
 def read_excel(*args, **kwargs):
     df = pd.read_excel(*args, **kwargs)
     return df
+
+def get_current_external_ip():
+    return 'http://{}:8088'.format(get('https://api.ipify.org').text)

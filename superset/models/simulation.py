@@ -102,6 +102,7 @@ class Assumption(
     status = Column(String(10))
     status_detail = Column(String(500))
     download_link = Column(String(200))
+    s3_path = Column(String(200))
 
     def __repr__(self):
         return self.name
@@ -120,7 +121,7 @@ class Simulation(
 ):
     __tablename__ = "simulation"
     id = Column(Integer, primary_key=True)
-    run_id = Column(String(20), nullable=False)
+    run_id = Column(String(20))
     name = Column(String(200), nullable=False, unique=True)
     description = Column(String(200))
     assumption_id = Column(Integer, ForeignKey("assumption.id"), nullable=False)
@@ -132,7 +133,7 @@ class Simulation(
     end_date = Column(Date, nullable=False)
     # report_type = Column(String(200), nullable=False)
     report_type = relationship("JobType", secondary=simulation_jobtype)
-    status = Column(String(10))
+    status = Column(String(128))
     status_detail = Column(String(500))
 
     def __repr__(self):
@@ -150,5 +151,5 @@ class SimulationLog(Model):
     action_object = Column(String(512))
     action_object_type = Column(String(20))
     dttm = Column(DateTime)
-    result = Column(String(20))
+    result = Column(String(128))
     detail = Column(String(512))

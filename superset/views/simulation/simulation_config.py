@@ -120,6 +120,9 @@ all_units_list_in_offerbands_path = 'nem-pricing-v2/source_information/all_units
 # S3 assumption excel path
 excel_path = 'assumption-excel/{}.xlsx'
 
+# nifi sqs url
+sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi_test"
+
 # S3 pickle cache path
 reference_date_s3_pickle_path = 'reference_date/test_2020to2040/{}.pickle'  # index
 
