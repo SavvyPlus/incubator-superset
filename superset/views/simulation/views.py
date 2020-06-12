@@ -561,7 +561,7 @@ class SimulationModelView(
             db.session.rollback()
 
             message = _(
-                'Unable to upload CSV file to table '
+                'Unable to load CSV file to table '
             )
 
             flash(message, "danger")

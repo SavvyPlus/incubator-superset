@@ -206,6 +206,13 @@ export function getOption(queryResponse) {
         type: 'category',
         data: xAxisData,
       },
+      dataZoom: [
+        {
+          show: true,
+          start: 10,
+          end: 50,
+        },
+      ],
       series: data.map(d => ({
         name: d.priceBin,
         type: 'bar',
