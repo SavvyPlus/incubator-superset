@@ -37,7 +37,7 @@ from superset.views.simulation.util import get_s3_url
 from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
 
 from .forms import UploadAssumptionForm, AddSimulationForm
-from .util import send_sqs_msg
+from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
@@ -97,14 +97,20 @@ def upload_assumption(path, name):
     assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
     if not assumption_file:
         assumption_file = Assumption()
-    assumption_file.name = name
+        assumption_file.name = name
+        db.session.add(assumption_file)
+        db.session.flush()
     assumption_file.status = "Uploaded"
     assumption_file.download_link = download_link
     assumption_file.s3_path = s3_link
     db.session.merge(assumption_file)
     db.session.commit()
-    while assumption_file.id == None:
+    refresh_time = 0
+    while assumption_file.id == None and refresh_time <3:
+        import time
+        refresh_time = refresh_time+1
         db.session.flush()
+        time.sleep(0.3)
     return assumption_file.id, assumption_file.name
 
 
@@ -589,7 +595,6 @@ class SimulationModelView(
     def upload_assumption_ajax(self):
         file = request.files['file']
         file_name = request.form['name']
-        run_id = request.form['run_id']
         g.action_object = file_name + '.xlsx'
         g.action_object_type = 'Assumption'
         try:
@@ -689,6 +694,7 @@ class SimulationModelView(
             simulation.status = 'Running'
             db.session.commit()
 
+            ip = get_current_external_ip()
             msg = {
                 'excelKey': excel_path.format(simulation.assumption.name),
                 'runNo': simulation.run_id,
@@ -698,7 +704,9 @@ class SimulationModelView(
                 'startDate': '2017-01-01',
                 'endDate': '2019-07-31',
                 'simStartDate': simulation.start_date.strftime('%Y-%m-%d'),
-                'simEndDate': simulation.end_date.strftime('%Y-%m-%d')
+                'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
+                'runType': run_type,
+                'supersetURL': ip,
             }
             # send_sqs_msg(json.dumps(msg))
             handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
@@ -724,6 +732,13 @@ class SimulationModelView(
         g.result = 'Process success'
         db.session.commit()
 
+        run_type = data['runType']
+        if run_type == 'test':
+            sim_num = 10
+        else:
+            sim_num = simulation.run_no
+        simulation_start_invoker.apply_async(args=[run_id, sim_num])
+
         return '200 OK'
 
     @simulation_logger.log_simulation(action_name='process assumption')
@@ -741,6 +756,13 @@ class SimulationModelView(
         g.result = 'Process failed'
         g.detail = error_msg.replace('\n', ' ')
         db.session.commit()
+
+        run_type = data['runType']
+        if run_type == 'test':
+            sim_num = 10
+        else:
+            sim_num = simulation.run_no
+        simulation_start_invoker.apply_async(args=[run_id, sim_num])
         return '200 OK'
 
 
