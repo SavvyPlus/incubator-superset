@@ -24,7 +24,6 @@ import BoxPlotRunComp from '../explore/controlPanels/BoxPlotRunComp';
 import BoxPlotFin from '../explore/controlPanels/BoxPlotFin';
 import BoxPlotFinStr from '../explore/controlPanels/BoxPlotFinStr';
 import MultiBoxplot from '../explore/controlPanels/MultiBoxplot';
-import CountryMap from '../explore/controlPanels/CountryMap';
 import DeckArc from '../explore/controlPanels/DeckArc';
 import DeckGeojson from '../explore/controlPanels/DeckGeojson';
 import DeckGrid from '../explore/controlPanels/DeckGrid';
@@ -34,7 +33,6 @@ import DeckPath from '../explore/controlPanels/DeckPath';
 import DeckPolygon from '../explore/controlPanels/DeckPolygon';
 import DeckScatter from '../explore/controlPanels/DeckScatter';
 import DeckScreengrid from '../explore/controlPanels/DeckScreengrid';
-import EventFlow from '../explore/controlPanels/EventFlow';
 import FilterBox from '../explore/controlPanels/FilterBox';
 import HistogramSpotPrice from '../explore/controlPanels/HistogramSpotPrice';
 import Separator from '../explore/controlPanels/Separator';
@@ -49,8 +47,6 @@ export default function setupPlugins() {
     .registerValue('box_plot_fin', BoxPlotFin)
     .registerValue('box_plot_fin_str', BoxPlotFinStr)
     .registerValue('multi_boxplot', MultiBoxplot)
-    .registerValue('country_map', CountryMap)
-    .registerValue('event_flow', EventFlow)
     .registerValue('filter_box', FilterBox)
     .registerValue('spot_price_histogram', HistogramSpotPrice)
     .registerValue('separator', Separator)

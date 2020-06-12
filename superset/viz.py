@@ -531,7 +531,7 @@ class BaseViz:
         has_error = (
             payload.get("status") == utils.QueryStatus.FAILED
             or payload.get("error") is not None
-            or len(payload.get("errors") or []) > 0
+            or bool(payload.get("errors"))
         )
         return self.json_dumps(payload), has_error
 
@@ -798,54 +798,6 @@ class PivotTableViz(BaseViz):
                 ).split(" "),
             ),
         )
-
-
-class MarkupViz(BaseViz):
-
-    """Use html or markdown to create a free form widget"""
-
-    viz_type = "markup"
-    verbose_name = _("Markup")
-    is_timeseries = False
-
-    def query_obj(self) -> QueryObjectDict:
-        return {}
-
-    def get_df(self, query_obj: Optional[QueryObjectDict] = None) -> pd.DataFrame:
-        return pd.DataFrame()
-
-    def get_data(self, df: pd.DataFrame) -> VizData:
-        markup_type = self.form_data.get("markup_type")
-        code = self.form_data.get("code", "")
-        if markup_type == "markdown":
-            code = markdown(code)
-        return dict(html=code, theme_css=get_manifest_files("theme", "css"))
-
-
-class SeparatorViz(MarkupViz):
-
-    """Use to create section headers in a dashboard, similar to `Markup`"""
-
-    viz_type = "separator"
-    verbose_name = _("Separator")
-
-
-class WordCloudViz(BaseViz):
-
-    """Build a colorful word cloud
-
-    Uses the nice library at:
-    https://github.com/jasondavies/d3-cloud
-    """
-
-    viz_type = "word_cloud"
-    verbose_name = _("Word Cloud")
-    is_timeseries = False
-
-    def query_obj(self) -> QueryObjectDict:
-        d = super().query_obj()
-        d["groupby"] = [self.form_data.get("series")]
-        return d
 
 
 class TreemapViz(BaseViz):
@@ -2422,7 +2374,11 @@ class SankeyViz(BaseViz):
         return qry
 
     def get_data(self, df: pd.DataFrame) -> VizData:
-        df.columns = ["source", "target", "value"]
+        source, target = self.groupby
+        (value,) = self.metric_labels
+        df.rename(
+            columns={source: "source", target: "target", value: "value",}, inplace=True,
+        )
         df["source"] = df["source"].astype(str)
         df["target"] = df["target"].astype(str)
         recs = df.to_dict(orient="records")
@@ -3413,7 +3369,7 @@ class PairedTTestViz(BaseViz):
             else:
                 cols.append(col)
         df.columns = cols
-        data: Dict = {}
+        data: Dict[str, List[Dict[str, Any]]] = {}
         series = df.to_dict("series")
         for nameSet in df.columns:
             # If no groups are defined, nameSet will be the metric name
@@ -3443,7 +3399,7 @@ class RoseViz(NVD3TimeSeriesViz):
             return None
 
         data = super().get_data(df)
-        result: Dict = {}
+        result: Dict[str, List[Dict[str, str]]] = {}
         for datum in data:  # type: ignore
             key = datum["key"]
             for val in datum["values"]:

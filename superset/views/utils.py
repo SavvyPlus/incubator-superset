@@ -16,11 +16,12 @@
 # under the License.
 from collections import defaultdict
 from datetime import date
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
 from urllib import parse
 import os
 import simplejson as json
 from flask import g, request
+from flask_appbuilder.security.sqla.models import User
 
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -32,7 +33,9 @@ from superset.exceptions import SupersetException
 from superset.legacy import update_time_range
 from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
+from superset.typing import FormData
 from superset.utils.core import QueryStatus, TimeRangeEndpoint
+from superset.viz import BaseViz
 
 # Sendgrid client
 sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
@@ -40,7 +43,7 @@ sendgrid_client = SendGridAPIClient(os.environ['SG_API_KEY'])
 
 
 if is_feature_enabled("SIP_38_VIZ_REARCHITECTURE"):
-    from superset import viz_sip38 as viz  # type: ignore
+    from superset import viz_sip38 as viz
 else:
     from superset import viz  # type: ignore
 
@@ -50,7 +53,7 @@ if not app.config["ENABLE_JAVASCRIPT_CONTROLS"]:
     FORM_DATA_KEY_BLACKLIST = ["js_tooltip", "js_onclick_href", "js_data_mutator"]
 
 
-def bootstrap_user_data(user, include_perms=False):
+def bootstrap_user_data(user: User, include_perms: bool = False) -> Dict[str, Any]:
     if user.is_anonymous:
         return {}
     payload = {
@@ -71,7 +74,9 @@ def bootstrap_user_data(user, include_perms=False):
     return payload
 
 
-def get_permissions(user):
+def get_permissions(
+    user: User,
+) -> Tuple[Dict[str, List[List[str]]], DefaultDict[str, Set[str]]]:
     if not user.roles:
         raise AttributeError("User object does not have roles")
 
@@ -94,11 +99,8 @@ def get_permissions(user):
 
 
 def get_viz(
-    form_data: Dict[str, Any],
-    datasource_type: str,
-    datasource_id: int,
-    force: bool = False,
-):
+    form_data: FormData, datasource_type: str, datasource_id: int, force: bool = False,
+) -> BaseViz:
     viz_type = form_data.get("viz_type", "table")
     datasource = ConnectorRegistry.get_datasource(
         datasource_type, datasource_id, db.session
@@ -166,9 +168,7 @@ def get_form_data(
 
 
 def get_datasource_info(
-    datasource_id: Optional[int],
-    datasource_type: Optional[str],
-    form_data: Dict[str, Any],
+    datasource_id: Optional[int], datasource_type: Optional[str], form_data: FormData,
 ) -> Tuple[int, Optional[str]]:
     """
     Compatibility layer for handling of datasource info
@@ -230,9 +230,7 @@ def apply_display_max_row_limit(
 
 
 def get_time_range_endpoints(
-    form_data: Dict[str, Any],
-    slc: Optional[Slice] = None,
-    slice_id: Optional[int] = None,
+    form_data: FormData, slc: Optional[Slice] = None, slice_id: Optional[int] = None,
 ) -> Optional[Tuple[TimeRangeEndpoint, TimeRangeEndpoint]]:
     """
     Get the slice aware time range endpoints from the form-data falling back to the SQL
@@ -328,9 +326,9 @@ def get_dashboard_extra_filters(
 
 
 def build_extra_filters(
-    layout: Dict,
-    filter_scopes: Dict,
-    default_filters: Dict[str, Dict[str, List]],
+    layout: Dict[str, Dict[str, Any]],
+    filter_scopes: Dict[str, Dict[str, Any]],
+    default_filters: Dict[str, Dict[str, List[Any]]],
     slice_id: int,
 ) -> List[Dict[str, Any]]:
     extra_filters = []
@@ -353,7 +351,9 @@ def build_extra_filters(
     return extra_filters
 
 
-def is_slice_in_container(layout: Dict, container_id: str, slice_id: int) -> bool:
+def is_slice_in_container(
+    layout: Dict[str, Dict[str, Any]], container_id: str, slice_id: int
+) -> bool:
     if container_id == "ROOT_ID":
         return True
 
