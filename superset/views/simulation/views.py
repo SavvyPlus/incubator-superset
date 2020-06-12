@@ -686,7 +686,6 @@ class SimulationModelView(
         if pass_check:
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
-                sim_num = 5
                 message = 'Test run started'
             else:
                 message = 'Full run started'
@@ -733,7 +732,7 @@ class SimulationModelView(
 
         run_type = data['runType']
         if run_type == 'test':
-            sim_num = 10
+            sim_num = 5
         else:
             sim_num = simulation.run_no
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
@@ -758,7 +757,7 @@ class SimulationModelView(
 
         run_type = data['runType']
         if run_type == 'test':
-            sim_num = 10
+            sim_num = 5
         else:
             sim_num = simulation.run_no
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
