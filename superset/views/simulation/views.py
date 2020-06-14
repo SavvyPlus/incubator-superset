@@ -29,7 +29,6 @@ from flask_babel import lazy_gettext as _
 
 
 from superset import app, db, event_logger, simulation_logger, celery_app
-import superset.models.core as models
 from superset.constants import RouteMethod
 from superset.models.simulation import *
 from superset.connectors.sqla.models import SqlaTable
@@ -37,8 +36,11 @@ from superset.utils import core as utils
 from superset.sql_parse import Table
 from superset.views.base import json_success, DeleteMixin, SupersetModelView
 from superset.views.utils import send_sendgrid_mail
+from superset.views.simulation.util import get_s3_url
+from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
 
 from .forms import UploadAssumptionForm, AddSimulationForm
+from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
 from .util import get_redirect_endpoint
 
@@ -70,16 +72,16 @@ def send_notification(simulation, template_id):
 
 @celery_app.task
 @simulation_logger.log_simulation(action_name='process assumption')
-def handle_assumption_process(path, name):
+def handle_assumption_process(path, name, run_id, sim_num):
     g.user = None
     g.action_object = name
     g.action_object_type = 'Assumption'
+    print('start preprocess')
     try:
-        process_assumptions(path, name)
+        process_assumptions(path, run_id)
         assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
-        assumption_file.status = "Success"
+        assumption_file.status = "Processed"
         assumption_file.status_detail = None
-        # assumption_file.download_link = obj_url
         db.session.merge(assumption_file)
         db.session.commit()
         g.result = 'Process success'
@@ -93,66 +95,91 @@ def handle_assumption_process(path, name):
         g.result = 'Process failed'
         g.detail = repr(e)
         traceback.print_exc()
+    finally:
+        simulation_start_invoker.apply_async(args=[run_id, sim_num])
+        # simulation_start_invoker(run_id, sim_num)
 
-
-def upload_assumption_and_trigger_process(path, name):
+def upload_assumption(path, name):
     download_link, s3_link = upload_assumption_file(path, name)
-    handle_assumption_process.apply_async(args=[s3_link, name])
     assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
     if not assumption_file:
         assumption_file = Assumption()
-    assumption_file.name = name
-    assumption_file.status = "Processing"
+        assumption_file.name = name
+        db.session.add(assumption_file)
+        db.session.flush()
+    assumption_file.status = "Uploaded"
     assumption_file.download_link = download_link
+    assumption_file.s3_path = s3_link
     db.session.merge(assumption_file)
     db.session.commit()
-    db.session.flush()
+    refresh_time = 0
+    while assumption_file.id == None and refresh_time <3:
+        import time
+        refresh_time = refresh_time+1
+        db.session.flush()
+        time.sleep(0.3)
     return assumption_file.id, assumption_file.name
 
 
-class UploadAssumptionView(SimpleFormView):
-    route_base = '/upload_assumption_file'
-    form = UploadAssumptionForm
-    form_template = "appbuilder/general/model/edit.html"
-    form_title = "Upload assumption excel template"
+@celery_app.task
+@simulation_logger.log_simulation(action_name='invoke')
+def simulation_start_invoker(run_id, sim_num):
+    from .invoker import batch_invoke_solver, batch_invoke_merger_all, batch_invoke_merger_year
+    from .batch_parameters import generate_parameters_for_batch
+    from .simulation_config import bucket_inputs
+    print('start invoke')
+    simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+    print('found simulation {}'.format(simulation.name))
+    g.user = None
+    g.action_object = simulation.name
+    g.action_object_type = 'simulation'
+    bucket_test = 'empower-simulation'
 
-    @simulation_logger.log_simulation(action_name='upload assumption')
-    def form_post(self, form):
-        import time
-        time1 = time.time()
-        excel_filename = form.excel_file.data.filename
-        extension = os.path.splitext(excel_filename)[1].lower()
-        path = tempfile.NamedTemporaryFile(
-            dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
-        ).name
+    # bucket_inputs = '007-spot-price-forecast-physical'
+    # bucket_outputs = "dex-empower.test"
 
-        form.excel_file.data.filename = path
-        name = form.name.data
-        g.action_object = name
-        g.action_object_type = 'Assumption'
+    # End early if assumption process failed
+    if simulation.assumption.status != 'Processed':
+        g.result = 'Run failed'
+        g.detail = 'The assumption process failed, please check the detail of the assumption'
+        simulation.status = 'Run failed'
+        simulation.status_detail = 'The assumption process failed, please check the detail of the assumption'
+        db.session.commit()
+    else:
+        print('generate parameters')
+        generate_parameters_for_batch(run_id, sim_num)
+        index_start = 0
+        index_end = sim_num  # exclusive
+        start_date = simulation.start_date
+        end_date = simulation.end_date
+        sim_tag = run_id
+        total_days = (start_date - end_date).days
+        output_days = total_days + 7 - total_days%7
+
+
         try:
-            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
-            upload_stream_write(form.excel_file.data, path)
-            upload_assumption_and_trigger_process(path, name)
-            message = "Upload success"
-            style = 'info'
-            g.result = 'Upload success, processing'
-            g.detail = None
+            # TODO uncomment to invoke
+            print('invoking')
+            # batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=60)
+            # batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, output_days, year_start=simulation.start_date.year,
+            #                          year_end=simulation.end_date.year, interval=30)
+            # batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, output_count=11, interval=60)
+            batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
+            # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
+            #                          year_end=simulation.end_date.year, interval=500)
+            # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
+            simulation.status = 'Run finished'
+            db.session.commit()
+            g.result = 'invoke success'
         except Exception as e:
+            simulation.status = 'Run failed'
+            simulation.status_detail = repr(e)
+            db.session.commit()
+            g.result = 'invoke failed'
+            g.detail = repr(e)
             traceback.print_exc()
-            db.session.rollback()
-            message = "Upload failed:" + str(e)
-            style = 'danger'
-            g.result = 'Upload failed'
-            g.detail = message
         finally:
-            os.remove(path)
-        # os.remove(path)
-        flash(message, style)
-        flash("Time used:{}".format(time.time() - time1), 'info')
-        # message = 'Upload success'
-
-        return redirect('/upload_assumption_file/form')
+            print('invoke finished')
 
 
 class AssumptionListWidget(ListWidget):
@@ -380,11 +407,11 @@ class AssumptionModelView(EmpowerModelView):
     list_widget = AssumptionListWidget
 
     order_columns = ['name']
-    list_columns = ['name', 'status', 'status_detail', 'download_link']
-    add_exclude_columns = ['status','status_detail']
-    label_columns = {'name':'Name','status':'Status','status_detail':'Status Detail', 'download_link':'Download'}
-    edit_exclude_columns = ['status','status_detail','download_link']
-    show_exclude_columns = ['download_link']
+    list_columns = ['name', 'status', 'download_link']
+    add_exclude_columns = ['status','status_detail', 's3_path']
+    label_columns = {'name':'Name','status_detail':'Status Detail', 'download_link':'Download'}
+    edit_exclude_columns = ['status','status_detail','download_link', 's3_path']
+    show_exclude_columns = ['download_link', 's3_path']
 
     add_form = UploadAssumptionForm
 
@@ -405,22 +432,11 @@ class AssumptionModelView(EmpowerModelView):
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.download_link.data, path)
-            download_link, s3_link = upload_assumption_file(path, name)
-            msg = check_assumption(path, name)
-            if msg != 'success':
-                raise Exception(msg)
-            # handle_assumption_process.apply_async(args=[s3_link, name])
-            assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
-            if not assumption_file:
-                assumption_file = Assumption()
-            assumption_file.name = name
-            assumption_file.status = "Processing"
-            assumption_file.download_link = download_link
-            db.session.merge(assumption_file)
-            db.session.commit()
+            upload_assumption(path, name)
+            # Do not do preprocess
             message = "Upload success"
             style = 'info'
-            g.result = 'Upload success, processing'
+            g.result = 'Upload success'
             g.detail = None
         except Exception as e:
             traceback.print_exc()
@@ -451,19 +467,15 @@ class SimulationModelView(
     datamodel = SQLAInterface(Simulation)
     include_route_methods = RouteMethod.CRUD_SET | {
         'upload_assumption_ajax',
-        'start_run',
         'load_results',
         'send_email',
+        'process_success',
+        'process_failed'
     }
-
-    list_columns = ['run_id', 'name','assumption', 'project', 'status']
-    # add_columns = ['name','run_id','description','assumption_choice1',
-    # 'assumption_choice2','generation_model', 'run_no','start_date','end_date',
-    # 'report_type']
-    edit_exclude_columns = ['status','status_detail']
-    edit_columns = ['name','run_id','project','assumption','run_no','report_type','start_date','end_date']
-    add_exclude_columns = ['status','status_detail']
-    label_columns = {'run_no':'No. of simulation run'}
+    add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
+    list_columns = ['name','assumption', 'project', 'status']
+    edit_exclude_columns = ['status','status_detail', 'run_id']
+    label_columns = {'run_no':'Number of simulation run'}
 
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
@@ -666,7 +678,7 @@ class SimulationModelView(
         item = self.datamodel.obj()
         try:
             form.populate_obj(item)
-
+            item.status = 'Waiting for start'
             g.action_object = item.name
             g.action_object_type = 'Simulation'
             g.result = 'Create simulation failed'
@@ -679,7 +691,6 @@ class SimulationModelView(
                 self.post_add(item)
                 g.result = 'Create simulation success'
                 g.detail = None
-                self.post_add(item)
                 # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
             flash(*self.datamodel.message)
@@ -720,7 +731,6 @@ class SimulationModelView(
             form.start_date.data = simulation.start_date
             form.end_date.data = simulation.end_date
             form.run_no.data = simulation.run_no
-            form.run_id.data = simulation.run_id
             form.report_type.data = simulation.report_type
         return form
 
@@ -728,18 +738,18 @@ class SimulationModelView(
     @expose('/upload_assumption_ajax', methods=['POST'])
     def upload_assumption_ajax(self):
         file = request.files['file']
+        file_name = request.form['name']
+        g.action_object = file_name + '.xlsx'
+        g.action_object_type = 'Assumption'
         try:
-            g.action_object = file.filename + '.xlsx'
-            g.action_object_type = 'Assumption'
-            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+
+            path = os.path.join(app.config['UPLOAD_FOLDER'], file_name+'.xlsx')
             file.save(path)
-            file_name = file.filename.split('.')[0]
-            id, name = upload_assumption_and_trigger_process(path, file_name)
-            message = 'Uploaded success. You can now choose the uploaded assumption in the list. The assumption ' + \
-                      'processing is running on backend and will be ready soon.'
+            id, name = upload_assumption(path, file_name)
+            message = 'Uploaded success. You can now choose the uploaded assumption in the list.'
             detail = {'name': name,
                       'id': id}
-            g.result = 'Upload success, processing'
+            g.result = 'Upload success'
             g.detail = None
         except Exception as e:
             message = 'Failed. {}'.format(repr(e))
@@ -753,12 +763,21 @@ class SimulationModelView(
                 'detail': detail
             })
 
+    '''Set run_id after id is got'''
+    def post_add(self, item):
+        db.session.flush()
+        g.id = item.id
+        item.run_id = item.id + 10000
+        db.session.commit()
+
+
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
         # print(form)
         if 'project' in flt_dic.keys():
             project = db.session.query(Project).filter_by(id=flt_dic['project']).one_or_none()
             form.project.data = project
+        # generate unique uuid as run id
         return form
 
     def get_filter_args(self):
@@ -776,41 +795,117 @@ class SimulationModelView(
     @simulation_logger.log_simulation(action_name='start run')
     @expose('/start_run/<id>/<run_type>/')
     def start_run(self,id,run_type):
-        from superset.views.simulation.util import get_s3_url
-        from superset.views.simulation.helper import excel_path, bucket_test
         simulation = db.session.query(Simulation).filter_by(id=id).one_or_none()
-        message = None
         if not simulation:
             message = 'No simulation found for this run id, please refresh the page and try again.'
             g.result = 'Run failed'
             g.detail = message
         else:
-            if simulation.assumption.status != 'Success':
-
+            g.action_object = simulation.name
+            g.action_object_type = 'Simulation'
+            if simulation.assumption.status != 'Uploaded' and simulation.assumption.status != 'Processed':
                 g.result = 'Run failed'
-                if simulation.assumption.status == 'Processing':
-                    message = 'The assumption file of this simulation is in processing, please start run after finished.'
-                elif simulation.assumption.status == 'Error':
-                    message = 'There is error during the processing of the assumption file, please choose another assumption.'
+                message = 'The assumption is not uploaded successfully, please reupload or use another one.'
                 g.detail = message
-                pass
-            assumption_path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
-            try:
-                msg = check_assumption(assumption_path, simulation.assumption.name)
-                if msg == 'success':
-                    if run_type == 'test':
-                        message = 'Test run started'
-                    else:
-                        message = 'Full run started'
-                else:
-                    pass
-            except Exception as e:
-                message = repr(e)
+            else:
+                if simulation.assumption.s3_path == None:
+                    path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
+                    simulation.assumption.s3_path = path
+                    db.session.commit()
+                try:
+                    message = self.pre_run_check_process(simulation, run_type)
+
+                except Exception as e:
+                    g.result = 'Run failed'
+                    g.detail =repr(e)
+                    message = 'Run failed: ' + repr(e)
+
         return jsonify({
             'message': message,
         })
 
+    def pre_run_check_process(self, simulation, run_type):
+        pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        # pass_check, message = True, ''
+        if pass_check:
+            g.result = 'Started, pre-process in progress'
+            if run_type == 'test':
+                message = 'Test run started'
+            else:
+                message = 'Full run started'
+            simulation.status = 'Running'
+            db.session.commit()
 
+            ip = get_current_external_ip()
+            msg = {
+                'excelKey': excel_path.format(simulation.assumption.name),
+                'runNo': simulation.run_id,
+                'processName': [],
+                'bucket': bucket_test,
+                'histBucket': bucket_inputs,
+                'startDate': '2017-01-01',
+                'endDate': '2019-07-31',
+                'simStartDate': simulation.start_date.strftime('%Y-%m-%d'),
+                'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
+                'runType': run_type,
+                'supersetURL': ip,
+            }
+            send_sqs_msg(json.dumps(msg))
+            # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
+            #                                             simulation.run_id, sim_num])
+
+        else:
+            g.result = 'Run failed'
+            g.detail = message
+        return message
+
+    @simulation_logger.log_simulation(action_name='process assumption')
+    @expose('/process_success', methods=['GET', 'POST'])
+    def process_success(self):
+        print('receive process success')
+        g.user = None
+        data = json.loads(request.data.decode())
+        run_id = data['runNo']
+        simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+
+        simulation.assumption.status = 'Processed'
+        g.action_object = simulation.assumption.name
+        g.action_object_type = 'Assumption'
+        g.result = 'Process success'
+        db.session.commit()
+
+        run_type = data['runType']
+        if run_type == 'test':
+            sim_num = 5
+        else:
+            sim_num = simulation.run_no
+        simulation_start_invoker.apply_async(args=[run_id, sim_num])
+
+        return '200 OK'
+
+    @simulation_logger.log_simulation(action_name='process assumption')
+    @expose('/process_failed', methods=['GET', 'POST'])
+    def process_failed(self):
+        print('received process failed')
+        g.user = None
+        data = json.loads(request.data.decode())
+        run_id = data['runNo']
+        error_msg = data['procStatus']
+        simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+        simulation.assumption.status = 'Error'
+        g.action_object = simulation.assumption.name
+        g.action_object_type = 'Assumption'
+        g.result = 'Process failed'
+        g.detail = error_msg.replace('\n', ' ')
+        db.session.commit()
+
+        run_type = data['runType']
+        if run_type == 'test':
+            sim_num = 5
+        else:
+            sim_num = simulation.run_no
+        simulation_start_invoker.apply_async(args=[run_id, sim_num])
+        return '200 OK'
 
 
 class ProjectModelView(EmpowerModelView):

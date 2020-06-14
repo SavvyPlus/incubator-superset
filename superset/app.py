@@ -165,7 +165,6 @@ class SupersetAppInitializer:
         from superset.views.database.views import DatabaseView, CsvToDatabaseView
         from superset.views.datasource import Datasource
         from superset.views.simulation.views import (
-            UploadAssumptionView,
             ClientModelView,
             ProjectModelView,
             AssumptionModelView,

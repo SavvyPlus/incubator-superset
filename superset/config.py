@@ -170,7 +170,9 @@ QUERY_SEARCH_LIMIT = 1000
 WTF_CSRF_ENABLED = True
 
 # Add endpoints that need to be exempt from CSRF protection
-WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log"]
+WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log",
+                        "superset.views.simulation.views.process_success",
+                        "superset.views.simulation.views.process_failed"]
 
 # Whether to run the web server in debug mode or not
 DEBUG = os.environ.get("FLASK_ENV") == "development"
