@@ -20,6 +20,7 @@ import traceback
 import logging
 import os
 import tempfile
+import superset.models.core as models
 from flask import flash, redirect, g, request, abort, url_for, jsonify
 from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
