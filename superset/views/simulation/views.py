@@ -607,12 +607,13 @@ class SimulationModelView(
             "cap_of_300": base_url + "300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
             "spot_price_distribution": base_url + "spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
         }
-        send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
+        status_code = send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
 
         return json_success(json.dumps({
             'email_to': email_to,
             'run_id': run_id,
-            'sim_num': sim_num
+            'sim_num': sim_num,
+            'status_code': status_code,
         }))
 
     def _get_list_widget(

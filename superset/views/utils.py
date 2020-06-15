@@ -381,8 +381,7 @@ def send_sendgrid_mail(address_to, message_data, template_id):
     message.template_id = template_id
     try:
         res = sendgrid_client.send(message)
-        print(res.status_code)
-        return True
+        return res.status_code
     except Exception as e:
         import traceback
         traceback.print_exc()
