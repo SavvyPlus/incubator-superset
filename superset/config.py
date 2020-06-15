@@ -663,14 +663,22 @@ FLASK_APP_MUTATOR = None
 ENABLE_ACCESS_REQUEST = False
 
 # smtp server configuration
-EMAIL_NOTIFICATIONS = False  # all the emails are sent using dryrun
-SMTP_HOST = "localhost"
-SMTP_STARTTLS = True
-SMTP_SSL = False
-SMTP_USER = "superset"
-SMTP_PORT = 25
-SMTP_PASSWORD = "superset"
-SMTP_MAIL_FROM = "superset@superset.com"
+# EMAIL_NOTIFICATIONS = False  # all the emails are sent using dryrun
+# SMTP_HOST = "localhost"
+# SMTP_STARTTLS = True
+# SMTP_SSL = False
+# SMTP_USER = "superset"
+# SMTP_PORT = 25
+# SMTP_PASSWORD = "superset"
+# SMTP_MAIL_FROM = "superset@superset.com"
+EMAIL_NOTIFICATIONS = True
+MAIL_SERVER = 'smtp.sendgrid.net'
+SMTP_STARTTLS = False
+SMTP_SSL = True
+MAIL_USERNAME = os.environ['SMTP_USERNAME']
+MAIL_PORT = 465
+MAIL_PASSWORD = os.environ['SMTP_PASSWORD']
+MAIL_DEFAULT_SENDER = 'no_reply@empoweranalytics.com.au'
 
 ENABLE_CHUNK_ENCODING = False
 
