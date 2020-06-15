@@ -58,9 +58,7 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
 
 def send_notification(simulation, template_id):
 
-    email_list = [["Will", 'weiliang.zhou@zawee.work'],
-                  ["Oscar", 'oscar.omegna@zawee.work'],
-                  ["Dex", 'dexiao.ye@zawee.work']]
+    email_list = [["Colin", 'chenyang.wang@zawee.work']]
     message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
                     "simulation": simulation.name,
                     "project": simulation.project.name,
@@ -693,7 +691,7 @@ class SimulationModelView(
                 self.post_add(item)
                 g.result = 'Create simulation success'
                 g.detail = None
-                # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
+                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
 
             flash(*self.datamodel.message)
