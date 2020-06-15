@@ -380,7 +380,8 @@ def send_sendgrid_mail(address_to, message_data, template_id):
     message.dynamic_template_data = message_data
     message.template_id = template_id
     try:
-        sendgrid_client.send(message)
+        res = sendgrid_client.send(message)
+        print(res.status_code)
         return True
     except Exception as e:
         import traceback
