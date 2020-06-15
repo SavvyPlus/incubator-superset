@@ -374,7 +374,7 @@ def is_slice_in_container(
 # Sendgrid email sender
 def send_sendgrid_mail(address_to, message_data, template_id):
     message = Mail(
-        from_email=("no_reply@empoweranalytics.com.au", "Empower Analytics"),
+        from_email=("no-reply@solarbi.com.au", "SolarBI"),
         to_emails=address_to
     )
     message.dynamic_template_data = message_data
