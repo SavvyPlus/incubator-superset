@@ -20,6 +20,7 @@ import traceback
 import logging
 import os
 import tempfile
+import superset.models.core as models
 from flask import flash, redirect, g, request, abort, url_for, jsonify
 from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
@@ -31,14 +32,19 @@ from flask_babel import lazy_gettext as _
 from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.constants import RouteMethod
 from superset.models.simulation import *
+from superset.connectors.sqla.models import SqlaTable
 from superset.utils import core as utils
-from superset.views.base import SupersetModelView
+from superset.sql_parse import Table
+from superset.views.base import json_success, DeleteMixin, SupersetModelView
+from superset.views.utils import send_sendgrid_mail
 from superset.views.simulation.util import get_s3_url
 from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
 
 from .forms import UploadAssumptionForm, AddSimulationForm
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
+from .util import get_redirect_endpoint
+
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
     chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
@@ -49,8 +55,9 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
                 break
             file_description.write(chunk)
 
+
 def send_notification(simulation, template_id):
-    from superset.views.utils import send_sendgrid_mail
+
     email_list = [["Will", 'weiliang.zhou@zawee.work'],
                   ["Oscar", 'oscar.omegna@zawee.work'],
                   ["Dex", 'dexiao.ye@zawee.work']]
@@ -62,6 +69,7 @@ def send_notification(simulation, template_id):
     for email in email_list:
         message_dict['receiver'] = email[0]
         send_sendgrid_mail(email[1], message_dict, template_id)
+
 
 @celery_app.task
 @simulation_logger.log_simulation(action_name='process assumption')
@@ -184,7 +192,7 @@ class EmpowerModelView(SupersetModelView):
     The base model view for empower, with modified workflow of crud.
 
     """
-    """Customised show template, removed related views. Please create own show widget template 
+    """Customised show template, removed related views. Please create own show widget template
     to display the related widget"""
     show_template = "empower/model/show.html"
 
@@ -236,7 +244,8 @@ class EmpowerModelView(SupersetModelView):
         )
         return widgets
 
-    """Pass the related view widgets to show widget. Override the show widget to take the widget.get['related_views'] out"""
+    """Pass the related view widgets to show widget. Override the show widget to take the
+     widget.get['related_views'] out"""
     def _get_show_widget(
         self, pk, item, widgets=None, actions=None, show_fieldsets=None
     ):
@@ -314,7 +323,8 @@ class EmpowerModelView(SupersetModelView):
     def prefill_hidden_field(self, form):
         return form
 
-    """Prefill the add form if adding to related view models. Override to get param from url and fill in form"""
+    """Prefill the add form if adding to related view models. Override to get param from
+    url and fill in form"""
     def prefill_form_add(self, form):
         return form
 
@@ -458,7 +468,8 @@ class SimulationModelView(
     datamodel = SQLAInterface(Simulation)
     include_route_methods = RouteMethod.CRUD_SET | {
         'upload_assumption_ajax',
-        'start_run',
+        'load_results',
+        'send_email',
         'process_success',
         'process_failed'
     }
@@ -470,6 +481,140 @@ class SimulationModelView(
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
     list_widget = SimulationListWidget
+
+    @event_logger.log_this
+    @expose('/load-results/<run_id>/<table_name>/')
+    def load_results(self, run_id, table_name):
+        # First check if the table has existed. If so, redirect to its chart
+        sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
+        if sqla_table:
+            endpoint = get_redirect_endpoint(table_name, sqla_table.id)
+            return redirect(endpoint)
+
+        # If this is a new table, load it into Superset and redirect to its chart
+        csv_table = Table(table=table_name, schema=None)
+        s3_file_path = 's3://empower-simulation/result-spot-price-forecast-simulation-statistics/' + run_id + '/' + table_name + '.csv'
+
+        try:
+            database = (
+                db.session.query(models.Database).filter_by(id=1).one()
+            )
+            csv_to_df_kwargs = {
+                "sep": ',',
+                "header": 0,
+                "index_col": None,
+                "mangle_dupe_cols": True,
+                "skipinitialspace": False,
+                "skiprows": None,
+                "nrows": None,
+                "skip_blank_lines": True,
+                "parse_dates": None,
+                "infer_datetime_format": True,
+                "chunksize": 1000,
+            }
+            df_to_sql_kwargs = {
+                "name": csv_table.table,
+                "if_exists": 'fail',
+                "index": False,
+                "index_label": None,
+                "chunksize": 1000,
+            }
+            database.db_engine_spec.create_table_from_csv(
+                s3_file_path,
+                csv_table,
+                database,
+                csv_to_df_kwargs,
+                df_to_sql_kwargs,
+            )
+
+            # Connect table to the database that should be used for exploration.
+            # E.g. if hive was used to upload a csv, presto will be a better option
+            # to explore the table.
+            expore_database = database
+            explore_database_id = database.get_extra().get("explore_database_id", None)
+            if explore_database_id:
+                expore_database = (
+                    db.session.query(models.Database)
+                    .filter_by(id=explore_database_id)
+                    .one_or_none()
+                    or database
+                )
+
+            sqla_table = (
+                db.session.query(SqlaTable)
+                .filter_by(
+                    table_name=csv_table.table,
+                    schema=csv_table.schema,
+                    database_id=expore_database.id,
+                )
+                .one_or_none()
+            )
+
+            if sqla_table:
+                sqla_table.fetch_metadata()
+            if not sqla_table:
+                sqla_table = SqlaTable(table_name=csv_table.table)
+                sqla_table.database = expore_database
+                sqla_table.database_id = database.id
+                sqla_table.user_id = g.user.id
+                sqla_table.schema = csv_table.schema
+                sqla_table.fetch_metadata()
+                db.session.add(sqla_table)
+            db.session.commit()
+
+            added_sqla_table = (
+                db.session.query(SqlaTable).filter_by(table_name=csv_table.table).one()
+            )
+        except ValueError as ve:
+            db.session.rollback()
+            flash(str(ve), "danger")
+
+            return redirect("/simulationmodelview/list/")
+        except Exception as ex:  # pylint: disable=broad-except
+            db.session.rollback()
+
+            message = _(
+                'Unable to load CSV file to table '
+            )
+
+            flash(message, "danger")
+            return redirect("/simulationmodelview/list/")
+
+        message = _(
+            'CSV file "%(csv_filename)s" uploaded to table "%(table_name)s" in '
+            'database "%(db_name)s"',
+            csv_filename=s3_file_path.split('/')[-1],
+            table_name=str(csv_table),
+            db_name=database.database_name,
+        )
+        flash(message, "info")
+
+        endpoint = get_redirect_endpoint(table_name, added_sqla_table.id)
+        return redirect(endpoint)
+
+    @event_logger.log_this
+    @expose('/send-email/<run_id>/<sim_num>/')
+    def send_email(self, run_id, sim_num):
+        # Get the user email
+        email_to = 'chenyang.wang@zawee.work'
+
+        # Send the notification email
+        base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
+        dynamic_template_data = {
+            "run_id": run_id,
+            "spot_price_forecast": base_url + "spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "cap_of_300": base_url + "300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "spot_price_distribution": base_url + "spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
+        }
+        send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
+
+        return json_success(json.dumps({
+            'email_to': email_to,
+            'run_id': run_id,
+            'sim_num': sim_num
+        }))
 
     def _get_list_widget(
             self,
@@ -822,7 +967,8 @@ class ProjectModelView(EmpowerModelView):
 
     def pre_delete(self, item):
         if item.simulations is not None:
-            raise Exception('This project has modeling jobs associate with it. Please delete the models first.')
+            raise Exception('This project has modeling jobs associate with it. Please '
+                            'delete the models first.')
 
 
 class ClientModelView(EmpowerModelView):
@@ -901,7 +1047,8 @@ class ClientModelView(EmpowerModelView):
 
     def pre_delete(self, item):
         if item.projects is not None:
-            raise Exception("This client has projects associate with it. Please delete the projects first.")
+            raise Exception("This client has projects associate with it. Please delete "
+                            "the projects first.")
 
 
 class SimulationLogModelView(SupersetModelView):
@@ -914,5 +1061,3 @@ class SimulationLogModelView(SupersetModelView):
 
     base_order = ('dttm', 'desc')
     page_size = 20
-
-

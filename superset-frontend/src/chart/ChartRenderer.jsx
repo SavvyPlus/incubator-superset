@@ -96,7 +96,7 @@ class ChartRenderer extends React.Component {
       return true;
     }
 
-    if (nextProps.vizType === 'box_plot_300_cap') {
+    if (nextProps.vizType === 'multi_boxplot') {
       return true;
     }
 
@@ -248,7 +248,7 @@ class ChartRenderer extends React.Component {
     // console.log(JSON.stringify(queryResponse.data));
     return (
       <>
-        {formData.viz_type === 'box_plot_300_cap' ||
+        {formData.viz_type === 'multi_boxplot' ||
         formData.viz_type === 'spot_price_histogram' ? (
           <ReactEcharts
             key={`${chartId}${
