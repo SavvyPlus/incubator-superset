@@ -471,7 +471,8 @@ class SimulationModelView(
         'load_results',
         'send_email',
         'process_success',
-        'process_failed'
+        'process_failed',
+        'start_run'
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
@@ -694,6 +695,7 @@ class SimulationModelView(
                 g.detail = None
                 # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
+
             flash(*self.datamodel.message)
             return False
 
@@ -820,22 +822,21 @@ class SimulationModelView(
                     g.result = 'Run failed'
                     g.detail =repr(e)
                     message = 'Run failed: ' + repr(e)
+                    traceback.print_exc()
 
         return jsonify({
             'message': message,
         })
 
     def pre_run_check_process(self, simulation, run_type):
-        pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
-        # pass_check, message = True, ''
+        # pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        pass_check, message = True, ''
         if pass_check:
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
                 message = 'Test run started'
             else:
                 message = 'Full run started'
-            simulation.status = 'Running'
-            db.session.commit()
 
             ip = get_current_external_ip()
             msg = {
@@ -852,6 +853,8 @@ class SimulationModelView(
                 'supersetURL': ip,
             }
             send_sqs_msg(json.dumps(msg))
+            simulation.status = 'Running'
+            db.session.commit()
             # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
             #                                             simulation.run_id, sim_num])
 
