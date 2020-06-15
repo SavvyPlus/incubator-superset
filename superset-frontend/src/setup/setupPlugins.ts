@@ -23,8 +23,7 @@ import setupPluginsExtra from './setupPluginsExtra';
 import BoxPlotRunComp from '../explore/controlPanels/BoxPlotRunComp';
 import BoxPlotFin from '../explore/controlPanels/BoxPlotFin';
 import BoxPlotFinStr from '../explore/controlPanels/BoxPlotFinStr';
-import BoxPlot300Cap from '../explore/controlPanels/BoxPlot300Cap';
-import CountryMap from '../explore/controlPanels/CountryMap';
+import MultiBoxplot from '../explore/controlPanels/MultiBoxplot';
 import DeckArc from '../explore/controlPanels/DeckArc';
 import DeckGeojson from '../explore/controlPanels/DeckGeojson';
 import DeckGrid from '../explore/controlPanels/DeckGrid';
@@ -34,7 +33,6 @@ import DeckPath from '../explore/controlPanels/DeckPath';
 import DeckPolygon from '../explore/controlPanels/DeckPolygon';
 import DeckScatter from '../explore/controlPanels/DeckScatter';
 import DeckScreengrid from '../explore/controlPanels/DeckScreengrid';
-import EventFlow from '../explore/controlPanels/EventFlow';
 import FilterBox from '../explore/controlPanels/FilterBox';
 import HistogramSpotPrice from '../explore/controlPanels/HistogramSpotPrice';
 import Separator from '../explore/controlPanels/Separator';
@@ -48,9 +46,7 @@ export default function setupPlugins() {
     .registerValue('box_plot_run_comp', BoxPlotRunComp)
     .registerValue('box_plot_fin', BoxPlotFin)
     .registerValue('box_plot_fin_str', BoxPlotFinStr)
-    .registerValue('box_plot_300_cap', BoxPlot300Cap)
-    .registerValue('country_map', CountryMap)
-    .registerValue('event_flow', EventFlow)
+    .registerValue('multi_boxplot', MultiBoxplot)
     .registerValue('filter_box', FilterBox)
     .registerValue('spot_price_histogram', HistogramSpotPrice)
     .registerValue('separator', Separator)

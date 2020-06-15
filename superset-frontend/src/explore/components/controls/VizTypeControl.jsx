@@ -101,8 +101,8 @@ const DEFAULT_ORDER = [
   'box_plot_run_comp',
   'box_plot_fin',
   'box_plot_fin_str',
-  'box_plot_300_cap',
   'spot_price_histogram',
+  'multi_boxplot',
 ];
 
 const typesWithDefaultOrder = new Set(DEFAULT_ORDER);
@@ -191,9 +191,6 @@ export default class VizTypeControl extends React.PureComponent {
             }
             if (entry.key === 'box_plot_fin_str') {
               entry.value.name = 'Box Plot For Financial Strategy';
-            }
-            if (entry.key === 'box_plot_300_cap') {
-              entry.value.name = 'Box Plot For $300 Cap';
             }
             return (
               <Col md={12 / IMAGE_PER_ROW} key={`grid-col-${entry.key}`}>
