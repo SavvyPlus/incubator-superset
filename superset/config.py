@@ -672,13 +672,13 @@ ENABLE_ACCESS_REQUEST = False
 # SMTP_PASSWORD = "superset"
 # SMTP_MAIL_FROM = "superset@superset.com"
 EMAIL_NOTIFICATIONS = True
-MAIL_SERVER = 'smtp.sendgrid.net'
+SMTP_HOST = 'smtp.sendgrid.net'
 SMTP_STARTTLS = False
 SMTP_SSL = True
-MAIL_USERNAME = os.environ['SMTP_USERNAME']
-MAIL_PORT = 465
-MAIL_PASSWORD = os.environ['SMTP_PASSWORD']
-MAIL_DEFAULT_SENDER = 'no_reply@empoweranalytics.com.au'
+SMTP_USER = os.environ['SMTP_USERNAME']
+SMTP_PORT = 465
+SMTP_PASSWORD = os.environ['SMTP_PASSWORD']
+SMTP_MAIL_FROM = 'no_reply@empoweranalytics.com.au'
 
 ENABLE_CHUNK_ENCODING = False
 
