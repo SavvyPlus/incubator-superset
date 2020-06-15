@@ -230,7 +230,7 @@ class ControlPanelsContainer extends React.Component {
         (viz_type === 'box_plot_run_comp' ||
           viz_type === 'box_plot_fin' ||
           viz_type === 'box_plot_fin_str' ||
-          viz_type === 'box_plot_300_cap' ||
+          viz_type === 'multi_boxplot' ||
           viz_type === 'spot_price_histogram') &&
         section.label === 'Time'
       ) {
@@ -254,7 +254,7 @@ class ControlPanelsContainer extends React.Component {
           (viz_type === 'box_plot_run_comp' ||
             viz_type === 'box_plot_fin' ||
             viz_type === 'box_plot_fin_str' ||
-            viz_type === 'box_plot_300_cap' ||
+            viz_type === 'multi_boxplot' ||
             viz_type === 'spot_price_histogram') &&
           section.label === 'Empower'
         ) {

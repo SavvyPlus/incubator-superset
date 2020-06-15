@@ -62,6 +62,7 @@ import { DeckGLChartPreset } from '@superset-ui/legacy-preset-chart-deckgl';
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
 import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPlugin';
+import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -77,7 +78,7 @@ export default class MainPreset extends Preset {
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_run_comp' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_fin' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_fin_str' }),
-        new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_300_cap' }),
+        new MultipleBoxplot().configure({ key: 'multi_boxplot' }),
         new BubbleChartPlugin().configure({ key: 'bubble' }),
         new BulletChartPlugin().configure({ key: 'bullet' }),
         new CalendarChartPlugin().configure({ key: 'cal_heatmap' }),
