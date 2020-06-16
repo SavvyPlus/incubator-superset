@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -152,4 +152,4 @@ class SimulationLog(Model):
     action_object_type = Column(String(20))
     dttm = Column(DateTime)
     result = Column(String(128))
-    detail = Column(String(512))
+    detail = Column(Text)
