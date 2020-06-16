@@ -760,7 +760,7 @@ class SimulationModelView(
             g.result = 'Upload failed'
             g.detail = detail
         finally:
-            # os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+            os.remove(path)
             return jsonify({
                 'message': message,
                 'detail': detail
@@ -806,12 +806,12 @@ class SimulationModelView(
         else:
             g.action_object = simulation.name
             g.action_object_type = 'Simulation'
-            if simulation.assumption.status != 'Uploaded' and simulation.assumption.status != 'Processed':
+            if simulation.assumption.status == 'Error':
                 g.result = 'Run failed'
-                message = 'The assumption is not uploaded successfully, please reupload or use another one.'
+                message = 'The assumption contains error, please reupload or use another one.'
                 g.detail = message
             else:
-                if simulation.assumption.s3_path == None:
+                if simulation.assumption.s3_path is None:
                     path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
                     simulation.assumption.s3_path = path
                     db.session.commit()
@@ -829,8 +829,8 @@ class SimulationModelView(
         })
 
     def pre_run_check_process(self, simulation, run_type):
-        # pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
-        pass_check, message = True, ''
+        pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        # pass_check, message = True, ''
         if pass_check:
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
@@ -882,7 +882,8 @@ class SimulationModelView(
         if run_type == 'test':
             sim_num = 5
         else:
-            sim_num = simulation.run_no
+            # sim_num = simulation.run_no
+            sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
 
         return '200 OK'
@@ -907,7 +908,8 @@ class SimulationModelView(
         if run_type == 'test':
             sim_num = 5
         else:
-            sim_num = simulation.run_no
+            # sim_num = simulation.run_no
+            sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
         return '200 OK'
 
