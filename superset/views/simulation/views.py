@@ -608,12 +608,11 @@ class SimulationModelView(
     @event_logger.log_this
     @expose('/send-email/<run_id>/<sim_num>/')
     def send_email(self, run_id, sim_num):
-        # Get the user email
+        # Get user email
         email_to = 'chenyang.wang@zawee.work'
 
-        # Send the notification email
-        base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
-        # base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
+        # Send notification email
+        base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
         # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
         dynamic_template_data = {
             "run_id": run_id,
@@ -626,7 +625,7 @@ class SimulationModelView(
         return json_success(json.dumps({
             'email_to': email_to,
             'run_id': run_id,
-            'sim_num': sim_num
+            'sim_num': sim_num,
         }))
 
     def _get_list_widget(

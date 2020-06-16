@@ -383,6 +383,7 @@ def send_sendgrid_mail(address_to, message_data, template_id):
         sendgrid_client.send(message)
         return True
     except Exception as e:
+        print(e)
         import traceback
         traceback.print_exc()
         return False
