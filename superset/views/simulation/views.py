@@ -482,7 +482,7 @@ class SimulationModelView(
     # add_form = AddSimulationForm
     list_widget = SimulationListWidget
 
-    @expose('/test')
+    @expose('/test/')
     def test(self):
         message = {
             'message': 'hello world'
