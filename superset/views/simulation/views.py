@@ -594,7 +594,7 @@ class SimulationModelView(
     @event_logger.log_this
     @expose('/send-email/<run_id>/<sim_num>/')
     def send_email(self, run_id, sim_num):
-        # Get the user email
+        # Get user email
         email_to = 'chenyang.wang@zawee.work'
 
         # Send notification email
