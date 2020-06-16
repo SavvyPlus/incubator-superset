@@ -470,7 +470,8 @@ class SimulationModelView(
         'send_email',
         'process_success',
         'process_failed',
-        'start_run'
+        'start_run',
+        'test'
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
@@ -480,6 +481,19 @@ class SimulationModelView(
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
     list_widget = SimulationListWidget
+
+    @expose('/test/')
+    def test(self):
+        message = {
+            'message': 'hello world'
+        }
+        try:
+            send_sqs_msg(json.dumps(message), queue_url='https://sqs.ap-southeast-2.amazonaws.com/000581985601/eric-test')
+            return 'message sent'
+        except Exception as e:
+            traceback.print_exc()
+            return repr((e))
+        
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
@@ -805,7 +819,7 @@ class SimulationModelView(
             g.action_object_type = 'Simulation'
             if simulation.assumption.status != 'Uploaded' and simulation.assumption.status != 'Processed':
                 g.result = 'Run failed'
-                message = 'The assumption is not uploaded successfully, please reupload or use another one.'
+                message = 'The assumption is not uploaded or processed successfully, please reupload or use another one.'
                 g.detail = message
             else:
                 if simulation.assumption.s3_path == None:
@@ -891,13 +905,14 @@ class SimulationModelView(
         g.user = None
         data = json.loads(request.data.decode())
         run_id = data['runNo']
-        error_msg = data['procStatus']
+        error_msg = data['procStatus'].replace('\n', ' ')
         simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
         simulation.assumption.status = 'Error'
+        simulation.assumption.status_detail = error_msg
         g.action_object = simulation.assumption.name
         g.action_object_type = 'Assumption'
         g.result = 'Process failed'
-        g.detail = error_msg.replace('\n', ' ')
+        g.detail = error_msg
         db.session.commit()
 
         run_type = data['runType']
