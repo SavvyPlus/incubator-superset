@@ -968,7 +968,7 @@ class ProjectModelView(EmpowerModelView):
         return result
 
     def pre_delete(self, item):
-        if item.simulations is not None:
+        if len(item.simulations) >0:
             raise Exception('This project has modeling jobs associate with it. Please '
                             'delete the models first.')
 
@@ -1048,7 +1048,7 @@ class ClientModelView(EmpowerModelView):
         return widgets
 
     def pre_delete(self, item):
-        if item.projects is not None:
+        if len(item.projects) >0:
             raise Exception("This client has projects associate with it. Please delete "
                             "the projects first.")
 
