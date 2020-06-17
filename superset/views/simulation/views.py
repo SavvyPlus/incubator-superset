@@ -852,9 +852,10 @@ class SimulationModelView(
                 'runType': run_type,
                 'supersetURL': ip,
             }
-            send_sqs_msg(json.dumps(msg))
-            simulation.status = 'Running'
-            db.session.commit()
+            if send_sqs_msg(json.dumps(msg)):
+                g.detail = json.dumps(msg)
+                simulation.status = 'Running'
+                db.session.commit()
             # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
             #                                             simulation.run_id, sim_num])
 
