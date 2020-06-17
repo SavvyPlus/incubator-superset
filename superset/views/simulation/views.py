@@ -28,7 +28,6 @@ from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
-
 from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.constants import RouteMethod
 from superset.models.simulation import *
@@ -68,7 +67,6 @@ def send_notification(simulation, template_id):
         message_dict['receiver'] = email[0]
         send_sendgrid_mail(email[1], message_dict, template_id)
 
-
 @celery_app.task
 @simulation_logger.log_simulation(action_name='process assumption')
 def handle_assumption_process(path, name, run_id, sim_num):
@@ -78,7 +76,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
     print('start preprocess')
     try:
         process_assumptions(path, run_id)
-        assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+        assumption_file = find_assumption_by_name(db.session, name)
         assumption_file.status = "Processed"
         assumption_file.status_detail = None
         db.session.merge(assumption_file)
@@ -86,7 +84,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
         g.result = 'Process success'
         g.detail = 'The assumption detail is now on S3 empower-simulation bucket'
     except Exception as e:
-        assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+        assumption_file = find_assumption_by_name(db.session, name)
         assumption_file.status = "Error"
         assumption_file.status_detail = repr(e)
         db.session.merge(assumption_file)
@@ -100,7 +98,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
 
 def upload_assumption(path, name):
     download_link, s3_link = upload_assumption_file(path, name)
-    assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+    assumption_file = find_assumption_by_name(db.session, name)
     if not assumption_file:
         assumption_file = Assumption()
         assumption_file.name = name
@@ -470,8 +468,7 @@ class SimulationModelView(
         'send_email',
         'process_success',
         'process_failed',
-        'start_run',
-        'test'
+        'start_run'
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
@@ -481,19 +478,6 @@ class SimulationModelView(
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
     list_widget = SimulationListWidget
-
-    @expose('/test/')
-    def test(self):
-        message = {
-            'message': 'hello world'
-        }
-        try:
-            send_sqs_msg(json.dumps(message), queue_url='https://sqs.ap-southeast-2.amazonaws.com/000581985601/eric-test')
-            return 'message sent'
-        except Exception as e:
-            traceback.print_exc()
-            return repr((e))
-        
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
@@ -984,7 +968,7 @@ class ProjectModelView(EmpowerModelView):
         return result
 
     def pre_delete(self, item):
-        if item.simulations is not None:
+        if len(item.simulations) >0:
             raise Exception('This project has modeling jobs associate with it. Please '
                             'delete the models first.')
 
@@ -1064,7 +1048,7 @@ class ClientModelView(EmpowerModelView):
         return widgets
 
     def pre_delete(self, item):
-        if item.projects is not None:
+        if len(item.projects) >0:
             raise Exception("This client has projects associate with it. Please delete "
                             "the projects first.")
 

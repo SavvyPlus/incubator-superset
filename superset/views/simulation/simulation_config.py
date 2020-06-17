@@ -119,6 +119,7 @@ all_units_list_in_offerbands_path = 'nem-pricing-v2/source_information/all_units
 
 # S3 assumption excel path
 excel_path = 'assumption-excel/{}.xlsx'
+template_path = 'template run 188.xlsx'
 
 # nifi sqs url
 sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi_test"
