@@ -468,8 +468,7 @@ class SimulationModelView(
         'send_email',
         'process_success',
         'process_failed',
-        'start_run',
-        'test'
+        'start_run'
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
@@ -479,19 +478,6 @@ class SimulationModelView(
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
     list_widget = SimulationListWidget
-
-    @expose('/test/')
-    def test(self):
-        message = {
-            'message': 'hello world'
-        }
-        try:
-            send_sqs_msg(json.dumps(message), queue_url='https://sqs.ap-southeast-2.amazonaws.com/000581985601/eric-test')
-            return 'message sent'
-        except Exception as e:
-            traceback.print_exc()
-            return repr((e))
-        
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
