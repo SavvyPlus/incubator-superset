@@ -185,4 +185,5 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
 
 
 def get_current_external_ip():
-    return 'http://{}:8088'.format(get('https://api.ipify.org').text)
+    # return 'http://{}:8088'.format(get('https://api.ipify.org').text)
+    return 'http://{}:8088'.format('10.61.146.25')

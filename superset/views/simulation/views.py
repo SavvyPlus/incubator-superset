@@ -58,9 +58,7 @@ def upload_stream_write(form_file_field: "FileStorage", path: str):
 
 def send_notification(simulation, template_id):
 
-    email_list = [["Will", 'weiliang.zhou@zawee.work'],
-                  ["Oscar", 'oscar.omegna@zawee.work'],
-                  ["Dex", 'dexiao.ye@zawee.work']]
+    email_list = [["Colin", 'chenyang.wang@zawee.work']]
     message_dict = {"user": "{} {}".format(g.user.first_name, g.user.last_name),
                     "simulation": simulation.name,
                     "project": simulation.project.name,
@@ -472,7 +470,8 @@ class SimulationModelView(
         'send_email',
         'process_success',
         'process_failed',
-        'start_run'
+        'start_run',
+        'test'
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
@@ -482,6 +481,19 @@ class SimulationModelView(
     add_widget = SimulationAddWidget
     # add_form = AddSimulationForm
     list_widget = SimulationListWidget
+
+    @expose('/test/')
+    def test(self):
+        message = {
+            'message': 'hello world'
+        }
+        try:
+            send_sqs_msg(json.dumps(message), queue_url='https://sqs.ap-southeast-2.amazonaws.com/000581985601/eric-test')
+            return 'message sent'
+        except Exception as e:
+            traceback.print_exc()
+            return repr((e))
+        
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
@@ -596,12 +608,11 @@ class SimulationModelView(
     @event_logger.log_this
     @expose('/send-email/<run_id>/<sim_num>/')
     def send_email(self, run_id, sim_num):
-        # Get the user email
+        # Get user email
         email_to = 'chenyang.wang@zawee.work'
 
-        # Send the notification email
-        base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
-        # base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
+        # Send notification email
+        base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
         # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
         dynamic_template_data = {
             "run_id": run_id,
@@ -614,7 +625,7 @@ class SimulationModelView(
         return json_success(json.dumps({
             'email_to': email_to,
             'run_id': run_id,
-            'sim_num': sim_num
+            'sim_num': sim_num,
         }))
 
     def _get_list_widget(
@@ -693,7 +704,7 @@ class SimulationModelView(
                 self.post_add(item)
                 g.result = 'Create simulation success'
                 g.detail = None
-                # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
+                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
 
             flash(*self.datamodel.message)
@@ -896,13 +907,14 @@ class SimulationModelView(
         g.user = None
         data = json.loads(request.data.decode())
         run_id = data['runNo']
-        error_msg = data['procStatus']
+        error_msg = data['procStatus'].replace('\n', ' ')
         simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
         simulation.assumption.status = 'Error'
+        simulation.assumption.status_detail = error_msg
         g.action_object = simulation.assumption.name
         g.action_object_type = 'Assumption'
         g.result = 'Process failed'
-        g.detail = error_msg.replace('\n', ' ')
+        g.detail = error_msg
         db.session.commit()
 
         run_type = data['runType']
