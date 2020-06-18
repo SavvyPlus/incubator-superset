@@ -3611,7 +3611,7 @@ class SpotPriceHistogramViz(BaseViz):
 
         self.chart_type = self.form_data['spot_hist_chart_type_picker']
         if self.chart_type == 'value':
-            col_value = 'BucketSum'
+            col_value = 'ProportionByValue'
         elif self.chart_type == 'percent':
             col_value = 'Percentage'
         else:
