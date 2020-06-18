@@ -611,6 +611,18 @@ class SimulationModelView(
         # Get user email
         email_to = 'chenyang.wang@zawee.work'
 
+        # simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+        # latest_sim = db.session.query(SimulationLog).filter_by(
+        #     action_object_type='Simulation',
+        #     action_object=simulation.name,
+        #     action='start run',
+        #     result='Started, pre-process in progress'
+        # ).order_by(SimulationLog.dttm.desc()).first()
+        # if not latest_sim:
+        #     email_to = 'chenyang.wang@zawee.work'
+        # else:
+        #     email_to = latest_sim.user.email
+
         # Send notification email
         base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
         # base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
