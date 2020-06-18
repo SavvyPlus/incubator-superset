@@ -192,31 +192,29 @@ def check_assumption(file_path, assumtpions_version, simulation):
                   'Retirement', 'Strategic_Behaviour' ,'Gas_Price_Escalation',
                   'Negatives_Adjustment', 'Demand_Adjustments', 'MPC_CTP']
 
+    df_dict = {}
     for sheet in all_sheets:
-        df = read_excel(file_path, sheet_name=sheet)
-        if df.isnull().values.any():
+        df_dict[sheet] = read_excel(file_path, sheet_name=sheet)
+        if df_dict[sheet].isnull().values.any():
             return False, 'Error: nul value exist in {}.'.format(sheet)
 
     for sheet in assumption_time_forecast_year:
-        df = read_excel(file_path, sheet_name=sheet)
-        if df['Year'].min() > simulation.start_date.year:
+        if df_dict[sheet]['Year'].min() > simulation.start_date.year:
             return False, 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
-        if df['Year'].max() < simulation.end_date.year:
+        if df_dict[sheet]['Year'].max() < simulation.end_date.year:
             return False, 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
 
     # # for sheet in assumption_time_ref_date:
     # #     df = read_excel(file_path, sheet_name=sheet)
     # #     if df['Date'].max
     for sheet in assumption_time_foreacast_date:
-        df = read_excel(file_path, sheet_name=sheet)
-        if df['Date'].min() > simulation.start_date:
+        if df_dict[sheet]['Date'].min() > simulation.start_date:
             return False, 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
-        if df['Date'].max() < simulation.end_date:
+        if df_dict[sheet]['Date'].max() < simulation.end_date:
             return False, 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
 
     for sheet in assumption_time_ref_date:
-        df = read_excel(file_path, sheet_name=sheet)
-        if simulation.start_date not in list(df['Date'].map(lambda x: x.date())):
+        if simulation.start_date not in list(df_dict[sheet]['Date'].map(lambda x: x.date())):
             return False, 'Error: the simulation start date is not in the list of assumption history pv, please check and adjust.'
     return True, 'success'
 
