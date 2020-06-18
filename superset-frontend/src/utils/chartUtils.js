@@ -70,7 +70,7 @@ function barValueFormatter(param) {
   return [
     'Period: <strong>' + param.name + '</strong>',
     'Price Bucket: <strong>' + param.seriesName + '</strong>',
-    'BucketSum: <strong>$' + Math.round(param.value) + '</strong>',
+    'ProportionByValue: <strong>$' + param.value.toFixed(2) + '</strong>',
   ].join('<br/>');
 }
 
@@ -88,6 +88,9 @@ export function getOption(queryResponse) {
           ? 'Spot Price Forecast'
           : '$300/MWh Cap Payout',
         left: 'center',
+        textStyle: {
+          fontSize: 30,
+        },
       },
       legend: {
         top: '10%',
@@ -95,6 +98,9 @@ export function getOption(queryResponse) {
         selected: {
           TAS: false,
           QLD: false,
+        },
+        textStyle: {
+          fontSize: 16,
         },
       },
       toolbox: {
@@ -126,6 +132,7 @@ export function getOption(queryResponse) {
         },
         axisLabel: {
           formatter: '{value}',
+          fontSize: 16,
         },
         splitLine: {
           show: false,
@@ -135,11 +142,18 @@ export function getOption(queryResponse) {
         type: 'value',
         name: 'Nominal $/MWh',
         nameLocation: 'middle',
-        nameGap: 25,
+        nameTextStyle: {
+          fontSize: 16,
+          fontWeight: 'bold',
+        },
+        nameGap: 40,
         min: 0,
         max: yMax,
         splitArea: {
           show: false,
+        },
+        axisLabel: {
+          fontSize: 16,
         },
       },
       dataZoom: [
@@ -163,6 +177,9 @@ export function getOption(queryResponse) {
         type: 'boxplot',
         data: d.boxData,
         tooltip: { formatter: boxplotFormatter },
+        // itemStyle: {
+        //   color: '#fff6a6',
+        // },
       })),
     };
   } else if (viz_type === 'spot_price_histogram') {
@@ -170,12 +187,26 @@ export function getOption(queryResponse) {
     const legendData = data.map(d => d.priceBin);
     const xAxisData = data[0].labels;
     return {
+      title: {
+        text:
+          chart_type === 'value'
+            ? 'Spot Price Value Annual'
+            : 'Spot Price Proportion Annual',
+        left: 'center',
+        textStyle: {
+          fontSize: 30,
+        },
+      },
       tooltip: {
         formatter:
           chart_type === 'value' ? barValueFormatter : barPropFormatter,
       },
       legend: {
+        top: '8%',
         data: legendData,
+        textStyle: {
+          fontSize: 16,
+        },
       },
       toolbox: {
         feature: {
@@ -185,30 +216,45 @@ export function getOption(queryResponse) {
         },
       },
       grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
+        left: '5%',
+        top: '18%',
+        right: '5%',
+        bottom: '8%',
         containLabel: true,
       },
       yAxis: {
         type: 'value',
-        name: chart_type === 'value' ? 'BucketSum' : 'Percentage',
+        name: chart_type === 'value' ? 'ProportionByValue' : 'Percentage',
         nameLocation: 'middle',
-        nameGap: 45,
+        nameGap: 55,
+        nameTextStyle: {
+          fontSize: 16,
+          fontWeight: 'bold',
+        },
         axisLabel: {
           formatter:
             chart_type === 'value'
-              ? value => '$' + value / Math.pow(10, 6) + 'M'
+              ? // ? value => '$' + value / Math.pow(10, 6) + 'M'
+                value => '$' + value
               : value => value * 100 + '%',
+          fontSize: 16,
         },
       },
       xAxis: {
         type: 'category',
         data: xAxisData,
+        axisLabel: {
+          fontSize: 16,
+        },
       },
       dataZoom: [
         {
           show: true,
+          start: 10,
+          end: 50,
+        },
+        {
+          type: 'inside',
           start: 10,
           end: 50,
         },
