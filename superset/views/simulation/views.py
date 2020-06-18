@@ -596,7 +596,8 @@ class SimulationModelView(
         email_to = 'chenyang.wang@zawee.work'
 
         # Send notification email
-        base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
+        base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
         # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
         dynamic_template_data = {
             "run_id": run_id,
