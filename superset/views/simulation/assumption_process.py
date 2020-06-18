@@ -216,8 +216,8 @@ def check_assumption(file_path, assumtpions_version, simulation):
 
     for sheet in assumption_time_ref_date:
         df = read_excel(file_path, sheet_name=sheet)
-        if simulation.start_date not in df['Date']:
-            return False, 'Error: the simulation start date must be the first day of the month, please adjust.'
+        if simulation.start_date not in list(df['Date'].map(lambda x: x.date())):
+            return False, 'Error: the simulation start date is not in the list of assumption history pv, please check and adjust.'
     return True, 'success'
 
 def check_proxy(file_path):
