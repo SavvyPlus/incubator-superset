@@ -32,6 +32,6 @@ def generate_parameters_for_batch(sim_tag, sim_num):
             parameter_dic[(j + 1) + len(sim_date) * i] = {'sim_index': i,
                                                           'sim_date': sim_date[j],
                                                           'ref_date': ref_date[j]}
-        print(i)
+        # print(i)
     write_pickle_to_s3(parameter_dic, bucket_test, parameters_for_batch_v2.format(sim_tag))
 

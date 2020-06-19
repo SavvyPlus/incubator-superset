@@ -29,6 +29,7 @@ from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
 from superset import app, db, event_logger, simulation_logger, celery_app
+from superset.typing import FlaskResponse
 from superset.constants import RouteMethod
 from superset.models.simulation import *
 from superset.connectors.sqla.models import SqlaTable
@@ -481,7 +482,7 @@ class SimulationModelView(
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
-    def load_results(self, run_id, table_name):
+    def load_results(self, run_id: str, table_name: str) -> FlaskResponse:
         # First check if the table has existed. If so, redirect to its chart
         sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
         if sqla_table:
@@ -591,11 +592,12 @@ class SimulationModelView(
 
     @event_logger.log_this
     @expose('/send-email/<run_id>/<sim_num>/')
-    def send_email(self, run_id, sim_num):
+    def send_email(self, run_id: str, sim_num: str) -> FlaskResponse:
         # Get user email
         email_to = 'chenyang.wang@zawee.work'
 
         # Send notification email
+        # base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
         base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
         # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
         dynamic_template_data = {
@@ -805,6 +807,10 @@ class SimulationModelView(
                 g.result = 'Run failed'
                 message = 'The assumption contains error, please reupload or use another one.'
                 g.detail = message
+            elif simulation.status == 'Running':
+                g.result = 'Run failed'
+                message = 'Running in progress, please wait till the run finish.'
+                g.detail = message
             else:
                 if simulation.assumption.s3_path is None:
                     path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
@@ -851,6 +857,10 @@ class SimulationModelView(
                 g.detail = json.dumps(msg)
                 simulation.status = 'Running'
                 db.session.commit()
+            else:
+                g.result = 'Run failed'
+                message = 'Error sending to message to sqs, please try again later to contact dev team.'
+                g.detail = message
             # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
             #                                             simulation.run_id, sim_num])
 
@@ -968,10 +978,17 @@ class ProjectModelView(EmpowerModelView):
         return result
 
     def pre_delete(self, item):
-        if len(item.simulations) >0:
+        if item.simulations is not None and len(item.simulations) >0:
+            g.direct_to_sub = True
             raise Exception('This project has modeling jobs associate with it. Please '
                             'delete the models first.')
+        g.direct_to_sub = False
 
+    def post_delete_redirect(self):
+        if g.direct_to_sub:
+            return redirect(url_for('SimulationModelView.list'))
+        else:
+            return redirect(url_for('.list'))
 
 class ClientModelView(EmpowerModelView):
 
@@ -1048,10 +1065,17 @@ class ClientModelView(EmpowerModelView):
         return widgets
 
     def pre_delete(self, item):
-        if len(item.projects) >0:
+        if item.projects is not None and len(item.projects) >0:
+            g.direct_to_sub = True
             raise Exception("This client has projects associate with it. Please delete "
                             "the projects first.")
+        g.direct_to_sub = False
 
+    def post_delete_redirect(self):
+        if g.direct_to_sub:
+            return redirect(url_for('ProjectModelView.list'))
+        else:
+            return redirect(url_for('.list'))
 
 class SimulationLogModelView(SupersetModelView):
     route_base = "/simulationlog"

@@ -21,6 +21,7 @@ These objects represent the backend of all the visualizations that
 Superset can render.
 """
 import copy
+import dataclasses
 import hashlib
 import inspect
 import logging
@@ -33,7 +34,6 @@ from datetime import datetime, timedelta
 from itertools import product
 from typing import Any, cast, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
 
-import dataclasses
 import geohash
 import numpy as np
 import pandas as pd
@@ -43,10 +43,9 @@ from dateutil import relativedelta as rdelta
 from flask import request
 from flask_babel import lazy_gettext as _
 from geopy.point import Point
-from markdown import markdown
 from pandas.tseries.frequencies import to_offset
 
-from superset import app, cache, get_manifest_files, security_manager
+from superset import app, cache, security_manager
 from superset.constants import NULL_STRING
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.exceptions import (
@@ -396,21 +395,22 @@ class BaseViz:
         "5 days ago" or "now").
 
         The `extra` arguments are currently used by time shift queries, since
-        different time shifts wil differ only in the `from_dttm` and `to_dttm`
-        values which are stripped.
+        different time shifts wil differ only in the `from_dttm`, `to_dttm`,
+        `inner_from_dttm`, and `inner_to_dttm` values which are stripped.
         """
         cache_dict = copy.copy(query_obj)
         cache_dict.update(extra)
 
-        for k in ["from_dttm", "to_dttm"]:
-            del cache_dict[k]
+        for k in ["from_dttm", "to_dttm", "inner_from_dttm", "inner_to_dttm"]:
+            if k in cache_dict:
+                del cache_dict[k]
 
         cache_dict["time_range"] = self.form_data.get("time_range")
         cache_dict["datasource"] = self.datasource.uid
         cache_dict["extra_cache_keys"] = self.datasource.get_extra_cache_keys(query_obj)
         cache_dict["rls"] = (
             security_manager.get_rls_ids(self.datasource)
-            if config["ENABLE_ROW_LEVEL_SECURITY"]
+            if config["ENABLE_ROW_LEVEL_SECURITY"] and self.datasource.is_rls_supported
             else []
         )
         cache_dict["changed_on"] = self.datasource.changed_on
@@ -3611,7 +3611,7 @@ class SpotPriceHistogramViz(BaseViz):
 
         self.chart_type = self.form_data['spot_hist_chart_type_picker']
         if self.chart_type == 'value':
-            col_value = 'BucketSum'
+            col_value = 'ProportionByValue'
         elif self.chart_type == 'percent':
             col_value = 'Percentage'
         else:
