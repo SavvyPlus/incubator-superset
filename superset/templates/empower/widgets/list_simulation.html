@@ -4,7 +4,7 @@
 
 {% block begin_content scoped %}
     <div class="table-responsive">
-    <table class="table table-bordered table-hover">
+    <table class="table table-hover">
 {% endblock %}
 
 {% block begin_loop_header scoped %}
@@ -65,10 +65,19 @@
                     <td>{{ item[value] }}</td>
                 {% endif %}
             {% endfor %}
-            <td><button class="btn btn-primary btn-sm" data-toggle="modal"
-                    data-target="#startModal{{ pk }}" data-client="{{ pk }}">
+            <td>
+                {% if item['status']=='Running' %}
+                <button class="btn btn-primary btn-sm" data-toggle="modal"
+                    data-target="#startModal{{ pk }}" data-client="{{ pk }}" disabled>
                 Start
-            </button>
+                </button>
+                {% else %}
+                <button class="btn btn-primary btn-sm" data-toggle="modal"
+                    data-target="#startModal{{ pk }}" data-client="{{ pk }}"
+                >
+                Start
+                </button>
+                {% endif %}
                 <div class="modal fade" id="startModal{{ pk }}" tabindex="-1" role="dialog" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
@@ -178,6 +187,7 @@
                     button.removeAttribute('disabled')
                     // console.log(document.getElementById('assumption'))
                     button.innerHTML = 'Start run'
+                    window.location.reload(true)
                 },
                 error: function(error, str){
                     if (str =='timeout'){

@@ -46,9 +46,19 @@ sheet_strategic_behaviour = "Strategic_Behaviour"
 sheet_renewable_proportion = "Renewable_Proportion"
 sheet_demand_adjustment = 'Demand_Adjustments'
 sheet_escalation = 'Gas_Price_Escalation'
-sheet_name_list = [sheet_pv_forecast, sheet_pv_history, sheet_generation_closure, sheet_demand_growth, sheet_project_list,
-                   sheet_project_proxy, sheet_strategic_behaviour,
-                   sheet_renewable_proportion, sheet_demand_adjustment, sheet_escalation]
+sheet_col_dict = {
+    'Project_Proxy':['Project','Nameplate Capacity (MW)','Technology Type','State'],
+    'Behind_The_Meter_Battery':['State','Year','AGGREGATE_MW'],
+    'Demand_Growth':['State','Year','Growth'],
+    'Gas_Price_Escalation':['State','Year'],
+    'MPC_CTP':['MCP'],
+    'NewFormat':['StartDate','EndDate','DUID','FuelType','InstalledQuantity','MaximumQuantity','StartDate','Proxy'],
+    'Rooftop_Solar_History':['State','Year','AGGREGATE_MW'],
+    'Rooftop_Solar_Forecast':['State','Date','CAPACITY_MW','AGGREGATE_MW'],
+    'Renewable_Proportion':['State','Date','Maximum Half-Hour Intermittent Proportion'],
+    'Retirement':['Closure Date','Back To Service Date'],
+    'Strategic_Behaviour':['State','Bin (not Exceeding)','value','MW']
+}
 
 # MSSQL data source
 # db_host = "AWS2-SVR-DB-002"

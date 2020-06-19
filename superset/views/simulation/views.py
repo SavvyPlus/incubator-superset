@@ -805,6 +805,10 @@ class SimulationModelView(
                 g.result = 'Run failed'
                 message = 'The assumption contains error, please reupload or use another one.'
                 g.detail = message
+            elif simulation.status == 'Running':
+                g.result = 'Run failed'
+                message = 'Running in progress, please wait till the run finish.'
+                g.detail = message
             else:
                 if simulation.assumption.s3_path is None:
                     path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
@@ -851,6 +855,10 @@ class SimulationModelView(
                 g.detail = json.dumps(msg)
                 simulation.status = 'Running'
                 db.session.commit()
+            else:
+                g.result = 'Run failed'
+                message = 'Error sending to message to sqs, please try again later to contact dev team.'
+                g.detail = message
             # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
             #                                             simulation.run_id, sim_num])
 
@@ -969,9 +977,16 @@ class ProjectModelView(EmpowerModelView):
 
     def pre_delete(self, item):
         if item.simulations is not None and len(item.simulations) >0:
+            g.direct_to_sub = True
             raise Exception('This project has modeling jobs associate with it. Please '
                             'delete the models first.')
+        g.direct_to_sub = False
 
+    def post_delete_redirect(self):
+        if g.direct_to_sub:
+            return redirect(url_for('SimulationModelView.list'))
+        else:
+            return redirect(url_for('.list'))
 
 class ClientModelView(EmpowerModelView):
 
@@ -1049,9 +1064,16 @@ class ClientModelView(EmpowerModelView):
 
     def pre_delete(self, item):
         if item.projects is not None and len(item.projects) >0:
+            g.direct_to_sub = True
             raise Exception("This client has projects associate with it. Please delete "
                             "the projects first.")
+        g.direct_to_sub = False
 
+    def post_delete_redirect(self):
+        if g.direct_to_sub:
+            return redirect(url_for('ProjectModelView.list'))
+        else:
+            return redirect(url_for('.list'))
 
 class SimulationLogModelView(SupersetModelView):
     route_base = "/simulationlog"
