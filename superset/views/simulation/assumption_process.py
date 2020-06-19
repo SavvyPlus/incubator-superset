@@ -185,23 +185,37 @@ def check_assumption(file_path, assumtpions_version, simulation):
     assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery',
                                        'Negatives_Adjustment']
     assumption_time_fin_year = ['MPC_CTP']
-    assumption_time_ref_year = ['Rooftop_Solar_History']
+    assumption_time_ref_date = ['Rooftop_Solar_History']
     assumption_time_foreacast_date = ['Renewable_Proportion']
+    all_sheets = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Rooftop_Solar_History',
+                  'Behind_The_Meter_Battery','Renewable_Proportion',
+                  'Retirement', 'Strategic_Behaviour' ,'Gas_Price_Escalation',
+                  'Negatives_Adjustment', 'Demand_Adjustments', 'MPC_CTP']
+
+    df_dict = {}
+    for sheet in all_sheets:
+        df_dict[sheet] = read_excel(file_path, sheet_name=sheet)
+        if df_dict[sheet].isnull().values.any():
+            return False, 'Error: nul value exist in {}.'.format(sheet)
+
     for sheet in assumption_time_forecast_year:
-        df = read_excel(file_path, sheet_name=sheet)
-        if df['Year'].min() > simulation.start_date.year:
+        if df_dict[sheet]['Year'].min() > simulation.start_date.year:
             return False, 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
-        if df['Year'].max() < simulation.end_date.year:
+        if df_dict[sheet]['Year'].max() < simulation.end_date.year:
             return False, 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
+
     # # for sheet in assumption_time_ref_date:
     # #     df = read_excel(file_path, sheet_name=sheet)
     # #     if df['Date'].max
     for sheet in assumption_time_foreacast_date:
-        df = read_excel(file_path, sheet_name=sheet)
-        if df['Date'].min() > simulation.start_date:
+        if df_dict[sheet]['Date'].min() > simulation.start_date:
             return False, 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
-        if df['Date'].max() < simulation.end_date:
+        if df_dict[sheet]['Date'].max() < simulation.end_date:
             return False, 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
+
+    for sheet in assumption_time_ref_date:
+        if simulation.start_date not in list(df_dict[sheet]['Date'].map(lambda x: x.date())):
+            return False, 'Error: the simulation start date is not in the list of assumption history pv, please check and adjust.'
     return True, 'success'
 
 def check_proxy(file_path):
@@ -210,6 +224,6 @@ def check_proxy(file_path):
 
 
 def upload_assumption_file(file_path, assumptions_version):
-    put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version))
+    put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version), is_public=True)
     return get_download_url(bucket_test, excel_path.format(assumptions_version)), \
            get_s3_url(bucket_test, excel_path.format(assumptions_version))

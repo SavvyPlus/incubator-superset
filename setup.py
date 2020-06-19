@@ -102,6 +102,7 @@ setup(
         "retry>=0.9.2",
         "selenium>=3.141.0",
         "simplejson>=3.15.0",
+        "slackclient>=2.6.2",
         "sqlalchemy>=1.3.16, <2.0",
         # Breaking change in sqlalchemy-utils==0.36.6, upgrading will probably
         # require a migration on EncryptedType columns. For more information, see
@@ -119,7 +120,7 @@ setup(
         "postgres": ["psycopg2-binary==2.8.5"],
         "presto": ["pyhive[presto]>=0.4.0"],
         "elasticsearch": ["elasticsearch-dbapi>=0.1.0, <0.2.0"],
-        "druid": ["pydruid==0.6.0", "requests==2.22.0"],
+        "druid": ["pydruid>=0.6.1,<0.7"],
         "hana": ["hdbcli==2.4.162", "sqlalchemy_hana==0.4.0"],
         "dremio": ["sqlalchemy_dremio>=1.1.0"],
         "cockroachdb": ["cockroachdb==0.3.3"],

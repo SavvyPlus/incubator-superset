@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -106,6 +106,9 @@ class Assumption(
 
     def __repr__(self):
         return self.name
+
+def find_assumption_by_name(session, name):
+    return session.query(Assumption).filter_by(name=func.binary(name)).one_or_none()
 
 simulation_jobtype = Table(
     "simulation_jobtype",

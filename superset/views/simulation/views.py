@@ -28,8 +28,8 @@ from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
-
 from superset import app, db, event_logger, simulation_logger, celery_app
+from superset.typing import FlaskResponse
 from superset.constants import RouteMethod
 from superset.models.simulation import *
 from superset.connectors.sqla.models import SqlaTable
@@ -68,7 +68,6 @@ def send_notification(simulation, template_id):
         message_dict['receiver'] = email[0]
         send_sendgrid_mail(email[1], message_dict, template_id)
 
-
 @celery_app.task
 @simulation_logger.log_simulation(action_name='process assumption')
 def handle_assumption_process(path, name, run_id, sim_num):
@@ -78,7 +77,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
     print('start preprocess')
     try:
         process_assumptions(path, run_id)
-        assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+        assumption_file = find_assumption_by_name(db.session, name)
         assumption_file.status = "Processed"
         assumption_file.status_detail = None
         db.session.merge(assumption_file)
@@ -86,7 +85,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
         g.result = 'Process success'
         g.detail = 'The assumption detail is now on S3 empower-simulation bucket'
     except Exception as e:
-        assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+        assumption_file = find_assumption_by_name(db.session, name)
         assumption_file.status = "Error"
         assumption_file.status_detail = repr(e)
         db.session.merge(assumption_file)
@@ -100,7 +99,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
 
 def upload_assumption(path, name):
     download_link, s3_link = upload_assumption_file(path, name)
-    assumption_file = db.session.query(Assumption).filter_by(name=name).one_or_none()
+    assumption_file = find_assumption_by_name(db.session, name)
     if not assumption_file:
         assumption_file = Assumption()
         assumption_file.name = name
@@ -470,8 +469,7 @@ class SimulationModelView(
         'send_email',
         'process_success',
         'process_failed',
-        'start_run',
-        'test'
+        'start_run'
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
@@ -482,22 +480,9 @@ class SimulationModelView(
     # add_form = AddSimulationForm
     list_widget = SimulationListWidget
 
-    @expose('/test/')
-    def test(self):
-        message = {
-            'message': 'hello world'
-        }
-        try:
-            send_sqs_msg(json.dumps(message), queue_url='https://sqs.ap-southeast-2.amazonaws.com/000581985601/eric-test')
-            return 'message sent'
-        except Exception as e:
-            traceback.print_exc()
-            return repr((e))
-        
-
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
-    def load_results(self, run_id, table_name):
+    def load_results(self, run_id: str, table_name: str) -> FlaskResponse:
         # First check if the table has existed. If so, redirect to its chart
         sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
         if sqla_table:
@@ -607,7 +592,7 @@ class SimulationModelView(
 
     @event_logger.log_this
     @expose('/send-email/<run_id>/<sim_num>/')
-    def send_email(self, run_id, sim_num):
+    def send_email(self, run_id: str, sim_num: str) -> FlaskResponse:
         # Get user email
         email_to = 'chenyang.wang@zawee.work'
 
@@ -624,8 +609,8 @@ class SimulationModelView(
         #     email_to = latest_sim.user.email
 
         # Send notification email
-        base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
-        # base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
+        base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
         # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
         dynamic_template_data = {
             "run_id": run_id,
@@ -784,7 +769,7 @@ class SimulationModelView(
             g.result = 'Upload failed'
             g.detail = detail
         finally:
-            # os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+            os.remove(path)
             return jsonify({
                 'message': message,
                 'detail': detail
@@ -830,12 +815,12 @@ class SimulationModelView(
         else:
             g.action_object = simulation.name
             g.action_object_type = 'Simulation'
-            if simulation.assumption.status != 'Uploaded' and simulation.assumption.status != 'Processed':
+            if simulation.assumption.status == 'Error':
                 g.result = 'Run failed'
-                message = 'The assumption is not uploaded or processed successfully, please reupload or use another one.'
+                message = 'The assumption contains error, please reupload or use another one.'
                 g.detail = message
             else:
-                if simulation.assumption.s3_path == None:
+                if simulation.assumption.s3_path is None:
                     path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
                     simulation.assumption.s3_path = path
                     db.session.commit()
@@ -853,8 +838,8 @@ class SimulationModelView(
         })
 
     def pre_run_check_process(self, simulation, run_type):
-        # pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
-        pass_check, message = True, ''
+        pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        # pass_check, message = True, ''
         if pass_check:
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
@@ -876,9 +861,10 @@ class SimulationModelView(
                 'runType': run_type,
                 'supersetURL': ip,
             }
-            send_sqs_msg(json.dumps(msg))
-            simulation.status = 'Running'
-            db.session.commit()
+            if send_sqs_msg(json.dumps(msg)):
+                g.detail = json.dumps(msg)
+                simulation.status = 'Running'
+                db.session.commit()
             # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
             #                                             simulation.run_id, sim_num])
 
@@ -906,7 +892,8 @@ class SimulationModelView(
         if run_type == 'test':
             sim_num = 5
         else:
-            sim_num = simulation.run_no
+            # sim_num = simulation.run_no
+            sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
 
         return '200 OK'
@@ -932,7 +919,8 @@ class SimulationModelView(
         if run_type == 'test':
             sim_num = 5
         else:
-            sim_num = simulation.run_no
+            # sim_num = simulation.run_no
+            sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
         return '200 OK'
 
@@ -994,7 +982,7 @@ class ProjectModelView(EmpowerModelView):
         return result
 
     def pre_delete(self, item):
-        if item.simulations is not None:
+        if item.simulations is not None and len(item.simulations) >0:
             raise Exception('This project has modeling jobs associate with it. Please '
                             'delete the models first.')
 
@@ -1074,7 +1062,7 @@ class ClientModelView(EmpowerModelView):
         return widgets
 
     def pre_delete(self, item):
-        if item.projects is not None:
+        if item.projects is not None and len(item.projects) >0:
             raise Exception("This client has projects associate with it. Please delete "
                             "the projects first.")
 

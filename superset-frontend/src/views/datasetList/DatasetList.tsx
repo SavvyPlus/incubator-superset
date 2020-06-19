@@ -27,14 +27,24 @@ import { Panel } from 'react-bootstrap';
 import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
 import ListView from 'src/components/ListView/ListView';
 import SubMenu from 'src/components/Menu/SubMenu';
+import AvatarIcon from 'src/components/AvatarIcon';
 import {
   FetchDataConfig,
   FilterOperatorMap,
   Filters,
 } from 'src/components/ListView/types';
 import withToasts from 'src/messageToasts/enhancers/withToasts';
+import TooltipWrapper from 'src/components/TooltipWrapper';
+import Icon from 'src/components/Icon';
 
 const PAGE_SIZE = 25;
+
+type Owner = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  username: string;
+};
 
 interface Props {
   addDangerToast: (msg: string) => void;
@@ -54,13 +64,14 @@ interface State {
 }
 
 interface Dataset {
+  changed_by: string;
   changed_by_name: string;
   changed_by_url: string;
-  changed_by: string;
   changed_on: string;
   databse_name: string;
   explore_url: string;
   id: number;
+  owners: Array<Owner>;
   schema: string;
   table_name: string;
 }
@@ -141,15 +152,65 @@ class DatasetList extends React.PureComponent<Props, State> {
     {
       Cell: ({
         row: {
-          original: { explore_url: exploreUrl, table_name: datasetTitle },
+          original: { kind },
         },
-      }: any) => <a href={exploreUrl}>{datasetTitle}</a>,
-      Header: t('Table'),
+      }: any) => {
+        if (kind === 'physical')
+          return (
+            <TooltipWrapper
+              label="physical-dataset"
+              tooltip={t('Physical Dataset')}
+            >
+              <Icon name="dataset-physical" />
+            </TooltipWrapper>
+          );
+
+        return (
+          <TooltipWrapper
+            label="virtual-dataset"
+            tooltip={t('Virtual Dataset')}
+          >
+            <Icon name="dataset-virtual" />
+          </TooltipWrapper>
+        );
+      },
+      accessor: 'kind_icon',
+    },
+    {
+      Cell: ({
+        row: {
+          original: { table_name: datasetTitle },
+        },
+      }: any) => datasetTitle,
+      Header: t('Name'),
       accessor: 'table_name',
     },
     {
-      Header: t('Database'),
+      Cell: ({
+        row: {
+          original: { kind },
+        },
+      }: any) => kind[0]?.toUpperCase() + kind.slice(1),
+      Header: t('Type'),
+      accessor: 'kind',
+    },
+    {
+      Header: t('Source'),
       accessor: 'database_name',
+    },
+    {
+      Header: t('Schema'),
+      accessor: 'schema',
+    },
+    {
+      Cell: ({
+        row: {
+          original: { changed_on: changedOn },
+        },
+      }: any) => <span className="no-wrap">{moment(changedOn).fromNow()}</span>,
+      Header: t('Last Modified'),
+      accessor: 'changed_on',
+      sortable: true,
     },
     {
       Cell: ({
@@ -160,30 +221,36 @@ class DatasetList extends React.PureComponent<Props, State> {
           },
         },
       }: any) => <a href={changedByUrl}>{changedByName}</a>,
-      Header: t('Changed By'),
+      Header: t('Modified By'),
       accessor: 'changed_by_fk',
-    },
-    {
-      Cell: ({
-        row: {
-          original: { changed_on: changedOn },
-        },
-      }: any) => <span className="no-wrap">{moment(changedOn).fromNow()}</span>,
-      Header: t('Modified'),
-      accessor: 'changed_on',
-      sortable: true,
     },
     {
       accessor: 'database',
       hidden: true,
     },
     {
-      accessor: 'schema',
-      hidden: true,
-    },
-    {
-      accessor: 'owners',
-      hidden: true,
+      Cell: ({
+        row: {
+          original: { owners, table_name: tableName },
+        },
+      }: any) => {
+        if (!owners) {
+          return null;
+        }
+        return owners
+          .slice(0, 5)
+          .map((owner: Owner) => (
+            <AvatarIcon
+              tableName={tableName}
+              firstName={owner.first_name}
+              lastName={owner.last_name}
+              userName={owner.username}
+              iconSize="20"
+            />
+          ));
+      },
+      Header: t('Owners'),
+      id: 'owners',
     },
     {
       accessor: 'is_sqllab_view',
@@ -200,6 +267,14 @@ class DatasetList extends React.PureComponent<Props, State> {
           <span
             className={`actions ${state && state.hover ? '' : 'invisible'}`}
           >
+            <a
+              role="button"
+              tabIndex={0}
+              className="action-button"
+              href={original.explore_url}
+            >
+              <Icon name="compass" />
+            </a>
             {this.canDelete && (
               <ConfirmStatusChange
                 title={t('Please Confirm')}
@@ -218,7 +293,7 @@ class DatasetList extends React.PureComponent<Props, State> {
                     className="action-button"
                     onClick={confirmDelete}
                   >
-                    <i className="fa fa-trash" />
+                    <Icon name="trash" />
                   </span>
                 )}
               </ConfirmStatusChange>
@@ -230,7 +305,7 @@ class DatasetList extends React.PureComponent<Props, State> {
                 className="action-button"
                 onClick={handleEdit}
               >
-                <i className="fa fa-pencil" />
+                <Icon name="pencil" />
               </span>
             )}
           </span>

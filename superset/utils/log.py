@@ -187,13 +187,14 @@ class SimulationLogger(AbstractEventLogger):
 
                 value = f(*args, **kwargs)
                 dttm = datetime.now()
+
                 if g.user:
                     user_id = g.user.get_id()
                 action_object = action_object_type = result = detail = None
 
                 if g.action_object:
                     action_object = g.action_object
-                    action_object_type = g.action_object_type
+                    action_object_type = g.action_object_type.capitalize()
 
                 if g.result:
                     result = g.result
@@ -201,7 +202,7 @@ class SimulationLogger(AbstractEventLogger):
                 if g.detail:
                     detail = g.detail
 
-                self.log(user_id=user_id, action=action_name,
+                self.log(user_id=user_id, action=action_name.lower(),
                                      action_object=action_object,
                                      action_object_type=action_object_type,
                                      result=result,

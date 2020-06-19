@@ -31,10 +31,13 @@ def write_pickle_to_s3(data, bucket, path):
     bucket = "empower-simulation"
     client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
-def put_file_to_s3(filename, bucket, key):
+def put_file_to_s3(filename, bucket, key, is_public=False):
     bucket = "empower-simulation"
     with open(filename, "rb") as f:
-        response = client.upload_fileobj(f, bucket, key)
+        if is_public:
+            response = client.upload_fileobj(f, bucket, key, ExtraArgs={'ACL': 'public-read'})
+        else:
+            response = client.upload_fileobj(f, bucket, key)
     return response
 
 def get_download_url(bucket, key):
