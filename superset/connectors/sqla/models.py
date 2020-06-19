@@ -16,7 +16,6 @@
 # under the License.
 # pylint: disable=C,R,W
 import logging
-import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from typing import Any, Dict, Hashable, List, NamedTuple, Optional, Tuple, Union
@@ -394,6 +393,7 @@ class SqlaTable(Model, BaseDatasource):
 
     type = "table"
     query_language = "sql"
+    is_rls_supported = True
     metric_class = SqlMetric
     column_class = TableColumn
     owner_class = security_manager.user_model
@@ -1208,6 +1208,9 @@ class SqlaTable(Model, BaseDatasource):
         if not self.main_dttm_col:
             self.main_dttm_col = any_date_col
         self.add_missing_metrics(metrics)
+
+        # Apply config supplied mutations.
+        config["SQLA_TABLE_MUTATOR"](self)
 
         db.session.merge(self)
         if commit:

@@ -224,6 +224,6 @@ def check_assumption(file_path, assumtpions_version, simulation):
 
 
 def upload_assumption_file(file_path, assumptions_version):
-    put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version))
+    put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version), is_public=True)
     return get_download_url(bucket_test, excel_path.format(assumptions_version)), \
            get_s3_url(bucket_test, excel_path.format(assumptions_version))

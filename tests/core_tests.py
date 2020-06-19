@@ -37,6 +37,7 @@ from unittest import mock, skipUnless
 import pandas as pd
 import sqlalchemy as sqla
 
+import superset.views.utils
 from tests.test_app import app
 from superset import (
     dataframe,
@@ -122,7 +123,21 @@ class CoreTests(SupersetTestCase):
         cache_key = viz.cache_key(qobj)
 
         qobj["groupby"] = []
-        self.assertNotEqual(cache_key, viz.cache_key(qobj))
+        cache_key_with_groupby = viz.cache_key(qobj)
+        self.assertNotEqual(cache_key, cache_key_with_groupby)
+
+        self.assertNotEqual(
+            viz.cache_key(qobj), viz.cache_key(qobj, time_compare="12 weeks")
+        )
+
+        self.assertNotEqual(
+            viz.cache_key(qobj, time_compare="28 days"),
+            viz.cache_key(qobj, time_compare="12 weeks"),
+        )
+
+        qobj["inner_from_dttm"] = datetime.datetime(1901, 1, 1)
+
+        self.assertEquals(cache_key_with_groupby, viz.cache_key(qobj))
 
     def test_get_superset_tables_not_allowed(self):
         example_db = utils.get_example_database()
@@ -177,12 +192,18 @@ class CoreTests(SupersetTestCase):
         db.session.add(annotation)
         db.session.commit()
 
-        resp = self.get_resp(
+        resp_annotations = json.loads(
+            self.get_resp("annotationlayermodelview/api/read")
+        )
+        # the UI needs id and name to function
+        self.assertIn("id", resp_annotations["result"][0])
+        self.assertIn("name", resp_annotations["result"][0])
+
+        layer = self.get_resp(
             f"/superset/annotation_json/{layer.id}?form_data="
             + quote(json.dumps({"time_range": "100 years ago : now"}))
         )
-
-        assert "my_annotation" in resp
+        self.assertIn("my_annotation", layer)
 
     def test_admin_only_permissions(self):
         def assert_admin_permission_in(role_name, assert_func):
@@ -1086,7 +1107,7 @@ class CoreTests(SupersetTestCase):
         self.assertIsInstance(serialized_payload, str)
 
         query_mock = mock.Mock()
-        deserialized_payload = views._deserialize_results_payload(
+        deserialized_payload = superset.views.utils._deserialize_results_payload(
             serialized_payload, query_mock, use_new_deserialization
         )
 
@@ -1139,7 +1160,7 @@ class CoreTests(SupersetTestCase):
             query_mock = mock.Mock()
             query_mock.database.db_engine_spec.expand_data = expand_data
 
-            deserialized_payload = views._deserialize_results_payload(
+            deserialized_payload = superset.views.utils._deserialize_results_payload(
                 serialized_payload, query_mock, use_new_deserialization
             )
             df = results.to_pandas_df()

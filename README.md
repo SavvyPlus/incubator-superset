@@ -150,6 +150,7 @@ Join our growing community!
  1. [Dial Once](https://www.dial-once.com/en/) 
  1. [Digit Game Studios](https://www.digitgaming.com/)
  1. [Douban](https://www.douban.com/) [@luchuan]
+ 1. [DouroECI](http://douroeci.com/en/) [@nunohelibeires]
  1. [Dragonpass](https://www.dragonpass.com.cn/) [@zhxjdwh]
  1. [Dremio](https://dremio.com) [@narendrans]
  1. [ELMO Cloud HR & Payroll](https://elmosoftware.com.au/)
@@ -161,6 +162,7 @@ Join our growing community!
  1. [GFG - Global Fashion Group](https://global-fashion-group.com) [@ksaagariconic]
  1. [GfK Data Lab](http://datalab.gfk.com) [@mherr]
  1. [Grassroot](https://www.grassrootinstitute.org/) 
+ 1. [GrowthSimple](https://growthsimple.ai/)
  1. [Hostnfly](https://www.hostnfly.com/) [@alexisrosuel]
  1. [HuiShouBao](http://www.huishoubao.com/) [@Yukinoshita-Yukino]
  1. [Intercom](https://www.intercom.com/) [@kate-gallo]

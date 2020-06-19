@@ -343,7 +343,7 @@ class DashboardList extends React.PureComponent<Props, State> {
   handleBulkDashboardExport = (dashboards: Dashboard[]) => {
     return window.location.assign(
       `/api/v1/dashboard/export/?q=${rison.encode(
-        dashboards.map(({ id }) => id).join(','),
+        dashboards.map(({ id }) => id),
       )}`,
     );
   };
@@ -437,6 +437,7 @@ class DashboardList extends React.PureComponent<Props, State> {
             operator: 'rel_m_m',
             unfilteredLabel: 'All',
             fetchSelects: this.fetchOwners,
+            paginate: true,
           },
           {
             Header: 'Published',
