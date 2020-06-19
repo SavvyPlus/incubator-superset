@@ -386,7 +386,6 @@ def is_slice_in_container(
     return False
 
 
-
 # Sendgrid email sender
 def send_sendgrid_mail(address_to, message_data, template_id):
     message = Mail(

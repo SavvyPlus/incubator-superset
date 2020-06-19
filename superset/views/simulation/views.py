@@ -29,6 +29,7 @@ from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
 
 from superset import app, db, event_logger, simulation_logger, celery_app
+from superset.typing import FlaskResponse
 from superset.constants import RouteMethod
 from superset.models.simulation import *
 from superset.connectors.sqla.models import SqlaTable
@@ -481,7 +482,7 @@ class SimulationModelView(
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
-    def load_results(self, run_id, table_name):
+    def load_results(self, run_id: str, table_name: str) -> FlaskResponse:
         # First check if the table has existed. If so, redirect to its chart
         sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
         if sqla_table:
@@ -591,7 +592,7 @@ class SimulationModelView(
 
     @event_logger.log_this
     @expose('/send-email/<run_id>/<sim_num>/')
-    def send_email(self, run_id, sim_num):
+    def send_email(self, run_id: str, sim_num: str) -> FlaskResponse:
         # Get user email
         email_to = 'chenyang.wang@zawee.work'
 
