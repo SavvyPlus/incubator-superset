@@ -39,6 +39,7 @@ from superset.views.base import json_success, DeleteMixin, SupersetModelView
 from superset.views.utils import send_sendgrid_mail
 from superset.views.simulation.util import get_s3_url
 from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
+from superset.views.simulation.simulation_config import bucket_test
 
 from .forms import UploadAssumptionForm, AddSimulationForm
 from .util import send_sqs_msg, get_current_external_ip
@@ -131,10 +132,11 @@ def simulation_start_invoker(run_id, sim_num):
     g.user = None
     g.action_object = simulation.name
     g.action_object_type = 'simulation'
-    bucket_test = 'empower-simulation'
 
-    # bucket_inputs = '007-spot-price-forecast-physical'
-    # bucket_outputs = "dex-empower.test"
+    if sim_num <= 5:
+        interval=300
+    else:
+        interval = 60
 
     # End early if assumption process failed
     if simulation.assumption.status != 'Processed':
@@ -152,28 +154,29 @@ def simulation_start_invoker(run_id, sim_num):
         end_date = simulation.end_date
         sim_tag = run_id
         total_days = (start_date - end_date).days
-        output_days = total_days + 7 - total_days%7
+        # output_days = total_days + 7 - total_days%7
 
 
         try:
             # TODO uncomment to invoke
             print('invoking')
-            # batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=60)
-            # batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, output_days, year_start=simulation.start_date.year,
-            #                          year_end=simulation.end_date.year, interval=30)
-            # batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, output_count=11, interval=60)
-            batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
+            batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=interval)
+            batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, total_days, year_start=simulation.start_date.year,
+                                     year_end=simulation.end_date.year, interval=interval/2)
+            batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, simulation.start_date.year - simulation.end_date.year,
+                                    interval=interval/2)
+            # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
             simulation.status = 'Run finished'
             db.session.commit()
-            g.result = 'invoke success'
+            g.result = 'Invoke success, simulation finished.'
         except Exception as e:
             simulation.status = 'Run failed'
             simulation.status_detail = repr(e)
             db.session.commit()
-            g.result = 'invoke failed'
+            g.result = 'Invoke failed'
             g.detail = repr(e)
             traceback.print_exc()
         finally:
