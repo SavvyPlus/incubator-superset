@@ -5,7 +5,7 @@ from .simulation_config import bucket_test, reference_date_s3_pickle_path, param
 
 
 def get_reference_day_dict(index):
-    ref_dic_t = read_pickle_from_s3(bucket_inputs, reference_date_s3_pickle_path.format(index))
+    ref_dic_t = read_pickle_from_s3(bucket_test, reference_date_s3_pickle_path.format(index))
     ref_dic = dict()
     for key in ref_dic_t:
         ref_date_index = random.randint(0, len(ref_dic_t[key]) - 1)
