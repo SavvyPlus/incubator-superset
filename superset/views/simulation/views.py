@@ -147,7 +147,16 @@ def simulation_start_invoker(run_id, sim_num):
         db.session.commit()
     else:
         print('generate parameters')
-        generate_parameters_for_batch(run_id, sim_num)
+        try:
+            generate_parameters_for_batch(run_id, sim_num)
+        except Exception as e:
+            simulation.status = 'Run failed'
+            simulation.status_detail = repr(e)
+            db.session.commit()
+            g.result = 'Invoke failed'
+            g.detail = repr(e)
+            traceback.print_exc()
+            return None
         index_start = 0
         index_end = sim_num  # exclusive
         # start_date = simulation.start_date
