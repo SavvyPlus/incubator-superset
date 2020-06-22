@@ -7,7 +7,7 @@ import datetime
 from superset import celery_app, simulation_logger
 
 from .util import write_pickle_to_s3, read_pickle_from_s3
-from .simulation_config import bucket_test
+from .simulation_config import bucket_test, bucket_inputs
 
 client = boto3.client('lambda', region_name='ap-southeast-2')
 s3 = boto3.client('s3', region_name='ap-southeast-2')
@@ -83,10 +83,11 @@ def merger(sim_index, sim_tag):
     )
 
 
-def merger2(sim_index, sim_tag, prefix, output_name):
-    payload = {"sim_index": sim_index, "sim_tag": sim_tag, "prefix": prefix, "output_name": output_name}
+def merger2(sim_index, sim_tag, prefix, output_name, bucket_from=bucket_inputs, bucket_to=bucket_test):
+    payload = {"sim_index": sim_index, "sim_tag": sim_tag, "prefix": prefix, "output_name": output_name,
+               "bucket_from": bucket_from, "bucket_to": bucket_to}
     response = client.invoke(
-        FunctionName='spot-price-lp-merger',
+        FunctionName='spot-price-forecast-simulation-merger',
         InvocationType='Event',
         Payload=json.dumps(payload),
     )
@@ -132,11 +133,12 @@ def batch_invoke_merger_year(bucket_outputs, sim_tag, start_index, end_index, ou
     for sim_index in range(start_index, end_index):
         print(sim_index)
         res_list = list_object_keys(bucket_outputs, f'simulation-result/{sim_tag}/{sim_index}/')
-        if len(res_list) != output_count:
+        if len(res_list) < output_count:
+            # Originally check equal, for this check if less
             print(f"{len(res_list)} records found, expect {output_count}")
             break
         for year in range(year_start,year_end):
-            merger2(sim_index, sim_tag, str(year), f"SUMMARY-{year}.pickle")
+            merger2(sim_index, sim_tag, str(year), f"SUMMARY-{year}.pickle", bucket_outputs, bucket_outputs)
         print(f"{len(res_list)} record found, check passed, continue next batch soon")
         time.sleep(interval)
 
@@ -145,10 +147,11 @@ def batch_invoke_merger_all(bucket_inputs, sim_tag, start_index, end_index, outp
     for sim_index in range(start_index, end_index):
         print(sim_index)
         res_list = list_object_keys(bucket_inputs, f'result-spot-price-simulation-lp/{sim_tag}/{sim_index}/SUMMARY-')
-        if len(res_list) != output_count:
+        if len(res_list) < output_count:
+            # Originally check equal, for this check if less
             print(f"{len(res_list)} records found, expect {output_count}")
             break
-        merger2(sim_index, sim_tag, 'SUMMARY-', 'SUMMARY.pickle')
+        merger2(sim_index, sim_tag, 'SUMMARY-', 'SUMMARY.pickle', bucket_inputs, bucket_inputs)
         print(f"{len(res_list)} record found, check passed, continue next batch soon")
         time.sleep(interval)
 
