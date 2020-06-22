@@ -53,8 +53,8 @@ sheet_col_dict = {
     'Gas_Price_Escalation':['State','Year'],
     'MPC_CTP':['MCP'],
     'NewFormat':['StartDate','EndDate','DUID','FuelType','InstalledQuantity','MaximumQuantity','StartDate','Proxy'],
-    'Rooftop_Solar_History':['State','Year','AGGREGATE_MW'],
-    'Rooftop_Solar_Forecast':['State','Date','CAPACITY_MW','AGGREGATE_MW'],
+    'Rooftop_Solar_Forecast':['State','Year','AGGREGATE_MW'],
+    'Rooftop_Solar_History':['State','Date','CAPACITY_MW','AGGREGATE_MW'],
     'Renewable_Proportion':['State','Date','Maximum Half-Hour Intermittent Proportion'],
     'Retirement':['Closure Date','Back To Service Date'],
     'Strategic_Behaviour':['State','Bin (not Exceeding)','value','MW']
