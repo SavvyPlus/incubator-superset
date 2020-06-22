@@ -183,24 +183,25 @@ def process_assumptions(file_path, assumptions_version):
 
 def check_assumption(file_path, assumtpions_version, simulation):
 
-    assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery',
-                                       'Negatives_Adjustment']
+    assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery']
     assumption_time_fin_year = ['MPC_CTP']
     assumption_time_ref_date = ['Rooftop_Solar_History']
     assumption_time_foreacast_date = ['Renewable_Proportion']
     all_sheets = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Rooftop_Solar_History',
                   'Behind_The_Meter_Battery','Renewable_Proportion',
                   'Retirement', 'Strategic_Behaviour' ,'Gas_Price_Escalation',
-                  'Negatives_Adjustment', 'Demand_Adjustments', 'MPC_CTP']
+                  'MPC_CTP']
 
     df_dict = {}
     for sheet in sheet_col_dict.keys():
         df_dict[sheet] = read_excel(file_path, sheet_name=sheet)
-        if df_dict[sheet].isnull().values.any():
-            return False, 'Error: null value exist in {}.'.format(sheet)
         for col in sheet_col_dict[sheet]:
             if col not in df_dict[sheet].columns:
                 return False, 'Error: missing column {} in {}.'.format(col, sheet)
+
+    for sheet in all_sheets:
+        if df_dict[sheet].isnull().values.any():
+            return False, 'Error: null value exist in {}.'.format(sheet)
 
     for sheet in assumption_time_forecast_year:
         if df_dict[sheet]['Year'].min() > simulation.start_date.year:
