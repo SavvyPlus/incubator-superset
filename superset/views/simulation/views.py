@@ -711,7 +711,7 @@ class SimulationModelView(
                 self.post_add(item)
                 g.result = 'Create simulation success'
                 g.detail = None
-                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
+                # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
 
             flash(*self.datamodel.message)
