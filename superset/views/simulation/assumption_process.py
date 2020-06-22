@@ -191,7 +191,7 @@ def check_assumption(file_path, assumtpions_version, simulation):
     all_sheets = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Rooftop_Solar_History',
                   'Behind_The_Meter_Battery','Renewable_Proportion',
                   'Retirement', 'Strategic_Behaviour' ,'Gas_Price_Escalation',
-                  'Negatives_Adjustment', 'Demand_Adjustments', 'MPC_CTP']
+                  'Demand_Adjustments', 'MPC_CTP']
 
     df_dict = {}
     for sheet in sheet_col_dict.keys():
