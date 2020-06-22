@@ -491,7 +491,7 @@ class SimulationModelView(
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
     def load_results(self, run_id: str, table_name: str) -> FlaskResponse:
-        # First check if the table has existed. If so, redirect to its chart
+        # First， check if the table has existed. If so, redirect to its chart
         sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
         if sqla_table:
             endpoint = get_redirect_endpoint(table_name, sqla_table.id)
