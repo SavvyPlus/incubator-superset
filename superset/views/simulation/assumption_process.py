@@ -4,7 +4,8 @@ from .simulation_config import start_date_str, end_date_str, sim_start_date_str,
     states, bucket_inputs, rooftop_pv_path, existing_generation_path, existing_generation_s3_pickle_path, \
     pv_data_s3_pickle_path, pv_forecast_s3_new_pickle_path, pv_history_s3_new_pickle_path, new_projects_pickle_path, \
     retirement_s3_pickle_path, demand_growth_rate_s3_pickle_path, renewable_proportion_s3_pickle_path, excel_path, bucket_test, \
-    projects_gen_data_s3_pickle_path, small_battery_capacity_s3_pickle_path, sheet_demand_adjustment
+    projects_gen_data_s3_pickle_path, small_battery_capacity_s3_pickle_path, sheet_demand_adjustment,\
+    sheet_col_dict
 import time
 import datetime
 import pandas as pd
@@ -193,10 +194,13 @@ def check_assumption(file_path, assumtpions_version, simulation):
                   'Negatives_Adjustment', 'Demand_Adjustments', 'MPC_CTP']
 
     df_dict = {}
-    for sheet in all_sheets:
+    for sheet in sheet_col_dict.keys():
         df_dict[sheet] = read_excel(file_path, sheet_name=sheet)
         if df_dict[sheet].isnull().values.any():
-            return False, 'Error: nul value exist in {}.'.format(sheet)
+            return False, 'Error: null value exist in {}.'.format(sheet)
+        for col in sheet_col_dict[sheet]:
+            if col not in df_dict[sheet].columns:
+                return False, 'Error: missing column {} in {}.'.format(col, sheet)
 
     for sheet in assumption_time_forecast_year:
         if df_dict[sheet]['Year'].min() > simulation.start_date.year:
@@ -217,10 +221,6 @@ def check_assumption(file_path, assumtpions_version, simulation):
         if simulation.start_date not in list(df_dict[sheet]['Date'].map(lambda x: x.date())):
             return False, 'Error: the simulation start date is not in the list of assumption history pv, please check and adjust.'
     return True, 'success'
-
-def check_proxy(file_path):
-    return True
-
 
 
 def upload_assumption_file(file_path, assumptions_version):
