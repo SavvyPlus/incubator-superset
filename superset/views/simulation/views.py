@@ -123,7 +123,7 @@ def upload_assumption(path, name):
 @celery_app.task
 @simulation_logger.log_simulation(action_name='invoke')
 def simulation_start_invoker(run_id, sim_num):
-    from .invoker import batch_invoke_solver, batch_invoke_merger_all, batch_invoke_merger_year
+    from .invoker import batch_invoke_solver, batch_invoke_merger_all, batch_invoke_merger_year, invoker
     from .batch_parameters import generate_parameters_for_batch
     from .simulation_config import bucket_inputs
     print('start invoke')
@@ -171,6 +171,9 @@ def simulation_start_invoker(run_id, sim_num):
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
+            invoker(payload={'run_id': sim_tag, 'bucket': bucket_test},
+                           function_name='spot_simulation_check_spot_price_outputs_numbers')
+
             simulation.status = 'Run finished'
             db.session.commit()
             g.result = 'Invoke success, simulation finished.'
