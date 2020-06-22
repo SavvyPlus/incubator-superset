@@ -196,11 +196,13 @@ def check_assumption(file_path, assumtpions_version, simulation):
     df_dict = {}
     for sheet in sheet_col_dict.keys():
         df_dict[sheet] = read_excel(file_path, sheet_name=sheet)
-        if df_dict[sheet].isnull().values.any():
-            return False, 'Error: null value exist in {}.'.format(sheet)
         for col in sheet_col_dict[sheet]:
             if col not in df_dict[sheet].columns:
                 return False, 'Error: missing column {} in {}.'.format(col, sheet)
+
+    for sheet in all_sheets:
+        if df_dict[sheet].isnull().values.any():
+            return False, 'Error: null value exist in {}.'.format(sheet)
 
     for sheet in assumption_time_forecast_year:
         if df_dict[sheet]['Year'].min() > simulation.start_date.year:
