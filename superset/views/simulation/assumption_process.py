@@ -183,15 +183,14 @@ def process_assumptions(file_path, assumptions_version):
 
 def check_assumption(file_path, assumtpions_version, simulation):
 
-    assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery',
-                                       'Negatives_Adjustment']
+    assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery']
     assumption_time_fin_year = ['MPC_CTP']
     assumption_time_ref_date = ['Rooftop_Solar_History']
     assumption_time_foreacast_date = ['Renewable_Proportion']
     all_sheets = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Rooftop_Solar_History',
                   'Behind_The_Meter_Battery','Renewable_Proportion',
                   'Retirement', 'Strategic_Behaviour' ,'Gas_Price_Escalation',
-                  'Demand_Adjustments', 'MPC_CTP']
+                  'MPC_CTP']
 
     df_dict = {}
     for sheet in sheet_col_dict.keys():
