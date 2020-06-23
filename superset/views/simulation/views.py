@@ -133,8 +133,10 @@ def simulation_start_invoker(run_id, sim_num):
     g.action_object = simulation.name
     g.action_object_type = 'simulation'
 
-    if sim_num <= 5:
+    if sim_num < 2:
         interval=300
+    elif sim_num < 5:
+        interval = 100
     else:
         interval = 60
 
