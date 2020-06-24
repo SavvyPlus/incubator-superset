@@ -412,7 +412,7 @@ class RolePermissionTests(SupersetTestCase):
         mock_g.user = security_manager.find_user("admin")
         with self.client.application.test_request_context():
             database = get_example_database()
-            schemas = security_manager.schemas_accessible_by_user(
+            schemas = security_manager.get_schemas_accessible_by_user(
                 database, ["1", "2", "3"]
             )
             self.assertEquals(schemas, ["1", "2", "3"])  # no changes
@@ -424,7 +424,7 @@ class RolePermissionTests(SupersetTestCase):
         mock_g.user = security_manager.find_user("gamma")
         with self.client.application.test_request_context():
             database = get_example_database()
-            schemas = security_manager.schemas_accessible_by_user(
+            schemas = security_manager.get_schemas_accessible_by_user(
                 database, ["1", "2", "3"]
             )
             # temp_schema is not passed in the params
@@ -437,7 +437,7 @@ class RolePermissionTests(SupersetTestCase):
         mock_g.user = security_manager.find_user("gamma")
         with self.client.application.test_request_context():
             database = get_example_database()
-            schemas = security_manager.schemas_accessible_by_user(
+            schemas = security_manager.get_schemas_accessible_by_user(
                 database, ["temp_schema", "2", "3"]
             )
             self.assertEquals(schemas, ["temp_schema"])
@@ -449,7 +449,7 @@ class RolePermissionTests(SupersetTestCase):
         mock_g.user = security_manager.find_user("gamma")
         with self.client.application.test_request_context():
             database = get_example_database()
-            schemas = security_manager.schemas_accessible_by_user(
+            schemas = security_manager.get_schemas_accessible_by_user(
                 database, ["temp_schema", "2", "3"]
             )
             self.assertEquals(schemas, ["temp_schema", "2"])
@@ -774,45 +774,45 @@ class SecurityManagerTests(SupersetTestCase):
     Testing the Security Manager.
     """
 
-    @patch("superset.security.SupersetSecurityManager.datasource_access")
-    def test_assert_datasource_permission(self, mock_datasource_access):
+    @patch("superset.security.SupersetSecurityManager.can_access_datasource")
+    def test_assert_datasource_permission(self, mock_can_access_datasource):
         datasource = self.get_datasource_mock()
 
         # Datasource with the "datasource_access" permission.
-        mock_datasource_access.return_value = True
+        mock_can_access_datasource.return_value = True
         security_manager.assert_datasource_permission(datasource)
 
         # Datasource without the "datasource_access" permission.
-        mock_datasource_access.return_value = False
+        mock_can_access_datasource.return_value = False
 
         with self.assertRaises(SupersetSecurityException):
             security_manager.assert_datasource_permission(datasource)
 
-    @patch("superset.security.SupersetSecurityManager.datasource_access")
-    def test_assert_query_context_permission(self, mock_datasource_access):
+    @patch("superset.security.SupersetSecurityManager.can_access_datasource")
+    def test_assert_query_context_permission(self, mock_can_access_datasource):
         query_context = Mock()
         query_context.datasource = self.get_datasource_mock()
 
         # Query context with the "datasource_access" permission.
-        mock_datasource_access.return_value = True
+        mock_can_access_datasource.return_value = True
         security_manager.assert_query_context_permission(query_context)
 
         # Query context without the "datasource_access" permission.
-        mock_datasource_access.return_value = False
+        mock_can_access_datasource.return_value = False
 
         with self.assertRaises(SupersetSecurityException):
             security_manager.assert_query_context_permission(query_context)
 
-    @patch("superset.security.SupersetSecurityManager.datasource_access")
-    def test_assert_viz_permission(self, mock_datasource_access):
+    @patch("superset.security.SupersetSecurityManager.can_access_datasource")
+    def test_assert_viz_permission(self, mock_can_access_datasource):
         test_viz = viz.TableViz(self.get_datasource_mock(), form_data={})
 
         # Visualization with the "datasource_access" permission.
-        mock_datasource_access.return_value = True
+        mock_can_access_datasource.return_value = True
         security_manager.assert_viz_permission(test_viz)
 
         # Visualization without the "datasource_access" permission.
-        mock_datasource_access.return_value = False
+        mock_can_access_datasource.return_value = False
 
         with self.assertRaises(SupersetSecurityException):
             security_manager.assert_viz_permission(test_viz)
@@ -833,10 +833,11 @@ class RowLevelSecurityTests(SupersetTestCase):
         self.rls_entry.table = (
             session.query(SqlaTable).filter_by(table_name="birth_names").first()
         )
-        self.rls_entry.clause = "gender = 'male'"
+        self.rls_entry.clause = "gender = 'boy'"
         self.rls_entry.roles.append(
             security_manager.find_role("Gamma")
         )  # db.session.query(Role).filter_by(name="Gamma").first())
+        self.rls_entry.roles.append(security_manager.find_role("Alpha"))
         db.session.add(self.rls_entry)
 
         db.session.commit()
@@ -849,7 +850,7 @@ class RowLevelSecurityTests(SupersetTestCase):
     # Do another test to make sure it doesn't alter another query
     def test_rls_filter_alters_query(self):
         g.user = self.get_user(
-            username="gamma"
+            username="alpha"
         )  # self.login() doesn't actually set the user
         tbl = self.get_table_by_name("birth_names")
         query_obj = dict(
@@ -864,7 +865,7 @@ class RowLevelSecurityTests(SupersetTestCase):
             extras={},
         )
         sql = tbl.get_query_str(query_obj)
-        self.assertIn("gender = 'male'", sql)
+        self.assertIn("gender = 'boy'", sql)
 
     def test_rls_filter_doesnt_alter_query(self):
         g.user = self.get_user(
@@ -883,4 +884,4 @@ class RowLevelSecurityTests(SupersetTestCase):
             extras={},
         )
         sql = tbl.get_query_str(query_obj)
-        self.assertNotIn("gender = 'male'", sql)
+        self.assertNotIn("gender = 'boy'", sql)

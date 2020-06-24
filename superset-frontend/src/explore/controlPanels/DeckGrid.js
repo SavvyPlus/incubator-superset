@@ -17,7 +17,7 @@
  * under the License.
  */
 import { t } from '@superset-ui/translation';
-import { nonEmpty } from '../validators';
+import { validateNonEmpty } from '@superset-ui/validator';
 import {
   filterNulls,
   autozoom,
@@ -29,6 +29,7 @@ import {
   gridSize,
   viewport,
   spatial,
+  mapboxStyle,
 } from './Shared_DeckGL';
 
 export default {
@@ -46,7 +47,7 @@ export default {
     {
       label: t('Map'),
       controlSetRows: [
-        ['mapbox_style', viewport],
+        [mapboxStyle, viewport],
         ['color_picker', autozoom],
         [gridSize, extruded],
       ],
@@ -65,7 +66,7 @@ export default {
     size: {
       label: t('Height'),
       description: t('Metric used to control height'),
-      validators: [nonEmpty],
+      validators: [validateNonEmpty],
     },
   },
 };

@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -100,6 +101,8 @@ const DEFAULT_ORDER = [
   'box_plot_run_comp',
   'box_plot_fin',
   'box_plot_fin_str',
+  'spot_price_histogram',
+  'multi_boxplot',
 ];
 
 const typesWithDefaultOrder = new Set(DEFAULT_ORDER);
@@ -181,15 +184,12 @@ export default class VizTypeControl extends React.PureComponent {
         <Row key={`row-${i}`}>
           {filteredTypes.slice(i, i + IMAGE_PER_ROW).map(entry => {
             if (entry.key === 'box_plot_run_comp') {
-              // eslint-disable-next-line no-param-reassign
               entry.value.name = 'Spot-Rev-Gen BoxPlot';
             }
             if (entry.key === 'box_plot_fin') {
-              // eslint-disable-next-line no-param-reassign
               entry.value.name = 'Box Plot For Financial Analysis';
             }
             if (entry.key === 'box_plot_fin_str') {
-              // eslint-disable-next-line no-param-reassign
               entry.value.name = 'Box Plot For Financial Strategy';
             }
             return (

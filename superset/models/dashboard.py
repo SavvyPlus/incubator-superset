@@ -36,13 +36,16 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.engine.base import Connection
 from sqlalchemy.orm import relationship, sessionmaker, subqueryload
+from sqlalchemy.orm.mapper import Mapper
 
 from superset import app, ConnectorRegistry, db, is_feature_enabled, security_manager
 from superset.models.helpers import AuditMixinNullable, ImportMixin
 from superset.models.slice import Slice as Slice
 from superset.models.tags import DashboardUpdater
 from superset.models.user_attributes import UserAttribute
+from superset.tasks.thumbnails import cache_dashboard_thumbnail
 from superset.utils import core as utils
 from superset.utils.dashboard_filter_scopes_converter import (
     convert_filter_scopes,
@@ -58,7 +61,7 @@ config = app.config
 logger = logging.getLogger(__name__)
 
 
-def copy_dashboard(mapper, connection, target):
+def copy_dashboard(mapper: Mapper, connection: Connection, target: "Dashboard") -> None:
     # pylint: disable=unused-argument
     dashboard_id = config["DASHBOARD_TEMPLATE_ID"]
     if dashboard_id is None:
@@ -139,7 +142,7 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
         "slug",
     ]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.dashboard_title or str(self.id)
 
     @property
@@ -185,13 +188,29 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
         return Markup(f'<a href="{self.url}">{title}</a>')
 
     @property
-    def changed_by_name(self):
+    def digest(self) -> str:
+        """
+            Returns a MD5 HEX digest that makes this dashboard unique
+        """
+        unique_string = f"{self.position_json}.{self.css}.{self.json_metadata}"
+        return utils.md5_hex(unique_string)
+
+    @property
+    def thumbnail_url(self) -> str:
+        """
+            Returns a thumbnail URL with a HEX digest. We want to avoid browser cache
+            if the dashboard has changed
+        """
+        return f"/api/v1/dashboard/{self.id}/thumbnail/{self.digest}/"
+
+    @property
+    def changed_by_name(self) -> str:
         if not self.changed_by:
             return ""
         return str(self.changed_by)
 
     @property
-    def changed_by_url(self):
+    def changed_by_url(self) -> str:
         if not self.changed_by:
             return ""
         return f"/superset/profile/{self.changed_by.username}"
@@ -212,8 +231,8 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
             "position_json": positions,
         }
 
-    @property
-    def params(self) -> str:
+    @property  # type: ignore
+    def params(self) -> str:  # type: ignore
         return self.json_metadata
 
     @params.setter
@@ -221,7 +240,7 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
         self.json_metadata = value
 
     @property
-    def position(self) -> Dict:
+    def position(self) -> Dict[str, Any]:
         if self.position_json:
             return json.loads(self.position_json)
         return {}
@@ -240,7 +259,9 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
          Audit metadata isn't copied over.
         """
 
-        def alter_positions(dashboard, old_to_new_slc_id_dict):
+        def alter_positions(
+            dashboard: Dashboard, old_to_new_slc_id_dict: Dict[int, int]
+        ) -> None:
             """ Updates slice_ids in the position json.
 
             Sample position_json data:
@@ -274,9 +295,9 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
                 if (
                     isinstance(value, dict)
                     and value.get("meta")
-                    and value.get("meta").get("chartId")
+                    and value.get("meta", {}).get("chartId")
                 ):
-                    old_slice_id = value.get("meta").get("chartId")
+                    old_slice_id = value["meta"]["chartId"]
 
                     if old_slice_id in old_to_new_slc_id_dict:
                         value["meta"]["chartId"] = old_to_new_slc_id_dict[old_slice_id]
@@ -294,7 +315,7 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
         old_to_new_slc_id_dict: Dict[int, int] = {}
         new_timed_refresh_immune_slices = []
         new_expanded_slices = {}
-        new_filter_scopes: Dict[str, Dict] = {}
+        new_filter_scopes = {}
         i_params_dict = dashboard_to_import.params_dict
         remote_id_slice_map = {
             slc.params_dict["remote_id"]: slc
@@ -330,7 +351,7 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
         # are converted to filter_scopes
         # but dashboard create from import may still have old dashboard filter metadata
         # here we convert them to new filter_scopes metadata first
-        filter_scopes: Dict = {}
+        filter_scopes = {}
         if (
             "filter_immune_slices" in i_params_dict
             or "filter_immune_slice_fields" in i_params_dict
@@ -394,7 +415,7 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def export_dashboards(  # pylint: disable=too-many-locals
-        cls, dashboard_ids: List
+        cls, dashboard_ids: List[int]
     ) -> str:
         copied_dashboards = []
         datasource_ids = set()
@@ -452,8 +473,20 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
         )
 
 
+def event_after_dashboard_changed(  # pylint: disable=unused-argument
+    mapper: Mapper, connection: Connection, target: Dashboard
+) -> None:
+    cache_dashboard_thumbnail.delay(target.id, force=True)
+
+
 # events for updating tags
 if is_feature_enabled("TAGGING_SYSTEM"):
     sqla.event.listen(Dashboard, "after_insert", DashboardUpdater.after_insert)
     sqla.event.listen(Dashboard, "after_update", DashboardUpdater.after_update)
     sqla.event.listen(Dashboard, "after_delete", DashboardUpdater.after_delete)
+
+
+# events for updating tags
+if is_feature_enabled("THUMBNAILS_SQLA_LISTENERS"):
+    sqla.event.listen(Dashboard, "after_insert", event_after_dashboard_changed)
+    sqla.event.listen(Dashboard, "after_update", event_after_dashboard_changed)

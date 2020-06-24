@@ -18,14 +18,14 @@
  */
 import React from 'react';
 import { shallow } from 'enzyme';
-import Header from '../../../../src/dashboard/components/Header';
-import EditableTitle from '../../../../src/components/EditableTitle';
-import FaveStar from '../../../../src/components/FaveStar';
-import PublishedStatus from '../../../../src/dashboard/components/PublishedStatus';
-import HeaderActionsDropdown from '../../../../src/dashboard/components/HeaderActionsDropdown';
-import Button from '../../../../src/components/Button';
-import UndoRedoKeylisteners from '../../../../src/dashboard/components/UndoRedoKeylisteners';
-import { BUILDER_PANE_TYPE } from '../../../../src/dashboard/util/constants';
+import Header from 'src/dashboard/components/Header';
+import EditableTitle from 'src/components/EditableTitle';
+import FaveStar from 'src/components/FaveStar';
+import PublishedStatus from 'src/dashboard/components/PublishedStatus';
+import HeaderActionsDropdown from 'src/dashboard/components/HeaderActionsDropdown';
+import Button from 'src/components/Button';
+import UndoRedoKeylisteners from 'src/dashboard/components/UndoRedoKeylisteners';
+import { BUILDER_PANE_TYPE } from 'src/dashboard/util/constants';
 
 describe('Header', () => {
   const props = {
@@ -36,6 +36,10 @@ describe('Header', () => {
       dash_edit_perm: true,
       dash_save_perm: true,
       userId: 1,
+      metadata: {},
+      common: {
+        conf: {},
+      },
     },
     dashboardTitle: 'title',
     charts: {},
@@ -79,6 +83,7 @@ describe('Header', () => {
   describe('read-only-user', () => {
     const overrideProps = {
       dashboardInfo: {
+        ...props.dashboardInfo,
         id: 1,
         dash_edit_perm: false,
         dash_save_perm: false,
@@ -121,6 +126,7 @@ describe('Header', () => {
     const overrideProps = {
       editMode: false,
       dashboardInfo: {
+        ...props.dashboardInfo,
         id: 1,
         dash_edit_perm: true,
         dash_save_perm: true,
@@ -163,6 +169,7 @@ describe('Header', () => {
     const overrideProps = {
       editMode: true,
       dashboardInfo: {
+        ...props.dashboardInfo,
         id: 1,
         dash_edit_perm: true,
         dash_save_perm: true,
@@ -204,6 +211,7 @@ describe('Header', () => {
   describe('logged-out-user', () => {
     const overrideProps = {
       dashboardInfo: {
+        ...props.dashboardInfo,
         id: 1,
         dash_edit_perm: false,
         dash_save_perm: false,

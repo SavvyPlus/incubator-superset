@@ -14,16 +14,17 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import dataclasses
 import functools
 import logging
 import traceback
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, cast, Dict, List, Optional, TYPE_CHECKING, Union
 
 import simplejson as json
 import yaml
 from flask import abort, flash, g, get_flashed_messages, redirect, Response, session
-from flask_appbuilder import BaseView, ModelView
+from flask_appbuilder import BaseView, Model, ModelView
 from flask_appbuilder.actions import action
 from flask_appbuilder.forms import DynamicForm
 from flask_appbuilder.models.sqla.filters import BaseFilter
@@ -32,7 +33,9 @@ from flask_appbuilder.widgets import ListWidget
 from flask_babel import get_locale, gettext as __, lazy_gettext as _
 from flask_wtf.form import FlaskForm
 from sqlalchemy import or_
+from sqlalchemy.orm import Query
 from werkzeug.exceptions import HTTPException
+from wtforms import Form
 from wtforms.fields.core import Field, UnboundField
 
 from superset import (
@@ -44,15 +47,25 @@ from superset import (
     security_manager,
 )
 from superset.connectors.sqla import models
+from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.exceptions import SupersetException, SupersetSecurityException
+from superset.models.helpers import ImportMixin
 from superset.translations.utils import get_language_pack
+from superset.typing import FlaskResponse
 from superset.utils import core as utils
 
 from .utils import bootstrap_user_data
 
+if TYPE_CHECKING:
+    from superset.connectors.druid.views import (  # pylint: disable=unused-import
+        DruidClusterModelView,
+    )
+
 FRONTEND_CONF_KEYS = (
     "SUPERSET_WEBSERVER_TIMEOUT",
     "SUPERSET_DASHBOARD_POSITION_DATA_LIMIT",
+    "SUPERSET_DASHBOARD_PERIODICAL_REFRESH_LIMIT",
+    "SUPERSET_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE",
     "ENABLE_JAVASCRIPT_CONTROLS",
     "DEFAULT_SQLLAB_LIMIT",
     "SQL_MAX_ROW",
@@ -66,7 +79,7 @@ logger = logging.getLogger(__name__)
 config = superset_app.config
 
 
-def get_error_msg():
+def get_error_msg() -> str:
     if conf.get("SHOW_STACKTRACE"):
         error_msg = traceback.format_exc()
     else:
@@ -78,7 +91,12 @@ def get_error_msg():
     return error_msg
 
 
-def json_error_response(msg=None, status=500, payload=None, link=None):
+def json_error_response(
+    msg: Optional[str] = None,
+    status: int = 500,
+    payload: Optional[Dict[str, Any]] = None,
+    link: Optional[str] = None,
+) -> FlaskResponse:
     if not payload:
         payload = {"error": "{}".format(msg)}
     if link:
@@ -91,11 +109,27 @@ def json_error_response(msg=None, status=500, payload=None, link=None):
     )
 
 
-def json_success(json_msg, status=200):
+def json_errors_response(
+    errors: List[SupersetError],
+    status: int = 500,
+    payload: Optional[Dict[str, Any]] = None,
+) -> FlaskResponse:
+    if not payload:
+        payload = {}
+
+    payload["errors"] = [dataclasses.asdict(error) for error in errors]
+    return Response(
+        json.dumps(payload, default=utils.json_iso_dttm_ser, ignore_nan=True),
+        status=status,
+        mimetype="application/json",
+    )
+
+
+def json_success(json_msg: str, status: int = 200) -> FlaskResponse:
     return Response(json_msg, status=status, mimetype="application/json")
 
 
-def data_payload_response(payload_json, has_error=False):
+def data_payload_response(payload_json: str, has_error: bool = False) -> FlaskResponse:
     status = 400 if has_error else 200
     return json_success(payload_json, status=status)
 
@@ -109,13 +143,13 @@ def generate_download_headers(
     return headers
 
 
-def api(f):
+def api(f: Callable[..., FlaskResponse]) -> Callable[..., FlaskResponse]:
     """
     A decorator to label an endpoint as an API. Catches uncaught exceptions and
     return the response in the JSON format
     """
 
-    def wraps(self, *args, **kwargs):
+    def wraps(self: "BaseSupersetView", *args: Any, **kwargs: Any) -> FlaskResponse:
         try:
             return f(self, *args, **kwargs)
         except Exception as ex:  # pylint: disable=broad-except
@@ -125,20 +159,22 @@ def api(f):
     return functools.update_wrapper(wraps, f)
 
 
-def handle_api_exception(f):
+def handle_api_exception(
+    f: Callable[..., FlaskResponse]
+) -> Callable[..., FlaskResponse]:
     """
     A decorator to catch superset exceptions. Use it after the @api decorator above
     so superset exception handler is triggered before the handler for generic
     exceptions.
     """
 
-    def wraps(self, *args, **kwargs):
+    def wraps(self: "BaseSupersetView", *args: Any, **kwargs: Any) -> FlaskResponse:
         try:
             return f(self, *args, **kwargs)
         except SupersetSecurityException as ex:
-            logger.exception(ex)
-            return json_error_response(
-                utils.error_msg_from_exception(ex), status=ex.status, link=ex.link
+            logger.warning(ex)
+            return json_errors_response(
+                errors=[ex.error], status=ex.status, payload=ex.payload
             )
         except SupersetException as ex:
             logger.exception(ex)
@@ -148,7 +184,7 @@ def handle_api_exception(f):
         except HTTPException as ex:
             logger.exception(ex)
             return json_error_response(
-                utils.error_msg_from_exception(ex), status=ex.code
+                utils.error_msg_from_exception(ex), status=cast(int, ex.code)
             )
         except Exception as ex:  # pylint: disable=broad-except
             logger.exception(ex)
@@ -202,7 +238,9 @@ def get_user_roles() -> List[Role]:
 
 class BaseSupersetView(BaseView):
     @staticmethod
-    def json_response(obj, status=200) -> Response:  # pylint: disable=no-self-use
+    def json_response(
+        obj: Any, status: int = 200
+    ) -> FlaskResponse:  # pylint: disable=no-self-use
         return Response(
             json.dumps(obj, default=utils.json_int_dttm_ser, ignore_nan=True),
             status=status,
@@ -210,14 +248,14 @@ class BaseSupersetView(BaseView):
         )
 
 
-def menu_data():
+def menu_data() -> Dict[str, Any]:
     menu = appbuilder.menu.get_data()
     root_path = "#"
     logo_target_path = ""
     if not g.user.is_anonymous:
         try:
             logo_target_path = (
-                appbuilder.app.config.get("LOGO_TARGET_PATH")
+                appbuilder.app.config["LOGO_TARGET_PATH"]
                 or f"/profile/{g.user.username}/"
             )
         # when user object has no username
@@ -241,12 +279,13 @@ def menu_data():
             "path": root_path,
             "icon": appbuilder.app_icon,
             "alt": appbuilder.app_name,
+            "width": appbuilder.app.config["APP_ICON_WIDTH"],
         },
         "navbar_right": {
-            "bug_report_url": appbuilder.app.config.get("BUG_REPORT_URL"),
-            "documentation_url": appbuilder.app.config.get("DOCUMENTATION_URL"),
-            "version_string": appbuilder.app.config.get("VERSION_STRING"),
-            "version_sha": appbuilder.app.config.get("VERSION_SHA"),
+            "bug_report_url": appbuilder.app.config["BUG_REPORT_URL"],
+            "documentation_url": appbuilder.app.config["DOCUMENTATION_URL"],
+            "version_string": appbuilder.app.config["VERSION_STRING"],
+            "version_sha": appbuilder.app.config["VERSION_SHA"],
             "languages": languages,
             "show_language_picker": len(languages.keys()) > 1,
             "user_is_anonymous": g.user.is_anonymous,
@@ -258,7 +297,7 @@ def menu_data():
     }
 
 
-def common_bootstrap_payload():
+def common_bootstrap_payload() -> Dict[str, Any]:
     """Common data always sent to the client"""
     messages = get_flashed_messages(with_categories=True)
     locale = str(get_locale())
@@ -281,7 +320,7 @@ class SupersetModelView(ModelView):
     page_size = 100
     list_widget = SupersetListWidget
 
-    def render_app_template(self):
+    def render_app_template(self) -> FlaskResponse:
         payload = {
             "user": bootstrap_user_data(g.user),
             "common": common_bootstrap_payload(),
@@ -303,7 +342,7 @@ class ListWidgetWithCheckboxes(ListWidget):  # pylint: disable=too-few-public-me
     template = "superset/fab_overrides/list_with_checkboxes.html"
 
 
-def validate_json(_form, field):
+def validate_json(form: Form, field: Field) -> None:  # pylint: disable=unused-argument
     try:
         json.loads(field.data)
     except Exception as ex:
@@ -320,22 +359,23 @@ class YamlExportMixin:  # pylint: disable=too-few-public-methods
     yaml_dict_key: Optional[str] = None
 
     @action("yaml_export", __("Export to YAML"), __("Export to YAML?"), "fa-download")
-    def yaml_export(self, items):
+    def yaml_export(
+        self, items: Union[ImportMixin, List[ImportMixin]]
+    ) -> FlaskResponse:
         if not isinstance(items, list):
             items = [items]
 
         data = [t.export_to_dict() for t in items]
-        if self.yaml_dict_key:
-            data = {self.yaml_dict_key: data}
+
         return Response(
-            yaml.safe_dump(data),
+            yaml.safe_dump({self.yaml_dict_key: data} if self.yaml_dict_key else data),
             headers=generate_download_headers("yaml"),
             mimetype="application/text",
         )
 
 
 class DeleteMixin:  # pylint: disable=too-few-public-methods
-    def _delete(self, primary_key):
+    def _delete(self: BaseView, primary_key: int) -> None:
         """
             Delete function logic, override to implement diferent logic
             deletes the record with primary_key = primary_key
@@ -377,7 +417,7 @@ class DeleteMixin:  # pylint: disable=too-few-public-methods
     @action(
         "muldelete", __("Delete"), __("Delete all Really?"), "fa-trash", single=False
     )
-    def muldelete(self, items):
+    def muldelete(self: BaseView, items: List[Model]) -> FlaskResponse:
         if not items:
             abort(404)
         for item in items:
@@ -392,8 +432,8 @@ class DeleteMixin:  # pylint: disable=too-few-public-methods
 
 
 class DatasourceFilter(BaseFilter):  # pylint: disable=too-few-public-methods
-    def apply(self, query, value):
-        if security_manager.all_datasource_access():
+    def apply(self, query: Query, value: Any) -> Query:
+        if security_manager.can_access_all_datasources():
             return query
         datasource_perms = security_manager.user_view_menu_names("datasource_access")
         schema_perms = security_manager.user_view_menu_names("schema_access")
@@ -426,7 +466,11 @@ def check_ownership(obj: Any, raise_if_false: bool = True) -> bool:
         return False
 
     security_exception = SupersetSecurityException(
-        "You don't have the rights to alter [{}]".format(obj)
+        SupersetError(
+            error_type=SupersetErrorType.MISSING_OWNERSHIP_ERROR,
+            message="You don't have the rights to alter [{}]".format(obj),
+            level=ErrorLevel.ERROR,
+        )
     )
 
     if g.user.is_anonymous:
@@ -459,7 +503,7 @@ def check_ownership(obj: Any, raise_if_false: bool = True) -> bool:
 
 
 def bind_field(
-    _, form: DynamicForm, unbound_field: UnboundField, options: Dict[Any, Any]
+    _: Any, form: DynamicForm, unbound_field: UnboundField, options: Dict[Any, Any]
 ) -> Field:
     """
     Customize how fields are bound by stripping all whitespace.
@@ -476,3 +520,18 @@ def bind_field(
 
 
 FlaskForm.Meta.bind_field = bind_field
+
+
+@superset_app.after_request
+def apply_http_headers(response: Response) -> Response:
+    """Applies the configuration's http headers to all responses"""
+
+    # HTTP_HEADERS is deprecated, this provides backwards compatibility
+    response.headers.extend(  # type: ignore
+        {**config["OVERRIDE_HTTP_HEADERS"], **config["HTTP_HEADERS"]}
+    )
+
+    for k, v in config["DEFAULT_HTTP_HEADERS"].items():
+        if k not in response.headers:
+            response.headers[k] = v
+    return response

@@ -19,6 +19,7 @@
 import React from 'react';
 import cx from 'classnames';
 import { TableInstance } from 'react-table';
+import Icon from 'src/components/Icon';
 
 interface Props {
   getTableProps: (userProps?: any) => any;
@@ -41,39 +42,41 @@ export default function TableCollection({
       <thead>
         {headerGroups.map(headerGroup => (
           <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map(column =>
-              column.hidden ? null : (
+            {headerGroup.headers.map(column => {
+              let sortIcon = <Icon name="sort" />;
+              if (column.isSortedDesc) {
+                sortIcon = <Icon name="sort-desc" />;
+              } else if (!column.isSortedDesc) {
+                sortIcon = <Icon name="sort-asc" />;
+              }
+
+              return column.hidden ? null : (
                 <th
                   {...column.getHeaderProps(
                     column.sortable ? column.getSortByToggleProps() : {},
                   )}
                   data-test="sort-header"
                 >
-                  {column.render('Header')}
-                  {'  '}
+                  <span>{column.render('Header')}</span>
                   {column.sortable && (
-                    <i
-                      className={cx('text-primary fa', {
-                        'fa-sort': !column.isSorted,
-                        'fa-sort-down': column.isSorted && column.isSortedDesc,
-                        'fa-sort-up': column.isSorted && !column.isSortedDesc,
-                      })}
-                    />
+                    <span className="sort-icon">{sortIcon}</span>
                   )}
                 </th>
-              ),
-            )}
+              );
+            })}
           </tr>
         ))}
       </thead>
       <tbody {...getTableBodyProps()}>
         {rows.map(row => {
           prepareRow(row);
-          const loadingProps = loading ? { className: 'table-row-loader' } : {};
           return (
             <tr
               {...row.getRowProps()}
-              {...loadingProps}
+              className={cx({
+                'table-row-loader': loading,
+                'table-row-selected': row.isSelected,
+              })}
               onMouseEnter={() => row.setState && row.setState({ hover: true })}
               onMouseLeave={() =>
                 row.setState && row.setState({ hover: false })
@@ -85,7 +88,11 @@ export default function TableCollection({
                 const columnCellProps = cell.column.cellProps || {};
 
                 return (
-                  <td {...cell.getCellProps()} {...columnCellProps}>
+                  <td
+                    className="table-cell"
+                    {...cell.getCellProps()}
+                    {...columnCellProps}
+                  >
                     <span>{cell.render('Cell')}</span>
                   </td>
                 );

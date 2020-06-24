@@ -19,18 +19,17 @@
 import React from 'react';
 import configureStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
-
 import { shallow } from 'enzyme';
 import sinon from 'sinon';
 import fetchMock from 'fetch-mock';
-
 import shortid from 'shortid';
+import sqlLabReducer from 'src/SqlLab/reducers/index';
+import * as actions from 'src/SqlLab/actions/sqlLab';
+import ExploreResultsButton from 'src/SqlLab/components/ExploreResultsButton';
+import * as exploreUtils from 'src/explore/exploreUtils';
+import Button from 'src/components/Button';
+
 import { queries, queryWithBadColumns } from './fixtures';
-import sqlLabReducer from '../../../src/SqlLab/reducers/index';
-import * as actions from '../../../src/SqlLab/actions/sqlLab';
-import ExploreResultsButton from '../../../src/SqlLab/components/ExploreResultsButton';
-import * as exploreUtils from '../../../src/explore/exploreUtils';
-import Button from '../../../src/components/Button';
 
 describe('ExploreResultsButton', () => {
   const middlewares = [thunk];
@@ -102,6 +101,7 @@ describe('ExploreResultsButton', () => {
       '1',
       '123',
       'CASE WHEN 1=1 THEN 1 ELSE 0 END',
+      '__TIMESTAMP',
     ]);
 
     const msgWrapper = shallow(wrapper.instance().renderInvalidColumnMessage());
@@ -178,17 +178,16 @@ describe('ExploreResultsButton', () => {
     fetchMock.post(visualizeEndpoint, visualizationPayload);
 
     beforeEach(() => {
-      sinon.stub(exploreUtils, 'getExploreUrlAndPayload').callsFake(() => ({
-        url: 'mockURL',
-        payload: { datasource: '107__table' },
-      }));
+      sinon.stub(exploreUtils, 'getExploreUrl').callsFake(() => 'mockURL');
       sinon.spy(exploreUtils, 'exportChart');
+      sinon.spy(exploreUtils, 'exploreChart');
       sinon
         .stub(wrapper.instance(), 'buildVizOptions')
         .callsFake(() => mockOptions);
     });
     afterEach(() => {
-      exploreUtils.getExploreUrlAndPayload.restore();
+      exploreUtils.getExploreUrl.restore();
+      exploreUtils.exploreChart.restore();
       exploreUtils.exportChart.restore();
       wrapper.instance().buildVizOptions.restore();
       fetchMock.reset();
@@ -228,8 +227,8 @@ describe('ExploreResultsButton', () => {
 
       setTimeout(() => {
         expect(datasourceSpy.callCount).toBe(1);
-        expect(exploreUtils.exportChart.callCount).toBe(1);
-        expect(exploreUtils.exportChart.getCall(0).args[0].datasource).toBe(
+        expect(exploreUtils.exploreChart.callCount).toBe(1);
+        expect(exploreUtils.exploreChart.getCall(0).args[0].datasource).toBe(
           '107__table',
         );
         expect(infoToastSpy.callCount).toBe(1);

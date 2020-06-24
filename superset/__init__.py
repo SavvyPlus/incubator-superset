@@ -25,6 +25,8 @@ from superset.extensions import (
     cache_manager,
     db,
     event_logger,
+    simulation_logger,
+    celery_app,
     feature_flag_manager,
     jinja_context_manager,
     manifest_processor,
@@ -51,3 +53,4 @@ results_backend_use_msgpack = LocalProxy(
     lambda: results_backend_manager.should_use_msgpack
 )
 tables_cache = LocalProxy(lambda: cache_manager.tables_cache)
+thumbnail_cache = LocalProxy(lambda: cache_manager.thumbnail_cache)

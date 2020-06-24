@@ -16,13 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+import React from 'react';
 import { getChartControlPanelRegistry } from '@superset-ui/chart';
 import { t } from '@superset-ui/translation';
+import { ColumnOption } from '@superset-ui/control-utils';
 import {
   getControlConfig,
   getControlState,
+  getFormDataFromControls,
   applyMapStateToPropsToControl,
-} from '../../../src/explore/controlUtils';
+  getAllControlsState,
+} from 'src/explore/controlUtils';
 
 describe('controlUtils', () => {
   const state = {
@@ -92,6 +97,40 @@ describe('controlUtils', () => {
             label: t('My beautiful colors'),
           },
         },
+      })
+      .registerValue('table', {
+        controlPanelSections: [
+          {
+            label: t('Chart Options'),
+            expanded: true,
+            controlSetRows: [
+              [
+                {
+                  name: 'all_columns',
+                  config: {
+                    type: 'SelectControl',
+                    queryField: 'columns',
+                    multi: true,
+                    label: t('Columns'),
+                    default: [],
+                    description: t('Columns to display'),
+                    optionRenderer: c => <ColumnOption column={c} showType />,
+                    valueRenderer: c => <ColumnOption column={c} />,
+                    valueKey: 'column_name',
+                    allowAll: true,
+                    mapStateToProps: stateRef => ({
+                      options: stateRef.datasource
+                        ? stateRef.datasource.columns
+                        : [],
+                    }),
+                    commaChoosesOption: false,
+                    freeForm: true,
+                  },
+                },
+              ],
+            ],
+          },
+        ],
       });
   });
 
@@ -208,6 +247,14 @@ describe('controlUtils', () => {
     it('validates the control, returns an error if empty', () => {
       const control = getControlState('metric', 'table', state, null);
       expect(control.validationErrors).toEqual(['cannot be empty']);
+    });
+  });
+
+  describe('queryFields', () => {
+    it('in formData', () => {
+      const controlsState = getAllControlsState('table', 'table', {}, {});
+      const formData = getFormDataFromControls(controlsState);
+      expect(formData.queryFields).toEqual({ all_columns: 'columns' });
     });
   });
 });

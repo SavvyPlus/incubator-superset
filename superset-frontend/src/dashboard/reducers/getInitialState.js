@@ -49,7 +49,7 @@ import getLocationHash from '../util/getLocationHash';
 import newComponentFactory from '../util/newComponentFactory';
 import { TIME_RANGE } from '../../visualizations/FilterBox/FilterBox';
 
-export default function(bootstrapData) {
+export default function (bootstrapData) {
   const { user_id, datasources, common, editMode, urlParams } = bootstrapData;
 
   const dashboard = { ...bootstrapData.dashboard_data };
@@ -292,6 +292,9 @@ export default function(bootstrapData) {
       focusedFilterField: [],
       expandedSlices: dashboard.metadata.expanded_slices || {},
       refreshFrequency: dashboard.metadata.refresh_frequency || 0,
+      // dashboard viewers can set refresh frequency for the current visit,
+      // only persistent refreshFrequency will be saved to backend
+      shouldPersistRefreshFrequency: false,
       css: dashboard.css || '',
       colorNamespace: dashboard.metadata.color_namespace,
       colorScheme: dashboard.metadata.color_scheme,

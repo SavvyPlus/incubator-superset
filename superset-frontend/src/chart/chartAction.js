@@ -18,19 +18,26 @@
  */
 /* eslint no-undef: 'error' */
 /* eslint no-param-reassign: ["error", { "props": false }] */
+import URI from 'urijs';
 import moment from 'moment';
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
-import { isFeatureEnabled, FeatureFlag } from 'src/featureFlags';
+import { isFeatureEnabled, FeatureFlag } from '../featureFlags';
 import {
-  getExploreUrlAndPayload,
   getAnnotationJsonUrl,
+  getExploreUrl,
+  getHostName,
+  getLegacyEndpointType,
+  buildV1ChartDataPayload,
   postForm,
+  shouldUseLegacyApi,
+  getChartDataUri,
 } from '../explore/exploreUtils';
 import {
   requiresQuery,
   ANNOTATION_SOURCE_TYPES,
 } from '../modules/AnnotationTypes';
+
 import { addDangerToast } from '../messageToasts/actions';
 import { logEvent } from '../logger/actions';
 import { Logger, LOG_ACTIONS_LOAD_CHART } from '../logger/LogUtils';
@@ -97,13 +104,125 @@ export function annotationQueryFailed(annotation, queryResponse, key) {
   return { type: ANNOTATION_QUERY_FAILED, annotation, queryResponse, key };
 }
 
+const legacyChartDataRequest = async (
+  formData,
+  resultFormat,
+  resultType,
+  force,
+  method = 'POST',
+  requestParams = {},
+) => {
+  const endpointType = getLegacyEndpointType({ resultFormat, resultType });
+  const url = getExploreUrl({
+    formData,
+    endpointType,
+    force,
+    allowDomainSharding,
+    method,
+    requestParams: requestParams.dashboard_id
+      ? { dashboard_id: requestParams.dashboard_id }
+      : {},
+  });
+  const querySettings = {
+    ...requestParams,
+    url,
+    postPayload: { form_data: formData },
+  };
+
+  const clientMethod =
+    'GET' && isFeatureEnabled(FeatureFlag.CLIENT_CACHE)
+      ? SupersetClient.get
+      : SupersetClient.post;
+  return clientMethod(querySettings).then(({ json }) => {
+    // Make the legacy endpoint return a payload that corresponds to the
+    // V1 chart data endpoint response signature.
+    return {
+      result: [json],
+    };
+  });
+};
+
+const v1ChartDataRequest = async (
+  formData,
+  resultFormat,
+  resultType,
+  force,
+  requestParams,
+) => {
+  const payload = buildV1ChartDataPayload({
+    formData,
+    resultType,
+    resultFormat,
+    force,
+  });
+
+  // The dashboard id is added to query params for tracking purposes
+  const qs = requestParams.dashboard_id
+    ? { dashboard_id: requestParams.dashboard_id }
+    : {};
+  const url = getChartDataUri({
+    path: '/api/v1/chart/data',
+    qs,
+    allowDomainSharding,
+  }).toString();
+
+  const querySettings = {
+    ...requestParams,
+    url,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  };
+  return SupersetClient.post(querySettings).then(({ json }) => {
+    return json;
+  });
+};
+
+export async function getChartDataRequest({
+  formData,
+  resultFormat = 'json',
+  resultType = 'full',
+  force = false,
+  method = 'POST',
+  requestParams = {},
+}) {
+  let querySettings = {
+    ...requestParams,
+  };
+
+  if (allowDomainSharding) {
+    querySettings = {
+      ...querySettings,
+      mode: 'cors',
+      credentials: 'include',
+    };
+  }
+
+  if (shouldUseLegacyApi(formData)) {
+    return legacyChartDataRequest(
+      formData,
+      resultFormat,
+      resultType,
+      force,
+      method,
+      querySettings,
+    );
+  }
+  return v1ChartDataRequest(
+    formData,
+    resultFormat,
+    resultType,
+    force,
+    querySettings,
+  );
+}
+
 export function runAnnotationQuery(
   annotation,
   timeout = 60,
   formData = null,
   key,
 ) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const sliceKey = key || Object.keys(getState().charts)[0];
     // make a copy of formData, not modifying original formData
     const fd = {
@@ -210,47 +329,40 @@ export function exploreJSON(
   method,
   dashboardId,
 ) {
-  return dispatch => {
-    const { url, payload } = getExploreUrlAndPayload({
-      formData,
-      endpointType: 'json',
-      force,
-      allowDomainSharding,
-      method,
-      requestParams: dashboardId ? { dashboard_id: dashboardId } : {},
-    });
+  return async dispatch => {
     const logStart = Logger.getTimestamp();
     const controller = new AbortController();
-    const { signal } = controller;
 
-    dispatch(chartUpdateStarted(controller, payload, key));
-
-    let querySettings = {
-      url,
-      postPayload: { form_data: payload },
-      signal,
+    const requestParams = {
+      signal: controller.signal,
       timeout: timeout * 1000,
     };
-    if (allowDomainSharding) {
-      querySettings = {
-        ...querySettings,
-        mode: 'cors',
-        credentials: 'include',
-      };
-    }
+    if (dashboardId) requestParams.dashboard_id = dashboardId;
 
-    const clientMethod =
-      method === 'GET' && isFeatureEnabled(FeatureFlag.CLIENT_CACHE)
-        ? SupersetClient.get
-        : SupersetClient.post;
-    const queryPromise = clientMethod(querySettings)
-      .then(({ json }) => {
+    const chartDataRequest = getChartDataRequest({
+      formData,
+      resultFormat: 'json',
+      resultType: 'full',
+      force,
+      method,
+      requestParams,
+    });
+
+    dispatch(chartUpdateStarted(controller, formData, key));
+
+    const chartDataRequestCaught = chartDataRequest
+      .then(response => {
+        // new API returns an object with an array of restults
+        // problem: response holds a list of results, when before we were just getting one result.
+        // How to make the entire app compatible with multiple results?
+        // For now just use the first result.
+        const result = response.result[0];
         dispatch(
           logEvent(LOG_ACTIONS_LOAD_CHART, {
             slice_id: key,
-            is_cached: json.is_cached,
+            is_cached: result.is_cached,
             force_refresh: force,
-            row_count: json.rowcount,
+            row_count: result.rowcount,
             datasource: formData.datasource,
             start_offset: logStart,
             ts: new Date().getTime(),
@@ -258,12 +370,12 @@ export function exploreJSON(
             has_extra_filters:
               formData.extra_filters && formData.extra_filters.length > 0,
             viz_type: formData.viz_type,
-            data_age: json.is_cached
-              ? moment(new Date()).diff(moment.utc(json.cached_dttm))
+            data_age: result.is_cached
+              ? moment(new Date()).diff(moment.utc(result.cached_dttm))
               : null,
           }),
         );
-        return dispatch(chartUpdateSucceeded(json, key));
+        return dispatch(chartUpdateSucceeded(result, key));
       })
       .catch(response => {
         const appendErrorLog = (errorDetails, isCached) => {
@@ -300,9 +412,9 @@ export function exploreJSON(
     const annotationLayers = formData.annotation_layers || [];
 
     return Promise.all([
-      queryPromise,
+      chartDataRequestCaught,
       dispatch(triggerQuery(false, key)),
-      dispatch(updateQueryFormData(payload, key)),
+      dispatch(updateQueryFormData(formData, key)),
       ...annotationLayers.map(x =>
         dispatch(runAnnotationQuery(x, timeout, formData, key)),
       ),
@@ -350,19 +462,12 @@ export function postChartFormData(
 
 export function redirectSQLLab(formData) {
   return dispatch => {
-    const { url } = getExploreUrlAndPayload({
-      formData,
-      endpointType: 'query',
-    });
-    return SupersetClient.post({
-      url,
-      postPayload: { form_data: formData },
-    })
-      .then(({ json }) => {
+    getChartDataRequest({ formData, resultFormat: 'json', resultType: 'query' })
+      .then(({ result }) => {
         const redirectUrl = '/superset/sqllab';
         const payload = {
           datasourceKey: formData.datasource,
-          sql: json.query,
+          sql: result[0].query,
         };
         postForm(redirectUrl, payload);
       })

@@ -41,13 +41,8 @@ import SankeyChartPlugin from '@superset-ui/legacy-plugin-chart-sankey';
 import SunburstChartPlugin from '@superset-ui/legacy-plugin-chart-sunburst';
 import TableChartPlugin from '@superset-ui/legacy-plugin-chart-table';
 import TreemapChartPlugin from '@superset-ui/legacy-plugin-chart-treemap';
-import WordCloudChartPlugin from '@superset-ui/legacy-plugin-chart-word-cloud';
+import { WordCloudChartPlugin } from '@superset-ui/plugin-chart-word-cloud';
 import WorldMapChartPlugin from '@superset-ui/legacy-plugin-chart-world-map';
-// There is a known issue with bubble chart that the bubbles will not show up.
-// (<path d="NaN" />)
-// Make sure to import '@superset-ui/legacy-preset-chart-nvd3/lib'
-// Not '@superset-ui/legacy-preset-chart-nvd3',
-// which will point to '@superset-ui/legacy-preset-chart-nvd3/esm' by default
 import {
   AreaChartPlugin,
   BarChartPlugin,
@@ -61,11 +56,13 @@ import {
   PieChartPlugin,
   TimePivotChartPlugin,
 } from '@superset-ui/legacy-preset-chart-nvd3';
-import { BoxPlotChartPlugin } from '@superset-ui/preset-chart-xy/esm/legacy';
+import { LegacyBoxPlotChartPlugin } from '@superset-ui/preset-chart-xy';
 import { DeckGLChartPreset } from '@superset-ui/legacy-preset-chart-deckgl';
 
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
+import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPlugin';
+import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -77,10 +74,11 @@ export default class MainPreset extends Preset {
         new BarChartPlugin().configure({ key: 'bar' }),
         new BigNumberChartPlugin().configure({ key: 'big_number' }),
         new BigNumberTotalChartPlugin().configure({ key: 'big_number_total' }),
-        new BoxPlotChartPlugin().configure({ key: 'box_plot' }),
-        new BoxPlotChartPlugin().configure({ key: 'box_plot_run_comp' }),
-        new BoxPlotChartPlugin().configure({ key: 'box_plot_fin' }),
-        new BoxPlotChartPlugin().configure({ key: 'box_plot_fin_str' }),
+        new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot' }),
+        new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_run_comp' }),
+        new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_fin' }),
+        new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_fin_str' }),
+        new MultipleBoxplot().configure({ key: 'multi_boxplot' }),
         new BubbleChartPlugin().configure({ key: 'bubble' }),
         new BulletChartPlugin().configure({ key: 'bullet' }),
         new CalendarChartPlugin().configure({ key: 'cal_heatmap' }),
@@ -94,6 +92,9 @@ export default class MainPreset extends Preset {
         new ForceDirectedChartPlugin().configure({ key: 'directed_force' }),
         new HeatmapChartPlugin().configure({ key: 'heatmap' }),
         new HistogramChartPlugin().configure({ key: 'histogram' }),
+        new SpotPriceHistogramPlugin().configure({
+          key: 'spot_price_histogram',
+        }),
         new HorizonChartPlugin().configure({ key: 'horizon' }),
         new IframeChartPlugin().configure({ key: 'iframe' }),
         new LineChartPlugin().configure({ key: 'line' }),

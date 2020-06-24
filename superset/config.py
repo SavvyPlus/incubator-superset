@@ -28,10 +28,12 @@ import os
 import sys
 from collections import OrderedDict
 from datetime import date
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING
 
+from cachelib.base import BaseCache
 from celery.schedules import crontab
 from dateutil import tz
+from flask import Blueprint
 from flask_appbuilder.security.manager import AUTH_DB
 
 from superset.jinja_context import (  # pylint: disable=unused-import
@@ -78,7 +80,7 @@ PACKAGE_JSON_FILE = os.path.join(BASE_DIR, "static", "assets", "package.json")
 FAVICONS = [{"href": "/static/assets/images/favicon.png"}]
 
 
-def _try_json_readversion(filepath):
+def _try_json_readversion(filepath: str) -> Optional[str]:
     try:
         with open(filepath, "r") as f:
             return json.load(f).get("version")
@@ -86,7 +88,9 @@ def _try_json_readversion(filepath):
         return None
 
 
-def _try_json_readsha(filepath, length):  # pylint: disable=unused-argument
+def _try_json_readsha(  # pylint: disable=unused-argument
+    filepath: str, length: int
+) -> Optional[str]:
     try:
         with open(filepath, "r") as f:
             return json.load(f).get("GIT_SHA")[:length]
@@ -109,6 +113,8 @@ VERSION_SHA = _try_json_readsha(VERSION_INFO_FILE, VERSION_SHA_LENGTH)
 
 ROW_LIMIT = 500000
 VIZ_ROW_LIMIT = 10000
+# max rows retreieved when requesting samples from datasource in explore view
+SAMPLES_ROW_LIMIT = 1000
 # max rows retrieved by filter select auto complete
 FILTER_SELECT_ROW_LIMIT = 10000
 SUPERSET_WORKERS = 2  # deprecated
@@ -123,6 +129,14 @@ SUPERSET_WEBSERVER_PORT = 8088
 # You should also make sure to configure your WSGI server
 # (gunicorn, nginx, apache, ...) timeout setting to be <= to this setting
 SUPERSET_WEBSERVER_TIMEOUT = 60
+
+# this 2 settings are used by dashboard period force refresh feature
+# When user choose auto force refresh frequency
+# < SUPERSET_DASHBOARD_PERIODICAL_REFRESH_LIMIT
+# they will see warning message in the Refresh Interval Modal.
+# please check PR #9886
+SUPERSET_DASHBOARD_PERIODICAL_REFRESH_LIMIT = 0
+SUPERSET_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE = None
 
 SUPERSET_DASHBOARD_POSITION_DATA_LIMIT = 65535
 CUSTOM_SECURITY_MANAGER = None
@@ -156,7 +170,9 @@ QUERY_SEARCH_LIMIT = 1000
 WTF_CSRF_ENABLED = True
 
 # Add endpoints that need to be exempt from CSRF protection
-WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log"]
+WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log",
+                        "superset.views.simulation.views.process_success",
+                        "superset.views.simulation.views.process_failed"]
 
 # Whether to run the web server in debug mode or not
 DEBUG = os.environ.get("FLASK_ENV") == "development"
@@ -280,14 +296,17 @@ LANGUAGES = {
 # For example, DEFAULT_FEATURE_FLAGS = { 'FOO': True, 'BAR': False } here
 # and FEATURE_FLAGS = { 'BAR': True, 'BAZ': True } in superset_config.py
 # will result in combined feature flags of { 'FOO': True, 'BAR': True, 'BAZ': True }
-DEFAULT_FEATURE_FLAGS = {
+DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     # Experimental feature introducing a client (browser) cache
     "CLIENT_CACHE": False,
     "ENABLE_EXPLORE_JSON_CSRF_PROTECTION": False,
     "KV_STORE": False,
     "PRESTO_EXPAND_DATA": False,
-    "REDUCE_DASHBOARD_BOOTSTRAP_PAYLOAD": False,
+    # Exposes API endpoint to compute thumbnails
+    "THUMBNAILS": False,
+    "REDUCE_DASHBOARD_BOOTSTRAP_PAYLOAD": True,
     "SHARE_QUERIES_VIA_KV_STORE": False,
+    "SIP_38_VIZ_REARCHITECTURE": False,
     "TAGGING_SYSTEM": False,
     "SQLLAB_BACKEND_PERSISTENCE": False,
     "LIST_VIEWS_NEW_UI": False,
@@ -312,6 +331,11 @@ FEATURE_FLAGS: Dict[str, bool] = {}
 #     return feature_flags_dict
 GET_FEATURE_FLAGS_FUNC: Optional[Callable[[Dict[str, bool]], Dict[str, bool]]] = None
 
+# ---------------------------------------------------
+# Thumbnail config (behind feature flag)
+# ---------------------------------------------------
+THUMBNAIL_SELENIUM_USER = "Admin"
+THUMBNAIL_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
 # ---------------------------------------------------
 # Image and file configuration
@@ -329,13 +353,13 @@ IMG_UPLOAD_URL = "/static/uploads/"
 # IMG_SIZE = (300, 200, True)
 
 CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24
-CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
-# CACHE_CONFIG: CacheConfig = {
-#     'CACHE_TYPE': 'redis',
-#     'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
-#     'CACHE_KEY_PREFIX': 'superset_results',
-#     'CACHE_REDIS_URL': 'redis://localhost:6379/0'
-# }
+# CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
+CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'redis',
+    'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
+    'CACHE_KEY_PREFIX': 'superset_results',
+    'CACHE_REDIS_URL': 'redis://redis:6379/0'
+}
 TABLE_NAMES_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
 # CORS Options
@@ -407,7 +431,7 @@ DEFAULT_MODULE_DS_MAP = OrderedDict(
     ]
 )
 ADDITIONAL_MODULE_DS_MAP: Dict[str, List[str]] = {}
-ADDITIONAL_MIDDLEWARE: List[Callable] = []
+ADDITIONAL_MIDDLEWARE: List[Callable[..., Any]] = []
 
 # 1) https://docs.python-guide.org/writing/logging/
 # 2) https://docs.python.org/2/library/logging.config.html
@@ -442,6 +466,7 @@ BACKUP_COUNT = 30
 #     user=None,
 #     client=None,
 #     security_manager=None,
+#     log_params=None,
 # ):
 #     pass
 QUERY_LOGGER = None
@@ -481,9 +506,12 @@ WARNING_MSG = None
 
 
 class CeleryConfig:  # pylint: disable=too-few-public-methods
-    BROKER_URL = "sqla+sqlite:///celerydb.sqlite"
+    # BROKER_URL = "sqla+sqlite:///celerydb.sqlite"
+    BROKER_URL = "redis://redis:6379/0"
     CELERY_IMPORTS = ("superset.sql_lab", "superset.tasks")
-    CELERY_RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
+
+    # CELERY_RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
+    CELERY_RESULT_BACKEND = "redis://redis:6379/0"
     CELERYD_LOG_LEVEL = "DEBUG"
     CELERYD_PREFETCH_MULTIPLIER = 1
     CELERY_ACKS_LATE = False
@@ -536,11 +564,6 @@ SQLLAB_DEFAULT_DBID = None
 # by celery.
 SQLLAB_ASYNC_TIME_LIMIT_SEC = 60 * 60 * 6
 
-# On Redis
-from werkzeug.contrib.cache import RedisCache  # noqa
-RESULTS_BACKEND = RedisCache(
-    host='localhost', port=6379, key_prefix='superset_results')
-
 # Some databases support running EXPLAIN queries that allow users to estimate
 # query costs before they run. These EXPLAIN queries should have a small
 # timeout.
@@ -572,10 +595,9 @@ SQLLAB_CTAS_SCHEMA_NAME_FUNC: Optional[
     Callable[["Database", "models.User", str, str], str]
 ] = None
 
-# An instantiated derivative of werkzeug.contrib.cache.BaseCache
-# if enabled, it can be used to store the results of long-running queries
+# If enabled, it can be used to store the results of long-running queries
 # in SQL Lab by using the "Run Async" button/feature
-RESULTS_BACKEND = None
+RESULTS_BACKEND: Optional[BaseCache] = None
 
 # Use PyArrow and MessagePack for async query results serialization,
 # rather than JSON. This feature requires additional testing from the
@@ -590,23 +612,39 @@ CSV_TO_HIVE_UPLOAD_S3_BUCKET = None
 # The directory within the bucket specified above that will
 # contain all the external tables
 CSV_TO_HIVE_UPLOAD_DIRECTORY = "EXTERNAL_HIVE_TABLES/"
+# Function that creates upload directory dynamically based on the
+# database used, user and schema provided.
+CSV_TO_HIVE_UPLOAD_DIRECTORY_FUNC: Callable[
+    ["Database", "models.User", str], Optional[str]
+] = lambda database, user, schema: CSV_TO_HIVE_UPLOAD_DIRECTORY
 
 # The namespace within hive where the tables created from
 # uploading CSVs will be stored.
-UPLOADED_CSV_HIVE_NAMESPACE = None
+UPLOADED_CSV_HIVE_NAMESPACE: Optional[str] = None
+
+# Function that computes the allowed schemas for the CSV uploads.
+# Allowed schemas will be a union of schemas_allowed_for_csv_upload
+# db configuration and a result of this function.
+
+# mypy doesn't catch that if case ensures list content being always str
+ALLOWED_USER_CSV_SCHEMA_FUNC: Callable[
+    ["Database", "models.User"], List[str]
+] = lambda database, user: [
+    UPLOADED_CSV_HIVE_NAMESPACE
+] if UPLOADED_CSV_HIVE_NAMESPACE else []
 
 # A dictionary of items that gets merged into the Jinja context for
 # SQL Lab. The existing context gets updated with this dictionary,
 # meaning values for existing keys get overwritten by the content of this
 # dictionary.
-JINJA_CONTEXT_ADDONS: Dict[str, Callable] = {}
+JINJA_CONTEXT_ADDONS: Dict[str, Callable[..., Any]] = {}
 
 # A dictionary of macro template processors that gets merged into global
 # template processors. The existing template processors get updated with this
 # dictionary, which means the existing keys get overwritten by the content of this
 # dictionary. The customized addons don't necessarily need to use jinjia templating
 # language. This allows you to define custom logic to process macro template.
-CUSTOM_TEMPLATE_PROCESSORS = {}  # type: Dict[str, BaseTemplateProcessor]
+CUSTOM_TEMPLATE_PROCESSORS: Dict[str, Type[BaseTemplateProcessor]] = {}
 
 # Roles that are controlled by the API / Superset and should not be changes
 # by humans.
@@ -634,6 +672,7 @@ SMTP_PORT = 25
 SMTP_PASSWORD = "superset"
 SMTP_MAIL_FROM = "superset@superset.com"
 
+
 ENABLE_CHUNK_ENCODING = False
 
 # Whether to bump the logging level to ERROR on the flask_appbuilder package
@@ -659,7 +698,7 @@ PERMISSION_INSTRUCTIONS_LINK = ""
 
 # Integrate external Blueprints to the app by passing them to your
 # configuration. These blueprints will get integrated in the app
-BLUEPRINTS: List[Callable] = []
+BLUEPRINTS: List[Blueprint] = []
 
 # Provide a callable that receives a tracking_url and returns another
 # URL. This is used to translate internal Hadoop job tracker URL
@@ -711,6 +750,10 @@ ENABLE_FLASK_COMPRESS = True
 # Enable / disable scheduled email reports
 ENABLE_SCHEDULED_EMAIL_REPORTS = True
 
+# Slack API token for the superset reports
+SLACK_API_TOKEN = None
+SLACK_PROXY = None
+
 # If enabled, certail features are run in debug mode
 # Current list:
 # * Emails are sent using dry-run mode (logging only)
@@ -755,6 +798,11 @@ WEBDRIVER_CONFIGURATION: Dict[Any, Any] = {}
 
 # The base URL to query for accessing the user interface
 WEBDRIVER_BASEURL = "http://0.0.0.0:8080/"
+# The base URL for the email report hyperlinks.
+WEBDRIVER_BASEURL_USER_FRIENDLY = WEBDRIVER_BASEURL
+# Time in seconds, selenium will wait for the page to load
+# and render for the email report.
+EMAIL_PAGE_RENDER_WAIT = 30
 
 # Send user to a link where they can report bugs
 BUG_REPORT_URL = None
@@ -840,6 +888,14 @@ SIP_15_TOAST_MESSAGE = (
     'new time range endpoints <a target="_blank" href="{url}" '
     'class="alert-link">here</a>.'
 )
+
+
+# SQLA table mutator, every time we fetch the metadata for a certain table
+# (superset.connectors.sqla.models.SqlaTable), we call this hook
+# to allow mutating the object with this callback.
+# This can be used to set any properties of the object based on naming
+# conventions and such. You can find examples in the tests.
+SQLA_TABLE_MUTATOR = lambda table: table
 
 if CONFIG_PATH_ENV_VAR in os.environ:
     # Explicitly import config module that is not necessarily in pythonpath; useful

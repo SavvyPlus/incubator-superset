@@ -17,7 +17,7 @@
 import json
 from collections import Counter
 
-from flask import request, Response
+from flask import request
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access_api
 from sqlalchemy.orm.exc import NoResultFound
@@ -25,6 +25,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from superset import db
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.models.core import Database
+from superset.typing import FlaskResponse
 
 from .base import api, BaseSupersetView, handle_api_exception, json_error_response
 
@@ -36,10 +37,10 @@ class Datasource(BaseSupersetView):
     @has_access_api
     @api
     @handle_api_exception
-    def save(self) -> Response:
+    def save(self) -> FlaskResponse:
         data = request.form.get("data")
         if not isinstance(data, str):
-            return json_error_response("Request missing data field.", status="500")
+            return json_error_response("Request missing data field.", status=500)
 
         datasource_dict = json.loads(data)
         datasource_id = datasource_dict.get("id")
@@ -66,7 +67,7 @@ class Datasource(BaseSupersetView):
         ]
         if duplicates:
             return json_error_response(
-                f"Duplicate column name(s): {','.join(duplicates)}", status="409"
+                f"Duplicate column name(s): {','.join(duplicates)}", status=409
             )
         orm_datasource.update_from_object(datasource_dict)
         data = orm_datasource.data
@@ -78,24 +79,26 @@ class Datasource(BaseSupersetView):
     @has_access_api
     @api
     @handle_api_exception
-    def get(self, datasource_type: str, datasource_id: int) -> Response:
+    def get(self, datasource_type: str, datasource_id: int) -> FlaskResponse:
         try:
             orm_datasource = ConnectorRegistry.get_datasource(
                 datasource_type, datasource_id, db.session
             )
             if not orm_datasource.data:
                 return json_error_response(
-                    "Error fetching datasource data.", status="500"
+                    "Error fetching datasource data.", status=500
                 )
             return self.json_response(orm_datasource.data)
         except NoResultFound:
-            return json_error_response("This datasource does not exist", status="400")
+            return json_error_response("This datasource does not exist", status=400)
 
     @expose("/external_metadata/<datasource_type>/<datasource_id>/")
     @has_access_api
     @api
     @handle_api_exception
-    def external_metadata(self, datasource_type: str, datasource_id: int) -> Response:
+    def external_metadata(
+        self, datasource_type: str, datasource_id: int
+    ) -> FlaskResponse:
         """Gets column info from the source system"""
         if datasource_type == "druid":
             datasource = ConnectorRegistry.get_datasource(

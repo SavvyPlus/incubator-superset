@@ -99,6 +99,8 @@ RUN cd /app \
         && pip install -e .
 
 COPY ./docker/docker-entrypoint.sh /usr/bin/
+COPY ./docker/celery-entrypoint.sh /usr/bin/
+RUN chmod +x /usr/bin/celery-entrypoint.sh
 
 WORKDIR /app
 
@@ -115,10 +117,14 @@ ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 ######################################################################
 FROM lean AS dev
 
-COPY ./requirements-dev.txt ./docker/requirements* /app/
+COPY ./requirements* ./docker/requirements* /app/
 
 USER root
+# Cache everything for dev purposes...
 RUN cd /app \
-    && pip install --no-cache -r requirements-dev.txt -r requirements-extra.txt \
-    && pip install --no-cache -r requirements-local.txt || true
+    && pip install --ignore-installed -e . \
+    && pip install --ignore-installed -r requirements.txt \
+    && pip install --ignore-installed -r requirements-dev.txt \
+    && pip install --ignore-installed -r requirements-extra.txt \
+    && pip install --ignore-installed -r requirements-local.txt || true
 USER superset

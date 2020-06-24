@@ -18,8 +18,8 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
+import { ColumnTypeLabel } from '@superset-ui/control-utils';
 
-import ColumnTypeLabel from '../../components/ColumnTypeLabel';
 import adhocMetricType from '../propTypes/adhocMetricType';
 
 const propTypes = {
@@ -27,11 +27,14 @@ const propTypes = {
   showType: PropTypes.bool,
 };
 
-export default function AdhocMetricStaticOption({ adhocMetric, showType }) {
+export default function AdhocMetricStaticOption({
+  adhocMetric,
+  showType = false,
+}) {
   return (
     <div>
       {showType && <ColumnTypeLabel type="expression" />}
-      <span className="m-r-5 option-label">{adhocMetric.label}</span>
+      <span className="option-label">{adhocMetric.label}</span>
     </div>
   );
 }

@@ -19,12 +19,12 @@
 /* eslint-disable no-unused-expressions */
 import React from 'react';
 import { shallow } from 'enzyme';
+import { MetricOption } from '@superset-ui/control-utils';
 
-import MetricDefinitionValue from '../../../../src/explore/components/MetricDefinitionValue';
-import MetricOption from '../../../../src/components/MetricOption';
-import AdhocMetricOption from '../../../../src/explore/components/AdhocMetricOption';
-import AdhocMetric from '../../../../src/explore/AdhocMetric';
-import { AGGREGATES } from '../../../../src/explore/constants';
+import MetricDefinitionValue from 'src/explore/components/MetricDefinitionValue';
+import AdhocMetricOption from 'src/explore/components/AdhocMetricOption';
+import AdhocMetric from 'src/explore/AdhocMetric';
+import { AGGREGATES } from 'src/explore/constants';
 
 const sumValueAdhocMetric = new AdhocMetric({
   column: { type: 'DOUBLE', column_name: 'value' },

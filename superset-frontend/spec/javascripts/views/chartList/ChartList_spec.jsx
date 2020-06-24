@@ -32,6 +32,8 @@ const store = mockStore({});
 const chartsInfoEndpoint = 'glob:*/api/v1/chart/_info*';
 const chartssOwnersEndpoint = 'glob:*/api/v1/chart/related/owners*';
 const chartsEndpoint = 'glob:*/api/v1/chart/?*';
+const chartsVizTypesEndpoint = 'glob:*/api/v1/chart/viz_types';
+const chartsDtasourcesEndpoint = 'glob:*/api/v1/chart/datasources';
 
 const mockCharts = [...new Array(3)].map((_, i) => ({
   changed_on: new Date().toISOString(),
@@ -40,6 +42,7 @@ const mockCharts = [...new Array(3)].map((_, i) => ({
   slice_name: `cool chart ${i}`,
   url: 'url',
   viz_type: 'bar',
+  datasource_name: `ds${i}`,
 }));
 
 fetchMock.get(chartsInfoEndpoint, {
@@ -58,6 +61,16 @@ fetchMock.get(chartssOwnersEndpoint, {
 fetchMock.get(chartsEndpoint, {
   result: mockCharts,
   chart_count: 3,
+});
+
+fetchMock.get(chartsVizTypesEndpoint, {
+  result: [],
+  count: 0,
+});
+
+fetchMock.get(chartsDtasourcesEndpoint, {
+  result: [],
+  count: 0,
 });
 
 describe('ChartList', () => {
@@ -89,7 +102,7 @@ describe('ChartList', () => {
     const callsD = fetchMock.calls(/chart\/\?q/);
     expect(callsD).toHaveLength(1);
     expect(callsD[0][0]).toMatchInlineSnapshot(
-      `"/http//localhost/api/v1/chart/?q={%22order_column%22:%22changed_on%22,%22order_direction%22:%22desc%22,%22page%22:0,%22page_size%22:25}"`,
+      `"/http//localhost/api/v1/chart/?q=(order_column:changed_on,order_direction:desc,page:0,page_size:25)"`,
     );
   });
 });

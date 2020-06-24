@@ -17,7 +17,7 @@
  * under the License.
  */
 import sinon from 'sinon';
-import * as actions from '../../../src/SqlLab/actions/sqlLab';
+import * as actions from 'src/SqlLab/actions/sqlLab';
 
 export const mockedActions = sinon.stub({ ...actions });
 
@@ -314,6 +314,16 @@ export const queryWithBadColumns = {
         is_date: false,
         name: 'CASE WHEN 1=1 THEN 1 ELSE 0 END',
         type: 'STRING',
+      },
+      {
+        is_date: true,
+        name: '_TIMESTAMP',
+        type: 'TIMESTAMP',
+      },
+      {
+        is_date: true,
+        name: '__TIMESTAMP',
+        type: 'TIMESTAMP',
       },
     ],
   },

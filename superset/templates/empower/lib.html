@@ -1,0 +1,193 @@
+{% import 'appbuilder/general/lib.html' as lib %}
+
+{% macro render_simulation_assumption(field, begin_sep_label='', end_sep_label='', begin_sep_field='', end_sep_field='') %}
+
+    {{begin_sep_label|safe}}
+        <label for="{{field.id}}" control-label>
+            {{ field.label.text }}
+            {% if field.flags.required %}
+                <strong style="color: red">&#42;</strong>
+            {% endif %}
+        </label>
+    {{end_sep_label|safe}}
+    {{begin_sep_field|safe}}
+        {{ field(**kwargs)|safe }}
+        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#assumption-file-upload-modal" id="toggle-upload"
+                >Upload new assumption</button>
+            <div class="modal fade" id="assumption-file-upload-modal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modal-title">Upload new Assumption</h5>
+
+                        </div>
+                        <div class="modal-body">
+                            <label for="assumption-name">Assumption name:</label>
+                            <input id="assumption-name" name="assumption-name">
+                            <p style="color: red">Warning: Old assumption with same name will be replaced.</p>
+                            <label for="assumption-file">Upload new assumption template</label>
+                            <input type="file" id="assumption-file" value="assumption-file" name="assumption-file">
+
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" id="upload-btn">Upload</button>
+                            <button class="btn btn-secondary" data-dismiss="modal" id="close-btn">
+                                Close
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <span class="help-block">{{ field.description }}</span>
+        {% if field.errors %}
+            <div class="alert alert-danger">
+            {% for error in field.errors %}
+              {{ _(error) }}
+            {% endfor %}
+            </div>
+        {% endif %}
+    {{end_sep_field|safe}}
+    {% block tail_js %}
+        <script>
+            $('#toggle-upload').click(function(e) {
+                e.preventDefault();
+
+            })
+            $('#upload-btn').click(function(e) {
+                e.preventDefault();
+                let button = this
+                if (document.getElementById('assumption-name').value === ""){
+                    alert('Please input the name for the assumption.')
+                }
+                else if(document.getElementById('assumption-file').files.length < 1){
+                    alert('Please select a file.');
+                }
+                else{
+                    button.innerHTML = 'Uploading'
+                    button.setAttribute('disabled', true)
+                    // let on_screen_msg = document.createElement('p')
+                    // on_screen_msg.value = 'The validation process can take several minutes, please be patient.'
+                    // on_screen_msg.id = 'msg'
+                    // on_screen_msg.style.backgroundColor = "red"
+                    // document.getElementsByClassName('modal-footer')[0].appendChild(on_screen_msg)
+                    let file = document.getElementById('assumption-file').files[0];
+                    let name = document.getElementById('assumption-name').value
+                    let formdata = new FormData();
+                    formdata.append("file", file, file.name);
+                    formdata.append("upload_file", true);
+                    formdata.append("name",name)
+                    var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                            }
+                        }
+                    });
+                    $.ajax({
+                        type: "POST",
+                        url: "/simulationmodelview/upload_assumption_ajax",
+                        xhr: function () {
+                            var myXhr = $.ajaxSettings.xhr();
+                            return myXhr;
+                        },
+                        success: function (data) {
+                            alert(data['message'])
+                            let new_name = data['detail']['name']
+                            let new_id = data['detail']['id']
+                            document.getElementById('upload-btn').removeAttribute('disabled')
+                            let new_option = document.createElement('option')
+                            new_option.value = new_id
+                            new_option.innerHTML = data['detail']['name']
+                            document.getElementById('assumption').appendChild(new_option)
+                            button.innerHTML = 'Upload'
+                        },
+                        error: function(x, s){
+                            if (s =='timeout'){
+                                alert('Timeout, please try again later.')
+                            }
+                            else if (s == 'error'){
+                                alert(error['message'])
+                            }
+                            document.getElementById('upload-btn').removeAttribute('disabled')
+                            button.innerHTML = 'Upload'
+                        },
+                        timeout: 30000,
+                        async: true,
+                        data: formdata,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                    });
+
+                }
+            })
+        </script>
+    {% endblock %}
+
+{% endmacro %}
+
+
+{% macro render_form_controls() %}
+    <div class="well well-sm">
+        <button id="submit_button" type="submit" class="btn  btn-sm btn-primary">{{_("Save")}}
+            <i class="fa fa-save"></i></button>
+        {{ lib.lnk_back() }}
+        <script>
+            // $('#submit_button').click( function(e) {
+            //     e.preventDefault();
+            //     let assumption_choice;
+            //
+            //     // list = []
+            //     let assumption = document.getElementById('assumption')
+            //     console.log(assumption)
+            //     // for(var i = 0, row; row = table.rows[i]; i++) {
+            //     //     if (row.id != ''){
+            //     //         list.push(row.id);
+            //     //     }
+            //     // }
+            //     // form = document.getElementById('model_form');
+            //     // var sites_list = document.createElement("input");
+            //     // sites_list.type = 'hidden';
+            //     // sites_list.name = 'sites';
+            //     // sites_list.id = 'sites';
+            //     // sites_list.value = list;
+            //     // form.appendChild(sites_list);
+            //     form.submit()
+            // })
+        </script>
+    </div>
+{% endmacro %}
+
+{% macro render_save_run() %}
+    <div class="well well-sm">
+        <button id="submit_button" type="submit" class="btn  btn-sm btn-primary">{{_("Save")}}
+            <i class="fa fa-save"></i></button>
+        {{ lib.lnk_back() }}
+        <script>
+            // $('#submit_button').click( function(e) {
+            //     e.preventDefault();
+            //     let assumption_choice;
+            //
+            //     // list = []
+            //     let assumption = document.getElementById('assumption')
+            //     console.log(assumption)
+            //     // for(var i = 0, row; row = table.rows[i]; i++) {
+            //     //     if (row.id != ''){
+            //     //         list.push(row.id);
+            //     //     }
+            //     // }
+            //     // form = document.getElementById('model_form');
+            //     // var sites_list = document.createElement("input");
+            //     // sites_list.type = 'hidden';
+            //     // sites_list.name = 'sites';
+            //     // sites_list.id = 'sites';
+            //     // sites_list.value = list;
+            //     // form.appendChild(sites_list);
+            //     form.submit()
+            // })
+        </script>
+    </div>
+{% endmacro %}

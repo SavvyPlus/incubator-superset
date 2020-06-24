@@ -18,11 +18,11 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
+import { MetricOption } from '@superset-ui/control-utils';
 
 import AdhocMetricOption from './AdhocMetricOption';
 import AdhocMetric from '../AdhocMetric';
 import columnType from '../propTypes/columnType';
-import MetricOption from '../../components/MetricOption';
 import savedMetricType from '../propTypes/savedMetricType';
 import adhocMetricType from '../propTypes/adhocMetricType';
 
@@ -43,7 +43,8 @@ export default function MetricDefinitionValue({
 }) {
   if (option.metric_name) {
     return <MetricOption metric={option} />;
-  } else if (option instanceof AdhocMetric) {
+  }
+  if (option instanceof AdhocMetric) {
     return (
       <AdhocMetricOption
         adhocMetric={option}

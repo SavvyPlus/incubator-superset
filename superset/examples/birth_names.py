@@ -49,7 +49,6 @@ def gen_filter(
         "expressionType": "SIMPLE",
         "operator": operator,
         "subject": subject,
-        "fromFormData": True,
     }
 
 
@@ -189,7 +188,7 @@ def load_birth_names(only_metadata: bool = False, force: bool = False) -> None:
                         "expressionType": "SIMPLE",
                         "filterOptionName": "2745eae5",
                         "comparator": ["other"],
-                        "operator": "not in",
+                        "operator": "NOT IN",
                         "subject": "state",
                     }
                 ],

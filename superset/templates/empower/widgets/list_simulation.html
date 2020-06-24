@@ -1,0 +1,211 @@
+{% import 'appbuilder/general/lib.html' as lib %}
+{% extends 'appbuilder/general/widgets/base_list.html' %}
+
+
+{% block begin_content scoped %}
+    <div class="table-responsive">
+    <table class="table table-hover">
+{% endblock %}
+
+{% block begin_loop_header scoped %}
+    <thead>
+    <tr>
+    {% if actions %}
+    <th class="action_checkboxes">
+        <input id="check_all" class="action_check_all" name="check_all" type="checkbox">
+    </th>
+    {% endif %}
+
+    {% if can_show or can_edit or can_delete %}
+        <th class="col-md-1 col-lg-1 col-sm-1" ></th>
+    {% endif %}
+
+    {% for item in include_columns %}
+        {% if item in order_columns %}
+            {% set res = item | get_link_order(modelview_name) %}
+                {% if res == 2 %}
+                <th><a href={{ item | link_order(modelview_name) }}>{{label_columns.get(item)}}
+                <i class="fa fa-chevron-up pull-right"></i></a></th>
+            {% elif res == 1 %}
+                <th><a href={{ item | link_order(modelview_name) }}>{{label_columns.get(item)}}
+                <i class="fa fa-chevron-down pull-right"></i></a></th>
+            {% else %}
+                <th><a href={{ item | link_order(modelview_name) }}>{{label_columns.get(item)}}
+                <i class="fa fa-arrows-v pull-right"></i></a></th>
+            {% endif %}
+        {% else %}
+            <th>{{label_columns.get(item)}}</th>
+        {% endif %}
+    {% endfor %}
+    <th>Start run</th>
+    <th>Create re-run</th>
+    </tr>
+    </thead>
+{% endblock %}
+
+{% block begin_loop_values %}
+    {% for item in value_columns %}
+        {% set pk = pks[loop.index-1] %}
+        <tr>
+            {% if actions %}
+            <td>
+                <input id="{{pk}}" class="action_check" name="rowid" value="{{pk}}" type="checkbox">
+            </td>
+            {% endif %}
+            {% if can_show or can_edit or can_delete %}
+                <td><center>
+                {{ lib.btn_crud(can_show, can_edit, can_delete, pk, modelview_name, filters) }}
+                </center></td>
+            {% endif %}
+            {% for value in include_columns %}
+                {% set formatter = formatters_columns.get(value) %}
+                {% if formatter %}
+                    <td>{{ formatter(item[value]) }}</td>
+                {% else %}
+                    <td>{{ item[value] }}</td>
+                {% endif %}
+            {% endfor %}
+            <td>
+                {% if item['status']=='Running' %}
+                <button class="btn btn-primary btn-sm" data-toggle="modal"
+                    data-target="#startModal{{ pk }}" data-client="{{ pk }}" disabled>
+                Start
+                </button>
+                {% else %}
+                <button class="btn btn-primary btn-sm" data-toggle="modal"
+                    data-target="#startModal{{ pk }}" data-client="{{ pk }}"
+                >
+                Start
+                </button>
+                {% endif %}
+                <div class="modal fade" id="startModal{{ pk }}" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modal-title-run">Start Run for {{item['name']}}</h5>
+                                </div>
+                                <div class="modal-body">
+                                    <label for="project-select-{{ pk }}">Choose to start a test run or full run</label>
+                                    <select id="run-select-{{ pk }}" name="{{pk}}" class="select2-chosen">
+                                        <option value="test">Test run</option>
+                                        <option value="full">Full run</option>
+                                    </select>
+
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary" id="run-btn-{{pk}}" name="{{ pk }}">Start run</button>
+                                    <button class="btn btn-secondary" data-dismiss="modal" id="close-btn-1">
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+            <td><button class="btn btn-primary btn-sm" data-toggle="modal"
+                                data-target="#rerunModal{{ pk }}" data-client="{{ pk }}">
+                            Create
+                        </button>
+                <div class="modal fade" id="rerunModal{{ pk }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modal-title">Create re run for {{item['name']}}</h5>
+                            </div>
+                            <div class="modal-body">
+                                <label for="project-select-{{ pk }}">Choose to re run for which project</label>
+                                <select id="project-select-{{ pk }}" name="{{pk}}" class="select2-chosen">
+                                    {% for project in projects %}
+                                        <option value="{{project.id}}">{{ project.name }}</option>
+                                    {% endfor %}
+                                </select>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-primary" id="rerun-btn-{{pk}}" name="{{ pk }}">Create</button>
+                                <button class="btn btn-secondary" data-dismiss="modal" id="close-btn">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block end_content scoped %}
+    </table>
+    </div>
+{% endblock %}
+
+{% block tail_js %}
+    <script>
+
+        $('[id^=rerun-btn]').click(function(e) {
+            let href = '{{ url }}'
+            href = href + '?_flt_0_project='
+            let pk = this.name
+            let project_select = document.getElementById('project-select-'+pk)
+            let project_id = project_select.value
+            // console.log(project_id)
+            href = href + project_id + '&simID='
+            let sim_id = project_select.name
+            href = href + sim_id
+            window.location.href = href
+        })
+
+        $('[id^=run-btn]').click(function(e) {
+            e.preventDefault();
+            let button = this
+            let href = '/simulationmodelview/start_run/'
+                // console.log(this)
+            button.innerHTML = 'Pre-run check in process'
+            this.setAttribute('disabled', true)
+            let pk = this.name
+            let run_select = document.getElementById('run-select-'+pk).value
+            var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+            href = href + pk + '/' + run_select + '/'
+            // $.ajaxSetup({
+            //     beforeSend: function (xhr, settings) {
+            //         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+            //             xhr.setRequestHeader("X-CSRFToken", csrf_token);
+            //         }
+            //     }
+            // });
+            $.ajax({
+                type: "GET",
+                url: href,
+                xhr: function () {
+                    var myXhr = $.ajaxSettings.xhr();
+                    return myXhr;
+                },
+                success: function (data) {
+                    alert(data['message'])
+                    button.removeAttribute('disabled')
+                    // console.log(document.getElementById('assumption'))
+                    button.innerHTML = 'Start run'
+                    window.location.reload(true)
+                },
+                error: function(error, str){
+                    if (str =='timeout'){
+                        alert('Timeout, please try again later.')
+                    }
+                    else if (str == 'error'){
+                        alert(error['message'])
+                    }
+                    button.removeAttribute('disabled')
+                    button.innerHTML = 'Start run'
+                },
+                timeout: 30000,
+                async: true,
+                cache: false,
+                contentType: false,
+                processData: false,
+            });
+        })
+    </script>
+{% endblock %}
+

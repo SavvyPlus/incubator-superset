@@ -23,18 +23,20 @@ from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 from urllib import parse
 
 import pandas as pd
-from sqlalchemy import Column
+from flask import g
+from sqlalchemy import Column, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.engine.url import make_url, URL
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import ColumnClause, Select
-from wtforms.form import Form
 
 from superset import app, cache, conf
 from superset.db_engine_specs.base import BaseEngineSpec
 from superset.db_engine_specs.presto import PrestoEngineSpec
+from superset.exceptions import SupersetException
 from superset.models.sql_lab import Query
+from superset.sql_parse import Table
 from superset.utils import core as utils
 
 if TYPE_CHECKING:
@@ -92,7 +94,7 @@ class HiveEngineSpec(PrestoEngineSpec):
         return BaseEngineSpec.get_all_datasource_names(database, datasource_type)
 
     @classmethod
-    def fetch_data(cls, cursor: Any, limit: int) -> List[Tuple]:
+    def fetch_data(cls, cursor: Any, limit: int) -> List[Tuple[Any, ...]]:
         import pyhive
         from TCLIService import ttypes
 
@@ -105,16 +107,25 @@ class HiveEngineSpec(PrestoEngineSpec):
             return []
 
     @classmethod
-    def create_table_from_csv(  # pylint: disable=too-many-locals
-        cls, form: Form, database: "Database"
+    def create_table_from_csv(  # pylint: disable=too-many-arguments, too-many-locals
+        cls,
+        filename: str,
+        table: Table,
+        database: "Database",
+        csv_to_df_kwargs: Dict[str, Any],
+        df_to_sql_kwargs: Dict[str, Any],
     ) -> None:
         """Uploads a csv file and creates a superset datasource in Hive."""
+
+        if_exists = df_to_sql_kwargs["if_exists"]
+        if if_exists == "append":
+            raise SupersetException("Append operation not currently supported")
 
         def convert_to_hive_type(col_type: str) -> str:
             """maps tableschema's types to hive types"""
             tableschema_to_hive_types = {
                 "boolean": "BOOLEAN",
-                "integer": "INT",
+                "integer": "BIGINT",
                 "number": "DOUBLE",
                 "string": "STRING",
             }
@@ -128,38 +139,16 @@ class HiveEngineSpec(PrestoEngineSpec):
                 "No upload bucket specified. You can specify one in the config file."
             )
 
-        table_name = form.name.data
-        schema_name = form.schema.data
-
-        if config["UPLOADED_CSV_HIVE_NAMESPACE"]:
-            if "." in table_name or schema_name:
-                raise Exception(
-                    "You can't specify a namespace. "
-                    "All tables will be uploaded to the `{}` namespace".format(
-                        config["HIVE_NAMESPACE"]
-                    )
-                )
-            full_table_name = "{}.{}".format(
-                config["UPLOADED_CSV_HIVE_NAMESPACE"], table_name
-            )
-        else:
-            if "." in table_name and schema_name:
-                raise Exception(
-                    "You can't specify a namespace both in the name of the table "
-                    "and in the schema field. Please remove one"
-                )
-
-            full_table_name = (
-                "{}.{}".format(schema_name, table_name) if schema_name else table_name
-            )
-
-        filename = form.csv_file.data.filename
-        upload_prefix = config["CSV_TO_HIVE_UPLOAD_DIRECTORY"]
+        upload_prefix = config["CSV_TO_HIVE_UPLOAD_DIRECTORY_FUNC"](
+            database, g.user, table.schema
+        )
 
         # Optional dependency
-        from tableschema import Table  # pylint: disable=import-error
+        from tableschema import (  # pylint: disable=import-error
+            Table as TableSchemaTable,
+        )
 
-        hive_table_schema = Table(filename).infer()
+        hive_table_schema = TableSchemaTable(filename).infer()
         column_name_and_type = []
         for column_info in hive_table_schema["fields"]:
             column_name_and_type.append(
@@ -169,22 +158,42 @@ class HiveEngineSpec(PrestoEngineSpec):
             )
         schema_definition = ", ".join(column_name_and_type)
 
+        # ensure table doesn't already exist
+        if (
+            if_exists == "fail"
+            and not database.get_df(
+                f"SHOW TABLES IN {table.schema} LIKE '{table.table}'"
+            ).empty
+        ):
+            raise SupersetException("Table already exists")
+
+        engine = cls.get_engine(database)
+
+        if if_exists == "replace":
+            engine.execute(f"DROP TABLE IF EXISTS {str(table)}")
+
         # Optional dependency
         import boto3  # pylint: disable=import-error
 
         s3 = boto3.client("s3")
-        location = os.path.join("s3a://", bucket_path, upload_prefix, table_name)
+        location = os.path.join("s3a://", bucket_path, upload_prefix, table.table)
         s3.upload_file(
             filename,
             bucket_path,
-            os.path.join(upload_prefix, table_name, os.path.basename(filename)),
+            os.path.join(upload_prefix, table.table, os.path.basename(filename)),
         )
-        sql = f"""CREATE TABLE {full_table_name} ( {schema_definition} )
-            ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS
-            TEXTFILE LOCATION '{location}'
+        sql = text(
+            f"""CREATE TABLE {str(table)} ( {schema_definition} )
+            ROW FORMAT DELIMITED FIELDS TERMINATED BY :delim
+            STORED AS TEXTFILE LOCATION :location
             tblproperties ('skip.header.line.count'='1')"""
+        )
         engine = cls.get_engine(database)
-        engine.execute(sql)
+        engine.execute(
+            sql,
+            delim=csv_to_df_kwargs["sep"].encode().decode("unicode_escape"),
+            location=location,
+        )
 
     @classmethod
     def convert_dttm(cls, target_type: str, dttm: datetime) -> Optional[str]:
@@ -319,7 +328,7 @@ class HiveEngineSpec(PrestoEngineSpec):
         schema: Optional[str],
         database: "Database",
         query: Select,
-        columns: Optional[List] = None,
+        columns: Optional[List[Dict[str, str]]] = None,
     ) -> Optional[Select]:
         try:
             col_names, values = cls.latest_partition(
@@ -338,7 +347,7 @@ class HiveEngineSpec(PrestoEngineSpec):
         return None
 
     @classmethod
-    def _get_fields(cls, cols: List[dict]) -> List[ColumnClause]:
+    def _get_fields(cls, cols: List[Dict[str, Any]]) -> List[ColumnClause]:
         return BaseEngineSpec._get_fields(cols)  # pylint: disable=protected-access
 
     @classmethod

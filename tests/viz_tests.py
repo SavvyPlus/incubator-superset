@@ -431,7 +431,7 @@ class TableVizTestCase(SupersetTestCase):
         datasource = self.get_datasource_mock()
         test_viz = viz.TableViz(datasource, form_data)
         data = test_viz.get_data(df)
-        self.assertEqual(["sum_value", "SUM(value1)"], data["columns"])
+        self.assertEqual(["sum_value"], data["columns"])
 
 
 class DistBarVizTestCase(SupersetTestCase):
@@ -974,7 +974,7 @@ class BaseDeckGLVizTestCase(SupersetTestCase):
         test_viz_deckgl = viz.DeckScatterViz(datasource, form_data)
         test_viz_deckgl.point_radius_fixed = {}
         result = test_viz_deckgl.get_metrics()
-        assert result is None
+        assert result == []
 
     def test_get_js_columns(self):
         form_data = load_fixture("deck_path_form_data.json")

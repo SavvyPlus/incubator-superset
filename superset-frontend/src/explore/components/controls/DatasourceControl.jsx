@@ -30,10 +30,8 @@ import {
   Well,
 } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
-
+import { ColumnOption, MetricOption } from '@superset-ui/control-utils';
 import ControlHeader from '../ControlHeader';
-import ColumnOption from '../../../components/ColumnOption';
-import MetricOption from '../../../components/MetricOption';
 import DatasourceModal from '../../../datasource/DatasourceModal';
 import ChangeDatasourceModal from '../../../datasource/ChangeDatasourceModal';
 import TooltipWrapper from '../../../components/TooltipWrapper';
@@ -48,7 +46,7 @@ const propTypes = {
 
 const defaultProps = {
   onChange: () => {},
-  onDatasourceSave: () => {},
+  onDatasourceSave: null,
   value: null,
 };
 
@@ -150,9 +148,11 @@ class DatasourceControl extends React.PureComponent {
                   {t('Explore in SQL Lab')}
                 </MenuItem>
               )}
-              <MenuItem eventKey="3" onClick={this.toggleEditDatasourceModal}>
-                {t('Edit Datasource')}
-              </MenuItem>
+              {!!this.props.onDatasourceSave && (
+                <MenuItem eventKey="3" onClick={this.toggleEditDatasourceModal}>
+                  {t('Edit Datasource')}
+                </MenuItem>
+              )}
             </DropdownButton>
           </TooltipWrapper>
           <OverlayTrigger
