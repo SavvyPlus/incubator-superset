@@ -64,9 +64,6 @@ def possible_assumptions():
 
 
 class SimulationForm(DynamicForm):
-    def up_to_10(self):
-        return list(zip(list(map(str, range(11))), list(map(str, range(11)))))
-
     name = StringField(
         _("Name"),
         description=_("Name of the assumption file."),
