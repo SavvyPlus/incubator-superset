@@ -41,7 +41,7 @@ from superset.views.simulation.util import get_s3_url
 from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
 from superset.views.simulation.simulation_config import bucket_test
 
-from .forms import UploadAssumptionForm, AddSimulationForm
+from .forms import UploadAssumptionForm, SimulationForm
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
 from .util import get_redirect_endpoint
@@ -133,8 +133,10 @@ def simulation_start_invoker(run_id, sim_num):
     g.action_object = simulation.name
     g.action_object_type = 'simulation'
 
-    if sim_num <= 5:
+    if sim_num < 2:
         interval=300
+    elif sim_num < 5:
+        interval = 100
     else:
         interval = 60
 
@@ -491,16 +493,17 @@ class SimulationModelView(
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
     edit_exclude_columns = ['status','status_detail', 'run_id']
-    label_columns = {'run_no':'Number of simulation run'}
+    # label_columns = {'run_no':'Number of simulation run'}
 
     add_widget = SimulationAddWidget
-    # add_form = AddSimulationForm
+    add_form = SimulationForm
     list_widget = SimulationListWidget
+    edit_form = SimulationForm
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
     def load_results(self, run_id: str, table_name: str) -> FlaskResponse:
-        # First check if the table has existed. If so, redirect to its chart
+        # First， check if the table has existed. If so, redirect to its chart
         sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
         if sqla_table:
             endpoint = get_redirect_endpoint(table_name, sqla_table.id)
@@ -720,7 +723,7 @@ class SimulationModelView(
                 self.post_add(item)
                 g.result = 'Create simulation success'
                 g.detail = None
-                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
+                # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
 
             flash(*self.datamodel.message)

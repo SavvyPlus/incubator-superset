@@ -21,7 +21,7 @@ def invoker(payload, function_name='spot-price-forecast-simulation-lp-solver'):
         LogType='Tail',
         Payload=json.dumps(payload),
     )
-    print(payload['sim_tag'], payload['sim_index'], payload['sim_ref_dates'])
+    # print(payload['sim_tag'], payload['sim_index'], payload['sim_ref_dates'])
 
 
 
