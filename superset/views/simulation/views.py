@@ -136,7 +136,7 @@ def simulation_start_invoker(run_id, sim_num):
 
     if sim_num < 2:
         interval=300
-    elif sim_num < 5:
+    elif sim_num < 6:
         interval = 100
     else:
         interval = 60
@@ -176,7 +176,7 @@ def simulation_start_invoker(run_id, sim_num):
             print('invoking')
             batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=interval)
             batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, 4017, year_start=2020,
-                                     year_end=2030, interval=interval/2)
+                                     year_end=2031, interval=interval/2)
             batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, 11,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
@@ -202,7 +202,7 @@ def simulation_start_invoker(run_id, sim_num):
             style = 'danger'
         finally:
             print('invoke finished')
-            flash(message, style)
+            # flash(message, style)
 
 
 class AssumptionListWidget(ListWidget):
@@ -964,21 +964,27 @@ class SimulationModelView(
         flash('The preprocess of simulation {} has failed, please check the log.'.format(simulation.name), 'danger')
         return '200 OK'
 
-
+    @simulation_logger.log_simulation(action_name='query result')
     @expose('/query_success', methods=['GET', 'POST'])
     def query_success(self):
         g.user = None
-        flash('reached query success', 'info')
+        # flash('reached query success', 'info')
         return '200 OK'
-        # data = json.loads(request.data.decode())
-        # print(data)
+        data = json.loads(request.data.decode())
+        print(data)
+        g.result = 'query success'
+        g.detail = data
 
+    @simulation_logger.log_simulation(action_name='query result')
     @expose('/query_failed', methods=['GET', 'POST'])
     def query_failed(self):
         g.user = None
         data = json.loads(request.data.decode())
         print(data)
+        g.result = 'query failed'
+        g.detail = data
 
+    @simulation_logger.log_simulation(action_name='start query')
     @expose('/query_result/<sim_id>/', methods=['POST'])
     def query_result(self, sim_id):
         query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
@@ -1008,10 +1014,19 @@ class SimulationModelView(
             'year_end': '2040'
         }
         # if send_sqs_msg(msg, queue_url=query_sqs):
-        if True:
+        g.action_object = simulation.name
+        g.action_object_type = 'simulation'
+        if send_sqs_msg(msg, queue_url=query_sqs):
             message = 'Query has been sent, please wait for notification about query result.'
+            g.result = 'send query result'
+            g.detail = json.dumps(msg)
         else:
             message = 'Query failed to send to sqs, please try again later or contact dev team.'
+            g.result = 'send query result'
+            g.detail=message
+
+
+
         return jsonify({'message': message})
 
 class ProjectModelView(EmpowerModelView):
