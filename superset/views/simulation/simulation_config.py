@@ -132,7 +132,7 @@ excel_path = 'assumption-excel/{}.xlsx'
 template_path = 'template run 188.xlsx'
 
 # nifi sqs url
-sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi_test"
+nifi_sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi_test"
 
 # S3 pickle cache path
 reference_date_s3_pickle_path = 'reference_date/test_2020to2030/{}.pickle'  # index

@@ -24,6 +24,7 @@ import superset.models.core as models
 from flask import flash, redirect, g, request, abort, url_for, jsonify
 from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
+from flask_appbuilder.actions import action
 from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
@@ -188,6 +189,8 @@ def simulation_start_invoker(run_id, sim_num):
             simulation.status = 'Run finished'
             db.session.commit()
             g.result = 'Invoke success, simulation finished.'
+            message = 'Simulation {} is finished successfully, an email contain links to the result will be sent to you shortly.'
+            style='info'
         except Exception as e:
             simulation.status = 'Run failed'
             simulation.status_detail = repr(e)
@@ -195,8 +198,11 @@ def simulation_start_invoker(run_id, sim_num):
             g.result = 'Invoke failed'
             g.detail = repr(e)
             traceback.print_exc()
+            message = 'Simulation {} has failed, please check log for the detail.'
+            style = 'danger'
         finally:
             print('invoke finished')
+            flash(message, style)
 
 
 class AssumptionListWidget(ListWidget):
@@ -488,17 +494,20 @@ class SimulationModelView(
         'send_email',
         'process_success',
         'process_failed',
-        'start_run'
+        'start_run',
+        'query_success',
+        'query_failed',
+        'query_result',
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
-    edit_exclude_columns = ['status','status_detail', 'run_id']
+    edit_exclude_columns = ['status_detail', 'run_id']
     # label_columns = {'run_no':'Number of simulation run'}
 
     add_widget = SimulationAddWidget
     add_form = SimulationForm
     list_widget = SimulationListWidget
-    edit_form = SimulationForm
+    # edit_form = SimulationForm
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
@@ -925,7 +934,7 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
-
+        flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
         return '200 OK'
 
     @simulation_logger.log_simulation(action_name='process assumption')
@@ -952,8 +961,58 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
+        flash('The preprocess of simulation {} has failed, please check the log.'.format(simulation.name), 'danger')
         return '200 OK'
 
+
+    @expose('/query_success', methods=['GET', 'POST'])
+    def query_success(self):
+        g.user = None
+        flash('reached query success', 'info')
+        return '200 OK'
+        # data = json.loads(request.data.decode())
+        # print(data)
+
+    @expose('/query_failed', methods=['GET', 'POST'])
+    def query_failed(self):
+        g.user = None
+        data = json.loads(request.data.decode())
+        print(data)
+
+    @expose('/query_result/<sim_id>/', methods=['POST'])
+    def query_result(self, sim_id):
+        query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
+        print('get query result')
+        data = request.form['duid_list']
+        data = data.replace('\n', '').split(',')
+        simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
+        msg = {
+            'sim_tag': simulation.run_id,
+            'outBucket': 'aws-forecast-poc-empower',
+            'query_list': [
+                'Technology_Generation_by_percentile_cal',
+                'DUID_Generation_by_percentile_cal',
+                'DUID_Average_Price_by_percentile_cal',
+                'DUID_Revenue_by_percentile_cal',
+                'DUID_Spot_Premium_by_percentile_cal',
+                'TWA_Simulation_by_simulation_cal',
+                'DUID_Generation_by_simulation_cal',
+                'DUID_Average_Price_by_simulation_cal',
+                'DUID_Revenue_by_simulation_cal'
+            ],
+            'dbname': 'dex_poc',
+            'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+            'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+            'duids': data,
+            'year_start': '2020',
+            'year_end': '2040'
+        }
+        # if send_sqs_msg(msg, queue_url=query_sqs):
+        if True:
+            message = 'Query has been sent, please wait for notification about query result.'
+        else:
+            message = 'Query failed to send to sqs, please try again later or contact dev team.'
+        return jsonify({'message': message})
 
 class ProjectModelView(EmpowerModelView):
 
