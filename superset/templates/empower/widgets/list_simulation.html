@@ -58,11 +58,40 @@
                 </center></td>
             {% endif %}
             {% for value in include_columns %}
-                {% set formatter = formatters_columns.get(value) %}
-                {% if formatter %}
-                    <td>{{ formatter(item[value]) }}</td>
+                {% if item[value] == 'Run finished' %}
+                    <td>
+                    <button class="btn btn-primary btn-sm" data-toggle="modal"
+                    data-target="#queryModal{{ pk }}" data-client="{{ pk }}" >
+                        Run finished, Export result
+                    </button>
+                    </td>
+                    <div class="modal fade" id="queryModal{{ pk }}" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modal-title-query">Export result for {{item['name']}}</h5>
+                                </div>
+                                <div class="modal-body">
+                                    <label for="query-input-{{ pk }}">Please input the list of DUIDs:</label>
+                                    <textarea id="query-input-{{ pk }}" name="{{pk}}" placeholder="XNUMURKAHSF, COLEASF1, ..."
+                                    rows="5" cols="40"></textarea>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary" id="query-btn-{{pk}}" name="{{ pk }}">Start query</button>
+                                    <button class="btn btn-secondary" data-dismiss="modal" id="close-btn-query">
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 {% else %}
-                    <td>{{ item[value] }}</td>
+                    {% set formatter = formatters_columns.get(value) %}
+                    {% if formatter %}
+                        <td>{{ formatter(item[value]) }}</td>
+                    {% else %}
+                        <td>{{ item[value] }}</td>
+                    {% endif %}
                 {% endif %}
             {% endfor %}
             <td>
@@ -77,7 +106,7 @@
                 >
                 Start
                 </button>
-                {% endif %}
+            </td>
                 <div class="modal fade" id="startModal{{ pk }}" tabindex="-1" role="dialog" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
@@ -94,14 +123,14 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button class="btn btn-primary" id="run-btn-{{pk}}" name="{{ pk }}">Start run</button>
-                                    <button class="btn btn-secondary" data-dismiss="modal" id="close-btn-1">
+                                    <button class="btn btn-secondary" data-dismiss="modal" id="close-btn-run">
                                         Close
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-
+                {% endif %}
 
             <td><button class="btn btn-primary btn-sm" data-toggle="modal"
                                 data-target="#rerunModal{{ pk }}" data-client="{{ pk }}">
@@ -124,7 +153,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button class="btn btn-primary" id="rerun-btn-{{pk}}" name="{{ pk }}">Create</button>
-                                <button class="btn btn-secondary" data-dismiss="modal" id="close-btn">
+                                <button class="btn btn-secondary" data-dismiss="modal" id="close-btn-create">
                                     Close
                                 </button>
                             </div>
@@ -168,13 +197,6 @@
             let run_select = document.getElementById('run-select-'+pk).value
             var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
             href = href + pk + '/' + run_select + '/'
-            // $.ajaxSetup({
-            //     beforeSend: function (xhr, settings) {
-            //         if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-            //             xhr.setRequestHeader("X-CSRFToken", csrf_token);
-            //         }
-            //     }
-            // });
             $.ajax({
                 type: "GET",
                 url: href,
@@ -201,6 +223,52 @@
                 },
                 timeout: 30000,
                 async: true,
+                cache: false,
+                contentType: false,
+                processData: false,
+            });
+        })
+
+        $('[id^=query-btn]').click(function(e) {
+            e.preventDefault();
+            let button = this
+            let href = '/simulationmodelview/query_result/'
+
+            button.innerHTML = 'Sending query'
+            this.setAttribute('disabled', true)
+            let pk = this.name
+            let query_input = document.getElementById('query-input-'+pk).value
+            var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+            let formdata = new FormData();
+            formdata.append('duid_list', query_input)
+            href = href + pk + '/'
+            $.ajax({
+                type: "POST",
+                url: href,
+                xhr: function () {
+                    var myXhr = $.ajaxSettings.xhr();
+                    return myXhr;
+                },
+                success: function (data) {
+                    alert(data['message'])
+                    button.removeAttribute('disabled')
+                    // console.log(document.getElementById('assumption'))
+                    button.innerHTML = 'Start run'
+                    window.location.reload(true)
+                },
+                error: function(error, str){
+                    if (str =='timeout'){
+                        alert('Timeout, please try again later.')
+                    }
+                    else if (str == 'error'){
+                        alert(error['message'])
+                    }
+                    button.removeAttribute('disabled')
+                    button.innerHTML = 'Start run'
+                },
+                timeout: 30000,
+                async: true,
+                data:formdata,
                 cache: false,
                 contentType: false,
                 processData: false,
