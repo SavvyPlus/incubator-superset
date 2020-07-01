@@ -208,7 +208,7 @@
                     alert(data['message'])
                     button.removeAttribute('disabled')
                     // console.log(document.getElementById('assumption'))
-                    button.innerHTML = 'Start run'
+                    button.innerHTML = 'Start query'
                     window.location.reload(true)
                 },
                 error: function(error, str){
@@ -219,7 +219,7 @@
                         alert(error['message'])
                     }
                     button.removeAttribute('disabled')
-                    button.innerHTML = 'Start run'
+                    button.innerHTML = 'Start query'
                 },
                 timeout: 30000,
                 async: true,

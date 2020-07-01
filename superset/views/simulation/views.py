@@ -1016,7 +1016,7 @@ class SimulationModelView(
         # if send_sqs_msg(msg, queue_url=query_sqs):
         g.action_object = simulation.name
         g.action_object_type = 'simulation'
-        if send_sqs_msg(msg, queue_url=query_sqs):
+        if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
             message = 'Query has been sent, please wait for notification about query result.'
             g.result = 'send query result'
             g.detail = json.dumps(msg)
@@ -1024,9 +1024,6 @@ class SimulationModelView(
             message = 'Query failed to send to sqs, please try again later or contact dev team.'
             g.result = 'send query result'
             g.detail=message
-
-
-
         return jsonify({'message': message})
 
 class ProjectModelView(EmpowerModelView):
