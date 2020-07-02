@@ -881,7 +881,6 @@ class SimulationModelView(
             else:
                 message = 'Full run started'
 
-            ip = get_current_external_ip()
             msg = {
                 'excelKey': excel_path.format(simulation.assumption.name),
                 'runNo': simulation.run_id,
@@ -894,7 +893,7 @@ class SimulationModelView(
                 # 'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
                 'simEndDate': '2030-12-31',
                 'runType': run_type,
-                'supersetURL': ip,
+                'supersetURL': get_current_external_ip(),
             }
             if send_sqs_msg(json.dumps(msg)):
                 g.detail = json.dumps(msg)
@@ -969,11 +968,12 @@ class SimulationModelView(
     def query_success(self):
         g.user = None
         # flash('reached query success', 'info')
-        return '200 OK'
         data = json.loads(request.data.decode())
         print(data)
         g.result = 'query success'
-        g.detail = data
+        g.detail = repr(data)
+        return '200 OK'
+
 
     @simulation_logger.log_simulation(action_name='query result')
     @expose('/query_failed', methods=['GET', 'POST'])
@@ -982,7 +982,9 @@ class SimulationModelView(
         data = json.loads(request.data.decode())
         print(data)
         g.result = 'query failed'
-        g.detail = data
+        g.detail = repr(data)
+        return '200 OK'
+
 
     @simulation_logger.log_simulation(action_name='start query')
     @expose('/query_result/<sim_id>/', methods=['POST'])
@@ -993,7 +995,8 @@ class SimulationModelView(
         data = data.replace('\n', '').split(',')
         simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
         msg = {
-            'sim_tag': simulation.run_id,
+            # 'sim_tag': simulation.run_id,
+            'sim_tag': 'Run_196',
             'outBucket': 'aws-forecast-poc-empower',
             'query_list': [
                 'Technology_Generation_by_percentile_cal',
@@ -1007,11 +1010,14 @@ class SimulationModelView(
                 'DUID_Revenue_by_simulation_cal'
             ],
             'dbname': 'dex_poc',
-            'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
-            'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+            # 'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+            'dispatchtbl': f'dispatch_{"Run_196".lower()}',
+            # 'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+            'spottbl': f'spot_demand_{"Run_196".lower()}',
             'duids': data,
             'year_start': '2020',
-            'year_end': '2040'
+            'year_end': '2040',
+            'supersetURL': get_current_external_ip()
         }
         # if send_sqs_msg(msg, queue_url=query_sqs):
         g.action_object = simulation.name
