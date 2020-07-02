@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func, Float
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -156,3 +156,310 @@ class SimulationLog(Model):
     dttm = Column(DateTime)
     result = Column(String(128))
     detail = Column(Text)
+
+
+
+"""Rooftop Solar History"""
+class RooftopSolarHistoryDefinition(Model):
+    __tablename__ = "Rooftop_Solar_History_Definition"
+    Rooftop_Solar_History_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+class RooftopSolarHistory(Model):
+    __tablename__ = "Rooftop_Solar_History"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Date = Column(Date)
+    Capacity_MW = Column(Float)
+    Aggregate_MW = Column(Float)
+    Rooftop_Solar_History_Version = Column(Integer,
+                                           ForeignKey('Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'),
+                                           nullable=False)
+    Rooftop_Solar_History_Definition = relationship('RooftopSolarHistoryDefinition',
+                                                    foreign_keys=[Rooftop_Solar_History_Version],
+                                                    backref="data")
+
+"""Rooftop Solar Forecast"""
+class RooftopSolarForecastDefinition(Model):
+    __tablename__ = "Rooftop_Solar_Forecast_Definition"
+    Rooftop_Solar_Forecast_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+    Assumption_Scenario = Column(String(50))
+    Assumption_Scenario_Version = Column(Integer)
+
+class RooftopSolarForecast(Model):
+    __tablename__ = "Rooftop_Solar_Forecast"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Year = Column(Integer)
+    Capacity_MW = Column(Float)
+    Aggregate_MW = Column(Float)
+    Rooftop_Solar_Forecast_Version = Column(Integer,
+                                           ForeignKey('Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'),
+                                           nullable=False)
+    Rooftop_Solar_Forecast_Definition = relationship('RooftopSolarForecastDefinition',
+                                                    foreign_keys=[Rooftop_Solar_Forecast_Version],
+                                                    backref="data")
+
+"""Renewable Proportion"""
+class RenewableProportionDefinition(Model):
+    __tablename__ = "Renewable_Proportion_Definition"
+    Renewable_Proportion_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+class RenewableProportion(Model):
+    __tablename__ = "Renewable_Proportion"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Date = Column(Date)
+    Maximum_HalfHour_Intermittent_Proportion = Column(Float)
+    Renewable_Proportion_Version = Column(Integer,
+                                           ForeignKey('Renewable_Proportion_Definition.Renewable_Proportion_Version'),
+                                           nullable=False)
+    Renewable_Proportion_Definition = relationship('RenewableProportionDefinition',
+                                                    foreign_keys=[Renewable_Proportion_Version],
+                                                    backref="data")
+"""Demand Growth"""
+class DemandGrowthDefinition(Model):
+    __tablename__ = "Demand_Growth_Definition"
+    Demand_Growth_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+    Assumption_Scenario = Column(String(50))
+    Assumption_Scenario_Version = Column(Integer)
+
+class DemandGrowth(Model):
+    __tablename__ = "Demand_Growth"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Year = Column(Integer)
+    Probability = Column(Float)
+    Growth = Column(Float)
+    Demand_Growth_Version = Column(Integer,
+                                           ForeignKey('Demand_Growth_Definition.Demand_Growth_Version'),
+                                           nullable=False)
+    Demand_Growth_Definition = relationship('DemandGrowthDefinition',
+                                                    foreign_keys=[Demand_Growth_Version],
+                                                    backref="data")
+
+"""Behind The Meter Battery"""
+class BehindTheMeterBatteryDefinition(Model):
+    __tablename__ = "Behind_The_Meter_Battery_Definition"
+    Behind_The_Meter_Battery_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+    Assumption_Scenario = Column(String(50))
+    Assumption_Scenario_Version = Column(Integer)
+
+class BehindTheMeterBattery(Model):
+    __tablename__ = "Behind_The_Meter_Battery"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Year = Column(Integer)
+    Aggregate_MW = Column(Float)
+    Behind_The_Meter_Battery_Version = Column(Integer,
+                                           ForeignKey('Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'),
+                                           nullable=False)
+    Behind_The_Meter_Battery_Definition = relationship('BehindTheMeterBatteryDefinition',
+                                                    foreign_keys=[Behind_The_Meter_Battery_Version],
+                                                    backref="data")
+
+"""Project Proxy"""
+class ProjectProxyDefinition(Model):
+    __tablename__ = "Project_Proxy_Definition"
+    Project_Proxy_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+class ProjectProxy(Model):
+    __tablename__ = "Project_Proxy"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Project = Column(String(50))
+    Nameplate_Capacity_MW = Column(Float)
+    Technology_Type = Column(String(10))
+    Latitude = Column(Float)
+    Longitude = Column(Float)
+    Tracking_Type = Column(String(50))
+    Project_Proxy_Version = Column(Integer,
+                                   ForeignKey('Project_Proxy_Definition.Project_Proxy_Version'),
+                                   nullable=False)
+    Project_Proxy_Definition = relationship('ProjectProxyDefinition',
+                                            foreign_keys=[Project_Proxy_Version],
+                                            backref="data")
+
+"""MPC CTP"""
+class MPCCTPDefinition(Model):
+    __tablename__ = "MPC_CTP_Definition"
+    MPC_CTP_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+class MPCCTP(Model):
+    __tablename__ = "MPC_CTP"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    FY = Column(String(10))
+    CPT = Column(Float)
+    MPC = Column(Float)
+    MPC_CTP_Version = Column(Integer,
+                            ForeignKey('MPC_CTP_Definition.MPC_CTP_Version'),
+                            nullable=False)
+    MPC_CTP_Definition = relationship('MPCCTPDefinition',
+                                    foreign_keys=[MPC_CTP_Version],
+                                    backref="data")
+
+"""Gas Price Escalation"""
+class GasPriceEscalationDefinition(Model):
+    __tablename__ = "Gas_Price_Escalation_Definition"
+    Gas_Price_Escalation_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+class GasPriceEscalation(Model):
+    __tablename__ = "MPC_CTP"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Year = Column(Integer)
+    Case1 = Column(Float)
+    Case2 = Column(Float)
+    Case3 = Column(Float)
+    Case4 = Column(Float)
+    Case5 = Column(Float)
+    Case6 = Column(Float)
+    Case7 = Column(Float)
+    Case8 = Column(Float)
+    Case9 = Column(Float)
+    Gas_Price_Escalation_Version = Column(Integer,
+                                        ForeignKey('Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'),
+                                        nullable=False)
+    Gas_Price_Escalation_Definition = relationship('GasPriceEscalationDefinition',
+                                                    foreign_keys=[Gas_Price_Escalation_Version],
+                                                    backref="data")
+
+"""Strategy Behaviour"""
+class StrategicBehaviourDefinition(Model):
+    __tablename__ = "Strategic_Behaviour_Definition"
+    Strategic_Behaviour_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+class StrategicBehaviour(Model):
+    __tablename__ = "Strategic_Behaviour"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Bin_Not_Exceeding = Column(Integer)
+    Value = Column(Float)
+    MW = Column(Float)
+    Strategic_Behaviour_Version = Column(Integer,
+                            ForeignKey('Strategic_Behaviour_Definition.Strategic_Behaviour_Version'),
+                            nullable=False)
+    Strategic_Behaviour_Definition = relationship('StrategicBehaviourDefinition',
+                                    foreign_keys=[Strategic_Behaviour_Version],
+                                    backref="data")
+
+"""Retirement"""
+class RetirementDefinition(Model):
+    __tablename__ = "Retirement_Definition"
+    Retirement_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+class Retirement(Model):
+    __tablename__ = "Retirement"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    DUID = Column(String(50))
+    State = Column(String(10))
+    Registered_Capacity = Column(Float)
+    Impact_To_State = Column(String(10))
+    Adjustment_Factor = Column(Float)
+    Closure_Date = Column(Date)
+    Back_To_Service_Date = Column(Date)
+    Retirement_Version = Column(Integer,
+                            ForeignKey('Retirement_Definition.Retirement_Version'),
+                            nullable=False)
+    Retirement_Definition = relationship('RetirementDefinition',
+                                    foreign_keys=[Retirement_Version],
+                                    backref="data")
+
+"""Project List"""
+class ProjectListDefinition(Model):
+    __tablename__ = "Project_List_Definition"
+    Project_List_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+class ProjectList(Model):
+    __tablename__ = "Project_List"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    DUID = Column(String(50))
+    Name = Column(String(50))
+    State = Column(String(10))
+    Fuel_Type = Column(String(10))
+    Start_Date = Column(Date)
+    End_Date = Column(Date)
+    Status = Column(String(50))
+    Offer_Rate = Column(Float)
+    Maximum_Quantity = Column(Float)
+    Installed_Quantity = Column(Float)
+    Probability_Of_Success = Column(Float)
+    Resolution = Column(String(20))
+    Proxy = Column(String(50))
+    Project_List_Version = Column(Integer,
+                            ForeignKey('Project_List_Definition.Project_List_Version'),
+                            nullable=False)
+    Project_List_Definition = relationship('ProjectListDefinition',
+                                    foreign_keys=[Project_List_Version],
+                                    backref="data")
+
+
+class AssumptionDefinition(Model):
+    __tablename__ = "Assumption_Definition"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    Name = Column(String(20))
+    Note = Column(String(512))
+    Rooftop_Solar_History_Version = Column(Integer,
+                                           ForeignKey('Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'))
+    Rooftop_Solar_History_Definition = relationship('RooftopSolarHistoryDefinition',
+                                                    foreign_keys=[Rooftop_Solar_History_Version])
+
+    Rooftop_Solar_Forecast_Version = Column(Integer,
+                                           ForeignKey('Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'))
+    Rooftop_Solar_Forecast_Definition = relationship('RooftopSolarForecastDefinition',
+                                                    foreign_keys=[Rooftop_Solar_Forecast_Version])
+
+    Renewable_Proportion_Version = Column(Integer,
+                                           ForeignKey('Renewable_Proportion_Definition.Renewable_Proportion_Version'))
+    Renewable_Proportion_Definition = relationship('RenewableProportionDefinition',
+                                                    foreign_keys=[Renewable_Proportion_Version])
+
+    Demand_Growth_Version = Column(Integer,
+                                           ForeignKey('Demand_Growth_Definition.Demand_Growth_Version'))
+    Demand_Growth_Definition = relationship('DemandGrowthDefinition',
+                                                    foreign_keys=[Demand_Growth_Version])
+
+    Behind_The_Meter_Battery_Version = Column(Integer,
+                                           ForeignKey('Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'))
+    Behind_The_Meter_Battery_Definition = relationship('BehindTheMeterBatteryDefinition',
+                                                    foreign_keys=[Behind_The_Meter_Battery_Version])
+
+    Project_Proxy_Version = Column(Integer,
+                                   ForeignKey('Project_Proxy_Definition.Project_Proxy_Version'))
+    Project_Proxy_Definition = relationship('ProjectProxyDefinition',
+                                            foreign_keys=[Project_Proxy_Version])
+
+    MPC_CTP_Version = Column(Integer,
+                            ForeignKey('MPC_CTP_Definition.MPC_CTP_Version'))
+    MPC_CTP_Definition = relationship('MPCCTPDefinition',
+                                    foreign_keys=[MPC_CTP_Version])
+
+    Gas_Price_Escalation_Version = Column(Integer,
+                                        ForeignKey('Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'))
+    Gas_Price_Escalation_Definition = relationship('GasPriceEscalationDefinition',
+                                                    foreign_keys=[Gas_Price_Escalation_Version])
+
+    Strategic_Behaviour_Version = Column(Integer,
+                            ForeignKey('Strategic_Behaviour_Definition.Strategic_Behaviour_Version'))
+    Strategic_Behaviour_Definition = relationship('StrategicBehaviourDefinition',
+                                    foreign_keys=[Strategic_Behaviour_Version])
+
+    Retirement_Version = Column(Integer,
+                            ForeignKey('Retirement_Definition.Retirement_Version'))
+    Retirement_Definition = relationship('RetirementDefinition',
+                                    foreign_keys=[Retirement_Version])
+
+    Project_List_Version = Column(Integer,
+                            ForeignKey('Project_List_Definition.Project_List_Version'))
+    Project_List_Definition = relationship('ProjectListDefinition',
+                                    foreign_keys=[Project_List_Version])
