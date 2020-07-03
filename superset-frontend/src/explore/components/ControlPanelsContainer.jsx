@@ -248,7 +248,6 @@ class ControlPanelsContainer extends React.Component {
             viz_type === 'spot_price_histogram') &&
           section.label === 'Empower'
         ) {
-          console.log(section);
           const s1 = {
             ...section,
             controlSetRows: [
