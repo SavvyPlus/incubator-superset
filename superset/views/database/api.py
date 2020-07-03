@@ -136,6 +136,8 @@ class DatabaseRestApi(DatabaseMixin, BaseSupersetModelRestApi):
         "allow_csv_upload",
         "allows_subquery",
         "allows_cost_estimate",
+        "allows_virtual_table_explore",
+        "explore_database_id",
         "backend",
         "function_names",
     ]

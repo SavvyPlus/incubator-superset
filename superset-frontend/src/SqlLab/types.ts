@@ -16,14 +16,42 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-// This function returns a promise that resolves to the value
-// of the passed response blob. It assumes the blob should be read as text,
-// and that the response can be parsed as JSON. This is needed to read
-// the value of any fetch-based response.
-export default function readResponseBlob(blob) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(JSON.parse(reader.result));
-    reader.readAsText(blob);
-  });
-}
+import { CtasEnum } from './actions/sqlLab';
+
+export type Column = {
+  name: string;
+};
+
+export type Query = {
+  cached: boolean;
+  ctas: boolean;
+  ctas_method?: keyof typeof CtasEnum;
+  dbId: number;
+  errorMessage: string | null;
+  extra: {
+    progress: string | null;
+  };
+  id: string;
+  isDataPreview: boolean;
+  link?: string;
+  progress: number;
+  results: {
+    columns: Column[];
+    data: Record<string, unknown>[];
+    expanded_columns: Column[];
+  };
+  resultsKey: string | null;
+  sql: string;
+  sqlEditorId: string;
+  state:
+    | 'stopped'
+    | 'failed'
+    | 'pending'
+    | 'running'
+    | 'scheduled'
+    | 'success'
+    | 'timed_out';
+  tempSchema: string | null;
+  tempTable: string;
+  trackingUrl: string | null;
+};

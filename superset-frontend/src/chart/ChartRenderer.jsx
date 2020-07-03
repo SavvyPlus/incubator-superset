@@ -245,15 +245,25 @@ class ChartRenderer extends React.Component {
         fd.metrics = ['$'];
       }
     }
-    // console.log(JSON.stringify(queryResponse.data));
+
+    const webpackHash =
+      process.env.WEBPACK_MODE === 'development'
+        ? `-${
+            // eslint-disable-next-line camelcase
+            typeof __webpack_require__ !== 'undefined' &&
+            // eslint-disable-next-line camelcase, no-undef
+            typeof __webpack_require__.h === 'function' &&
+            // eslint-disable-next-line no-undef
+            __webpack_require__.h()
+          }`
+        : '';
+
     return (
       <>
         {formData.viz_type === 'multi_boxplot' ||
         formData.viz_type === 'spot_price_histogram' ? (
           <ReactEcharts
-            key={`${chartId}${
-              process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
-            }`}
+            key={`${chartId}${webpackHash}`}
             id={`chart-id-${chartId}`}
             option={getOption(queryResponse)}
             style={{ height: `${height}px`, width: `${width}px` }}
@@ -262,9 +272,7 @@ class ChartRenderer extends React.Component {
         ) : (
           <SuperChart
             disableErrorBoundary
-            key={`${chartId}${
-              process.env.WEBPACK_MODE === 'development' ? `-${Date.now()}` : ''
-            }`}
+            key={`${chartId}${webpackHash}`}
             id={`chart-id-${chartId}`}
             className={chartClassName}
             chartType={vizType}
