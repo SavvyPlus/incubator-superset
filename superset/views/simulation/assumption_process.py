@@ -236,22 +236,18 @@ def process_assumption_to_df_dict(file_path):
     return df_dict
 
 def save_as_new_tab_version(db, df_dict, tab_model, tab_data_model, note=None, scenario=None):
-    try:
-        new_tab_def = tab_model()
-        new_tab_def.Note = note
-        df = df_dict[new_tab_def.get_sheet_name()]
-        if scenario and hasattr(tab_model, 'Assumption_Scenario'):
-            new_tab_def.Assumption_Scenario = scenario
-            scen_ver = db.session.query(tab_model).filter_by(Assumption_Scenario=scenario).order_by(tab_model.Assumption_Scenario_Version.desc()).first().Assumption_Scenario_Version
-            new_tab_def.Assumption_Scenario_Version = scen_ver + 1
-        db.session.add(new_tab_def)
-        db.session.flush()
-        new_ver = new_tab_def.get_version()
-        version_col = tab_data_model.get_version_col_name()
-        df[version_col] = new_ver
-        df.to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
-        return new_tab_def
-    except Exception as e:
-        db.session.rollback()
-        print(repr(e))
-        raise e
+    new_tab_def = tab_model()
+    new_tab_def.Note = note
+    df = df_dict[new_tab_def.get_sheet_name()]
+    if scenario and hasattr(tab_model, 'Assumption_Scenario'):
+        new_tab_def.Assumption_Scenario = scenario
+        scen_ver = db.session.query(tab_model).filter_by(Assumption_Scenario=scenario).order_by(tab_model.Assumption_Scenario_Version.desc()).first().Assumption_Scenario_Version
+        new_tab_def.Assumption_Scenario_Version = scen_ver + 1
+    db.session.add(new_tab_def)
+    # db.session.flush()
+    db.session.commit()
+    new_ver = new_tab_def.get_version()
+    version_col = tab_data_model.get_version_col_name()
+    df[version_col] = new_ver
+    df.to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
+    return new_tab_def
