@@ -157,38 +157,6 @@ class ControlPanelsContainer extends React.Component {
                 } else {
                   return this.renderControl(controlItem);
                 }
-              } else if (controls[controlItem]) {
-                // When the item is string name, meaning the control config
-                // is not specified directly. Have to look up the config from
-                // centralized configs.
-                const name = controlItem;
-
-                // Dynamically render selection fields based on the group type
-                if (name === 'cal_years') {
-                  if (controls.period_type.value === 'CalYear') {
-                    return this.renderControl(name, controlConfigs[name], true);
-                  }
-                } else if (name === 'fin_years') {
-                  if (controls.period_type.value === 'FinYear') {
-                    return this.renderControl(name, controlConfigs[name], true);
-                  }
-                } else if (name === 'period_finyear_picker') {
-                  if (controls.period_type_static_picker.value === 'FinYear') {
-                    return this.renderControl(name, controlConfigs[name], true);
-                  }
-                } else if (name === 'period_calyear_picker') {
-                  if (controls.period_type_static_picker.value === 'CalYear') {
-                    return this.renderControl(name, controlConfigs[name], true);
-                  }
-                } else if (name === 'period_quarterly_picker') {
-                  if (
-                    controls.period_type_static_picker.value === 'Quarterly'
-                  ) {
-                    return this.renderControl(name, controlConfigs[name], true);
-                  }
-                } else {
-                  return this.renderControl(name, controlConfigs[name], true);
-                }
               }
               return null;
             })
