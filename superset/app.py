@@ -168,6 +168,7 @@ class SupersetAppInitializer:
             SimulationModelView,
             SimulationLogModelView,
             UploadExcelView,
+            EditAssumptionModelView,
         )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
@@ -272,6 +273,14 @@ class SupersetAppInitializer:
             label=__("Modeling"),
             icon="fa-dashboard",
             category="Modeling",
+        )
+        appbuilder.add_view(
+            EditAssumptionModelView,
+            "Edit Assumption",
+            label=__("Edit Assumption"),
+            icon="fa-edit",
+            category="Modeling",
+            category_icon="",
         )
         appbuilder.add_separator("Modeling")
         appbuilder.add_link(
