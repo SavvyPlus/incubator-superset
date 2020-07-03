@@ -32,14 +32,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 import superset.models.core as models
-from superset import (
-    app,
-    dataframe,
-    db,
-    is_feature_enabled,
-    result_set,
-    security_manager,
-)
+from superset import app, dataframe, db, is_feature_enabled, result_set
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.exceptions import SupersetException, SupersetSecurityException
@@ -460,7 +453,7 @@ def check_datasource_perms(
         force=False,
     )
 
-    security_manager.assert_viz_permission(viz_obj)
+    viz_obj.raise_for_access()
 
 
 def check_slice_perms(_self: Any, slice_id: int) -> None:
@@ -469,6 +462,9 @@ def check_slice_perms(_self: Any, slice_id: int) -> None:
 
     This function takes `self` since it must have the same signature as the
     the decorated method.
+
+    :param slice_id: The slice ID
+    :raises SupersetSecurityException: If the user cannot access the resource
     """
 
     form_data, slc = get_form_data(slice_id, use_slice_data=True)
@@ -481,13 +477,13 @@ def check_slice_perms(_self: Any, slice_id: int) -> None:
             force=False,
         )
 
-        security_manager.assert_viz_permission(viz_obj)
+        viz_obj.raise_for_access()
 
 
 def _deserialize_results_payload(
     payload: Union[bytes, str], query: Query, use_msgpack: Optional[bool] = False
 ) -> Dict[str, Any]:
-    logger.debug(f"Deserializing from msgpack: {use_msgpack}")
+    logger.debug("Deserializing from msgpack: %r", use_msgpack)
     if use_msgpack:
         with stats_timing(
             "sqllab.query.results_backend_msgpack_deserialize", stats_logger
@@ -509,11 +505,9 @@ def _deserialize_results_payload(
         )
 
         return ds_payload
-    else:
-        with stats_timing(
-            "sqllab.query.results_backend_json_deserialize", stats_logger
-        ):
-            return json.loads(payload)
+
+    with stats_timing("sqllab.query.results_backend_json_deserialize", stats_logger):
+        return json.loads(payload)
 
 
 def get_cta_schema_name(

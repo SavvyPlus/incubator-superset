@@ -11,7 +11,7 @@ import pickle
 import logging
 from urllib import parse
 from requests import get
-from .simulation_config import states, sqs_url
+from .simulation_config import states, nifi_sqs_url
 
 logging.getLogger('botocore').setLevel(logging.CRITICAL)
 logging.getLogger('boto3').setLevel(logging.CRITICAL)
@@ -60,7 +60,7 @@ def read_from_s3(bucket, path):
     return df
 
 def send_sqs_msg(message_body, delay=10,
-                        queue_url=sqs_url):
+                 queue_url=nifi_sqs_url):
 
     response = sqs.send_message(
         QueueUrl=queue_url,
@@ -189,4 +189,4 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
 
 def get_current_external_ip():
     # return 'http://{}:8088'.format(get('https://api.ipify.org').text)
-    return 'http://{}:8088'.format('10.61.145.120')
+    return 'http://{}:8088'.format('10.61.146.25')

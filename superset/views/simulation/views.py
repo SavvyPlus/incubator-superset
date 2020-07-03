@@ -24,6 +24,7 @@ import superset.models.core as models
 from flask import flash, redirect, g, request, abort, url_for, jsonify
 from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
+from flask_appbuilder.actions import action
 from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
@@ -41,9 +42,10 @@ from superset.views.simulation.util import get_s3_url
 from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
 from superset.views.simulation.simulation_config import bucket_test
 
-from .forms import UploadAssumptionForm, AddSimulationForm
+from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
-from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
+from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
+    save_as_new_tab_version
 from .util import get_redirect_endpoint
 
 
@@ -133,8 +135,10 @@ def simulation_start_invoker(run_id, sim_num):
     g.action_object = simulation.name
     g.action_object_type = 'simulation'
 
-    if sim_num <= 5:
+    if sim_num < 2:
         interval=300
+    elif sim_num < 6:
+        interval = 100
     else:
         interval = 60
 
@@ -173,7 +177,7 @@ def simulation_start_invoker(run_id, sim_num):
             print('invoking')
             batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=interval)
             batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, 4017, year_start=2020,
-                                     year_end=2030, interval=interval/2)
+                                     year_end=2031, interval=interval/2)
             batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, 11,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
@@ -186,6 +190,8 @@ def simulation_start_invoker(run_id, sim_num):
             simulation.status = 'Run finished'
             db.session.commit()
             g.result = 'Invoke success, simulation finished.'
+            message = 'Simulation {} is finished successfully, an email contain links to the result will be sent to you shortly.'
+            style='info'
         except Exception as e:
             simulation.status = 'Run failed'
             simulation.status_detail = repr(e)
@@ -193,8 +199,11 @@ def simulation_start_invoker(run_id, sim_num):
             g.result = 'Invoke failed'
             g.detail = repr(e)
             traceback.print_exc()
+            message = 'Simulation {} has failed, please check log for the detail.'
+            style = 'danger'
         finally:
             print('invoke finished')
+            # flash(message, style)
 
 
 class AssumptionListWidget(ListWidget):
@@ -468,6 +477,48 @@ class AssumptionModelView(EmpowerModelView):
         return None
 
 
+class UploadExcelView(SimpleFormView):
+    route_base = '/upload_base_excel'
+    form_title = 'Upload assumption excel'
+    form = UploadAssumptionFormForStanding
+    form_template = "appbuilder/general/model/edit.html"
+
+    def form_post(self, form):
+        file_name = form.file.data.filename
+        extension = os.path.splitext(file_name)[1].lower()
+        path = tempfile.NamedTemporaryFile(
+            dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
+        ).name
+
+        form.file.data.filename = path
+        name = form.name.data
+        g.action_object = name
+        g.action_object_type = 'Assumption'
+        try:
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
+            upload_stream_write(form.file.data, path)
+            df_dict = process_assumption_to_df_dict(path)
+            new_assum_def = AssumptionDefinition()
+            new_assum_def.Name = name
+
+            for tab_def_model, tab_data_model in model_list:
+                # sheet_name = tab_def_model.get_sheet_name()
+                sub_tab_def = save_as_new_tab_version(db, df_dict, tab_def_model, tab_data_model)
+                # set relation of assumption def with sub table definition
+                new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
+            db.session.add(new_assum_def)
+            message = 'success'
+            style = 'info'
+        except Exception as e:
+            traceback.print_exc()
+            db.session.rollback()
+            message = repr(e)
+            style = 'danger'
+        finally:
+            os.remove(path)
+        flash(message, style)
+        return redirect('.form')
+
 class SimulationModelView(
     EmpowerModelView
 ):
@@ -486,21 +537,25 @@ class SimulationModelView(
         'send_email',
         'process_success',
         'process_failed',
-        'start_run'
+        'start_run',
+        'query_success',
+        'query_failed',
+        'query_result',
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
-    edit_exclude_columns = ['status','status_detail', 'run_id']
-    label_columns = {'run_no':'Number of simulation run'}
+    edit_exclude_columns = ['status_detail', 'run_id']
+    # label_columns = {'run_no':'Number of simulation run'}
 
     add_widget = SimulationAddWidget
-    # add_form = AddSimulationForm
+    add_form = SimulationForm
     list_widget = SimulationListWidget
+    # edit_form = SimulationForm
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
     def load_results(self, run_id: str, table_name: str) -> FlaskResponse:
-        # First check if the table has existed. If so, redirect to its chart
+        # First， check if the table has existed. If so, redirect to its chart
         sqla_table = db.session.query(SqlaTable).filter_by(table_name=table_name).one_or_none()
         if sqla_table:
             endpoint = get_redirect_endpoint(table_name, sqla_table.id)
@@ -720,7 +775,7 @@ class SimulationModelView(
                 self.post_add(item)
                 g.result = 'Create simulation success'
                 g.detail = None
-                send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
+                # send_notification(item, 'd-a55f374a820b4aa08ebc6eb132504151')
                 return True
 
             flash(*self.datamodel.message)
@@ -869,7 +924,6 @@ class SimulationModelView(
             else:
                 message = 'Full run started'
 
-            ip = get_current_external_ip()
             msg = {
                 'excelKey': excel_path.format(simulation.assumption.name),
                 'runNo': simulation.run_id,
@@ -882,7 +936,7 @@ class SimulationModelView(
                 # 'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
                 'simEndDate': '2030-12-31',
                 'runType': run_type,
-                'supersetURL': ip,
+                'supersetURL': get_current_external_ip(),
             }
             if send_sqs_msg(json.dumps(msg)):
                 g.detail = json.dumps(msg)
@@ -922,7 +976,7 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
-
+        flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
         return '200 OK'
 
     @simulation_logger.log_simulation(action_name='process assumption')
@@ -949,8 +1003,77 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
+        flash('The preprocess of simulation {} has failed, please check the log.'.format(simulation.name), 'danger')
         return '200 OK'
 
+    @simulation_logger.log_simulation(action_name='query result')
+    @expose('/query_success', methods=['GET', 'POST'])
+    def query_success(self):
+        g.user = None
+        # flash('reached query success', 'info')
+        data = json.loads(request.data.decode())
+        print(data)
+        g.result = 'query success'
+        g.detail = repr(data)
+        return '200 OK'
+
+
+    @simulation_logger.log_simulation(action_name='query result')
+    @expose('/query_failed', methods=['GET', 'POST'])
+    def query_failed(self):
+        g.user = None
+        data = json.loads(request.data.decode())
+        print(data)
+        g.result = 'query failed'
+        g.detail = repr(data)
+        return '200 OK'
+
+
+    @simulation_logger.log_simulation(action_name='start query')
+    @expose('/query_result/<sim_id>/', methods=['POST'])
+    def query_result(self, sim_id):
+        query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
+        print('get query result')
+        data = request.form['duid_list']
+        data = data.replace('\n', '').split(',')
+        simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
+        msg = {
+            # 'sim_tag': simulation.run_id,
+            'sim_tag': 'Run_196',
+            'outBucket': bucket_test,
+            'query_list': [
+                'Technology_Generation_by_percentile_cal',
+                'DUID_Generation_by_percentile_cal',
+                'DUID_Average_Price_by_percentile_cal',
+                'DUID_Revenue_by_percentile_cal',
+                'DUID_Spot_Premium_by_percentile_cal',
+                'TWA_Simulation_by_simulation_cal',
+                'DUID_Generation_by_simulation_cal',
+                'DUID_Average_Price_by_simulation_cal',
+                'DUID_Revenue_by_simulation_cal'
+            ],
+            'dbname': 'dex_poc',
+            # 'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+            'dispatchtbl': f'dispatch_{"Run_196".lower()}',
+            # 'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+            'spottbl': f'spot_demand_{"Run_196".lower()}',
+            'duids': data,
+            'year_start': '2020',
+            'year_end': '2040',
+            'supersetURL': get_current_external_ip()
+        }
+        # if send_sqs_msg(msg, queue_url=query_sqs):
+        g.action_object = simulation.name
+        g.action_object_type = 'simulation'
+        if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
+            message = 'Query has been sent, please wait for notification about query result.'
+            g.result = 'send query result'
+            g.detail = json.dumps(msg)
+        else:
+            message = 'Query failed to send to sqs, please try again later or contact dev team.'
+            g.result = 'send query result'
+            g.detail=message
+        return jsonify({'message': message})
 
 class ProjectModelView(EmpowerModelView):
 

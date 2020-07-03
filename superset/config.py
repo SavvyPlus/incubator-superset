@@ -172,7 +172,11 @@ WTF_CSRF_ENABLED = True
 # Add endpoints that need to be exempt from CSRF protection
 WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log",
                         "superset.views.simulation.views.process_success",
-                        "superset.views.simulation.views.process_failed"]
+                        "superset.views.simulation.views.query_success",
+                        "superset.views.simulation.views.process_failed",
+                        "superset.views.simulation.views.query_failed",
+                        "superset.views.simulation.views.query_result",
+                        ]
 
 # Whether to run the web server in debug mode or not
 DEBUG = os.environ.get("FLASK_ENV") == "development"
@@ -911,7 +915,7 @@ if CONFIG_PATH_ENV_VAR in os.environ:
         print(f"Loaded your LOCAL configuration at [{cfg_path}]")
     except Exception:
         logger.exception(
-            f"Failed to import config for {CONFIG_PATH_ENV_VAR}={cfg_path}"
+            "Failed to import config for %s=%s", CONFIG_PATH_ENV_VAR, cfg_path
         )
         raise
 elif importlib.util.find_spec("superset_config"):

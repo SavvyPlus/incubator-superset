@@ -15,21 +15,20 @@
 # specific language governing permissions and limitations
 # under the License.
 """Contains the logic to create cohesive forms on the explore view"""
-from flask_appbuilder.fieldwidgets import BS3TextFieldWidget, Select2Widget
+from flask_appbuilder.fieldwidgets import BS3TextFieldWidget, Select2Widget, DatePickerWidget, Select2ManyWidget
 from flask_appbuilder.forms import DynamicForm
 from flask_babel import lazy_gettext as _
 from flask_wtf.file import FileAllowed, FileField, FileRequired
 from wtforms import BooleanField, IntegerField, SelectField, StringField, RadioField, DateField
-from wtforms.ext.sqlalchemy.fields import QuerySelectField
+from wtforms.ext.sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 from superset.models.simulation import Assumption
 from superset import app, db, security_manager
-from superset.forms import CommaSeparatedListField, filter_not_empty_values
-from superset.models import core as models
+from superset.models import simulation as sim_models
+
 
 class UploadAssumptionForm(DynamicForm):
-
     name = StringField(
         _("Name"),
         description=_("Name of the assumption file."),
@@ -58,21 +57,25 @@ class UploadAssumptionForm(DynamicForm):
         ],
     )
 
-def possible_assumptions():
-    # from flask_appbuilder.models.sqla.interface import SQLAInterface
-    return Assumption.query
 
-class AddSimulationForm(DynamicForm):
-    assumption_choice1 = QuerySelectField(
-        _("assumption choice 1"),
-        query_factory=possible_assumptions,
-        get_label='name_en', get_pk=lambda a: a.id,
+class UploadAssumptionFormForStanding(DynamicForm):
+    name = StringField(
+        _("Name"),
         description=_("Name of the assumption file."),
+        validators=[DataRequired()],
+        widget=BS3TextFieldWidget(),
     )
-    assumption_choice2 = FileField(
+    note = StringField(
+        _("Description"),
+        description=_("Note of the assumption"),
+        widget=BS3TextFieldWidget(),
+    )
+
+    file = FileField(
         _("Excel File"),
         description=_("Select the assumption template excel file."),
         validators=[
+            FileRequired(),
             FileAllowed(
                 ["xlsx"],
                 _(
@@ -83,35 +86,72 @@ class AddSimulationForm(DynamicForm):
             ),
         ],
     )
+
+
+def possible_assumptions():
+    # from flask_appbuilder.models.sqla.interface import SQLAInterface
+    return Assumption.query
+
+
+class SimulationForm(DynamicForm):
     name = StringField(
         _("Name"),
         description=_("Name of the assumption file."),
         validators=[DataRequired()],
         widget=BS3TextFieldWidget(),
     )
+    project = QuerySelectField(
+        _("Project"),
+        query_factory=lambda: db.session().query(sim_models.Project),
+        allow_blank=False,
+        widget=Select2Widget(),
+        validators=[DataRequired()],
+    )
+    assumption = QuerySelectField(
+        _("Assumption"),
+        query_factory=lambda: db.session().query(sim_models.Assumption),
+        allow_blank=False,
+        widget=Select2Widget(),
+        validators=[DataRequired()],
+    )
     description = StringField(
         _("Description"),
         description=_("Description of the assumption"),
+        widget=BS3TextFieldWidget(),
     )
-    start_date = DateField('Simulation start date', description='Start date of simulation')
-    end_date = DateField('Simulation end date', description='End date of simulation')
-    run_id = StringField(
-        'Run ID',
-        description='Run id, must be integer',
-        validators=[DataRequired()]
+    run_no = SelectField(
+        _("Number of simulation run"),
+        description=_("The number of simulations that requires to run"),
+        choices=[
+            ("1", "1"),
+            ("2", "2"),
+            ("3", "3"),
+            ("4", "4"),
+            ("5", "5"),
+            ("6", "6"),
+            ("7", "7"),
+            ("8", "8"),
+            ("9", "9"),
+            ("10", "10"),
+        ],
+        widget=Select2Widget(),
+        validators=[DataRequired()],
     )
-    generation_model = StringField(
-        'Generation model',
-        description='The generation model'
+    report_type = QuerySelectMultipleField(
+        _("Report Type"),
+        query_factory=lambda: db.session().query(sim_models.JobType),
+        allow_blank=True,
+        widget=Select2ManyWidget(),
     )
-    run_no = StringField(
-        'Number of simulation runs',
-        description='The number of simulations that requires to run',
-        validators=[DataRequired()]
+    start_date = DateField(
+        _('Simulation start date'),
+        description='Start date of simulation',
+        widget=DatePickerWidget(),
     )
-    report_type = StringField(
-        'Report type',
-        description='The type the report, it determines the type of chart for final data'
+    end_date = DateField(
+        _('Simulation end date'),
+        description='End date of simulation',
+        widget=DatePickerWidget()
     )
 
 

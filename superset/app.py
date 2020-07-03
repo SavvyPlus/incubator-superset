@@ -95,7 +95,6 @@ class SupersetAppInitializer:
         """
         Called after any other init tasks
         """
-        pass
 
     def configure_celery(self) -> None:
         celery_app.config_from_object(self.config["CELERY_CONFIG"])
@@ -168,6 +167,7 @@ class SupersetAppInitializer:
             AssumptionModelView,
             SimulationModelView,
             SimulationLogModelView,
+            UploadExcelView,
         )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
@@ -274,6 +274,15 @@ class SupersetAppInitializer:
             category="Modeling",
         )
         appbuilder.add_separator("Modeling")
+        appbuilder.add_link(
+            "Upload assumption file",
+            label="Upload Assumption excel",
+            href="/upload_base_excel/form",
+            icon="fa-upload",
+            category="Modeling",
+            category_label="Modeling",
+            category_icon="fa-wrench",
+        )
         appbuilder.add_view(
             SimulationLogModelView,
             'Logs',
@@ -342,6 +351,7 @@ class SupersetAppInitializer:
         appbuilder.add_view_no_menu(TableModelView)
         appbuilder.add_view_no_menu(TableSchemaView)
         appbuilder.add_view_no_menu(TabStateView)
+        appbuilder.add_view_no_menu(UploadExcelView)
 
         if feature_flag_manager.is_feature_enabled("TAGGING_SYSTEM"):
             appbuilder.add_view_no_menu(TagView)
@@ -662,7 +672,7 @@ class SupersetAppInitializer:
     def register_blueprints(self) -> None:
         for bp in self.config["BLUEPRINTS"]:
             try:
-                logger.info(f"Registering blueprint: '{bp.name}'")
+                logger.info("Registering blueprint: %s", bp.name)
                 self.flask_app.register_blueprint(bp)
             except Exception:  # pylint: disable=broad-except
                 logger.exception("blueprint registration failed")
