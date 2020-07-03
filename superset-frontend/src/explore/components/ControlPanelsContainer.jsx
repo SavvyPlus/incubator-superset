@@ -30,6 +30,7 @@ import { sharedControls } from '@superset-ui/chart-controls';
 import ControlPanelSection from './ControlPanelSection';
 import ControlRow from './ControlRow';
 import Control from './Control';
+import controlConfigs from '../controls';
 import { sectionsToRender } from '../controlUtils';
 import * as exploreActions from '../actions/exploreActions';
 
@@ -129,7 +130,33 @@ class ControlPanelsContainer extends React.Component {
                 // When the item is a React element
                 return controlItem;
               } else if (controlItem.name && controlItem.config) {
-                return this.renderControl(controlItem);
+                // Dynamically render selection fields based on the group type
+                const { name } = controlItem;
+                if (name === 'cal_years') {
+                  if (controls.period_type.value === 'CalYear') {
+                    return this.renderControl(controlItem);
+                  }
+                } else if (name === 'fin_years') {
+                  if (controls.period_type.value === 'FinYear') {
+                    return this.renderControl(controlItem);
+                  }
+                } else if (name === 'period_finyear_picker') {
+                  if (controls.period_type_static_picker.value === 'FinYear') {
+                    return this.renderControl(controlItem);
+                  }
+                } else if (name === 'period_calyear_picker') {
+                  if (controls.period_type_static_picker.value === 'CalYear') {
+                    return this.renderControl(controlItem);
+                  }
+                } else if (name === 'period_quarterly_picker') {
+                  if (
+                    controls.period_type_static_picker.value === 'Quarterly'
+                  ) {
+                    return this.renderControl(controlItem);
+                  }
+                } else {
+                  return this.renderControl(controlItem);
+                }
               } else if (controls[controlItem]) {
                 // When the item is string name, meaning the control config
                 // is not specified directly. Have to look up the config from
@@ -183,7 +210,6 @@ class ControlPanelsContainer extends React.Component {
   }
   render() {
     const { viz_type } = this.props.form_data;
-    // console.log(this.props)
     const allSectionsToRender = this.sectionsToRender();
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
@@ -201,6 +227,7 @@ class ControlPanelsContainer extends React.Component {
       // if at least one control in the secion is not `renderTrigger`
       // or asks to be displayed at the Data tab
       if (
+        section.label === 'Empower' ||
         section.tabOverride === 'data' ||
         section.controlSetRows.some(rows =>
           rows.some(
@@ -221,15 +248,16 @@ class ControlPanelsContainer extends React.Component {
             viz_type === 'spot_price_histogram') &&
           section.label === 'Empower'
         ) {
+          console.log(section);
           const s1 = {
             ...section,
             controlSetRows: [
               ...section.controlSetRows.filter(
                 item =>
-                  item[0] !== 'metrics' &&
-                  item[0] !== 'groupby' &&
-                  item[0] !== 'adhoc_filters' &&
-                  item[0] !== 'whisker_options',
+                  item[0].name !== 'metrics' &&
+                  item[0].name !== 'groupby' &&
+                  item[0].name !== 'adhoc_filters' &&
+                  item[0].name !== 'whisker_options',
               ),
             ],
           };
