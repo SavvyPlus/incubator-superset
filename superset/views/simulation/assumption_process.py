@@ -1,11 +1,6 @@
 from .helper import *
 from .util import *
-from .simulation_config import start_date_str, end_date_str, sim_start_date_str, sim_end_date_str, \
-    states, bucket_inputs, rooftop_pv_path, existing_generation_path, existing_generation_s3_pickle_path, \
-    pv_data_s3_pickle_path, pv_forecast_s3_new_pickle_path, pv_history_s3_new_pickle_path, new_projects_pickle_path, \
-    retirement_s3_pickle_path, demand_growth_rate_s3_pickle_path, renewable_proportion_s3_pickle_path, excel_path, bucket_test, \
-    projects_gen_data_s3_pickle_path, small_battery_capacity_s3_pickle_path, sheet_demand_adjustment,\
-    sheet_col_dict
+from .simulation_config import *
 import time
 import datetime
 import pandas as pd
@@ -192,12 +187,10 @@ def check_assumption(file_path, assumtpions_version, simulation):
                   'Retirement', 'Strategic_Behaviour' ,'Gas_Price_Escalation',
                   'MPC_CTP']
 
-    df_dict = {}
-    for sheet in sheet_col_dict.keys():
-        df_dict[sheet] = read_excel(file_path, sheet_name=sheet)
-        for col in sheet_col_dict[sheet]:
-            if col not in df_dict[sheet].columns:
-                return False, 'Error: missing column {} in {}.'.format(col, sheet)
+    try:
+        df_dict = process_assumption_to_df_dict(file_path)
+    except Exception as e:
+        return False, repr(e)
 
     for sheet in all_sheets:
         if df_dict[sheet].isnull().values.any():
@@ -228,3 +221,37 @@ def upload_assumption_file(file_path, assumptions_version):
     put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version), is_public=True)
     return get_download_url(bucket_test, excel_path.format(assumptions_version)), \
            get_s3_url(bucket_test, excel_path.format(assumptions_version))
+
+def process_assumption_to_df_dict(file_path):
+    df_dict = {}
+    for sheet in sheet_col_dict.keys():
+        df_dict[sheet] = read_excel(file_path, sheet_name=sheet)
+        for col in sheet_col_dict[sheet]:
+            if col not in df_dict[sheet].columns:
+                raise Exception('Missing {} in sheet {}'.format(col, sheet))
+
+    for sheet in sheet_col_name_to_tab_col_name_dict.keys():
+        df_dict[sheet] = df_dict[sheet].rename(columns=sheet_col_name_to_tab_col_name_dict[sheet])
+
+    return df_dict
+
+def save_as_new_tab_version(db, df_dict, tab_model, tab_data_model, note=None, scenario=None):
+    try:
+        new_tab_def = tab_model()
+        new_tab_def.Note = note
+        df = df_dict[new_tab_def.get_sheet_name()]
+        if scenario and hasattr(tab_model, 'Assumption_Scenario'):
+            new_tab_def.Assumption_Scenario = scenario
+            scen_ver = db.session.query(tab_model).filter_by(Assumption_Scenario=scenario).order_by(tab_model.Assumption_Scenario_Version.desc()).first().Assumption_Scenario_Version
+            new_tab_def.Assumption_Scenario_Version = scen_ver + 1
+        db.session.add(new_tab_def)
+        db.session.flush()
+        new_ver = new_tab_def.get_version()
+        version_col = tab_data_model.get_version_col_name()
+        df[version_col] = new_ver
+        df.to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
+        return new_tab_def
+    except Exception as e:
+        db.session.rollback()
+        print(repr(e))
+        raise e

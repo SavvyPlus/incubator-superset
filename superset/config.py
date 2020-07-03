@@ -172,7 +172,11 @@ WTF_CSRF_ENABLED = True
 # Add endpoints that need to be exempt from CSRF protection
 WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log",
                         "superset.views.simulation.views.process_success",
-                        "superset.views.simulation.views.process_failed"]
+                        "superset.views.simulation.views.query_success",
+                        "superset.views.simulation.views.process_failed",
+                        "superset.views.simulation.views.query_failed",
+                        "superset.views.simulation.views.query_result",
+                        ]
 
 # Whether to run the web server in debug mode or not
 DEBUG = os.environ.get("FLASK_ENV") == "development"
@@ -358,7 +362,7 @@ CACHE_CONFIG: CacheConfig = {
     'CACHE_TYPE': 'redis',
     'CACHE_DEFAULT_TIMEOUT': CACHE_DEFAULT_TIMEOUT,
     'CACHE_KEY_PREFIX': 'superset_results',
-    'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+    'CACHE_REDIS_URL': 'redis://redis:6379/0'
 }
 TABLE_NAMES_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
 
