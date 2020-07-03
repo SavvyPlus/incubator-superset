@@ -76,6 +76,7 @@ sheet_col_name_to_tab_col_name_dict = {
         'MaximumQuantity': 'Maximum_Quantity',
         'ProbabilityOfSuccess': 'Probability_Of_Success',
         'Region': 'State',
+        'OfferRate': 'Offer_Rate',
     },
     'Renewable_Proportion': {
         'Maximum Half-Hour Intermittent Proportion': 'Maximum_HalfHour_Intermittent_Proportion'

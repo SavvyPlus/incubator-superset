@@ -507,6 +507,7 @@ class UploadExcelView(SimpleFormView):
                 # set relation of assumption def with sub table definition
                 new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
             db.session.add(new_assum_def)
+            db.session.commit()
             message = 'success'
             style = 'info'
         except Exception as e:
@@ -517,7 +518,7 @@ class UploadExcelView(SimpleFormView):
         finally:
             os.remove(path)
         flash(message, style)
-        return redirect('.form')
+        return redirect(self.route_base + '/form')
 
 class SimulationModelView(
     EmpowerModelView
