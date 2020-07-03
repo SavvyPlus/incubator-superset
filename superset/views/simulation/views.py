@@ -42,9 +42,10 @@ from superset.views.simulation.util import get_s3_url
 from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
 from superset.views.simulation.simulation_config import bucket_test
 
-from .forms import UploadAssumptionForm, SimulationForm
+from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
-from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
+from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
+    save_as_new_tab_version
 from .util import get_redirect_endpoint
 
 
@@ -475,6 +476,48 @@ class AssumptionModelView(EmpowerModelView):
         flash("Time used:{}".format(time.time() - time1), 'info')
         return None
 
+
+class UploadExcelView(SimpleFormView):
+    route_base = '/upload_base_excel'
+    form_title = 'Upload assumption excel'
+    form = UploadAssumptionFormForStanding
+    form_template = "appbuilder/general/model/edit.html"
+
+    def form_post(self, form):
+        file_name = form.file.data.filename
+        extension = os.path.splitext(file_name)[1].lower()
+        path = tempfile.NamedTemporaryFile(
+            dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
+        ).name
+
+        form.file.data.filename = path
+        name = form.name.data
+        g.action_object = name
+        g.action_object_type = 'Assumption'
+        try:
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
+            upload_stream_write(form.file.data, path)
+            df_dict = process_assumption_to_df_dict(path)
+            new_assum_def = AssumptionDefinition()
+            new_assum_def.Name = name
+
+            for tab_def_model, tab_data_model in model_list:
+                # sheet_name = tab_def_model.get_sheet_name()
+                sub_tab_def = save_as_new_tab_version(db, df_dict, tab_def_model, tab_data_model)
+                # set relation of assumption def with sub table definition
+                new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
+            db.session.add(new_assum_def)
+            message = 'success'
+            style = 'info'
+        except Exception as e:
+            traceback.print_exc()
+            db.session.rollback()
+            message = repr(e)
+            style = 'danger'
+        finally:
+            os.remove(path)
+        flash(message, style)
+        return redirect('.form')
 
 class SimulationModelView(
     EmpowerModelView
@@ -997,7 +1040,7 @@ class SimulationModelView(
         msg = {
             # 'sim_tag': simulation.run_id,
             'sim_tag': 'Run_196',
-            'outBucket': 'aws-forecast-poc-empower',
+            'outBucket': bucket_test,
             'query_list': [
                 'Technology_Generation_by_percentile_cal',
                 'DUID_Generation_by_percentile_cal',

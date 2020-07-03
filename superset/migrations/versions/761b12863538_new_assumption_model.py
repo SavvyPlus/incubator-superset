@@ -14,16 +14,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""new assumption data structure
+"""new assumption model
 
-Revision ID: 67b410fddec0
+Revision ID: 761b12863538
 Revises: a72cb0ebeb22
-Create Date: 2020-07-02 14:53:36.383184
+Create Date: 2020-07-03 13:06:41.135156
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '67b410fddec0'
+revision = '761b12863538'
 down_revision = 'a72cb0ebeb22'
 
 from alembic import op
@@ -51,10 +51,10 @@ def upgrade():
     sa.Column('Note', sa.String(length=512), nullable=True),
     sa.PrimaryKeyConstraint('Gas_Price_Escalation_Version')
     )
-    op.create_table('MPC_CTP_Definition',
-    sa.Column('MPC_CTP_Version', sa.Integer(), autoincrement=True, nullable=False),
+    op.create_table('MPC_CPT_Definition',
+    sa.Column('MPC_CPT_Version', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('Note', sa.String(length=512), nullable=True),
-    sa.PrimaryKeyConstraint('MPC_CTP_Version')
+    sa.PrimaryKeyConstraint('MPC_CPT_Version')
     )
     op.create_table('Project_List_Definition',
     sa.Column('Project_List_Version', sa.Integer(), autoincrement=True, nullable=False),
@@ -103,7 +103,7 @@ def upgrade():
     sa.Column('Demand_Growth_Version', sa.Integer(), nullable=True),
     sa.Column('Behind_The_Meter_Battery_Version', sa.Integer(), nullable=True),
     sa.Column('Project_Proxy_Version', sa.Integer(), nullable=True),
-    sa.Column('MPC_CTP_Version', sa.Integer(), nullable=True),
+    sa.Column('MPC_CPT_Version', sa.Integer(), nullable=True),
     sa.Column('Gas_Price_Escalation_Version', sa.Integer(), nullable=True),
     sa.Column('Strategic_Behaviour_Version', sa.Integer(), nullable=True),
     sa.Column('Retirement_Version', sa.Integer(), nullable=True),
@@ -111,7 +111,7 @@ def upgrade():
     sa.ForeignKeyConstraint(['Behind_The_Meter_Battery_Version'], ['Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'], ),
     sa.ForeignKeyConstraint(['Demand_Growth_Version'], ['Demand_Growth_Definition.Demand_Growth_Version'], ),
     sa.ForeignKeyConstraint(['Gas_Price_Escalation_Version'], ['Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'], ),
-    sa.ForeignKeyConstraint(['MPC_CTP_Version'], ['MPC_CTP_Definition.MPC_CTP_Version'], ),
+    sa.ForeignKeyConstraint(['MPC_CPT_Version'], ['MPC_CPT_Definition.MPC_CPT_Version'], ),
     sa.ForeignKeyConstraint(['Project_List_Version'], ['Project_List_Definition.Project_List_Version'], ),
     sa.ForeignKeyConstraint(['Project_Proxy_Version'], ['Project_Proxy_Definition.Project_Proxy_Version'], ),
     sa.ForeignKeyConstraint(['Renewable_Proportion_Version'], ['Renewable_Proportion_Definition.Renewable_Proportion_Version'], ),
@@ -140,12 +140,8 @@ def upgrade():
     sa.ForeignKeyConstraint(['Demand_Growth_Version'], ['Demand_Growth_Definition.Demand_Growth_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('MPC_CTP',
+    op.create_table('Gas_Price_Escalation',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('FY', sa.String(length=10), nullable=True),
-    sa.Column('CPT', sa.Float(), nullable=True),
-    sa.Column('MPC', sa.Float(), nullable=True),
-    sa.Column('MPC_CTP_Version', sa.Integer(), nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Year', sa.Integer(), nullable=True),
     sa.Column('Case1', sa.Float(), nullable=True),
@@ -159,7 +155,15 @@ def upgrade():
     sa.Column('Case9', sa.Float(), nullable=True),
     sa.Column('Gas_Price_Escalation_Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Gas_Price_Escalation_Version'], ['Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'], ),
-    sa.ForeignKeyConstraint(['MPC_CTP_Version'], ['MPC_CTP_Definition.MPC_CTP_Version'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('MPC_CPT',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('FY', sa.String(length=10), nullable=True),
+    sa.Column('CPT', sa.Float(), nullable=True),
+    sa.Column('MPC', sa.Float(), nullable=True),
+    sa.Column('MPC_CPT_Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['MPC_CPT_Version'], ['MPC_CPT_Definition.MPC_CPT_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Project_List',
@@ -258,7 +262,8 @@ def downgrade():
     op.drop_table('Renewable_Proportion')
     op.drop_table('Project_Proxy')
     op.drop_table('Project_List')
-    op.drop_table('MPC_CTP')
+    op.drop_table('MPC_CPT')
+    op.drop_table('Gas_Price_Escalation')
     op.drop_table('Demand_Growth')
     op.drop_table('Behind_The_Meter_Battery')
     op.drop_table('Assumption_Definition')
@@ -269,7 +274,7 @@ def downgrade():
     op.drop_table('Renewable_Proportion_Definition')
     op.drop_table('Project_Proxy_Definition')
     op.drop_table('Project_List_Definition')
-    op.drop_table('MPC_CTP_Definition')
+    op.drop_table('MPC_CPT_Definition')
     op.drop_table('Gas_Price_Escalation_Definition')
     op.drop_table('Demand_Growth_Definition')
     op.drop_table('Behind_The_Meter_Battery_Definition')

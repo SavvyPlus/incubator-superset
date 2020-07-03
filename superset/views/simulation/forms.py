@@ -58,6 +58,36 @@ class UploadAssumptionForm(DynamicForm):
     )
 
 
+class UploadAssumptionFormForStanding(DynamicForm):
+    name = StringField(
+        _("Name"),
+        description=_("Name of the assumption file."),
+        validators=[DataRequired()],
+        widget=BS3TextFieldWidget(),
+    )
+    note = StringField(
+        _("Description"),
+        description=_("Note of the assumption"),
+        widget=BS3TextFieldWidget(),
+    )
+
+    file = FileField(
+        _("Excel File"),
+        description=_("Select the assumption template excel file."),
+        validators=[
+            FileRequired(),
+            FileAllowed(
+                ["xlsx"],
+                _(
+                    "Only the following file extensions are allowed: "
+                    "%(allowed_extensions)s",
+                    allowed_extensions=", ".join(["xlsx"]),
+                ),
+            ),
+        ],
+    )
+
+
 def possible_assumptions():
     # from flask_appbuilder.models.sqla.interface import SQLAInterface
     return Assumption.query
