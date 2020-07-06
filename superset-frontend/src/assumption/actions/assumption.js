@@ -16,19 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/* eslint-disable camelcase */
-import { isString } from 'lodash';
-
-import { SET_USER } from './user';
-
-export default function (bootstrapData) {
-  const { user } = bootstrapData;
-
-  return {
-    user,
-    assumption: {
-      upsert: 'upload',
-    },
-    messageToasts: [],
-  };
+export const SET_UPSERT = 'SET_UPSERT';
+export function setUpsert(upsert) {
+  return { type: SET_UPSERT, upsert };
 }

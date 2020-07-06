@@ -17,12 +17,16 @@
  * under the License.
  */
 import React from 'react';
+import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Col, Row, Tabs, Tab, Panel } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
 
-function App({ username, firstName, lastName }) {
+import * as Actions from '../actions/assumption';
+import UpsertSelect from './UpsertSelect';
+
+function App({ username, firstName, lastName, assumption, actions }) {
   return (
     <div className="container app">
       <Row>
@@ -31,6 +35,10 @@ function App({ username, firstName, lastName }) {
           <h3>
             {firstName} {lastName}
           </h3>
+          <UpsertSelect
+            upsert={assumption.upsert}
+            setUpsert={actions.setUpsert}
+          />
         </Col>
       </Row>
     </div>
@@ -38,13 +46,21 @@ function App({ username, firstName, lastName }) {
 }
 
 function mapStateToProps(state) {
-  const { user } = state;
+  const { user, assumption } = state;
 
   return {
     username: user.username,
     firstName: user.firstName,
     lastName: user.lastName,
+    assumption,
   };
 }
 
-export default connect(mapStateToProps)(App);
+function mapDispatchToProps(dispatch) {
+  return {
+    actions: bindActionCreators(Actions, dispatch),
+  };
+}
+
+export { App };
+export default connect(mapStateToProps, mapDispatchToProps)(App);

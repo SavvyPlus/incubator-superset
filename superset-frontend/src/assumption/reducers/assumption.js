@@ -16,19 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/* eslint-disable camelcase */
-import { isString } from 'lodash';
+import { SET_UPSERT } from '../actions/assumption';
 
-import { SET_USER } from './user';
-
-export default function (bootstrapData) {
-  const { user } = bootstrapData;
-
-  return {
-    user,
-    assumption: {
-      upsert: 'upload',
+export default function assumptionReducer(state = {}, action) {
+  const actionHandlers = {
+    [SET_UPSERT]() {
+      return { ...state, upsert: action.upsert };
     },
-    messageToasts: [],
   };
+
+  if (action.type in actionHandlers) {
+    return actionHandlers[action.type]();
+  }
+  return state;
 }
