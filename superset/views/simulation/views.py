@@ -33,10 +33,12 @@ from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.typing import FlaskResponse
 from superset.constants import RouteMethod
 from superset.models.simulation import *
+from superset.models.slice import Slice
+from flask_appbuilder.security.sqla import models as ab_models
 from superset.connectors.sqla.models import SqlaTable
 from superset.utils import core as utils
 from superset.sql_parse import Table
-from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView
+from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView, common_bootstrap_payload
 from superset.views.utils import send_sendgrid_mail
 from superset.views.simulation.util import get_s3_url
 from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
@@ -47,6 +49,7 @@ from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version
 from .util import get_redirect_endpoint
+from ..utils import bootstrap_user_data
 
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
@@ -475,6 +478,38 @@ class AssumptionModelView(EmpowerModelView):
         flash(message, style)
         flash("Time used:{}".format(time.time() - time1), 'info')
         return None
+
+
+class EditAssumptionModelView(
+    SupersetModelView, DeleteMixin
+):  # pylint: disable=too-many-ancestors
+    route_base = "/edit-assumption"
+    default_view = 'assumption'
+    datamodel = SQLAInterface(Slice)
+
+    @expose("/assumption/")
+    def assumption(self):
+        username = g.user.username
+
+        user = (
+            db.session.query(ab_models.User).filter_by(username=username).one_or_none()
+        )
+        if not user:
+            abort(404, description=f"User: {username} does not exist.")
+
+        payload = {
+            "user": bootstrap_user_data(user, include_perms=True),
+            "common": common_bootstrap_payload(),
+        }
+
+        return self.render_template(
+            "superset/basic.html",
+            title=_("Edit Assumption"),
+            entry="assumption",
+            bootstrap_data=json.dumps(
+                payload, default=utils.pessimistic_json_iso_dttm_ser
+            ),
+        )
 
 
 class UploadExcelView(SimpleFormView):
