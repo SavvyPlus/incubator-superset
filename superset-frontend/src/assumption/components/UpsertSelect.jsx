@@ -20,11 +20,14 @@ export default function UpsertSelect({ upsert, setUpsert }) {
     setUpsert(event.target.value);
   };
   return (
-    <FormControl variant="outlined" className={classes.formControl}>
-      <Select value={upsert} onChange={handleChange}>
-        <MenuItem value="upload">Upload</MenuItem>
-        <MenuItem value="modify">Modify</MenuItem>
-      </Select>
-    </FormControl>
+    <>
+      <h3 className="mt-50">Step 1: Select Upload or Modify</h3>
+      <FormControl variant="outlined" className={classes.formControl}>
+        <Select value={upsert} onChange={handleChange}>
+          <MenuItem value="upload">Upload</MenuItem>
+          <MenuItem value="modify">Modify</MenuItem>
+        </Select>
+      </FormControl>
+    </>
   );
 }

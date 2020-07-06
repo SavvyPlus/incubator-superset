@@ -16,12 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { SET_UPSERT } from '../actions/assumption';
+import { SET_UPSERT, SET_TABLE, SET_UPLOAD_FILE } from '../actions/assumption';
 
 export default function assumptionReducer(state = {}, action) {
   const actionHandlers = {
     [SET_UPSERT]() {
       return { ...state, upsert: action.upsert };
+    },
+    [SET_TABLE]() {
+      return { ...state, table: action.table };
+    },
+    [SET_UPLOAD_FILE]() {
+      return { ...state, path: action.path };
     },
   };
 

@@ -25,6 +25,9 @@ import { t } from '@superset-ui/translation';
 
 import * as Actions from '../actions/assumption';
 import UpsertSelect from './UpsertSelect';
+import TableSelect from './TableSelect';
+import Dropzone from './upload/Dropzone';
+import '../App.less';
 
 function App({ username, firstName, lastName, assumption, actions }) {
   return (
@@ -35,11 +38,32 @@ function App({ username, firstName, lastName, assumption, actions }) {
           <h3>
             {firstName} {lastName}
           </h3>
+        </Col>
+      </Row>
+      <Row>
+        <Col md={8}>
           <UpsertSelect
             upsert={assumption.upsert}
             setUpsert={actions.setUpsert}
           />
         </Col>
+      </Row>
+      <Row>
+        <Col md={8}>
+          <TableSelect table={assumption.table} setTable={actions.setTable} />
+        </Col>
+      </Row>
+      <Row>
+        <Col md={8}>
+          <Dropzone
+            table={assumption.table}
+            setUploadFilePath={actions.setUploadFilePath}
+            uploadFile={actions.uploadFile}
+          />
+        </Col>
+      </Row>
+      <Row>
+        <Col md={8} />
       </Row>
     </div>
   );

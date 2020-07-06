@@ -19,8 +19,6 @@
 /* eslint-disable camelcase */
 import { isString } from 'lodash';
 
-import { SET_USER } from './user';
-
 export default function (bootstrapData) {
   const { user } = bootstrapData;
 
@@ -28,6 +26,8 @@ export default function (bootstrapData) {
     user,
     assumption: {
       upsert: 'upload',
+      table: 'RooftopSolarHistory',
+      path: null,
     },
     messageToasts: [],
   };
