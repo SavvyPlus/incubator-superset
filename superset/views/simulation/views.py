@@ -47,7 +47,7 @@ from superset.views.simulation.simulation_config import bucket_test
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
-    save_as_new_tab_version
+    save_as_new_tab_version, ref_day_generation_check
 from .util import get_redirect_endpoint
 from ..utils import bootstrap_user_data
 
@@ -155,7 +155,7 @@ def simulation_start_invoker(run_id, sim_num):
     else:
         print('generate parameters')
         try:
-            generate_parameters_for_batch(run_id, sim_num)
+            generate_parameters_for_batch(simulation, sim_num)
         except Exception as e:
             simulation.status = 'Run failed'
             simulation.status_detail = repr(e)
@@ -171,8 +171,6 @@ def simulation_start_invoker(run_id, sim_num):
         # end_date = simulation.end_date
         end_date = '2030-12-31'
         sim_tag = run_id
-        # total_days = (start_date - end_date).days
-        # output_days = total_days + 7 - total_days%7
 
 
         try:
@@ -535,10 +533,9 @@ class UploadExcelView(SimpleFormView):
             df_dict = process_assumption_to_df_dict(path)
             new_assum_def = AssumptionDefinition()
             new_assum_def.Name = name
-
             for tab_def_model, tab_data_model in model_list:
-                # sheet_name = tab_def_model.get_sheet_name()
-                sub_tab_def = save_as_new_tab_version(db, df_dict, tab_def_model, tab_data_model)
+                sheet_name = tab_def_model.get_sheet_name()
+                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name], tab_def_model, tab_data_model)
                 # set relation of assumption def with sub table definition
                 new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
             db.session.add(new_assum_def)
@@ -954,6 +951,7 @@ class SimulationModelView(
         pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
         # pass_check, message = True, ''
         if pass_check:
+            ref_day_generation_check(simulation, run_type)
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
                 message = 'Test run started'
@@ -1049,8 +1047,10 @@ class SimulationModelView(
         # flash('reached query success', 'info')
         data = json.loads(request.data.decode())
         print(data)
+        email = data['email']
         g.result = 'query success'
         g.detail = repr(data)
+        # send_sendgrid_mail('','','',attachments='')
         return '200 OK'
 
 
@@ -1096,7 +1096,8 @@ class SimulationModelView(
             'duids': data,
             'year_start': '2020',
             'year_end': '2040',
-            'supersetURL': get_current_external_ip()
+            'supersetURL': get_current_external_ip(),
+            'email': g.user.email,
         }
         # if send_sqs_msg(msg, queue_url=query_sqs):
         g.action_object = simulation.name
