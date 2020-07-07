@@ -93,7 +93,7 @@ function Dropzone(props) {
       {accFiles.length > 0 && (
         <aside>
           <h4>
-            File Name: {accFiles + '  '}
+            File Name: {accFiles} {'  '}
             <i style={{ color: '#4caf50' }} className="fa fa-check" />
           </h4>
         </aside>
