@@ -1,7 +1,7 @@
 import React from 'react';
-import MaterialTable from 'material-table';
+import MaterialTable from './materialTable';
 
-export default function MaterialTableDemo() {
+export default function AssumptionTable() {
   const [state, setState] = React.useState({
     columns: [
       { title: 'Name', field: 'name' },
@@ -48,6 +48,7 @@ export default function MaterialTableDemo() {
               if (oldData) {
                 setState(prevState => {
                   const data = [...prevState.data];
+                  console.log(data);
                   data[data.indexOf(oldData)] = newData;
                   return { ...prevState, data };
                 });
