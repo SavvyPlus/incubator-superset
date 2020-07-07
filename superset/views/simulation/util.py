@@ -174,9 +174,13 @@ def df_state_error_checker(f):
     return wrap
 
 
-@df_state_error_checker
+# @df_state_error_checker
 def read_excel(*args, **kwargs):
     df = pd.read_excel(*args, **kwargs)
+    return df
+
+def read_csv(*args, **kwargs):
+    df = pd.read_csv(*args, **kwargs)
     return df
 
 
