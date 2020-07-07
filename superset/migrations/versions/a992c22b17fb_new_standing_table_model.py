@@ -14,16 +14,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""new assumption model
+"""new standing table model
 
-Revision ID: 761b12863538
+Revision ID: a992c22b17fb
 Revises: a72cb0ebeb22
-Create Date: 2020-07-03 13:06:41.135156
+Create Date: 2020-07-07 14:14:20.981375
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '761b12863538'
+revision = 'a992c22b17fb'
 down_revision = 'a72cb0ebeb22'
 
 from alembic import op
@@ -126,8 +126,8 @@ def upgrade():
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Year', sa.Integer(), nullable=True),
     sa.Column('Aggregate_MW', sa.Float(), nullable=True),
-    sa.Column('Behind_The_Meter_Battery_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Behind_The_Meter_Battery_Version'], ['Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Demand_Growth',
@@ -136,8 +136,8 @@ def upgrade():
     sa.Column('Year', sa.Integer(), nullable=True),
     sa.Column('Probability', sa.Float(), nullable=True),
     sa.Column('Growth', sa.Float(), nullable=True),
-    sa.Column('Demand_Growth_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Demand_Growth_Version'], ['Demand_Growth_Definition.Demand_Growth_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Demand_Growth_Definition.Demand_Growth_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Gas_Price_Escalation',
@@ -153,8 +153,8 @@ def upgrade():
     sa.Column('Case7', sa.Float(), nullable=True),
     sa.Column('Case8', sa.Float(), nullable=True),
     sa.Column('Case9', sa.Float(), nullable=True),
-    sa.Column('Gas_Price_Escalation_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Gas_Price_Escalation_Version'], ['Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('MPC_CPT',
@@ -162,8 +162,8 @@ def upgrade():
     sa.Column('FY', sa.String(length=10), nullable=True),
     sa.Column('CPT', sa.Float(), nullable=True),
     sa.Column('MPC', sa.Float(), nullable=True),
-    sa.Column('MPC_CPT_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['MPC_CPT_Version'], ['MPC_CPT_Definition.MPC_CPT_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['MPC_CPT_Definition.MPC_CPT_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Project_List',
@@ -181,8 +181,8 @@ def upgrade():
     sa.Column('Probability_Of_Success', sa.Float(), nullable=True),
     sa.Column('Resolution', sa.String(length=20), nullable=True),
     sa.Column('Proxy', sa.String(length=50), nullable=True),
-    sa.Column('Project_List_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Project_List_Version'], ['Project_List_Definition.Project_List_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Project_List_Definition.Project_List_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Project_Proxy',
@@ -194,8 +194,8 @@ def upgrade():
     sa.Column('Latitude', sa.Float(), nullable=True),
     sa.Column('Longitude', sa.Float(), nullable=True),
     sa.Column('Tracking_Type', sa.String(length=50), nullable=True),
-    sa.Column('Project_Proxy_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Project_Proxy_Version'], ['Project_Proxy_Definition.Project_Proxy_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Project_Proxy_Definition.Project_Proxy_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Renewable_Proportion',
@@ -203,8 +203,8 @@ def upgrade():
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Date', sa.Date(), nullable=True),
     sa.Column('Maximum_HalfHour_Intermittent_Proportion', sa.Float(), nullable=True),
-    sa.Column('Renewable_Proportion_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Renewable_Proportion_Version'], ['Renewable_Proportion_Definition.Renewable_Proportion_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Renewable_Proportion_Definition.Renewable_Proportion_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Retirement',
@@ -216,8 +216,8 @@ def upgrade():
     sa.Column('Adjustment_Factor', sa.Float(), nullable=True),
     sa.Column('Closure_Date', sa.Date(), nullable=True),
     sa.Column('Back_To_Service_Date', sa.Date(), nullable=True),
-    sa.Column('Retirement_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Retirement_Version'], ['Retirement_Definition.Retirement_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Retirement_Definition.Retirement_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Rooftop_Solar_Forecast',
@@ -226,8 +226,8 @@ def upgrade():
     sa.Column('Year', sa.Integer(), nullable=True),
     sa.Column('Capacity_MW', sa.Float(), nullable=True),
     sa.Column('Aggregate_MW', sa.Float(), nullable=True),
-    sa.Column('Rooftop_Solar_Forecast_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Rooftop_Solar_Forecast_Version'], ['Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Rooftop_Solar_History',
@@ -236,8 +236,8 @@ def upgrade():
     sa.Column('Date', sa.Date(), nullable=True),
     sa.Column('Capacity_MW', sa.Float(), nullable=True),
     sa.Column('Aggregate_MW', sa.Float(), nullable=True),
-    sa.Column('Rooftop_Solar_History_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Rooftop_Solar_History_Version'], ['Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Strategic_Behaviour',
@@ -246,8 +246,8 @@ def upgrade():
     sa.Column('Bin_Not_Exceeding', sa.Integer(), nullable=True),
     sa.Column('Value', sa.Float(), nullable=True),
     sa.Column('MW', sa.Float(), nullable=True),
-    sa.Column('Strategic_Behaviour_Version', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['Strategic_Behaviour_Version'], ['Strategic_Behaviour_Definition.Strategic_Behaviour_Version'], ),
+    sa.Column('Version', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['Version'], ['Strategic_Behaviour_Definition.Strategic_Behaviour_Version'], ),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###

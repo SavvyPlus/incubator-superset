@@ -16,19 +16,37 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/* eslint-disable camelcase */
-import { isString } from 'lodash';
+import {
+  SET_UPSERT,
+  SET_TABLE,
+  UPLOAD_FILE_SUCCESS,
+  UPLOAD_FILE_FAILED,
+} from '../actions/assumption';
 
-export default function (bootstrapData) {
-  const { user } = bootstrapData;
-
-  return {
-    user,
-    assumption: {
-      upsert: 'upload',
-      table: 'RooftopSolarHistory',
-      isLoading: false,
+export default function assumptionReducer(state = {}, action) {
+  const actionHandlers = {
+    [SET_UPSERT]() {
+      return { ...state, upsert: action.upsert };
     },
-    messageToasts: [],
+    [SET_TABLE]() {
+      return { ...state, table: action.table };
+    },
+    [UPLOAD_FILE_SUCCESS]() {
+      return {
+        ...state,
+        upsert: 'upload',
+        table: 'RooftopSolarHistory',
+      };
+    },
+    [UPLOAD_FILE_FAILED]() {
+      return {
+        ...state,
+      };
+    },
   };
+
+  if (action.type in actionHandlers) {
+    return actionHandlers[action.type]();
+  }
+  return state;
 }
