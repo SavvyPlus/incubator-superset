@@ -90,9 +90,14 @@ function Dropzone(props) {
           Drag 'n' drop your single csv or excel file, or click to select file
         </p>
       </div>
-      <aside>
-        <h4>File Name: {accFiles}</h4>
-      </aside>
+      {accFiles.length > 0 && (
+        <aside>
+          <h4>
+            File Name: {accFiles + '  '}
+            <i style={{ color: '#4caf50' }} className="fa fa-check" />
+          </h4>
+        </aside>
+      )}
 
       <h3 className="mt-50">Step 4: Write Your Note About This Upload</h3>
       <TextField

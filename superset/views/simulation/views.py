@@ -48,7 +48,7 @@ from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormFor
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check
-from .util import get_redirect_endpoint, read_excel, read_csv
+from .util import get_redirect_endpoint, read_excel
 from ..utils import bootstrap_user_data
 
 
@@ -509,12 +509,12 @@ class EditAssumptionModelView(
             ),
         )
 
-    @expose("/upload_csv/")
+    @expose('/upload-csv/', methods=['POST'])
     def upload_csv(self):
         form = request.form
         table = form['table']
         note = form['note']
-        file = form['file']
+        file = request.files.get('file')
         scenario = None
         if 'scenario' in form.keys():
             scenario = form['Scenario']

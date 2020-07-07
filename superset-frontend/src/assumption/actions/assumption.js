@@ -46,16 +46,14 @@ export function uploadFileFailed(error) {
 
 export function uploadFile(table, note, files) {
   return dispatch => {
-    const formData = new FormData();
-    formData.append(files[0].path, files[0]);
-
     return SupersetClient.post({
       endpoint: '/edit-assumption/upload-csv/',
       postPayload: {
         table,
         note,
-        file: formData,
+        file: files[0],
       },
+      stringify: false,
     })
       .then(({ json }) => {
         dispatch(uploadFileSuccess(json));

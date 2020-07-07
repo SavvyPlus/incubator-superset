@@ -59,9 +59,6 @@ function App({ username, firstName, lastName, assumption, actions }) {
           <Dropzone table={assumption.table} uploadFile={actions.uploadFile} />
         </Col>
       </Row>
-      <Row>
-        <Col md={8} />
-      </Row>
       <ToastPresenter />
     </div>
   );
