@@ -17,11 +17,13 @@
  * under the License.
  */
 import { combineReducers } from 'redux';
+import assumption from './assumption';
 
 import user from './user';
 import messageToasts from '../../messageToasts/reducers';
 
 export default combineReducers({
   user,
+  assumption,
   messageToasts,
 });
