@@ -224,11 +224,12 @@ def ref_day_generation_check(simulation, run_type):
     end_date = get_full_week_end_date(start_date, simulation.end_date)
     ref_day_list = list_object_keys(bucket_test, reference_date_s3_folder_format.format(start_date.strftime('%Y-%m-%d'),
                                                                                         end_date.strftime('%Y-%m-%d')))
-    if len(ref_day_list) < simulation.run_no:
-        # TODO modify run number for full run
-        run_no = 5 if run_type == 'test' else 5
+
+    # TODO modify run number for full run
+    run_no = 5 if run_type == 'test' else 5
+    if len(ref_day_list) < run_no:
         threads = []
-        for sim_index in range(0,run_no):
+        for sim_index in range(len(ref_day_list),run_no):
             payload = {
                 'sim_index': sim_index,
                 'start_date': start_date.strftime('%Y-%m-%d'),

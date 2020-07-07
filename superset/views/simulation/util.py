@@ -52,6 +52,9 @@ def put_object_to_s3(binary_data, bucket, key):
                       Bucket=bucket,
                       Key=key)
 
+def download_from_s3(bucket, key, path):
+    client.download_file(bucket, key, path)
+
 def read_from_s3(bucket, path):
     bucket_uri = f's3://{bucket}/{path}'
     dataset = pq.ParquetDataset(bucket_uri, filesystem=fs)
@@ -174,9 +177,13 @@ def df_state_error_checker(f):
     return wrap
 
 
-@df_state_error_checker
+# @df_state_error_checker
 def read_excel(*args, **kwargs):
     df = pd.read_excel(*args, **kwargs)
+    return df
+
+def read_csv(*args, **kwargs):
+    df = pd.read_csv(*args, **kwargs)
     return df
 
 
