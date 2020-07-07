@@ -48,7 +48,7 @@ from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormFor
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check
-from .util import get_redirect_endpoint
+from .util import get_redirect_endpoint, read_excel, read_csv
 from ..utils import bootstrap_user_data
 
 
@@ -89,7 +89,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
         db.session.merge(assumption_file)
         db.session.commit()
         g.result = 'Process success'
-        g.detail = 'The assumption detail is now on S3 empower-simulation bucket'
+        g.detail = 'The assumption detail is now on S3 {} bucket.'.format(bucket_test)
     except Exception as e:
         assumption_file = find_assumption_by_name(db.session, name)
         assumption_file.status = "Error"
@@ -509,6 +509,43 @@ class EditAssumptionModelView(
             ),
         )
 
+    @expose("/upload_csv/")
+    def upload_csv(self):
+        form = request.form
+        table = form['table']
+        note = form['note']
+        file = form['file']
+        scenario = None
+        if 'scenario' in form.keys():
+            scenario = form['Scenario']
+        file_name = file.name
+        extension = os.path.splitext(file_name)[1].lower()
+        path = tempfile.NamedTemporaryFile(
+            dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
+        ).name
+        try:
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
+            upload_stream_write(file.data, path)
+            tab_model = find_table_class_by_name(table)
+            tab_def_model = find_table_class_by_name(table+'Definition')
+            if extension == 'xlsx':
+                df = read_excel(path)
+            else:
+                df = read_csv(path)
+            new_def = save_as_new_tab_version(db, df, tab_def_model, tab_model, note=note, scenario=scenario)
+            message = 'Update table successful'
+        except Exception as e:
+            db.session.rollback()
+            traceback.print_exc()
+            message = repr(e)
+        finally:
+            os.remove(path)
+
+        return jsonify({
+            'message': message
+        })
+
+
 
 class UploadExcelView(SimpleFormView):
     route_base = '/upload_base_excel'
@@ -596,7 +633,7 @@ class SimulationModelView(
 
         # If this is a new table, load it into Superset and redirect to its chart
         csv_table = Table(table=table_name, schema=None)
-        s3_file_path = 's3://empower-simulation/result-spot-price-forecast-simulation-statistics/' + run_id + '/' + table_name + '.csv'
+        s3_file_path = 's3://{}/result-spot-price-forecast-simulation-statistics/{}/{}.csv'.format(bucket_test, run_id, table_name)
 
         try:
             database = (
@@ -1048,6 +1085,10 @@ class SimulationModelView(
         data = json.loads(request.data.decode())
         print(data)
         email = data['email']
+        s3_list = data['outS3Keys']
+        run_id = data['sim_tag']
+        simulation = db.query(Simulation).filter_by(run_id=run_id).first()
+
         g.result = 'query success'
         g.detail = repr(data)
         # send_sendgrid_mail('','','',attachments='')
