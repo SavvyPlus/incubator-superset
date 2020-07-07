@@ -16,7 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { SET_UPSERT, SET_TABLE, SET_UPLOAD_FILE } from '../actions/assumption';
+import {
+  SET_UPSERT,
+  SET_TABLE,
+  UPLOAD_FILE_SUCCESS,
+  UPLOAD_FILE_FAILED,
+} from '../actions/assumption';
 
 export default function assumptionReducer(state = {}, action) {
   const actionHandlers = {
@@ -26,8 +31,17 @@ export default function assumptionReducer(state = {}, action) {
     [SET_TABLE]() {
       return { ...state, table: action.table };
     },
-    [SET_UPLOAD_FILE]() {
-      return { ...state, path: action.path };
+    [UPLOAD_FILE_SUCCESS]() {
+      return {
+        ...state,
+        upsert: 'upload',
+        table: 'RooftopSolarHistory',
+      };
+    },
+    [UPLOAD_FILE_FAILED]() {
+      return {
+        ...state,
+      };
     },
   };
 

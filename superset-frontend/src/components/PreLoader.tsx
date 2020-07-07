@@ -16,19 +16,37 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/* eslint-disable camelcase */
-import { isString } from 'lodash';
+import React from 'react';
+import styled from '@superset-ui/style';
 
-export default function (bootstrapData) {
-  const { user } = bootstrapData;
+interface Props {
+  position?: string;
+}
 
-  return {
-    user,
-    assumption: {
-      upsert: 'upload',
-      table: 'RooftopSolarHistory',
-      isLoading: false,
-    },
-    messageToasts: [],
-  };
+const LoaderImg = styled.img`
+  z-index: 1000;
+  width: 50px;
+  position: relative;
+  margin: 10px;
+  &.inline {
+    margin: 0px;
+    width: 21px;
+  }
+  &.floating {
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+`;
+export default function Loading({ position = 'inline' }: Props) {
+  return (
+    <LoaderImg
+      className={`loading ${position}`}
+      alt="Loading..."
+      src="/static/assets/images/preloader.gif"
+    />
+  );
 }

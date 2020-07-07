@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
+import PreLoader from '../../../components/PreLoader';
 
 const baseStyle = {
   flex: 1,
@@ -34,6 +35,7 @@ const rejectStyle = {
 function Dropzone(props) {
   const [files, setFiles] = useState([]);
   const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const {
     getRootProps,
@@ -51,7 +53,6 @@ function Dropzone(props) {
     multiple: false,
     onDrop: fs => {
       setFiles(fs);
-      props.setUploadFilePath(fs[0].path);
     },
   });
 
@@ -72,12 +73,17 @@ function Dropzone(props) {
   };
 
   const handleSubmit = () => {
-    props.uploadFile(props.table, note, files);
+    setLoading(true);
+    props.uploadFile(props.table, note, files).then(() => {
+      setLoading(false);
+      setNote('');
+      setFiles([]);
+    });
   };
 
   return (
-    <div>
-      <h3 className="mt-50">Step 3: Upload Your File</h3>
+    <div className="mb-50">
+      <h3 className="mt-50">Step 3: Upload Your Assumption File</h3>
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
         <p className="dz-font">
@@ -90,24 +96,28 @@ function Dropzone(props) {
 
       <h3 className="mt-50">Step 4: Write Your Note About This Upload</h3>
       <TextField
+        disabled={loading}
         required
         fullWidth
         id="upload-note"
         label="Required"
         value={note}
-        placeholder="Input your note about this upload file"
+        placeholder="Write your note about this upload file"
         onChange={handleChange}
       />
 
       <h3 className="mt-50">Step 5: Submit</h3>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleSubmit}
-        disabled={files.length === 0 || note.length === 0}
-      >
-        Submit
-      </Button>
+      <div className="submit">
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          onClick={handleSubmit}
+          disabled={files.length === 0 || note.length === 0 || loading}
+        >
+          {loading ? <PreLoader /> : 'Submit'}
+        </Button>
+      </div>
     </div>
   );
 }

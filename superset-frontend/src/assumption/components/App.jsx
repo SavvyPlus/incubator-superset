@@ -27,6 +27,7 @@ import * as Actions from '../actions/assumption';
 import UpsertSelect from './UpsertSelect';
 import TableSelect from './TableSelect';
 import Dropzone from './upload/Dropzone';
+import ToastPresenter from '../../messageToasts/containers/ToastPresenter';
 import '../App.less';
 
 function App({ username, firstName, lastName, assumption, actions }) {
@@ -55,16 +56,13 @@ function App({ username, firstName, lastName, assumption, actions }) {
       </Row>
       <Row>
         <Col md={8}>
-          <Dropzone
-            table={assumption.table}
-            setUploadFilePath={actions.setUploadFilePath}
-            uploadFile={actions.uploadFile}
-          />
+          <Dropzone table={assumption.table} uploadFile={actions.uploadFile} />
         </Col>
       </Row>
       <Row>
         <Col md={8} />
       </Row>
+      <ToastPresenter />
     </div>
   );
 }
