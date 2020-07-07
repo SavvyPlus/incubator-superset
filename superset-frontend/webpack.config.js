@@ -184,6 +184,7 @@ const config = {
     welcome: addPreamble('/src/welcome/index.jsx'),
     profile: addPreamble('/src/profile/index.jsx'),
     generation: addPreamble('/src/generation/index.jsx'),
+    assumption: addPreamble('/src/assumption/index.jsx'),
     showSavedQuery: [path.join(APP_DIR, '/src/showSavedQuery/index.jsx')],
   },
   output,
@@ -195,6 +196,7 @@ const config = {
     },
   },
   optimization: {
+    sideEffects: true,
     splitChunks: {
       chunks: 'all',
       automaticNameDelimiter: '-',

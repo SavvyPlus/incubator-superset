@@ -104,8 +104,8 @@ class ChartList extends React.PureComponent<Props, State> {
     return this.hasPerm('can_delete');
   }
 
-  get isNewUIEnabled() {
-    return isFeatureEnabled(FeatureFlag.LIST_VIEWS_NEW_UI);
+  get isSIP34FilterUIEnabled() {
+    return isFeatureEnabled(FeatureFlag.LIST_VIEWS_SIP34_FILTER_UI);
   }
 
   initialSort = [{ id: 'changed_on', desc: true }];
@@ -119,7 +119,6 @@ class ChartList extends React.PureComponent<Props, State> {
       }: any) => <a href={url}>{sliceName}</a>,
       Header: t('Chart'),
       accessor: 'slice_name',
-      sortable: true,
     },
     {
       Cell: ({
@@ -129,7 +128,6 @@ class ChartList extends React.PureComponent<Props, State> {
       }: any) => vizType,
       Header: t('Visualization Type'),
       accessor: 'viz_type',
-      sortable: true,
     },
     {
       Cell: ({
@@ -139,7 +137,6 @@ class ChartList extends React.PureComponent<Props, State> {
       }: any) => <a href={dsUrl}>{dsNameTxt}</a>,
       Header: t('Datasource'),
       accessor: 'datasource_name',
-      sortable: true,
     },
     {
       Cell: ({
@@ -152,7 +149,6 @@ class ChartList extends React.PureComponent<Props, State> {
       }: any) => <a href={changedByUrl}>{changedByName}</a>,
       Header: t('Creator'),
       accessor: 'changed_by_fk',
-      sortable: true,
     },
     {
       Cell: ({
@@ -162,19 +158,21 @@ class ChartList extends React.PureComponent<Props, State> {
       }: any) => <span className="no-wrap">{moment(changedOn).fromNow()}</span>,
       Header: t('Last Modified'),
       accessor: 'changed_on',
-      sortable: true,
     },
     {
       accessor: 'description',
       hidden: true,
+      disableSortBy: true,
     },
     {
       accessor: 'owners',
       hidden: true,
+      disableSortBy: true,
     },
     {
       accessor: 'datasource',
       hidden: true,
+      disableSortBy: true,
     },
     {
       Cell: ({ row: { state, original } }: any) => {
@@ -226,6 +224,7 @@ class ChartList extends React.PureComponent<Props, State> {
       },
       Header: t('Actions'),
       id: 'actions',
+      disableSortBy: true,
     },
   ];
 
@@ -425,7 +424,7 @@ class ChartList extends React.PureComponent<Props, State> {
   updateFilters = async () => {
     const { filterOperators } = this.state;
 
-    if (this.isNewUIEnabled) {
+    if (this.isSIP34FilterUIEnabled) {
       this.setState({
         filters: [
           {
@@ -560,7 +559,7 @@ class ChartList extends React.PureComponent<Props, State> {
                 initialSort={this.initialSort}
                 filters={filters}
                 bulkActions={bulkActions}
-                useNewUIFilters={this.isNewUIEnabled}
+                isSIP34FilterUIEnabled={this.isSIP34FilterUIEnabled}
               />
             );
           }}

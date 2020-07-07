@@ -18,8 +18,12 @@
  */
 import { t } from '@superset-ui/translation';
 import { validateNonEmpty } from '@superset-ui/validator';
-import { columnChoices } from '../controls';
-import { formatSelectOptions } from '../../modules/utils';
+import {
+  periodTypeStaticPicker,
+  periodFinyearPicker,
+  periodCalyearPicker,
+  periodQuarterlyPicker,
+} from './Shared_Empower';
 
 export default {
   controlPanelSections: [
@@ -27,13 +31,45 @@ export default {
       label: t('Empower'),
       expanded: true,
       controlSetRows: [
-        ['spot_hist_chart_type_picker'],
-        ['state_static_picker'],
-        ['period_type_static_picker'],
-        ['period_finyear_picker'],
-        ['period_calyear_picker'],
-        ['period_quarterly_picker'],
-        // ['price_bin_picker']
+        [
+          {
+            name: 'spot_hist_chart_type_picker',
+            config: {
+              type: 'SelectControl',
+              multi: false,
+              label: t('Chart Type'),
+              default: 'value',
+              validators: [validateNonEmpty],
+              choices: [
+                ['value', 'Spot Price Value Annual'],
+                ['percent', 'Spot Price Proportion Annual'],
+              ],
+            },
+          },
+        ],
+        [
+          {
+            name: 'state_static_picker',
+            config: {
+              type: 'SelectControl',
+              multi: false,
+              label: t('Region'),
+              default: ['VIC'],
+              validators: [validateNonEmpty],
+              choices: [
+                ['NSW1', 'NSW'],
+                ['VIC1', 'VIC'],
+                ['QLD1', 'QLD'],
+                ['TAS1', 'TAS'],
+                ['SA1', 'SA'],
+              ],
+            },
+          },
+        ],
+        [periodTypeStaticPicker],
+        [periodFinyearPicker],
+        [periodCalyearPicker],
+        [periodQuarterlyPicker],
       ],
     },
   ],

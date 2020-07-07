@@ -33,10 +33,12 @@ from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.typing import FlaskResponse
 from superset.constants import RouteMethod
 from superset.models.simulation import *
+from superset.models.slice import Slice
+from flask_appbuilder.security.sqla import models as ab_models
 from superset.connectors.sqla.models import SqlaTable
 from superset.utils import core as utils
 from superset.sql_parse import Table
-from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView
+from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView, common_bootstrap_payload
 from superset.views.utils import send_sendgrid_mail
 from superset.views.simulation.util import get_s3_url
 from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
@@ -45,8 +47,9 @@ from superset.views.simulation.simulation_config import bucket_test
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
-    save_as_new_tab_version
-from .util import get_redirect_endpoint
+    save_as_new_tab_version, ref_day_generation_check
+from .util import get_redirect_endpoint, read_excel, read_csv
+from ..utils import bootstrap_user_data
 
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
@@ -86,7 +89,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
         db.session.merge(assumption_file)
         db.session.commit()
         g.result = 'Process success'
-        g.detail = 'The assumption detail is now on S3 empower-simulation bucket'
+        g.detail = 'The assumption detail is now on S3 {} bucket.'.format(bucket_test)
     except Exception as e:
         assumption_file = find_assumption_by_name(db.session, name)
         assumption_file.status = "Error"
@@ -152,7 +155,7 @@ def simulation_start_invoker(run_id, sim_num):
     else:
         print('generate parameters')
         try:
-            generate_parameters_for_batch(run_id, sim_num)
+            generate_parameters_for_batch(simulation, sim_num)
         except Exception as e:
             simulation.status = 'Run failed'
             simulation.status_detail = repr(e)
@@ -168,8 +171,6 @@ def simulation_start_invoker(run_id, sim_num):
         # end_date = simulation.end_date
         end_date = '2030-12-31'
         sim_tag = run_id
-        # total_days = (start_date - end_date).days
-        # output_days = total_days + 7 - total_days%7
 
 
         try:
@@ -477,6 +478,75 @@ class AssumptionModelView(EmpowerModelView):
         return None
 
 
+class EditAssumptionModelView(
+    SupersetModelView, DeleteMixin
+):  # pylint: disable=too-many-ancestors
+    route_base = "/edit-assumption"
+    default_view = 'assumption'
+    datamodel = SQLAInterface(Slice)
+
+    @expose("/assumption/")
+    def assumption(self):
+        username = g.user.username
+
+        user = (
+            db.session.query(ab_models.User).filter_by(username=username).one_or_none()
+        )
+        if not user:
+            abort(404, description=f"User: {username} does not exist.")
+
+        payload = {
+            "user": bootstrap_user_data(user, include_perms=True),
+            "common": common_bootstrap_payload(),
+        }
+
+        return self.render_template(
+            "superset/basic.html",
+            title=_("Edit Assumption"),
+            entry="assumption",
+            bootstrap_data=json.dumps(
+                payload, default=utils.pessimistic_json_iso_dttm_ser
+            ),
+        )
+
+    @expose("/upload_csv/")
+    def upload_csv(self):
+        form = request.form
+        table = form['table']
+        note = form['note']
+        file = form['file']
+        scenario = None
+        if 'scenario' in form.keys():
+            scenario = form['Scenario']
+        file_name = file.name
+        extension = os.path.splitext(file_name)[1].lower()
+        path = tempfile.NamedTemporaryFile(
+            dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
+        ).name
+        try:
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
+            upload_stream_write(file.data, path)
+            tab_model = find_table_class_by_name(table)
+            tab_def_model = find_table_class_by_name(table+'Definition')
+            if extension == 'xlsx':
+                df = read_excel(path)
+            else:
+                df = read_csv(path)
+            new_def = save_as_new_tab_version(db, df, tab_def_model, tab_model, note=note, scenario=scenario)
+            message = 'Update table successful'
+        except Exception as e:
+            db.session.rollback()
+            traceback.print_exc()
+            message = repr(e)
+        finally:
+            os.remove(path)
+
+        return jsonify({
+            'message': message
+        })
+
+
+
 class UploadExcelView(SimpleFormView):
     route_base = '/upload_base_excel'
     form_title = 'Upload assumption excel'
@@ -500,10 +570,9 @@ class UploadExcelView(SimpleFormView):
             df_dict = process_assumption_to_df_dict(path)
             new_assum_def = AssumptionDefinition()
             new_assum_def.Name = name
-
             for tab_def_model, tab_data_model in model_list:
-                # sheet_name = tab_def_model.get_sheet_name()
-                sub_tab_def = save_as_new_tab_version(db, df_dict, tab_def_model, tab_data_model)
+                sheet_name = tab_def_model.get_sheet_name()
+                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name], tab_def_model, tab_data_model)
                 # set relation of assumption def with sub table definition
                 new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
             db.session.add(new_assum_def)
@@ -564,7 +633,7 @@ class SimulationModelView(
 
         # If this is a new table, load it into Superset and redirect to its chart
         csv_table = Table(table=table_name, schema=None)
-        s3_file_path = 's3://empower-simulation/result-spot-price-forecast-simulation-statistics/' + run_id + '/' + table_name + '.csv'
+        s3_file_path = 's3://{}/result-spot-price-forecast-simulation-statistics/{}/{}.csv'.format(bucket_test, run_id, table_name)
 
         try:
             database = (
@@ -919,6 +988,7 @@ class SimulationModelView(
         pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
         # pass_check, message = True, ''
         if pass_check:
+            ref_day_generation_check(simulation, run_type)
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
                 message = 'Test run started'
@@ -1014,8 +1084,14 @@ class SimulationModelView(
         # flash('reached query success', 'info')
         data = json.loads(request.data.decode())
         print(data)
+        email = data['email']
+        s3_list = data['outS3Keys']
+        run_id = data['sim_tag']
+        simulation = db.query(Simulation).filter_by(run_id=run_id).first()
+
         g.result = 'query success'
         g.detail = repr(data)
+        # send_sendgrid_mail('','','',attachments='')
         return '200 OK'
 
 
@@ -1061,7 +1137,8 @@ class SimulationModelView(
             'duids': data,
             'year_start': '2020',
             'year_end': '2040',
-            'supersetURL': get_current_external_ip()
+            'supersetURL': get_current_external_ip(),
+            'email': g.user.email,
         }
         # if send_sqs_msg(msg, queue_url=query_sqs):
         g.action_object = simulation.name

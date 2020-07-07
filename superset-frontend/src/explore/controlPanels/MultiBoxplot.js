@@ -17,6 +17,13 @@
  * under the License.
  */
 import { t } from '@superset-ui/translation';
+import { formatSelectOptions } from '../../modules/utils';
+import {
+  periodTypeStaticPicker,
+  periodFinyearPicker,
+  periodCalyearPicker,
+  periodQuarterlyPicker,
+} from './Shared_Empower';
 
 export default {
   controlPanelSections: [
@@ -27,11 +34,30 @@ export default {
         ['metrics'],
         ['adhoc_filters'],
         ['groupby'],
-        ['whisker_options'],
-        ['period_type_static_picker'],
-        ['period_finyear_picker'],
-        ['period_calyear_picker'],
-        ['period_quarterly_picker'],
+        [
+          {
+            name: 'whisker_options',
+            config: {
+              type: 'SelectControl',
+              freeForm: true,
+              label: t('Whisker/outlier options'),
+              default: 'Min/max (no outliers)',
+              description: t(
+                'Determines how whiskers and outliers are calculated.',
+              ),
+              choices: formatSelectOptions([
+                'Tukey',
+                'Min/max (no outliers)',
+                '2/98 percentiles',
+                '9/91 percentiles',
+              ]),
+            },
+          },
+        ],
+        [periodTypeStaticPicker],
+        [periodFinyearPicker],
+        [periodCalyearPicker],
+        [periodQuarterlyPicker],
       ],
     },
   ],

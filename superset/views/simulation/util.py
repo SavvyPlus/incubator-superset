@@ -17,7 +17,7 @@ logging.getLogger('botocore').setLevel(logging.CRITICAL)
 logging.getLogger('boto3').setLevel(logging.CRITICAL)
 
 fs = s3fs.S3FileSystem()
-client = boto3.client('s3')
+client = boto3.client('s3', region_name='ap-southeast-2')
 sqs = boto3.client('sqs', region_name='ap-southeast-2')
 
 def read_pickle_from_s3(bucket, path):
@@ -68,6 +68,38 @@ def send_sqs_msg(message_body, delay=10,
         MessageBody=(message_body)
     )
     return response.get("MessageId", "")
+
+
+def list_object_keys(bucket, prefix):
+    key_list = []
+    response = client.list_objects_v2(
+        Bucket=bucket,
+        Prefix=prefix
+    )
+    if response['KeyCount'] <= 0:
+        return []
+    contents = response['Contents']
+    is_truncated = response['IsTruncated']
+
+    for content in contents:
+        key_list.append(content['Key'])
+
+    if is_truncated:
+        cont_token = response['NextContinuationToken']
+    while is_truncated:
+        response = client.list_objects_v2(
+            Bucket=bucket,
+            Prefix=prefix,
+            ContinuationToken=cont_token
+        )
+        contents = response['Contents']
+        is_truncated = response['IsTruncated']
+        for content in contents:
+            key_list.append(content['Key'])
+        if is_truncated:
+            cont_token = response['NextContinuationToken']
+
+    return sorted(key_list)
 
 def write_to_s3(data, bucket, path):
     bucket_uri = f's3://{bucket}/{path}'
@@ -190,3 +222,8 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
 def get_current_external_ip():
     # return 'http://{}:8088'.format(get('https://api.ipify.org').text)
     return 'http://{}:8088'.format('10.61.146.25')
+
+def get_full_week_end_date(start_date, end_date):
+    total_days = (end_date - start_date).days
+    end_date = end_date + datetime.timedelta(days=7 - total_days % 7)
+    return end_date
