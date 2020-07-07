@@ -169,7 +169,8 @@ template_path = 'template run 188.xlsx'
 nifi_sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi_test"
 
 # S3 pickle cache path
-reference_date_s3_pickle_path = 'reference_date/test_2020to2030/{}.pickle'  # index
+reference_date_s3_pickle_path = 'reference_date/{}to{}/{}.pickle'  # index
+reference_date_s3_folder_format = 'reference_date/{}to{}/'
 
 pv_data_s3_pickle_path = 'cache/{}/pv.pickle'    # assumptions version
 pv_forecast_s3_new_pickle_path = 'cache/{}/pv_forecast.pickle'

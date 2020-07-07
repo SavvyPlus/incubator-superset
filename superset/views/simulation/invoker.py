@@ -6,7 +6,7 @@ import datetime
 
 from superset import celery_app, simulation_logger
 
-from .util import write_pickle_to_s3, read_pickle_from_s3
+from .util import write_pickle_to_s3, read_pickle_from_s3, list_object_keys
 from .simulation_config import bucket_test, bucket_inputs
 
 client = boto3.client('lambda', region_name='ap-southeast-2')
@@ -14,7 +14,7 @@ s3 = boto3.client('s3', region_name='ap-southeast-2')
 
 
 
-def invoker(payload, function_name='spot-price-forecast-simulation-lp-solver'):
+def invoker(payload, function_name='spot-simulation-prod-stk2-lp-v2'):
     response = client.invoke(
         FunctionName=function_name,
         InvocationType='Event',
@@ -22,9 +22,6 @@ def invoker(payload, function_name='spot-price-forecast-simulation-lp-solver'):
         Payload=json.dumps(payload),
     )
     # print(payload['sim_tag'], payload['sim_index'], payload['sim_ref_dates'])
-
-
-
 
 
 def batch_invoke(sim_tag, sim_ref_para, sim_index):
@@ -43,51 +40,24 @@ def batch_invoke(sim_tag, sim_ref_para, sim_index):
         # break  # uncomment it if only want to run one call for test
 
 
-def list_object_keys(bucket, prefix):
-    key_list = []
-    response = s3.list_objects_v2(
-        Bucket=bucket,
-        Prefix=prefix
-    )
-    contents = response['Contents']
-    is_truncated = response['IsTruncated']
-
-    for content in contents:
-        key_list.append(content['Key'])
-
-    if is_truncated:
-        cont_token = response['NextContinuationToken']
-    while is_truncated:
-        response = s3.list_objects_v2(
-            Bucket=bucket,
-            Prefix=prefix,
-            ContinuationToken=cont_token
-        )
-        contents = response['Contents']
-        is_truncated = response['IsTruncated']
-        for content in contents:
-            key_list.append(content['Key'])
-        if is_truncated:
-            cont_token = response['NextContinuationToken']
-
-    return sorted(key_list)
-
-
-
 def merger(sim_index, sim_tag):
     payload = {"sim_index": sim_index, "sim_tag": sim_tag}
     response = client.invoke(
-        FunctionName='spot-price-lp-merger',
+        FunctionName='spot-simulation-prod-stk2-merger',
         InvocationType='Event',
         Payload=json.dumps(payload),
     )
 
 
 def merger2(sim_index, sim_tag, prefix, output_name, bucket_from=bucket_inputs, bucket_to=bucket_test):
-    payload = {"sim_index": sim_index, "sim_tag": sim_tag, "prefix": prefix, "output_name": output_name,
-               "bucket_from": bucket_from, "bucket_to": bucket_to}
+    payload = {"sim_index": sim_index,
+               "sim_tag": sim_tag,
+               "prefix": prefix,
+               "output_name": output_name,
+               "bucket_from": bucket_from,
+               "bucket_to": bucket_to}
     response = client.invoke(
-        FunctionName='spot-price-forecast-simulation-merger',
+        FunctionName='spot-simulation-prod-stk2-merger',
         InvocationType='Event',
         Payload=json.dumps(payload),
     )
