@@ -28,11 +28,9 @@ def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
 
     # TODO DEBUG do not write to s3
-    bucket = "empower-simulation"
     client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
 def put_file_to_s3(filename, bucket, key, is_public=False):
-    bucket = "empower-simulation"
     with open(filename, "rb") as f:
         if is_public:
             response = client.upload_fileobj(f, bucket, key, ExtraArgs={'ACL': 'public-read'})

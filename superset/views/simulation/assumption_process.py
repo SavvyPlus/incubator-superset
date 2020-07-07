@@ -222,8 +222,8 @@ def check_assumption(file_path, assumtpions_version, simulation):
 def ref_day_generation_check(simulation, run_type):
     start_date = simulation.start_date
     end_date = get_full_week_end_date(start_date, simulation.end_date)
-    ref_day_list = list_object_keys(bucket_test, reference_date_s3_folder_format.format(start_date.strftime('%Y-%m-%d'),
-                                                                                        end_date.strftime('%Y-%m-%d')))
+    ref_day_list = list_object_keys(bucket_inputs, reference_date_s3_folder_format.format(start_date.strftime('%Y-%m-%d'),
+                                                                                          end_date.strftime('%Y-%m-%d')))
 
     # TODO modify run number for full run
     run_no = 5 if run_type == 'test' else 5
@@ -243,9 +243,9 @@ def ref_day_generation_check(simulation, run_type):
 
 
 def upload_assumption_file(file_path, assumptions_version):
-    put_file_to_s3(file_path, bucket_test, excel_path.format(assumptions_version), is_public=True)
-    return get_download_url(bucket_test, excel_path.format(assumptions_version)), \
-           get_s3_url(bucket_test, excel_path.format(assumptions_version))
+    put_file_to_s3(file_path, bucket_inputs, excel_path.format(assumptions_version), is_public=True)
+    return get_download_url(bucket_inputs, excel_path.format(assumptions_version)), \
+           get_s3_url(bucket_inputs, excel_path.format(assumptions_version))
 
 def process_assumption_to_df_dict(file_path):
     df_dict = {}

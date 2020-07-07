@@ -41,8 +41,7 @@ from superset.sql_parse import Table
 from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView, common_bootstrap_payload
 from superset.views.utils import send_sendgrid_mail
 from superset.views.simulation.util import get_s3_url
-from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
-from superset.views.simulation.simulation_config import bucket_test
+from superset.views.simulation.simulation_config import excel_path, bucket_inputs
 
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
@@ -89,7 +88,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
         db.session.merge(assumption_file)
         db.session.commit()
         g.result = 'Process success'
-        g.detail = 'The assumption detail is now on S3 {} bucket.'.format(bucket_test)
+        g.detail = 'The assumption detail is now on S3 {} bucket.'.format(bucket_inputs)
     except Exception as e:
         assumption_file = find_assumption_by_name(db.session, name)
         assumption_file.status = "Error"
@@ -176,17 +175,17 @@ def simulation_start_invoker(run_id, sim_num):
         try:
             # TODO uncomment to invoke
             print('invoking')
-            batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=interval)
-            batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, 4017, year_start=2020,
+            batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
+            batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, 4017, year_start=2020,
                                      year_end=2031, interval=interval/2)
-            batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, 11,
+            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, 11,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
-            invoker(payload={'run_id': sim_tag, 'bucket': bucket_test},
-                           function_name='spot_simulation_check_spot_price_outputs_numbers')
+            invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs},
+                    function_name='spot_simulation_check_spot_price_outputs_numbers')
 
             simulation.status = 'Run finished'
             db.session.commit()
@@ -655,7 +654,7 @@ class SimulationModelView(
 
         # If this is a new table, load it into Superset and redirect to its chart
         csv_table = Table(table=table_name, schema=None)
-        s3_file_path = 's3://{}/result-spot-price-forecast-simulation-statistics/{}/{}.csv'.format(bucket_test, run_id, table_name)
+        s3_file_path = 's3://{}/result-spot-price-forecast-simulation-statistics/{}/{}.csv'.format(bucket_inputs, run_id, table_name)
 
         try:
             database = (
@@ -990,7 +989,7 @@ class SimulationModelView(
                 g.detail = message
             else:
                 if simulation.assumption.s3_path is None:
-                    path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
+                    path = get_s3_url(bucket_inputs, excel_path.format(simulation.assumption.name))
                     simulation.assumption.s3_path = path
                     db.session.commit()
                 try:
@@ -1021,7 +1020,7 @@ class SimulationModelView(
                 'excelKey': excel_path.format(simulation.assumption.name),
                 'runNo': simulation.run_id,
                 'processName': [],
-                'bucket': bucket_test,
+                'bucket': bucket_inputs,
                 'histBucket': bucket_inputs,
                 'startDate': '2017-01-01',
                 'endDate': '2019-07-31',
@@ -1157,7 +1156,7 @@ class SimulationModelView(
         msg = {
             # 'sim_tag': simulation.run_id,
             'sim_tag': 'Run_196',
-            'outBucket': bucket_test,
+            'outBucket': bucket_inputs,
             'query_list': [
                 'Technology_Generation_by_percentile_cal',
                 'DUID_Generation_by_percentile_cal',
