@@ -271,7 +271,6 @@ def save_as_new_tab_version(db, df, tab_model, tab_data_model, note=None, scenar
     # db.session.flush()
     db.session.commit()
     new_ver = new_tab_def.get_version()
-    version_col = tab_data_model.get_version_col_name()
-    df[version_col] = new_ver
+    df['Version'] = new_ver
     df.to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
     return new_tab_def
