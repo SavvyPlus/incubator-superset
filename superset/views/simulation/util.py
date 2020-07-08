@@ -184,6 +184,9 @@ def read_csv(*args, **kwargs):
     df = pd.read_csv(*args, **kwargs)
     return df
 
+def from_dict(dict_list):
+    return pd.DataFrame.from_dict(dict_list)
+
 
 def get_redirect_endpoint(table_name: str, table_id: int) -> str:
     if 'distribution' in table_name:

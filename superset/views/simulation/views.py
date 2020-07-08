@@ -47,7 +47,7 @@ from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormFor
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check
-from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3
+from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, from_dict
 from ..utils import bootstrap_user_data, create_attachment
 
 
@@ -552,8 +552,9 @@ class EditAssumptionModelView(
         if form['request'] == 'version':
             version_list = db.session.query(tab_def_model).all()
             versions = {}
-            for version in version_list:
-                versions[version.id] = version.Note
+            if len(version_list) >0:
+                for version in version_list:
+                    versions[version.id] = version.Note
 
             message = {
                 'versions': versions
@@ -570,6 +571,20 @@ class EditAssumptionModelView(
                 'header': headers,
                 'data': data_list
             }
+        return jsonify(message)
+
+    @expose("/save_data/")
+    def save_data(self):
+        form = request.form
+        table = form['table']
+        data_list = form['data']
+        note = form['note']
+        tab_data_model = find_table_class_by_name(table)
+        tab_def_model = find_table_class_by_name(table+'Definition')
+        df = from_dict(data_list)
+        new_def = save_as_new_tab_version(db, df, tab_def_model, tab_data_model, note)
+        message = 'Data has been saved as new version'
+
         return jsonify(message)
 
 
