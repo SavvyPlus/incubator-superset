@@ -31,6 +31,8 @@ export default function (bootstrapData) {
         column: [],
         data: [],
       },
+      version: undefined,
+      versions: {},
     },
     messageToasts: [],
   };

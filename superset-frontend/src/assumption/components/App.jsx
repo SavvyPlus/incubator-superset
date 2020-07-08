@@ -26,6 +26,7 @@ import { t } from '@superset-ui/translation';
 import * as Actions from '../actions/assumption';
 import UpsertSelect from './UpsertSelect';
 import TableSelect from './TableSelect';
+import VersionSelect from './VersionSelect';
 import Dropzone from './Dropzone';
 import ToastPresenter from '../../messageToasts/containers/ToastPresenter';
 import '../App.less';
@@ -63,10 +64,23 @@ function App({ username, firstName, lastName, assumption, actions }) {
               uploadFile={actions.uploadFile}
             />
           ) : (
-            <AssumptionTable
-              table={assumption.table}
-              tableData={assumption.tableData}
-            />
+            <>
+              <VersionSelect
+                versions={assumption.versions}
+                upsert={assumption.upsert}
+                table={assumption.table}
+                version={assumption.version}
+                setVersion={actions.setVersions}
+                fetchTableVersions={actions.fetchTableVersions}
+              />
+              <AssumptionTable
+                upsert={assumption.upsert}
+                table={assumption.table}
+                tableData={assumption.tableData}
+                version={assumption.version}
+                fetchTableVersions={actions.fetchTableVersions}
+              />
+            </>
           )}
         </Col>
       </Row>

@@ -34,6 +34,11 @@ export function setTable(table) {
   return { type: SET_TABLE, table };
 }
 
+export const SET_VERSION = 'SET_VERSION';
+export function serVersion(version) {
+  return { type: SET_VERSION, version };
+}
+
 export const UPLOAD_FILE_SUCCESS = 'UPLOAD_FILE_SUCCESS';
 export function uploadFileSuccess(data) {
   return { type: UPLOAD_FILE_SUCCESS, data };
@@ -68,19 +73,28 @@ export function uploadFile(table, note, files) {
   };
 }
 
+export const FETCH_TABLE_VERSIONS_SUCCESS = 'FETCH_TABLE_VERSIONS_SUCCESS';
+export function fetchTableVersionsSuccess(data) {
+  return { type: FETCH_TABLE_VERSIONS_SUCCESS, data };
+}
+
 export function fetchTableVersions(table) {
   return dispatch => {
     return SupersetClient.get({
-      endpoint: `/superset/fetch_datasource_metadata?datasourceKey=${table}`,
+      endpoint: `/edit-assumption/get-data/${table}/version/nan`,
     })
       .then(({ json }) => {
-        dispatch(fetchTableDataSuccss(json));
-        dispatch(addSuccessToast(t('File was uploaded successfully.')));
+        console.log(json);
+        dispatch(fetchTableVersionsSuccess(json));
+        dispatch(
+          addSuccessToast(t('Table versions were updated successfully.')),
+        );
       })
       .catch(() => {
-        dispatch(fetchTableDataFailed());
         dispatch(
-          addDangerToast(t('Sorry, there was an error updating this table')),
+          addDangerToast(
+            t('Sorry, there was an error updating table versions'),
+          ),
         );
       });
   };
@@ -114,23 +128,36 @@ export function fetchTableData(table) {
   };
 }
 
-export const REMOVE_TABLE_DATA_SUCCESS = 'REMOVE_TABLE_DATA_SUCCESS';
-export function removeTableDataSuccss(data) {
-  return { type: REMOVE_TABLE_DATA_SUCCESS, data };
+export const SAVE_TABLE_DATA_SUCESS = 'SAVE_TABLE_DATA_SUCESS';
+export function saveTableDataSuccess(data) {
+  return { type: SAVE_TABLE_DATA_SUCESS, data };
 }
 
-export function removeTableData(id) {
+export const SAVE_TABLE_DATA_FAILED = 'SAVE_TABLE_DATA_FAILED';
+export function saveTableDataFailed() {
+  return { type: SAVE_TABLE_DATA_FAILED };
+}
+
+export function saveTableData(table, note, files) {
   return dispatch => {
-    return SupersetClient.delete({
-      endpoint: encodeURI(`/tabstateview/${id}`),
+    return SupersetClient.post({
+      endpoint: '/edit-assumption/upload-csv/',
+      postPayload: {
+        table,
+        note,
+        file: files[0],
+      },
+      stringify: false,
     })
-      .then(json => dispatch(removeTableDataSuccss(json)))
-      .catch(() =>
+      .then(({ json }) => {
+        dispatch(saveTableDataSuccess(json));
+        dispatch(addSuccessToast(t('File was uploaded successfully.')));
+      })
+      .catch(() => {
+        dispatch(saveTableDataFailed());
         dispatch(
-          addDangerToast(
-            t('Sorry, there was an error occurred while removing data.'),
-          ),
-        ),
-      );
+          addDangerToast(t('Sorry, there was an error uploading this file')),
+        );
+      });
   };
 }

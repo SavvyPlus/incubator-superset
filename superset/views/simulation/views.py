@@ -544,12 +544,12 @@ class EditAssumptionModelView(
             'message': message
         })
 
-    @expose("/get_data/")
-    def get_data(self):
-        form = request.form
-        table = form['table']
+    @expose("/get-data/<table>/<request_type>/<ver>/")
+    def get_data(self, table: str, request_type: str, ver: str):
+        # form = request.form
+        # table = form['table']
         tab_def_model = find_table_class_by_name(table + 'Definition')
-        if form['request'] == 'version':
+        if request_type == 'version':
             version_list = db.session.query(tab_def_model).all()
             versions = {}
             for version in version_list:
@@ -560,7 +560,7 @@ class EditAssumptionModelView(
             }
         else:
             tab_data_model = find_table_class_by_name(table)
-            version = form['version']
+            version = ver
             tab_data = db.session.query(tab_data_model).filter_by(Version=version).all()
             headers = tab_data_model.included_keys
             data_list = []

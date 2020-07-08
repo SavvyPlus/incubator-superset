@@ -19,8 +19,10 @@
 import {
   SET_UPSERT,
   SET_TABLE,
+  SET_VERSION,
   UPLOAD_FILE_SUCCESS,
   UPLOAD_FILE_FAILED,
+  FETCH_TABLE_VERSIONS_SUCCESS,
 } from '../actions/assumption';
 
 export default function assumptionReducer(state = {}, action) {
@@ -30,6 +32,9 @@ export default function assumptionReducer(state = {}, action) {
     },
     [SET_TABLE]() {
       return { ...state, table: action.table };
+    },
+    [SET_VERSION]() {
+      return { ...state, version: action.version };
     },
     [UPLOAD_FILE_SUCCESS]() {
       return {
@@ -41,6 +46,12 @@ export default function assumptionReducer(state = {}, action) {
     [UPLOAD_FILE_FAILED]() {
       return {
         ...state,
+      };
+    },
+    [FETCH_TABLE_VERSIONS_SUCCESS]() {
+      return {
+        ...state,
+        versions: action.versions,
       };
     },
   };
