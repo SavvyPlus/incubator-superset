@@ -546,24 +546,31 @@ class EditAssumptionModelView(
 
     @expose("/get_data/")
     def get_data(self):
-        tab_data_model = find_table_class_by_name("ProjectProxy")
-        # ver_col = getattr()
-        tab_data = db.session.query(tab_data_model).filter_by(Version=1).all()
-        # form = request.form
-        # table = form['table']
-        # tab_def_model = find_table_class_by_name(table + 'Definition')
-        # if form['request'] == 'version':
-        #     version_list = db.session.query(tab_def_model).all()
-        #     versions = {}
-        #     for version in version_list:
-        #         versions[version.id] = version.Note
-        #
-        #     message = version
-        # else:
-        #     version = form['version']
-        #     tab_data = db.session.query(tab_def_model)
-        #     data = {}
-        return jsonify('')
+        form = request.form
+        table = form['table']
+        tab_def_model = find_table_class_by_name(table + 'Definition')
+        if form['request'] == 'version':
+            version_list = db.session.query(tab_def_model).all()
+            versions = {}
+            for version in version_list:
+                versions[version.id] = version.Note
+
+            message = {
+                'versions': versions
+            }
+        else:
+            tab_data_model = find_table_class_by_name(table)
+            version = form['version']
+            tab_data = db.session.query(tab_data_model).filter_by(Version=version).all()
+            headers = tab_data_model.included_keys
+            data_list = []
+            for row_data in tab_data:
+                data_list.append(row_data.get_dict())
+            message = {
+                'header': headers,
+                'data': data_list
+            }
+        return jsonify(message)
 
 
 class UploadExcelView(SimpleFormView):

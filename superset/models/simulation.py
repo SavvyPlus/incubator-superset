@@ -158,7 +158,19 @@ class SimulationLog(Model):
     result = Column(String(128))
     detail = Column(Text)
 
+"""Data table interface"""
+class DataTableMixin:
 
+    __tablename__ = None
+    included_keys = None
+    def get_def_col_name(self):
+        return self.__tablename__ + '_Definition'
+
+    def get_definition(self):
+        return getattr(self, self.get_def_col_name())
+
+    def get_dict(self):
+        return dict((key, value) for (key, value) in self.__dict__.items() if key in self.included_keys)
 
 """Rooftop Solar History"""
 class RooftopSolarHistoryDefinition(Model):
@@ -173,7 +185,7 @@ class RooftopSolarHistoryDefinition(Model):
     def get_sheet_name():
         return sheet_pv_history
 
-class RooftopSolarHistory(Model):
+class RooftopSolarHistory(Model, DataTableMixin):
     __tablename__ = "Rooftop_Solar_History"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
@@ -186,13 +198,8 @@ class RooftopSolarHistory(Model):
     Rooftop_Solar_History_Definition = relationship('RooftopSolarHistoryDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Date', 'Capacity_MW', 'Aggregate_MW']
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Rooftop_Solar_History_Version'
-
-    def get_definition(self):
-        return self.Rooftop_Solar_History_Definition
 
 """Rooftop Solar Forecast"""
 class RooftopSolarForecastDefinition(Model):
@@ -209,7 +216,7 @@ class RooftopSolarForecastDefinition(Model):
     def get_sheet_name():
         return sheet_pv_forecast
 
-class RooftopSolarForecast(Model):
+class RooftopSolarForecast(Model, DataTableMixin):
     __tablename__ = "Rooftop_Solar_Forecast"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
@@ -222,13 +229,8 @@ class RooftopSolarForecast(Model):
     Rooftop_Solar_Forecast_Definition = relationship('RooftopSolarForecastDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Year', 'Capacity_MW', 'Aggregate_MW']
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Rooftop_Solar_Forecast_Version'
-
-    def get_definition(self):
-        return self.Rooftop_Solar_Forecast_Definition
 
 """Renewable Proportion"""
 class RenewableProportionDefinition(Model):
@@ -243,7 +245,7 @@ class RenewableProportionDefinition(Model):
     def get_sheet_name():
         return sheet_renewable_proportion
 
-class RenewableProportion(Model):
+class RenewableProportion(Model, DataTableMixin):
     __tablename__ = "Renewable_Proportion"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
@@ -255,13 +257,7 @@ class RenewableProportion(Model):
     Renewable_Proportion_Definition = relationship('RenewableProportionDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
-
-    @staticmethod
-    def get_version_col_name():
-        return 'Renewable_Proportion_Version'
-
-    def get_definition(self):
-        return self.Renewable_Proportion_Definition
+    included_keys = ['State', 'Date', 'Maximum_HalfHour_Intermittent_Proportion']
 
 
 """Demand Growth"""
@@ -279,7 +275,7 @@ class DemandGrowthDefinition(Model):
     def get_sheet_name():
         return sheet_demand_growth
 
-class DemandGrowth(Model):
+class DemandGrowth(Model, DataTableMixin):
     __tablename__ = "Demand_Growth"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
@@ -292,13 +288,8 @@ class DemandGrowth(Model):
     Demand_Growth_Definition = relationship('DemandGrowthDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Year', 'Probability', 'Growth']
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Demand_Growth_Version'
-
-    def get_definition(self):
-        return self.Demand_Growth_Definition
 
 """Behind The Meter Battery"""
 class BehindTheMeterBatteryDefinition(Model):
@@ -315,7 +306,7 @@ class BehindTheMeterBatteryDefinition(Model):
     def get_sheet_name():
         return sheet_behind_the_meter_battery
 
-class BehindTheMeterBattery(Model):
+class BehindTheMeterBattery(Model, DataTableMixin):
     __tablename__ = "Behind_The_Meter_Battery"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
@@ -327,13 +318,8 @@ class BehindTheMeterBattery(Model):
     Behind_The_Meter_Battery_Definition = relationship('BehindTheMeterBatteryDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Year', 'Aggregate_MW']
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Behind_The_Meter_Battery_Version'
-
-    def get_definition(self):
-        return self.Behind_The_Meter_Battery_Definition
 
 """Project Proxy"""
 class ProjectProxyDefinition(Model):
@@ -348,7 +334,7 @@ class ProjectProxyDefinition(Model):
     def get_sheet_name():
         return sheet_project_proxy
 
-class ProjectProxy(Model):
+class ProjectProxy(Model, DataTableMixin):
     __tablename__ = "Project_Proxy"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
@@ -364,13 +350,8 @@ class ProjectProxy(Model):
     Project_Proxy_Definition = relationship('ProjectProxyDefinition',
                                             foreign_keys=[Version],
                                             backref="data")
+    included_keys = ['State', 'Project', 'Nameplate_Capacity_MW', 'Technology_Type', 'Latitude', 'Longitude', 'Tracking_Type']
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Project_Proxy_Version'
-
-    def get_definition(self):
-        return self.Project_Proxy_Definition
 
 """MPC CPT"""
 class MPCCPTDefinition(Model):
@@ -385,7 +366,7 @@ class MPCCPTDefinition(Model):
     def get_sheet_name():
         return sheet_mpc
 
-class MPCCPT(Model):
+class MPCCPT(Model, DataTableMixin):
     __tablename__ = "MPC_CPT"
     id = Column(Integer, primary_key=True, autoincrement=True)
     FY = Column(String(10))
@@ -397,13 +378,8 @@ class MPCCPT(Model):
     MPC_CPT_Definition = relationship('MPCCPTDefinition',
                                     foreign_keys=[Version],
                                     backref="data")
+    included_keys = ['FY', 'CPT', 'MPC']
 
-    @staticmethod
-    def get_version_col_name():
-        return 'MPC_CPT_Version'
-
-    def get_definition(self):
-        return self.MPC_CPT_Definition
 
 """Gas Price Escalation"""
 class GasPriceEscalationDefinition(Model):
@@ -418,7 +394,7 @@ class GasPriceEscalationDefinition(Model):
     def get_sheet_name():
         return sheet_escalation
 
-class GasPriceEscalation(Model):
+class GasPriceEscalation(Model, DataTableMixin):
     __tablename__ = "Gas_Price_Escalation"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
@@ -438,13 +414,8 @@ class GasPriceEscalation(Model):
     Gas_Price_Escalation_Definition = relationship('GasPriceEscalationDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Year', 'Case1', 'Case2', 'Case3', 'Case4', 'Case5', 'Case6', 'Case7', 'Case8', 'Case9']
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Gas_Price_Escalation_Version'
-
-    def get_definition(self):
-        return self.Gas_Price_Escalation_Definition
 
 """Strategy Behaviour"""
 class StrategicBehaviourDefinition(Model):
@@ -459,7 +430,7 @@ class StrategicBehaviourDefinition(Model):
     def get_sheet_name():
         return sheet_strategic_behaviour
 
-class StrategicBehaviour(Model):
+class StrategicBehaviour(Model, DataTableMixin):
     __tablename__ = "Strategic_Behaviour"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
@@ -472,13 +443,7 @@ class StrategicBehaviour(Model):
     Strategic_Behaviour_Definition = relationship('StrategicBehaviourDefinition',
                                     foreign_keys=[Version],
                                     backref="data")
-
-    @staticmethod
-    def get_version_col_name():
-        return 'Strategic_Behaviour_Version'
-
-    def get_definition(self):
-        return self.Strategic_Behaviour_Definition
+    included_keys = ['State', 'Bin_Not_Exceeding', 'Value', 'MW']
 
 """Retirement"""
 class RetirementDefinition(Model):
@@ -493,7 +458,7 @@ class RetirementDefinition(Model):
     def get_sheet_name():
         return sheet_retirement
 
-class Retirement(Model):
+class Retirement(Model, DataTableMixin):
     __tablename__ = "Retirement"
     id = Column(Integer, primary_key=True, autoincrement=True)
     DUID = Column(String(50))
@@ -509,13 +474,7 @@ class Retirement(Model):
     Retirement_Definition = relationship('RetirementDefinition',
                                     foreign_keys=[Version],
                                     backref="data")
-
-    @staticmethod
-    def get_version_col_name():
-        return 'Retirement_Version'
-
-    def get_definition(self):
-        return self.Retirement_Definition
+    included_keys = ['DUID','State','Registered_Capacity','Impact_To_State','Adjustment_Factor','Closure_Date','Back_To_Service_Date']
 
 """Project List"""
 class ProjectListDefinition(Model):
@@ -530,7 +489,7 @@ class ProjectListDefinition(Model):
     def get_sheet_name():
         return sheet_project_list
 
-class ProjectList(Model):
+class ProjectList(Model, DataTableMixin):
     __tablename__ = "Project_List"
     id = Column(Integer, primary_key=True, autoincrement=True)
     DUID = Column(String(50))
@@ -552,13 +511,8 @@ class ProjectList(Model):
     Project_List_Definition = relationship('ProjectListDefinition',
                                     foreign_keys=[Version],
                                     backref="data")
-
-    @staticmethod
-    def get_version_col_name():
-        return 'Project_List_Version'
-
-    def get_definition(self):
-        return self.Project_List_Definition
+    included_keys = ['DUID','Name','State','Fuel_Type','Start_Date','End_Date','Status','Offer_Rate','Maximum_Quantity',
+                     'Installed_Quantity','Probability_Of_Success','Resolution','Proxy']
 
 
 model_list = {
