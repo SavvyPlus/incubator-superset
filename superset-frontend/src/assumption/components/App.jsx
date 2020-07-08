@@ -26,7 +26,7 @@ import { t } from '@superset-ui/translation';
 import * as Actions from '../actions/assumption';
 import UpsertSelect from './UpsertSelect';
 import TableSelect from './TableSelect';
-import Dropzone from './upload/Dropzone';
+import Dropzone from './Dropzone';
 import ToastPresenter from '../../messageToasts/containers/ToastPresenter';
 import '../App.less';
 import AssumptionTable from './AssumptionTable';
@@ -63,7 +63,10 @@ function App({ username, firstName, lastName, assumption, actions }) {
               uploadFile={actions.uploadFile}
             />
           ) : (
-            <AssumptionTable />
+            <AssumptionTable
+              table={assumption.table}
+              tableData={assumption.tableData}
+            />
           )}
         </Col>
       </Row>

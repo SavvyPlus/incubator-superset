@@ -67,3 +67,70 @@ export function uploadFile(table, note, files) {
       });
   };
 }
+
+export function fetchTableVersions(table) {
+  return dispatch => {
+    return SupersetClient.get({
+      endpoint: `/superset/fetch_datasource_metadata?datasourceKey=${table}`,
+    })
+      .then(({ json }) => {
+        dispatch(fetchTableDataSuccss(json));
+        dispatch(addSuccessToast(t('File was uploaded successfully.')));
+      })
+      .catch(() => {
+        dispatch(fetchTableDataFailed());
+        dispatch(
+          addDangerToast(t('Sorry, there was an error updating this table')),
+        );
+      });
+  };
+}
+
+export const FETCH_TABLE_DATA_SUCCESS = 'FETCH_TABLE_DATA_SUCCESS';
+export function fetchTableDataSuccss(data) {
+  return { type: FETCH_TABLE_DATA_SUCCESS, data };
+}
+
+export const FETCH_TABLE_DATA_FAILED = 'FETCH_TABLE_DATA_FAILED';
+export function fetchTableDataFailed(data) {
+  return { type: FETCH_TABLE_DATA_FAILED, data };
+}
+
+export function fetchTableData(table) {
+  return dispatch => {
+    return SupersetClient.get({
+      endpoint: `/superset/fetch_datasource_metadata?datasourceKey=${table}`,
+    })
+      .then(({ json }) => {
+        dispatch(fetchTableDataSuccss(json));
+        dispatch(addSuccessToast(t('File was uploaded successfully.')));
+      })
+      .catch(() => {
+        dispatch(fetchTableDataFailed());
+        dispatch(
+          addDangerToast(t('Sorry, there was an error updating this table')),
+        );
+      });
+  };
+}
+
+export const REMOVE_TABLE_DATA_SUCCESS = 'REMOVE_TABLE_DATA_SUCCESS';
+export function removeTableDataSuccss(data) {
+  return { type: REMOVE_TABLE_DATA_SUCCESS, data };
+}
+
+export function removeTableData(id) {
+  return dispatch => {
+    return SupersetClient.delete({
+      endpoint: encodeURI(`/tabstateview/${id}`),
+    })
+      .then(json => dispatch(removeTableDataSuccss(json)))
+      .catch(() =>
+        dispatch(
+          addDangerToast(
+            t('Sorry, there was an error occurred while removing data.'),
+          ),
+        ),
+      );
+  };
+}

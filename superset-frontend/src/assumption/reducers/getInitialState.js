@@ -27,7 +27,10 @@ export default function (bootstrapData) {
     assumption: {
       upsert: 'upload',
       table: 'RooftopSolarHistory',
-      isLoading: false,
+      tableData: {
+        column: [],
+        data: [],
+      },
     },
     messageToasts: [],
   };

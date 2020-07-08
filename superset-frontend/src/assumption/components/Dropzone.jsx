@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import PreLoader from '../../../components/PreLoader';
+import PreLoader from '../../components/PreLoader';
 
 const baseStyle = {
   flex: 1,
