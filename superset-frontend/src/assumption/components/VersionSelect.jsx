@@ -20,6 +20,7 @@ export default function VersionSelect({
   upsert,
   table,
   version,
+  fetching,
   setVersion,
   fetchTableVersions,
 }) {
@@ -31,19 +32,26 @@ export default function VersionSelect({
     }
   }, [table]);
 
+  let content = null;
+  if (fetching) {
+    content = <PreLoader />;
+  } else if (!fetching && isEmpty(versions)) {
+    content = <h4>No versions found. Please upload the table file first</h4>;
+  } else if (!fetching && !isEmpty(versions)) {
+    content = (
+      <FormControl variant="outlined" className={classes.formControl}>
+        <Select value={version} onChange={setVersion}>
+          <MenuItem value="upload">Upload</MenuItem>
+          <MenuItem value="modify">Modify</MenuItem>
+        </Select>
+      </FormControl>
+    );
+  }
+
   return (
     <>
       <h3 className="mt-50">Step 3: Select Version</h3>
-      {isEmpty(versions) ? (
-        <PreLoader />
-      ) : (
-        <FormControl variant="outlined" className={classes.formControl}>
-          <Select value={version} onChange={setVersion}>
-            <MenuItem value="upload">Upload</MenuItem>
-            <MenuItem value="modify">Modify</MenuItem>
-          </Select>
-        </FormControl>
-      )}
+      {content}
     </>
   );
 }

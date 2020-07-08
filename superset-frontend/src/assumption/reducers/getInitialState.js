@@ -32,6 +32,7 @@ export default function (bootstrapData) {
         data: [],
       },
       version: undefined,
+      fetchingVersions: false,
       versions: {},
     },
     messageToasts: [],

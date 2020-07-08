@@ -23,6 +23,8 @@ import {
   UPLOAD_FILE_SUCCESS,
   UPLOAD_FILE_FAILED,
   FETCH_TABLE_VERSIONS_SUCCESS,
+  FETCH_TABLE_VERSIONS_STARTED,
+  FETCH_TABLE_VERSIONS_FAILED,
 } from '../actions/assumption';
 
 export default function assumptionReducer(state = {}, action) {
@@ -48,10 +50,23 @@ export default function assumptionReducer(state = {}, action) {
         ...state,
       };
     },
+    [FETCH_TABLE_VERSIONS_STARTED]() {
+      return {
+        ...state,
+        fetchingVersions: true,
+      };
+    },
     [FETCH_TABLE_VERSIONS_SUCCESS]() {
       return {
         ...state,
+        fetchingVersions: false,
         versions: action.versions,
+      };
+    },
+    [FETCH_TABLE_VERSIONS_FAILED]() {
+      return {
+        ...state,
+        fetchingVersions: false,
       };
     },
   };

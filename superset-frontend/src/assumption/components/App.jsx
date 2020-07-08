@@ -70,6 +70,7 @@ function App({ username, firstName, lastName, assumption, actions }) {
                 upsert={assumption.upsert}
                 table={assumption.table}
                 version={assumption.version}
+                fetching={assumption.fetchingVersions}
                 setVersion={actions.setVersions}
                 fetchTableVersions={actions.fetchTableVersions}
               />

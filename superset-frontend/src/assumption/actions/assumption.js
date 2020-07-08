@@ -73,13 +73,24 @@ export function uploadFile(table, note, files) {
   };
 }
 
+export const FETCH_TABLE_VERSIONS_STARTED = 'FETCH_TABLE_VERSIONS_STARTED';
+export function fetchTableVersionsStarted() {
+  return { type: FETCH_TABLE_VERSIONS_STARTED };
+}
+
 export const FETCH_TABLE_VERSIONS_SUCCESS = 'FETCH_TABLE_VERSIONS_SUCCESS';
 export function fetchTableVersionsSuccess(data) {
   return { type: FETCH_TABLE_VERSIONS_SUCCESS, data };
 }
 
+export const FETCH_TABLE_VERSIONS_FAILED = 'FETCH_TABLE_VERSIONS_FAILED';
+export function fetchTableVersionsFailed() {
+  return { type: FETCH_TABLE_VERSIONS_FAILED };
+}
+
 export function fetchTableVersions(table) {
   return dispatch => {
+    dispatch(fetchTableVersionsStarted());
     return SupersetClient.get({
       endpoint: `/edit-assumption/get-data/${table}/version/nan`,
     })
@@ -91,6 +102,7 @@ export function fetchTableVersions(table) {
         );
       })
       .catch(() => {
+        dispatch(fetchTableVersionsFailed());
         dispatch(
           addDangerToast(
             t('Sorry, there was an error updating table versions'),
