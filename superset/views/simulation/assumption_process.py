@@ -181,13 +181,13 @@ def process_assumptions(file_path, assumptions_version):
 def check_assumption(file_path, assumtpions_version, simulation):
 
     assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery']
-    assumption_time_fin_year = ['MPC_CTP']
+    assumption_time_fin_year = ['MPC_CPT']
     assumption_time_ref_date = ['Rooftop_Solar_History']
     assumption_time_foreacast_date = ['Renewable_Proportion']
     all_sheets = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Rooftop_Solar_History',
                   'Behind_The_Meter_Battery','Renewable_Proportion',
                   'Retirement', 'Strategic_Behaviour' ,'Gas_Price_Escalation',
-                  'MPC_CTP']
+                  'MPC_CPT']
 
     try:
         df_dict = process_assumption_to_df_dict(file_path)
@@ -235,7 +235,8 @@ def ref_day_generation_check(simulation, run_type):
                 'start_date': start_date.strftime('%Y-%m-%d'),
                 'end_date': end_date.strftime('%Y-%m-%d')
             }
-            t = threading.Thread(target=invoker, args=(payload, 'spot-simulation-reference-days-generator'))
+            t = threading.Thread(target=invoker, args=(payload, 'spot-simulation-prod-stk2-ref-day-gen'))
+            print('ref day generate:'+repr(payload))
             threads.append(t)
             t.start()
             # break

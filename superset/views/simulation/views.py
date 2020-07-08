@@ -166,9 +166,10 @@ def simulation_start_invoker(run_id, sim_num):
         index_start = 0
         index_end = sim_num  # exclusive
         # start_date = simulation.start_date
-        start_date = '2020-01-01'
+        start_date = simulation.start_date
         # end_date = simulation.end_date
-        end_date = '2030-12-31'
+        end_date = get_full_week_end_date(start_date, simulation.end_date)
+        total_days = (end_date-start_date).days
         sim_tag = run_id
 
 
@@ -176,9 +177,9 @@ def simulation_start_invoker(run_id, sim_num):
             # TODO uncomment to invoke
             print('invoking')
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
-            batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, 4017, year_start=2020,
-                                     year_end=2031, interval=interval/2)
-            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, 11,
+            batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
+                                     year_end=end_date.year, interval=interval/2)
+            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, end_date.year-start_date.year+1,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
@@ -1025,8 +1026,8 @@ class SimulationModelView(
                 'startDate': '2017-01-01',
                 'endDate': '2019-07-31',
                 'simStartDate': '2020-01-01',
-                # 'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
-                'simEndDate': '2030-12-31',
+                'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
+                # 'simEndDate': '2030-12-31',
                 'runType': run_type,
                 'supersetURL': get_current_external_ip(),
             }
