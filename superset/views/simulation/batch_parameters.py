@@ -1,14 +1,14 @@
 import random
 from .util import write_pickle_to_s3, read_pickle_from_s3, get_full_week_end_date
-from .simulation_config import bucket_test, reference_date_s3_pickle_path, parameters_for_batch, bucket_inputs, \
+from .simulation_config import reference_date_s3_pickle_path, parameters_for_batch, bucket_inputs, \
     parameters_for_batch_v2
 
 
 def get_reference_day_dict(simulation, index):
     start_date, end_date = simulation.start_date, get_full_week_end_date(simulation.start_date, simulation.end_date)
-    ref_dic_t = read_pickle_from_s3(bucket_test, reference_date_s3_pickle_path.format(start_date.strftime('%Y-%m-%d'),
-                                                                                      end_date.strftime('%Y-%m-%d'),
-                                                                                      index))
+    ref_dic_t = read_pickle_from_s3(bucket_inputs, reference_date_s3_pickle_path.format(start_date.strftime('%Y-%m-%d'),
+                                                                                        end_date.strftime('%Y-%m-%d'),
+                                                                                        index))
     ref_dic = dict()
     for key in ref_dic_t:
         ref_date_index = random.randint(0, len(ref_dic_t[key]) - 1)

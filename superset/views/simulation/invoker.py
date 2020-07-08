@@ -7,7 +7,7 @@ import datetime
 from superset import celery_app, simulation_logger
 
 from .util import write_pickle_to_s3, read_pickle_from_s3, list_object_keys
-from .simulation_config import bucket_test, bucket_inputs
+from .simulation_config import bucket_inputs
 
 client = boto3.client('lambda', region_name='ap-southeast-2')
 s3 = boto3.client('s3', region_name='ap-southeast-2')
@@ -49,7 +49,7 @@ def merger(sim_index, sim_tag):
     )
 
 
-def merger2(sim_index, sim_tag, prefix, output_name, bucket_from=bucket_inputs, bucket_to=bucket_test):
+def merger2(sim_index, sim_tag, prefix, output_name, bucket_from=bucket_inputs, bucket_to=bucket_inputs):
     payload = {"sim_index": sim_index,
                "sim_tag": sim_tag,
                "prefix": prefix,

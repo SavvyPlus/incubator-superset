@@ -28,11 +28,9 @@ def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
 
     # TODO DEBUG do not write to s3
-    bucket = "empower-simulation"
     client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
 def put_file_to_s3(filename, bucket, key, is_public=False):
-    bucket = "empower-simulation"
     with open(filename, "rb") as f:
         if is_public:
             response = client.upload_fileobj(f, bucket, key, ExtraArgs={'ACL': 'public-read'})
@@ -51,6 +49,9 @@ def put_object_to_s3(binary_data, bucket, key):
     client.put_object(Body=binary_data,
                       Bucket=bucket,
                       Key=key)
+
+def download_from_s3(bucket, key, path):
+    client.download_file(bucket, key, path)
 
 def read_from_s3(bucket, path):
     bucket_uri = f's3://{bucket}/{path}'
@@ -174,9 +175,13 @@ def df_state_error_checker(f):
     return wrap
 
 
-@df_state_error_checker
+# @df_state_error_checker
 def read_excel(*args, **kwargs):
     df = pd.read_excel(*args, **kwargs)
+    return df
+
+def read_csv(*args, **kwargs):
+    df = pd.read_csv(*args, **kwargs)
     return df
 
 
