@@ -41,13 +41,13 @@ from superset.sql_parse import Table
 from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView, common_bootstrap_payload
 from superset.views.utils import send_sendgrid_mail
 from superset.views.simulation.util import get_s3_url
-from superset.views.simulation.simulation_config import excel_path, bucket_inputs
+from superset.views.simulation.simulation_config import excel_path, bucket_inputs, bucket_hist
 
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check
-from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3
+from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date
 from ..utils import bootstrap_user_data, create_attachment
 
 
@@ -152,30 +152,18 @@ def simulation_start_invoker(run_id, sim_num):
         simulation.status_detail = 'The assumption process failed, please check the detail of the assumption'
         db.session.commit()
     else:
-        print('generate parameters')
         try:
+            print('generate parameters')
             generate_parameters_for_batch(simulation, sim_num)
-        except Exception as e:
-            simulation.status = 'Run failed'
-            simulation.status_detail = repr(e)
-            db.session.commit()
-            g.result = 'Invoke failed'
-            g.detail = repr(e)
-            traceback.print_exc()
-            return None
-        index_start = 0
-        index_end = sim_num  # exclusive
-        # start_date = simulation.start_date
-        start_date = simulation.start_date
-        # end_date = simulation.end_date
-        end_date = get_full_week_end_date(start_date, simulation.end_date)
-        total_days = (end_date-start_date).days
-        sim_tag = run_id
-
-
-        try:
-            # TODO uncomment to invoke
             print('invoking')
+            index_start = 0
+            index_end = sim_num  # exclusive
+            # start_date = simulation.start_date
+            start_date = simulation.start_date
+            # end_date = simulation.end_date
+            end_date = get_full_week_end_date(start_date, simulation.end_date)
+            total_days = (end_date - start_date).days
+            sim_tag = run_id
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
             batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
                                      year_end=end_date.year, interval=interval/2)
@@ -200,8 +188,8 @@ def simulation_start_invoker(run_id, sim_num):
             g.result = 'Invoke failed'
             g.detail = repr(e)
             traceback.print_exc()
-            message = 'Simulation {} has failed, please check log for the detail.'
-            style = 'danger'
+            # message = 'Simulation {} has failed, please check log for the detail.'
+            # style = 'danger'
         finally:
             print('invoke finished')
             # flash(message, style)
@@ -1007,10 +995,10 @@ class SimulationModelView(
         })
 
     def pre_run_check_process(self, simulation, run_type):
-        pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
-        # pass_check, message = True, ''
+        # pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        pass_check, message = True, ''
         if pass_check:
-            ref_day_generation_check(simulation, run_type)
+            # ref_day_generation_check(simulation, run_type)
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
                 message = 'Test run started'
@@ -1022,7 +1010,7 @@ class SimulationModelView(
                 'runNo': simulation.run_id,
                 'processName': [],
                 'bucket': bucket_inputs,
-                'histBucket': bucket_inputs,
+                'histBucket': bucket_hist,
                 'startDate': '2017-01-01',
                 'endDate': '2019-07-31',
                 'simStartDate': '2020-01-01',
