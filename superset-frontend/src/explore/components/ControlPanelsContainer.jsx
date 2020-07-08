@@ -25,6 +25,7 @@ import { Alert, Tab, Tabs } from 'react-bootstrap';
 import { isPlainObject } from 'lodash';
 import { t } from '@superset-ui/translation';
 import { getChartControlPanelRegistry } from '@superset-ui/chart';
+import { sharedControls } from '@superset-ui/chart-controls';
 
 import ControlPanelSection from './ControlPanelSection';
 import ControlRow from './ControlRow';
@@ -47,40 +48,9 @@ class ControlPanelsContainer extends React.Component {
   constructor(props) {
     super(props);
 
-    this.getControlData = this.getControlData.bind(this);
     this.removeAlert = this.removeAlert.bind(this);
     this.renderControl = this.renderControl.bind(this);
     this.renderControlPanelSection = this.renderControlPanelSection.bind(this);
-  }
-
-  getControlData(controlName) {
-    if (React.isValidElement(controlName)) {
-      return controlName;
-    }
-
-    const control = this.props.controls[controlName];
-    // Identifying mapStateToProps function to apply (logic can't be in store)
-    let mapF = controlConfigs[controlName].mapStateToProps;
-
-    // Looking to find mapStateToProps override for this viz type
-    const controlPanelConfig =
-      getChartControlPanelRegistry().get(this.props.controls.viz_type.value) ||
-      {};
-    const controlOverrides = controlPanelConfig.controlOverrides || {};
-    if (
-      controlOverrides[controlName] &&
-      controlOverrides[controlName].mapStateToProps
-    ) {
-      mapF = controlOverrides[controlName].mapStateToProps;
-    }
-    // Applying mapStateToProps if needed
-    if (mapF) {
-      return {
-        ...control,
-        ...mapF(this.props.exploreState, control, this.props.actions),
-      };
-    }
-    return control;
   }
 
   sectionsToRender() {
@@ -94,48 +64,38 @@ class ControlPanelsContainer extends React.Component {
     this.props.actions.removeControlPanelAlert();
   }
 
-  renderControl(name, config, lookupControlData) {
+  renderControl({ name, config }) {
     const { actions, controls, exploreState, form_data: formData } = this.props;
     const { visibility } = config;
-
-    // if visibility check says the config is not visible, don't render it
-    if (visibility && !visibility.call(config, this.props)) {
-      return null;
-    }
-
-    // Looking to find mapStateToProps override for this viz type
-    const controlPanelConfig =
-      getChartControlPanelRegistry().get(controls.viz_type.value) || {};
-    const controlOverrides = controlPanelConfig.controlOverrides || {};
-    const overrides = controlOverrides[name];
-
-    // Identifying mapStateToProps function to apply (logic can't be in store)
-    const mapFn =
-      overrides && overrides.mapStateToProps
-        ? overrides.mapStateToProps
-        : config.mapStateToProps;
-
     // If the control item is not an object, we have to look up the control data from
     // the centralized controls file.
     // When it is an object we read control data straight from `config` instead
-    const controlData = lookupControlData ? controls[name] : config;
+    const controlData = {
+      ...controls[name],
+      ...config,
+      name,
+      // apply current value in formData
+      value: formData[name],
+    };
+    const {
+      validationErrors,
+      provideFormDataToProps,
+      ...restProps
+    } = controlData;
 
-    // Applying mapStateToProps if needed
-    const additionalProps = mapFn
-      ? { ...controlData, ...mapFn(exploreState, controlData, actions) }
-      : controlData;
-
-    const { validationErrors, provideFormDataToProps } = controlData;
+    // if visibility check says the config is not visible, don't render it
+    if (visibility && !visibility.call(config, this.props, controlData)) {
+      return null;
+    }
 
     return (
       <Control
         name={name}
         key={`control-${name}`}
-        value={formData[name]}
         validationErrors={validationErrors}
         actions={actions}
         formData={provideFormDataToProps ? formData : null}
-        {...additionalProps}
+        {...restProps}
       />
     );
   }
@@ -160,68 +120,64 @@ class ControlPanelsContainer extends React.Component {
         hasErrors={hasErrors}
         description={section.description}
       >
-        {section.controlSetRows.map((controlSets, i) => (
-          <ControlRow
-            key={`controlsetrow-${i}`}
-            className="control-row"
-            controls={controlSets.map(controlItem => {
+        {section.controlSetRows.map((controlSets, i) => {
+          const renderedControls = controlSets
+            .map(controlItem => {
               if (!controlItem) {
                 // When the item is invalid
                 return null;
               } else if (React.isValidElement(controlItem)) {
                 // When the item is a React element
                 return controlItem;
-              } else if (
-                isPlainObject(controlItem) &&
-                controlItem.name &&
-                controlItem.config
-              ) {
-                const { name, config } = controlItem;
-
-                return this.renderControl(name, config, false);
-              } else if (controls[controlItem]) {
-                // When the item is string name, meaning the control config
-                // is not specified directly. Have to look up the config from
-                // centralized configs.
-                const name = controlItem;
-
+              } else if (controlItem.name && controlItem.config) {
                 // Dynamically render selection fields based on the group type
+                const { name } = controlItem;
                 if (name === 'cal_years') {
                   if (controls.period_type.value === 'CalYear') {
-                    return this.renderControl(name, controlConfigs[name], true);
+                    return this.renderControl(controlItem);
                   }
                 } else if (name === 'fin_years') {
                   if (controls.period_type.value === 'FinYear') {
-                    return this.renderControl(name, controlConfigs[name], true);
+                    return this.renderControl(controlItem);
                   }
                 } else if (name === 'period_finyear_picker') {
                   if (controls.period_type_static_picker.value === 'FinYear') {
-                    return this.renderControl(name, controlConfigs[name], true);
+                    return this.renderControl(controlItem);
                   }
                 } else if (name === 'period_calyear_picker') {
                   if (controls.period_type_static_picker.value === 'CalYear') {
-                    return this.renderControl(name, controlConfigs[name], true);
+                    return this.renderControl(controlItem);
                   }
                 } else if (name === 'period_quarterly_picker') {
                   if (
                     controls.period_type_static_picker.value === 'Quarterly'
                   ) {
-                    return this.renderControl(name, controlConfigs[name], true);
+                    return this.renderControl(controlItem);
                   }
                 } else {
-                  return this.renderControl(name, controlConfigs[name], true);
+                  return this.renderControl(controlItem);
                 }
               }
               return null;
-            })}
-          />
-        ))}
+            })
+            .filter(x => x !== null);
+          // don't show the row if it is empty
+          if (renderedControls.length === 0) {
+            return null;
+          }
+          return (
+            <ControlRow
+              key={`controlsetrow-${i}`}
+              className="control-row"
+              controls={renderedControls}
+            />
+          );
+        })}
       </ControlPanelSection>
     );
   }
   render() {
     const { viz_type } = this.props.form_data;
-    // console.log(this.props)
     const allSectionsToRender = this.sectionsToRender();
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
@@ -239,13 +195,15 @@ class ControlPanelsContainer extends React.Component {
       // if at least one control in the secion is not `renderTrigger`
       // or asks to be displayed at the Data tab
       if (
+        section.label === 'Empower' ||
         section.tabOverride === 'data' ||
         section.controlSetRows.some(rows =>
           rows.some(
             control =>
-              controlConfigs[control] &&
-              (!controlConfigs[control].renderTrigger ||
-                controlConfigs[control].tabOverride === 'data'),
+              control &&
+              control.config &&
+              (!control.config.renderTrigger ||
+                control.config.tabOverride === 'data'),
           ),
         )
       ) {
@@ -263,10 +221,10 @@ class ControlPanelsContainer extends React.Component {
             controlSetRows: [
               ...section.controlSetRows.filter(
                 item =>
-                  item[0] !== 'metrics' &&
-                  item[0] !== 'groupby' &&
-                  item[0] !== 'adhoc_filters' &&
-                  item[0] !== 'whisker_options',
+                  item[0].name !== 'metrics' &&
+                  item[0].name !== 'groupby' &&
+                  item[0].name !== 'adhoc_filters' &&
+                  item[0].name !== 'whisker_options',
               ),
             ],
           };

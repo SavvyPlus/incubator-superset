@@ -190,6 +190,16 @@ class Database(
         )
 
     @property
+    def allows_virtual_table_explore(self) -> bool:
+        extra = self.get_extra()
+
+        return bool(extra.get("allows_virtual_table_explore", True))
+
+    @property
+    def explore_database_id(self) -> int:
+        return self.get_extra().get("explore_database_id", self.id)
+
+    @property
     def data(self) -> Dict[str, Any]:
         return {
             "id": self.id,
@@ -198,6 +208,8 @@ class Database(
             "allow_multi_schema_metadata_fetch": self.allow_multi_schema_metadata_fetch,
             "allows_subquery": self.allows_subquery,
             "allows_cost_estimate": self.allows_cost_estimate,
+            "allows_virtual_table_explore": self.allows_virtual_table_explore,
+            "explore_database_id": self.explore_database_id,
         }
 
     @property
@@ -236,6 +248,10 @@ class Database(
     @property
     def default_schemas(self) -> List[str]:
         return self.get_extra().get("default_schemas", [])
+
+    @property
+    def connect_args(self) -> Dict[str, Any]:
+        return self.get_extra().get("engine_params", {}).get("connect_args", {})
 
     @classmethod
     def get_password_masked_url_from_uri(  # pylint: disable=invalid-name

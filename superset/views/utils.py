@@ -20,7 +20,7 @@ from datetime import date
 from typing import Any, Callable, DefaultDict, Dict, List, Optional, Set, Tuple, Union
 from urllib import parse
 import os
-
+import base64
 import msgpack
 import pyarrow as pa
 import simplejson as json
@@ -29,7 +29,7 @@ from flask_appbuilder.security.sqla import models as ab_models
 from flask_appbuilder.security.sqla.models import User
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import Mail, Attachment
 
 import superset.models.core as models
 from superset import app, dataframe, db, is_feature_enabled, result_set
@@ -380,13 +380,16 @@ def is_slice_in_container(
 
 
 # Sendgrid email sender
-def send_sendgrid_mail(address_to, message_data, template_id):
+def send_sendgrid_mail(address_to, message_data, template_id, attachments=[]):
     message = Mail(
         from_email=("no_reply@empoweranalytics.com.au", "Empower Analytics"),
         to_emails=address_to
     )
     message.dynamic_template_data = message_data
     message.template_id = template_id
+    if len(attachments) > 0:
+        for attachment in attachments:
+            message.add_attachment(attachment)
     try:
         sendgrid_client.send(message)
         return True
@@ -395,6 +398,18 @@ def send_sendgrid_mail(address_to, message_data, template_id):
         import traceback
         traceback.print_exc()
         return False
+
+def create_attachment(file_name, file_path, file_type, disposition='attachment', content_id=None):
+    attachment = Attachment()
+    with open(file_path, 'rb') as f:
+        data = f.read()
+    file_content = base64.b64encode(data).decode()
+    attachment.file_content = file_content
+    attachment.file_type = file_type
+    attachment.file_name = file_name
+    attachment.disposition = disposition
+    attachment.content_id = content_id
+    return attachment
 
 
 def is_sublist(small, large):

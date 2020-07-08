@@ -45,20 +45,54 @@ sheet_strategic_behaviour = "Strategic_Behaviour"
 # sheet_floor_price = "LGC_Floor_Price"
 sheet_renewable_proportion = "Renewable_Proportion"
 sheet_demand_adjustment = 'Demand_Adjustments'
+sheet_behind_the_meter_battery = 'Behind_The_Meter_Battery'
 sheet_escalation = 'Gas_Price_Escalation'
+sheet_retirement = 'Retirement'
+sheet_mpc = 'MPC_CPT'
 sheet_col_dict = {
     'Project_Proxy':['Project','Nameplate Capacity (MW)','Technology Type','State'],
     'Behind_The_Meter_Battery':['State','Year','AGGREGATE_MW'],
     'Demand_Growth':['State','Year','Growth'],
     'Gas_Price_Escalation':['State','Year'],
-    'MPC_CTP':['MCP'],
-    'NewFormat':['StartDate','EndDate','DUID','FuelType','InstalledQuantity','MaximumQuantity','StartDate','Proxy'],
+    'MPC_CPT':['MPC'],
+    'NewFormat':['StartDate','EndDate','DUID','FuelType','InstalledQuantity','MaximumQuantity','Proxy'],
     'Rooftop_Solar_Forecast':['State','Year','AGGREGATE_MW'],
     'Rooftop_Solar_History':['State','Date','CAPACITY_MW','AGGREGATE_MW'],
     'Renewable_Proportion':['State','Date','Maximum Half-Hour Intermittent Proportion'],
     'Retirement':['Closure Date','Back To Service Date'],
     'Strategic_Behaviour':['State','Bin (not Exceeding)','value','MW']
 }
+sheet_col_name_to_tab_col_name_dict = {
+    'Project_Proxy':{
+        'Nameplate Capacity (MW)': 'Nameplate_Capacity_MW',
+        'Technology Type': 'Technology_Type',
+        'Tracking Type': 'Tracking_Type',
+    },
+    'NewFormat': {
+        'StartDate': 'Start_Date',
+        'EndDate': 'End_Date',
+        'FuelType': 'Fuel_Type',
+        'InstalledQuantity': 'Installed_Quantity',
+        'MaximumQuantity': 'Maximum_Quantity',
+        'ProbabilityOfSuccess': 'Probability_Of_Success',
+        'Region': 'State',
+        'OfferRate': 'Offer_Rate',
+    },
+    'Renewable_Proportion': {
+        'Maximum Half-Hour Intermittent Proportion': 'Maximum_HalfHour_Intermittent_Proportion'
+    },
+    'Retirement': {
+        'Registered Capacity': 'Registered_Capacity',
+        'Impact To State': 'Impact_To_State',
+        'Adjustment Factor': 'Adjustment_Factor',
+        'Closure Date': 'Closure_Date',
+        'Back To Service Date': 'Back_To_Service_Date',
+    },
+    'Strategic_Behaviour':{
+        'Bin (not Exceeding)': 'Bin_Not_Exceeding',
+    },
+}
+
 
 # MSSQL data source
 # db_host = "AWS2-SVR-DB-002"
@@ -87,8 +121,7 @@ db_pass_mysql = "Elecmms_2020"
 db_schema_ElecMMS3 = "ElecMMS3"
 
 # S3 data folders:
-bucket_inputs = "007-spot-price-forecast-physical"
-bucket_test = "empower-simulation"
+bucket_inputs = "spot-price-forecast-simulation-prod"
 rooftop_pv_path = 'historical-generation/{}/rooftop-pv'  # state
 public_holiday_path = 'public_holiday/{}.pickle'  # state
 wind_solar_path = 'historical-generation/{}/{}/{}'  # state, wind/solar, duid
@@ -135,7 +168,8 @@ template_path = 'template run 188.xlsx'
 nifi_sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi_test"
 
 # S3 pickle cache path
-reference_date_s3_pickle_path = 'reference_date/test_2020to2030/{}.pickle'  # index
+reference_date_s3_pickle_path = 'reference_date/{}to{}/{}.pickle'  # index
+reference_date_s3_folder_format = 'reference_date/{}to{}/'
 
 pv_data_s3_pickle_path = 'cache/{}/pv.pickle'    # assumptions version
 pv_forecast_s3_new_pickle_path = 'cache/{}/pv_forecast.pickle'

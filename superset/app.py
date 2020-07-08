@@ -167,6 +167,8 @@ class SupersetAppInitializer:
             AssumptionModelView,
             SimulationModelView,
             SimulationLogModelView,
+            UploadExcelView,
+            EditAssumptionModelView,
         )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
@@ -272,7 +274,24 @@ class SupersetAppInitializer:
             icon="fa-dashboard",
             category="Modeling",
         )
+        appbuilder.add_view(
+            EditAssumptionModelView,
+            "Edit Assumption",
+            label=__("Edit Assumption"),
+            icon="fa-edit",
+            category="Modeling",
+            category_icon="",
+        )
         appbuilder.add_separator("Modeling")
+        appbuilder.add_link(
+            "Upload assumption file",
+            label="Upload Assumption excel",
+            href="/upload_base_excel/form",
+            icon="fa-upload",
+            category="Modeling",
+            category_label="Modeling",
+            category_icon="fa-wrench",
+        )
         appbuilder.add_view(
             SimulationLogModelView,
             'Logs',
@@ -341,6 +360,7 @@ class SupersetAppInitializer:
         appbuilder.add_view_no_menu(TableModelView)
         appbuilder.add_view_no_menu(TableSchemaView)
         appbuilder.add_view_no_menu(TabStateView)
+        appbuilder.add_view_no_menu(UploadExcelView)
 
         if feature_flag_manager.is_feature_enabled("TAGGING_SYSTEM"):
             appbuilder.add_view_no_menu(TagView)
