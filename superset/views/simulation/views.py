@@ -995,10 +995,10 @@ class SimulationModelView(
         })
 
     def pre_run_check_process(self, simulation, run_type):
-        # pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
-        pass_check, message = True, ''
+        pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
+        # pass_check, message = True, ''
         if pass_check:
-            # ref_day_generation_check(simulation, run_type)
+            ref_day_generation_check(simulation, run_type)
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
                 message = 'Test run started'
@@ -1013,8 +1013,9 @@ class SimulationModelView(
                 'histBucket': bucket_hist,
                 'startDate': '2017-01-01',
                 'endDate': '2019-07-31',
-                'simStartDate': '2020-01-01',
-                'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
+                # 'simStartDate': '2020-01-01',
+                'simStartDate': simulation.start_date.strftime('%Y-%m-%d'),
+                'simEndDate': get_full_week_end_date(simulation.start_date, simulation.end_date).strftime('%Y-%m-%d'),
                 # 'simEndDate': '2030-12-31',
                 'runType': run_type,
                 'supersetURL': get_current_external_ip(),
@@ -1112,8 +1113,8 @@ class SimulationModelView(
             attachments.append(attachment)
             os.remove(path)
         message = {
-            # 'sim_name': simulation.name
-            'sim_name': 'Run_196'
+            'sim_name': simulation.name
+            # 'sim_name': 'Run_196'
         }
         if send_sendgrid_mail(email, message, 'd-49e6d877ad7c440b84fe2b63835ccea5', attachments):
             g.result = 'query success'
@@ -1140,11 +1141,11 @@ class SimulationModelView(
         query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
         print('get query result')
         data = request.form['duid_list']
-        data = data.replace('\n', '').split(',')
+        data = data.strip('\t').replace('\n', '').split(',')
         simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
         msg = {
-            # 'sim_tag': simulation.run_id,
-            'sim_tag': 'Run_196',
+            'sim_tag': simulation.run_id,
+            # 'sim_tag': 'Run_196',
             'outBucket': bucket_inputs,
             'query_list': [
                 'Technology_Generation_by_percentile_cal',
@@ -1158,13 +1159,13 @@ class SimulationModelView(
                 'DUID_Revenue_by_simulation_cal'
             ],
             'dbname': 'dex_poc',
-            # 'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
-            'dispatchtbl': f'dispatch_{"Run_196".lower()}',
-            # 'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
-            'spottbl': f'spot_demand_{"Run_196".lower()}',
+            'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+            # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
+            'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+            # 'spottbl': f'spot_demand_{"Run_196".lower()}',
             'duids': data,
-            'year_start': '2020',
-            'year_end': '2040',
+            'year_start': simulation.start_date.year,
+            'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
             'supersetURL': get_current_external_ip(),
             'email': g.user.email,
         }
@@ -1172,7 +1173,7 @@ class SimulationModelView(
         g.action_object = simulation.name
         g.action_object_type = 'simulation'
         if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
-            message = 'Query has been sent, please wait for notification about query result.'
+            message = 'Query has been sent, the data files will be sent to your email when ready.'
             g.result = 'send query result'
             g.detail = json.dumps(msg)
         else:

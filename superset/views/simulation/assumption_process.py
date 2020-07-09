@@ -233,7 +233,9 @@ def ref_day_generation_check(simulation, run_type):
             payload = {
                 'sim_index': sim_index,
                 'start_date': start_date.strftime('%Y-%m-%d'),
-                'end_date': end_date.strftime('%Y-%m-%d')
+                'end_date': end_date.strftime('%Y-%m-%d'),
+                "ref_start_date": '2017-01-01',
+                "ref_end_date": '2019-07-31',
             }
             t = threading.Thread(target=invoker, args=(payload, 'spot-simulation-prod-stk2-ref-day-gen'))
             print('ref day generate:'+repr(payload))
