@@ -102,6 +102,7 @@ export default function AssumptionTable({
         }}
         options={{
           selection: true,
+          pageSize: 10,
         }}
         actions={[
           {
