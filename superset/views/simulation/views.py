@@ -166,7 +166,7 @@ def simulation_start_invoker(run_id, sim_num):
             sim_tag = run_id
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
             batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
-                                     year_end=end_date.year, interval=interval/2)
+                                     year_end=end_date.year+1, interval=interval/2)
             batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, end_date.year-start_date.year+1,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
@@ -174,7 +174,7 @@ def simulation_start_invoker(run_id, sim_num):
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
             invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs},
-                    function_name='spot_simulation_check_spot_price_outputs_numbers')
+                    function_name='spot-simulation-prod-stk-check-spot-output')
 
             simulation.status = 'Run finished'
             db.session.commit()
