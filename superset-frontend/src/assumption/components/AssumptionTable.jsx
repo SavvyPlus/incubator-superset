@@ -4,62 +4,58 @@ import MaterialTable from './materialTable';
 import DeleteDialog from './DeleteDialog';
 import PreLoader from '../../components/PreLoader';
 
-export default function AssumptionTable({ version, table, tableData }) {
-  const [fetching, setFetching] = React.useState(false);
+export default function AssumptionTable({
+  version,
+  table,
+  tableData,
+  fetchingVersions,
+  fetchTableData,
+}) {
+  const [fetchingData, setFetchingData] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [selctedData, setSelectedData] = React.useState([]);
 
-  const [state, setState] = React.useState({
-    columns: [
-      { title: 'Name', field: 'name' },
-      { title: 'Surname', field: 'surname' },
-      { title: 'Birth Year', field: 'birthYear', type: 'numeric' },
-      {
-        title: 'Birth Place',
-        field: 'birthCity',
-      },
-    ],
-    data: [
-      {
-        name: 'Mehmet',
-        surname: 'Baran',
-        birthYear: 1987,
-        birthCity: 'İstanbul',
-      },
-      {
-        name: 'Zerya Betül',
-        surname: 'Baran',
-        birthYear: 2017,
-        birthCity: 'Şanlıurfa',
-      },
-      {
-        name: 'Ce2ya',
-        surname: 'Mtren',
-        birthYear: 2011,
-        birthCity: 'Şanlıurfa',
-      },
-      {
-        name: 'Colin',
-        surname: 'Wang',
-        birthYear: 1995,
-        birthCity: 'İstanbul',
-      },
-    ],
-    // columns: [],
-    // data: [],
-  });
+  const getTableData = td => {
+    const columns = [];
+    for (let i = 0; i < td.columns.length; i++) {
+      columns.push({ title: td.columns[i], field: td.columns[i] });
+      // if (td.columns[i] === 'Aggregate_MW' || td.columns[i] === 'Capacity_MW') {
+      //   columns.push({
+      //     title: td.columns[i],
+      //     field: td.columns[i],
+      //     type: 'numeric',
+      //   });
+      // } else {
+      //   columns.push({ title: td.columns[i], field: td.columns[i] });
+      // }
+    }
+    const data = td.data;
+    return { columns, data };
+  };
 
-  const handleFetchTableData = () => {};
+  const handleFetchTableData = () => {
+    setFetchingData(true);
+    fetchTableData(table, version).then(() => {
+      setFetchingData(false);
+    });
+  };
 
   const handleDialogClose = () => {
     setOpen(false);
   };
 
+  const tableD = getTableData(tableData);
+
   return (
     <div className="mb-50">
       <h3 className="mt-50">Step 4: Fetch Table Data</h3>
-      <Button disabled={!version} variant="contained" color="primary">
-        {fetching ? (
+      <Button
+        disabled={!version || fetchingVersions}
+        variant="contained"
+        color="primary"
+        onClick={handleFetchTableData}
+      >
+        {fetchingVersions || fetchingData ? (
           <div style={{ width: 39.68 }}>
             <PreLoader />
           </div>
@@ -72,21 +68,19 @@ export default function AssumptionTable({ version, table, tableData }) {
         title={table}
         localization={{
           body: {
-            emptyDataSourceMessage: 'Please fetch table data first',
+            emptyDataSourceMessage: fetchingData
+              ? 'Fetching...'
+              : 'Please fetch table data first',
           },
         }}
-        columns={state.columns}
-        data={state.data}
+        columns={tableD.columns}
+        data={tableD.data}
         editable={{
           onRowAdd: newData =>
             new Promise(resolve => {
               setTimeout(() => {
                 resolve();
-                setState(prevState => {
-                  const data = [...prevState.data];
-                  data.push(newData);
-                  return { ...prevState, data };
-                });
+                console.log('adding....');
               }, 600);
             }),
           onRowUpdate: (newData, oldData) =>
@@ -94,11 +88,7 @@ export default function AssumptionTable({ version, table, tableData }) {
               setTimeout(() => {
                 resolve();
                 if (oldData) {
-                  setState(prevState => {
-                    const data = [...prevState.data];
-                    data[data.indexOf(oldData)] = newData;
-                    return { ...prevState, data };
-                  });
+                  console.log('updating....');
                 }
               }, 600);
             }),
@@ -106,11 +96,7 @@ export default function AssumptionTable({ version, table, tableData }) {
             new Promise(resolve => {
               setTimeout(() => {
                 resolve();
-                setState(prevState => {
-                  const data = [...prevState.data];
-                  data.splice(data.indexOf(oldData), 1);
-                  return { ...prevState, data };
-                });
+                console.log('deleting....');
               }, 600);
             }),
         }}

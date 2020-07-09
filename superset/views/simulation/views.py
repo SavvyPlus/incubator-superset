@@ -551,9 +551,12 @@ class EditAssumptionModelView(
         tab_def_model = find_table_class_by_name(table + 'Definition')
         if request_type == 'version':
             version_list = db.session.query(tab_def_model).all()
-            versions = {}
+            versions = []
             for version in version_list:
-                versions[version.id] = version.Note
+                versions.append({
+                    'version': version.get_version(),
+                    'note': version.Note
+                })
 
             message = {
                 'versions': versions
@@ -600,7 +603,9 @@ class UploadExcelView(SimpleFormView):
                 tab_def_model = find_table_class_by_name(tab_def_model)
                 tab_data_model = find_table_class_by_name(tab_data_model)
                 sheet_name = tab_def_model.get_sheet_name()
-                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name], tab_def_model, tab_data_model)
+                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name],
+                                                      tab_def_model, tab_data_model,
+                                                      note=name)
                 # set relation of assumption def with sub table definition
                 new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
             db.session.add(new_assum_def)

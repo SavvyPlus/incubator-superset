@@ -35,14 +35,14 @@ import AssumptionTable from './AssumptionTable';
 function App({ username, firstName, lastName, assumption, actions }) {
   return (
     <div className="container app">
-      <Row>
+      {/* <Row>
         <Col md={9}>
           <h1>{username}</h1>
           <h3>
             {firstName} {lastName}
           </h3>
         </Col>
-      </Row>
+      </Row> */}
       <Row>
         <Col md={8}>
           <UpsertSelect
@@ -57,7 +57,7 @@ function App({ username, firstName, lastName, assumption, actions }) {
         </Col>
       </Row>
       <Row>
-        <Col md={8}>
+        <Col md={12}>
           {assumption.upsert === 'upload' ? (
             <Dropzone
               table={assumption.table}
@@ -71,15 +71,15 @@ function App({ username, firstName, lastName, assumption, actions }) {
                 table={assumption.table}
                 version={assumption.version}
                 fetching={assumption.fetchingVersions}
-                setVersion={actions.setVersions}
+                setVersion={actions.setVersion}
                 fetchTableVersions={actions.fetchTableVersions}
               />
               <AssumptionTable
-                upsert={assumption.upsert}
                 table={assumption.table}
                 tableData={assumption.tableData}
                 version={assumption.version}
-                fetchTableVersions={actions.fetchTableVersions}
+                fetchingVersions={assumption.fetchingVersions}
+                fetchTableData={actions.fetchTableData}
               />
             </>
           )}

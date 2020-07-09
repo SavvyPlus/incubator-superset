@@ -53,7 +53,7 @@ function DeleteDialog({ open, data, handleClose }) {
         <DialogTitle id="form-dialog-title">Delete Table Rows?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            The following table rows will be deleted:
+            {`The following ${data.length} table rows will be deleted:`}
           </DialogContentText>
           {data.length > 0 && (
             <TableContainer component={Paper}>
@@ -80,7 +80,7 @@ function DeleteDialog({ open, data, handleClose }) {
             Cancel
           </Button>
           <Button onClick={handleClose} color="primary">
-            Subscribe
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

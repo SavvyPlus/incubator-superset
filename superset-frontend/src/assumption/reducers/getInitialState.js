@@ -28,12 +28,12 @@ export default function (bootstrapData) {
       upsert: 'upload',
       table: 'RooftopSolarHistory',
       tableData: {
-        column: [],
+        columns: [],
         data: [],
       },
       version: undefined,
       fetchingVersions: false,
-      versions: {},
+      versions: [],
     },
     messageToasts: [],
   };

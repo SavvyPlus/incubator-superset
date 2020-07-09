@@ -35,7 +35,7 @@ export function setTable(table) {
 }
 
 export const SET_VERSION = 'SET_VERSION';
-export function serVersion(version) {
+export function setVersion(version) {
   return { type: SET_VERSION, version };
 }
 
@@ -79,8 +79,8 @@ export function fetchTableVersionsStarted() {
 }
 
 export const FETCH_TABLE_VERSIONS_SUCCESS = 'FETCH_TABLE_VERSIONS_SUCCESS';
-export function fetchTableVersionsSuccess(data) {
-  return { type: FETCH_TABLE_VERSIONS_SUCCESS, data };
+export function fetchTableVersionsSuccess(versions) {
+  return { type: FETCH_TABLE_VERSIONS_SUCCESS, versions };
 }
 
 export const FETCH_TABLE_VERSIONS_FAILED = 'FETCH_TABLE_VERSIONS_FAILED';
@@ -92,14 +92,10 @@ export function fetchTableVersions(table) {
   return dispatch => {
     dispatch(fetchTableVersionsStarted());
     return SupersetClient.get({
-      endpoint: `/edit-assumption/get-data/${table}/version/nan`,
+      endpoint: `/edit-assumption/get-data/${table}/version/na`,
     })
       .then(({ json }) => {
-        console.log(json);
-        dispatch(fetchTableVersionsSuccess(json));
-        dispatch(
-          addSuccessToast(t('Table versions were updated successfully.')),
-        );
+        dispatch(fetchTableVersionsSuccess(json.versions));
       })
       .catch(() => {
         dispatch(fetchTableVersionsFailed());
@@ -112,9 +108,14 @@ export function fetchTableVersions(table) {
   };
 }
 
+export const FETCH_TABLE_DATA_STARTED = 'FETCH_TABLE_DATA_STARTED';
+export function fetchTableDataStarted() {
+  return { type: FETCH_TABLE_DATA_STARTED };
+}
+
 export const FETCH_TABLE_DATA_SUCCESS = 'FETCH_TABLE_DATA_SUCCESS';
-export function fetchTableDataSuccss(data) {
-  return { type: FETCH_TABLE_DATA_SUCCESS, data };
+export function fetchTableDataSuccuss(res) {
+  return { type: FETCH_TABLE_DATA_SUCCESS, res };
 }
 
 export const FETCH_TABLE_DATA_FAILED = 'FETCH_TABLE_DATA_FAILED';
@@ -122,19 +123,20 @@ export function fetchTableDataFailed(data) {
   return { type: FETCH_TABLE_DATA_FAILED, data };
 }
 
-export function fetchTableData(table) {
+export function fetchTableData(table, version) {
   return dispatch => {
     return SupersetClient.get({
-      endpoint: `/superset/fetch_datasource_metadata?datasourceKey=${table}`,
+      endpoint: `/edit-assumption/get-data/${table}/data/${version}`,
     })
       .then(({ json }) => {
-        dispatch(fetchTableDataSuccss(json));
-        dispatch(addSuccessToast(t('File was uploaded successfully.')));
+        console.log(json);
+        dispatch(fetchTableDataSuccuss(json));
+        dispatch(addSuccessToast(t('Table data was fetched successfully')));
       })
       .catch(() => {
         dispatch(fetchTableDataFailed());
         dispatch(
-          addDangerToast(t('Sorry, there was an error updating this table')),
+          addDangerToast(t('Sorry, there was an error fetching the data')),
         );
       });
   };

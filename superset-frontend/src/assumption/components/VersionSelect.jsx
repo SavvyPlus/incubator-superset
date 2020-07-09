@@ -32,17 +32,26 @@ export default function VersionSelect({
     }
   }, [table]);
 
+  const handleChange = e => {
+    setVersion(e.target.value);
+  };
+
   let content = null;
   if (fetching) {
     content = <PreLoader />;
-  } else if (!fetching && isEmpty(versions)) {
-    content = <h4>No versions found. Please upload the table file first</h4>;
-  } else if (!fetching && !isEmpty(versions)) {
+  } else if (!fetching && versions.length === 0) {
+    content = (
+      <h4>{`No versions found in table ${table}. Please upload the table file first`}</h4>
+    );
+  } else if (!fetching && versions.length > 0) {
     content = (
       <FormControl variant="outlined" className={classes.formControl}>
-        <Select value={version} onChange={setVersion}>
-          <MenuItem value="upload">Upload</MenuItem>
-          <MenuItem value="modify">Modify</MenuItem>
+        <Select value={version} onChange={handleChange}>
+          {versions.map(v => (
+            <MenuItem key={v.version} value={v.version}>
+              {v.note}
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
     );
