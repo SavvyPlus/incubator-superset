@@ -19,8 +19,14 @@
 import {
   SET_UPSERT,
   SET_TABLE,
+  SET_VERSION,
   UPLOAD_FILE_SUCCESS,
   UPLOAD_FILE_FAILED,
+  FETCH_TABLE_VERSIONS_SUCCESS,
+  FETCH_TABLE_VERSIONS_STARTED,
+  FETCH_TABLE_VERSIONS_FAILED,
+  FETCH_TABLE_DATA_STARTED,
+  FETCH_TABLE_DATA_SUCCESS,
 } from '../actions/assumption';
 
 export default function assumptionReducer(state = {}, action) {
@@ -29,7 +35,24 @@ export default function assumptionReducer(state = {}, action) {
       return { ...state, upsert: action.upsert };
     },
     [SET_TABLE]() {
-      return { ...state, table: action.table };
+      return {
+        ...state,
+        table: action.table,
+        tableData: {
+          columns: [],
+          data: [],
+        },
+      };
+    },
+    [SET_VERSION]() {
+      return {
+        ...state,
+        version: action.version,
+        tableData: {
+          columns: [],
+          data: [],
+        },
+      };
     },
     [UPLOAD_FILE_SUCCESS]() {
       return {
@@ -41,6 +64,44 @@ export default function assumptionReducer(state = {}, action) {
     [UPLOAD_FILE_FAILED]() {
       return {
         ...state,
+      };
+    },
+    [FETCH_TABLE_VERSIONS_STARTED]() {
+      return {
+        ...state,
+        fetchingVersions: true,
+      };
+    },
+    [FETCH_TABLE_VERSIONS_SUCCESS]() {
+      return {
+        ...state,
+        fetchingVersions: false,
+        version: action.versions[0].version,
+        versions: action.versions,
+      };
+    },
+    [FETCH_TABLE_VERSIONS_FAILED]() {
+      return {
+        ...state,
+        fetchingVersions: false,
+      };
+    },
+    [FETCH_TABLE_DATA_STARTED]() {
+      return {
+        ...state,
+        tableData: {
+          columns: [],
+          data: [],
+        },
+      };
+    },
+    [FETCH_TABLE_DATA_SUCCESS]() {
+      return {
+        ...state,
+        tableData: {
+          columns: action.res.header,
+          data: action.res.data,
+        },
       };
     },
   };

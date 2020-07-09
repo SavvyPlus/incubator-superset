@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import PreLoader from '../../../components/PreLoader';
+import PreLoader from '../../components/PreLoader';
 
 const baseStyle = {
   flex: 1,
@@ -83,7 +83,7 @@ function Dropzone(props) {
 
   return (
     <div className="mb-50">
-      <h3 className="mt-50">Step 3: Upload Your Assumption File</h3>
+      <h3 className="mt-50">Step 3: Upload Your Table File</h3>
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
         <p className="dz-font">

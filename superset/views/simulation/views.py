@@ -41,13 +41,13 @@ from superset.sql_parse import Table
 from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView, common_bootstrap_payload
 from superset.views.utils import send_sendgrid_mail
 from superset.views.simulation.util import get_s3_url
-from superset.views.simulation.simulation_config import excel_path, bucket_inputs
+from superset.views.simulation.simulation_config import excel_path, bucket_inputs, bucket_hist
 
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check
-from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3
+from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date, from_dict
 from ..utils import bootstrap_user_data, create_attachment
 
 
@@ -152,40 +152,29 @@ def simulation_start_invoker(run_id, sim_num):
         simulation.status_detail = 'The assumption process failed, please check the detail of the assumption'
         db.session.commit()
     else:
-        print('generate parameters')
         try:
+            print('generate parameters')
             generate_parameters_for_batch(simulation, sim_num)
-        except Exception as e:
-            simulation.status = 'Run failed'
-            simulation.status_detail = repr(e)
-            db.session.commit()
-            g.result = 'Invoke failed'
-            g.detail = repr(e)
-            traceback.print_exc()
-            return None
-        index_start = 0
-        index_end = sim_num  # exclusive
-        # start_date = simulation.start_date
-        start_date = '2020-01-01'
-        # end_date = simulation.end_date
-        end_date = '2030-12-31'
-        sim_tag = run_id
-
-
-        try:
-            # TODO uncomment to invoke
             print('invoking')
+            index_start = 0
+            index_end = sim_num  # exclusive
+            # start_date = simulation.start_date
+            start_date = simulation.start_date
+            # end_date = simulation.end_date
+            end_date = get_full_week_end_date(start_date, simulation.end_date)
+            total_days = (end_date - start_date).days
+            sim_tag = run_id
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
-            batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, 4017, year_start=2020,
-                                     year_end=2031, interval=interval/2)
-            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, 11,
+            batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
+                                     year_end=end_date.year+1, interval=interval/2)
+            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, end_date.year-start_date.year+1,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
             invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs},
-                    function_name='spot_simulation_check_spot_price_outputs_numbers')
+                    function_name='spot-simulation-prod-stk-check-spot-output')
 
             simulation.status = 'Run finished'
             db.session.commit()
@@ -199,8 +188,8 @@ def simulation_start_invoker(run_id, sim_num):
             g.result = 'Invoke failed'
             g.detail = repr(e)
             traceback.print_exc()
-            message = 'Simulation {} has failed, please check log for the detail.'
-            style = 'danger'
+            # message = 'Simulation {} has failed, please check log for the detail.'
+            # style = 'danger'
         finally:
             print('invoke finished')
             # flash(message, style)
@@ -544,26 +533,51 @@ class EditAssumptionModelView(
             'message': message
         })
 
-    @expose("/get_data/")
-    def get_data(self):
-        tab_data_model = find_table_class_by_name("ProjectProxy")
-        # ver_col = getattr()
-        tab_data = db.session.query(tab_data_model).filter_by(Version=1).all()
+    @expose("/get-data/<table>/<request_type>/<ver>/")
+    def get_data(self, table: str, request_type: str, ver: str):
         # form = request.form
         # table = form['table']
-        # tab_def_model = find_table_class_by_name(table + 'Definition')
-        # if form['request'] == 'version':
-        #     version_list = db.session.query(tab_def_model).all()
-        #     versions = {}
-        #     for version in version_list:
-        #         versions[version.id] = version.Note
-        #
-        #     message = version
-        # else:
-        #     version = form['version']
-        #     tab_data = db.session.query(tab_def_model)
-        #     data = {}
-        return jsonify('')
+        tab_def_model = find_table_class_by_name(table + 'Definition')
+        if request_type == 'version':
+            version_list = db.session.query(tab_def_model).all()
+            versions = []
+            if len(version_list)>0:
+                for version in version_list:
+                    versions.append({
+                        'version': version.get_version(),
+                        'note': version.Note
+                    })
+
+            message = {
+                'versions': versions
+            }
+        else:
+            tab_data_model = find_table_class_by_name(table)
+            version = ver
+            tab_data = db.session.query(tab_data_model).filter_by(Version=version).all()
+            headers = tab_data_model.included_keys
+            data_list = []
+            for row_data in tab_data:
+                data_list.append(row_data.get_dict())
+            message = {
+                'header': headers,
+                'data': data_list
+            }
+        return jsonify(message)
+
+    @expose("/save_data/")
+    def save_data(self):
+        form = request.form
+        table = form['table']
+        data_list = form['data']
+        note = form['note']
+        tab_data_model = find_table_class_by_name(table)
+        tab_def_model = find_table_class_by_name(table+'Definition')
+        df = from_dict(data_list)
+        new_def = save_as_new_tab_version(db, df, tab_def_model, tab_data_model, note)
+        message = 'Data has been saved as new version'
+
+        return jsonify(message)
 
 
 class UploadExcelView(SimpleFormView):
@@ -593,7 +607,9 @@ class UploadExcelView(SimpleFormView):
                 tab_def_model = find_table_class_by_name(tab_def_model)
                 tab_data_model = find_table_class_by_name(tab_data_model)
                 sheet_name = tab_def_model.get_sheet_name()
-                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name], tab_def_model, tab_data_model)
+                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name],
+                                                      tab_def_model, tab_data_model,
+                                                      note=name)
                 # set relation of assumption def with sub table definition
                 new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
             db.session.add(new_assum_def)
@@ -1021,12 +1037,13 @@ class SimulationModelView(
                 'runNo': simulation.run_id,
                 'processName': [],
                 'bucket': bucket_inputs,
-                'histBucket': bucket_inputs,
+                'histBucket': bucket_hist,
                 'startDate': '2017-01-01',
                 'endDate': '2019-07-31',
-                'simStartDate': '2020-01-01',
-                # 'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
-                'simEndDate': '2030-12-31',
+                # 'simStartDate': '2020-01-01',
+                'simStartDate': simulation.start_date.strftime('%Y-%m-%d'),
+                'simEndDate': get_full_week_end_date(simulation.start_date, simulation.end_date).strftime('%Y-%m-%d'),
+                # 'simEndDate': '2030-12-31',
                 'runType': run_type,
                 'supersetURL': get_current_external_ip(),
             }
@@ -1123,8 +1140,8 @@ class SimulationModelView(
             attachments.append(attachment)
             os.remove(path)
         message = {
-            # 'sim_name': simulation.name
-            'sim_name': 'Run_196'
+            'sim_name': simulation.name
+            # 'sim_name': 'Run_196'
         }
         if send_sendgrid_mail(email, message, 'd-49e6d877ad7c440b84fe2b63835ccea5', attachments):
             g.result = 'query success'
@@ -1151,11 +1168,11 @@ class SimulationModelView(
         query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
         print('get query result')
         data = request.form['duid_list']
-        data = data.replace('\n', '').split(',')
+        data = data.strip('\t').replace('\n', '').split(',')
         simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
         msg = {
-            # 'sim_tag': simulation.run_id,
-            'sim_tag': 'Run_196',
+            'sim_tag': simulation.run_id,
+            # 'sim_tag': 'Run_196',
             'outBucket': bucket_inputs,
             'query_list': [
                 'Technology_Generation_by_percentile_cal',
@@ -1169,13 +1186,13 @@ class SimulationModelView(
                 'DUID_Revenue_by_simulation_cal'
             ],
             'dbname': 'dex_poc',
-            # 'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
-            'dispatchtbl': f'dispatch_{"Run_196".lower()}',
-            # 'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
-            'spottbl': f'spot_demand_{"Run_196".lower()}',
+            'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+            # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
+            'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+            # 'spottbl': f'spot_demand_{"Run_196".lower()}',
             'duids': data,
-            'year_start': '2020',
-            'year_end': '2040',
+            'year_start': simulation.start_date.year,
+            'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
             'supersetURL': get_current_external_ip(),
             'email': g.user.email,
         }
@@ -1183,7 +1200,7 @@ class SimulationModelView(
         g.action_object = simulation.name
         g.action_object_type = 'simulation'
         if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
-            message = 'Query has been sent, please wait for notification about query result.'
+            message = 'Query has been sent, the data files will be sent to your email when ready.'
             g.result = 'send query result'
             g.detail = json.dumps(msg)
         else:
