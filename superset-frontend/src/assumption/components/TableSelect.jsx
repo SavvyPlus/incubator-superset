@@ -19,6 +19,7 @@ export default function TableSelect({ table, setTable }) {
   const handleChange = event => {
     setTable(event.target.value);
   };
+
   return (
     <>
       <h3 className="mt-50">Step 2: Select Table</h3>
