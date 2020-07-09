@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func, Float
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -32,6 +32,7 @@ from superset.models.helpers import AuditMixinNullable, ImportMixin
 from superset.models.tags import ChartUpdater
 from superset.utils import core as utils
 from superset.viz import BaseViz, viz_types
+from superset.views.simulation.simulation_config import *
 
 
 class Region(Model):
@@ -156,3 +157,484 @@ class SimulationLog(Model):
     dttm = Column(DateTime)
     result = Column(String(128))
     detail = Column(Text)
+
+
+
+"""Rooftop Solar History"""
+class RooftopSolarHistoryDefinition(Model):
+    __tablename__ = "Rooftop_Solar_History_Definition"
+    Rooftop_Solar_History_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+    def get_version(self):
+        return self.Rooftop_Solar_History_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_pv_history
+
+class RooftopSolarHistory(Model):
+    __tablename__ = "Rooftop_Solar_History"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Date = Column(Date)
+    Capacity_MW = Column(Float)
+    Aggregate_MW = Column(Float)
+    Version = Column(Integer,
+                                           ForeignKey('Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'),
+                                           nullable=False)
+    Rooftop_Solar_History_Definition = relationship('RooftopSolarHistoryDefinition',
+                                                    foreign_keys=[Version],
+                                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Rooftop_Solar_History_Version'
+
+    def get_definition(self):
+        return self.Rooftop_Solar_History_Definition
+
+"""Rooftop Solar Forecast"""
+class RooftopSolarForecastDefinition(Model):
+    __tablename__ = "Rooftop_Solar_Forecast_Definition"
+    Rooftop_Solar_Forecast_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+    Assumption_Scenario = Column(String(50))
+    Assumption_Scenario_Version = Column(Integer)
+
+    def get_version(self):
+        return self.Rooftop_Solar_Forecast_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_pv_forecast
+
+class RooftopSolarForecast(Model):
+    __tablename__ = "Rooftop_Solar_Forecast"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Year = Column(Integer)
+    Capacity_MW = Column(Float)
+    Aggregate_MW = Column(Float)
+    Version = Column(Integer,
+                                           ForeignKey('Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'),
+                                           nullable=False)
+    Rooftop_Solar_Forecast_Definition = relationship('RooftopSolarForecastDefinition',
+                                                    foreign_keys=[Version],
+                                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Rooftop_Solar_Forecast_Version'
+
+    def get_definition(self):
+        return self.Rooftop_Solar_Forecast_Definition
+
+"""Renewable Proportion"""
+class RenewableProportionDefinition(Model):
+    __tablename__ = "Renewable_Proportion_Definition"
+    Renewable_Proportion_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+    def get_version(self):
+        return self.Renewable_Proportion_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_renewable_proportion
+
+class RenewableProportion(Model):
+    __tablename__ = "Renewable_Proportion"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Date = Column(Date)
+    Maximum_HalfHour_Intermittent_Proportion = Column(Float)
+    Version = Column(Integer,
+                                           ForeignKey('Renewable_Proportion_Definition.Renewable_Proportion_Version'),
+                                           nullable=False)
+    Renewable_Proportion_Definition = relationship('RenewableProportionDefinition',
+                                                    foreign_keys=[Version],
+                                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Renewable_Proportion_Version'
+
+    def get_definition(self):
+        return self.Renewable_Proportion_Definition
+
+
+"""Demand Growth"""
+class DemandGrowthDefinition(Model):
+    __tablename__ = "Demand_Growth_Definition"
+    Demand_Growth_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+    Assumption_Scenario = Column(String(50))
+    Assumption_Scenario_Version = Column(Integer)
+
+    def get_version(self):
+        return self.Demand_Growth_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_demand_growth
+
+class DemandGrowth(Model):
+    __tablename__ = "Demand_Growth"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Year = Column(Integer)
+    Probability = Column(Float)
+    Growth = Column(Float)
+    Version = Column(Integer,
+                   ForeignKey('Demand_Growth_Definition.Demand_Growth_Version'),
+                   nullable=False)
+    Demand_Growth_Definition = relationship('DemandGrowthDefinition',
+                                                    foreign_keys=[Version],
+                                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Demand_Growth_Version'
+
+    def get_definition(self):
+        return self.Demand_Growth_Definition
+
+"""Behind The Meter Battery"""
+class BehindTheMeterBatteryDefinition(Model):
+    __tablename__ = "Behind_The_Meter_Battery_Definition"
+    Behind_The_Meter_Battery_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+    Assumption_Scenario = Column(String(50))
+    Assumption_Scenario_Version = Column(Integer)
+
+    def get_version(self):
+        return self.Behind_The_Meter_Battery_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_behind_the_meter_battery
+
+class BehindTheMeterBattery(Model):
+    __tablename__ = "Behind_The_Meter_Battery"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Year = Column(Integer)
+    Aggregate_MW = Column(Float)
+    Version = Column(Integer,
+                                           ForeignKey('Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'),
+                                           nullable=False)
+    Behind_The_Meter_Battery_Definition = relationship('BehindTheMeterBatteryDefinition',
+                                                    foreign_keys=[Version],
+                                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Behind_The_Meter_Battery_Version'
+
+    def get_definition(self):
+        return self.Behind_The_Meter_Battery_Definition
+
+"""Project Proxy"""
+class ProjectProxyDefinition(Model):
+    __tablename__ = "Project_Proxy_Definition"
+    Project_Proxy_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+    def get_version(self):
+        return self.Project_Proxy_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_project_proxy
+
+class ProjectProxy(Model):
+    __tablename__ = "Project_Proxy"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Project = Column(String(50))
+    Nameplate_Capacity_MW = Column(Float)
+    Technology_Type = Column(String(10))
+    Latitude = Column(Float)
+    Longitude = Column(Float)
+    Tracking_Type = Column(String(50))
+    Version = Column(Integer,
+                                   ForeignKey('Project_Proxy_Definition.Project_Proxy_Version'),
+                                   nullable=False)
+    Project_Proxy_Definition = relationship('ProjectProxyDefinition',
+                                            foreign_keys=[Version],
+                                            backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Project_Proxy_Version'
+
+    def get_definition(self):
+        return self.Project_Proxy_Definition
+
+"""MPC CPT"""
+class MPCCPTDefinition(Model):
+    __tablename__ = "MPC_CPT_Definition"
+    MPC_CPT_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+    def get_version(self):
+        return self.MPC_CPT_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_mpc
+
+class MPCCPT(Model):
+    __tablename__ = "MPC_CPT"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    FY = Column(String(10))
+    CPT = Column(Float)
+    MPC = Column(Float)
+    Version = Column(Integer,
+                            ForeignKey('MPC_CPT_Definition.MPC_CPT_Version'),
+                            nullable=False)
+    MPC_CPT_Definition = relationship('MPCCPTDefinition',
+                                    foreign_keys=[Version],
+                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'MPC_CPT_Version'
+
+    def get_definition(self):
+        return self.MPC_CPT_Definition
+
+"""Gas Price Escalation"""
+class GasPriceEscalationDefinition(Model):
+    __tablename__ = "Gas_Price_Escalation_Definition"
+    Gas_Price_Escalation_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+    def get_version(self):
+        return self.Gas_Price_Escalation_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_escalation
+
+class GasPriceEscalation(Model):
+    __tablename__ = "Gas_Price_Escalation"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Year = Column(Integer)
+    Case1 = Column(Float)
+    Case2 = Column(Float)
+    Case3 = Column(Float)
+    Case4 = Column(Float)
+    Case5 = Column(Float)
+    Case6 = Column(Float)
+    Case7 = Column(Float)
+    Case8 = Column(Float)
+    Case9 = Column(Float)
+    Version = Column(Integer,
+                                        ForeignKey('Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'),
+                                        nullable=False)
+    Gas_Price_Escalation_Definition = relationship('GasPriceEscalationDefinition',
+                                                    foreign_keys=[Version],
+                                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Gas_Price_Escalation_Version'
+
+    def get_definition(self):
+        return self.Gas_Price_Escalation_Definition
+
+"""Strategy Behaviour"""
+class StrategicBehaviourDefinition(Model):
+    __tablename__ = "Strategic_Behaviour_Definition"
+    Strategic_Behaviour_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+    def get_version(self):
+        return self.Strategic_Behaviour_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_strategic_behaviour
+
+class StrategicBehaviour(Model):
+    __tablename__ = "Strategic_Behaviour"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    State = Column(String(10))
+    Bin_Not_Exceeding = Column(Integer)
+    Value = Column(Float)
+    MW = Column(Float)
+    Version = Column(Integer,
+                            ForeignKey('Strategic_Behaviour_Definition.Strategic_Behaviour_Version'),
+                            nullable=False)
+    Strategic_Behaviour_Definition = relationship('StrategicBehaviourDefinition',
+                                    foreign_keys=[Version],
+                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Strategic_Behaviour_Version'
+
+    def get_definition(self):
+        return self.Strategic_Behaviour_Definition
+
+"""Retirement"""
+class RetirementDefinition(Model):
+    __tablename__ = "Retirement_Definition"
+    Retirement_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+    def get_version(self):
+        return self.Retirement_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_retirement
+
+class Retirement(Model):
+    __tablename__ = "Retirement"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    DUID = Column(String(50))
+    State = Column(String(10))
+    Registered_Capacity = Column(Float)
+    Impact_To_State = Column(String(10))
+    Adjustment_Factor = Column(Float)
+    Closure_Date = Column(Date)
+    Back_To_Service_Date = Column(Date)
+    Version = Column(Integer,
+                            ForeignKey('Retirement_Definition.Retirement_Version'),
+                            nullable=False)
+    Retirement_Definition = relationship('RetirementDefinition',
+                                    foreign_keys=[Version],
+                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Retirement_Version'
+
+    def get_definition(self):
+        return self.Retirement_Definition
+
+"""Project List"""
+class ProjectListDefinition(Model):
+    __tablename__ = "Project_List_Definition"
+    Project_List_Version = Column(Integer, primary_key=True, autoincrement=True)
+    Note = Column(String(512))
+
+    def get_version(self):
+        return self.Project_List_Version
+
+    @staticmethod
+    def get_sheet_name():
+        return sheet_project_list
+
+class ProjectList(Model):
+    __tablename__ = "Project_List"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    DUID = Column(String(50))
+    Name = Column(String(50))
+    State = Column(String(10))
+    Fuel_Type = Column(String(10))
+    Start_Date = Column(Date)
+    End_Date = Column(Date)
+    Status = Column(String(50))
+    Offer_Rate = Column(Float)
+    Maximum_Quantity = Column(Float)
+    Installed_Quantity = Column(Float)
+    Probability_Of_Success = Column(Float)
+    Resolution = Column(String(20))
+    Proxy = Column(String(50))
+    Version = Column(Integer,
+                            ForeignKey('Project_List_Definition.Project_List_Version'),
+                            nullable=False)
+    Project_List_Definition = relationship('ProjectListDefinition',
+                                    foreign_keys=[Version],
+                                    backref="data")
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Project_List_Version'
+
+    def get_definition(self):
+        return self.Project_List_Definition
+
+
+model_list = {
+    ('RooftopSolarHistoryDefinition', 'RooftopSolarHistory'),
+    ('RooftopSolarForecastDefinition', 'RooftopSolarForecast'),
+    ('RenewableProportionDefinition', 'RenewableProportion'),
+    ('DemandGrowthDefinition', 'DemandGrowth'),
+    ('BehindTheMeterBatteryDefinition', 'BehindTheMeterBattery'),
+    ('ProjectProxyDefinition', 'ProjectProxy'),
+    ('MPCCPTDefinition', 'MPCCPT'),
+    ('GasPriceEscalationDefinition', 'GasPriceEscalation'),
+    ('StrategicBehaviourDefinition', 'StrategicBehaviour'),
+    ('RetirementDefinition', 'Retirement'),
+    ('ProjectListDefinition', 'ProjectList')
+}
+
+def find_table_class_by_name(name):
+    import sys
+    return getattr(sys.modules[__name__], name)
+
+class AssumptionDefinition(Model):
+    __tablename__ = "Assumption_Definition"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    Name = Column(String(20))
+    Note = Column(String(512))
+    Rooftop_Solar_History_Version = Column(Integer,
+                                           ForeignKey('Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'))
+    Rooftop_Solar_History_Definition = relationship('RooftopSolarHistoryDefinition',
+                                                    foreign_keys=[Rooftop_Solar_History_Version])
+
+    Rooftop_Solar_Forecast_Version = Column(Integer,
+                                           ForeignKey('Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'))
+    Rooftop_Solar_Forecast_Definition = relationship('RooftopSolarForecastDefinition',
+                                                    foreign_keys=[Rooftop_Solar_Forecast_Version])
+
+    Renewable_Proportion_Version = Column(Integer,
+                                           ForeignKey('Renewable_Proportion_Definition.Renewable_Proportion_Version'))
+    Renewable_Proportion_Definition = relationship('RenewableProportionDefinition',
+                                                    foreign_keys=[Renewable_Proportion_Version])
+
+    Demand_Growth_Version = Column(Integer,
+                                           ForeignKey('Demand_Growth_Definition.Demand_Growth_Version'))
+    Demand_Growth_Definition = relationship('DemandGrowthDefinition',
+                                                    foreign_keys=[Demand_Growth_Version])
+
+    Behind_The_Meter_Battery_Version = Column(Integer,
+                                           ForeignKey('Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'))
+    Behind_The_Meter_Battery_Definition = relationship('BehindTheMeterBatteryDefinition',
+                                                    foreign_keys=[Behind_The_Meter_Battery_Version])
+
+    Project_Proxy_Version = Column(Integer,
+                                   ForeignKey('Project_Proxy_Definition.Project_Proxy_Version'))
+    Project_Proxy_Definition = relationship('ProjectProxyDefinition',
+                                            foreign_keys=[Project_Proxy_Version])
+
+    MPC_CPT_Version = Column(Integer,
+                            ForeignKey('MPC_CPT_Definition.MPC_CPT_Version'))
+    MPC_CPT_Definition = relationship('MPCCPTDefinition',
+                                    foreign_keys=[MPC_CPT_Version])
+
+    Gas_Price_Escalation_Version = Column(Integer,
+                                        ForeignKey('Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'))
+    Gas_Price_Escalation_Definition = relationship('GasPriceEscalationDefinition',
+                                                    foreign_keys=[Gas_Price_Escalation_Version])
+
+    Strategic_Behaviour_Version = Column(Integer,
+                            ForeignKey('Strategic_Behaviour_Definition.Strategic_Behaviour_Version'))
+    Strategic_Behaviour_Definition = relationship('StrategicBehaviourDefinition',
+                                    foreign_keys=[Strategic_Behaviour_Version])
+
+    Retirement_Version = Column(Integer,
+                            ForeignKey('Retirement_Definition.Retirement_Version'))
+    Retirement_Definition = relationship('RetirementDefinition',
+                                    foreign_keys=[Retirement_Version])
+
+    Project_List_Version = Column(Integer,
+                            ForeignKey('Project_List_Definition.Project_List_Version'))
+    Project_List_Definition = relationship('ProjectListDefinition',
+                                    foreign_keys=[Project_List_Version])

@@ -20,7 +20,7 @@ from datetime import date
 from typing import Any, Callable, DefaultDict, Dict, List, Optional, Set, Tuple, Union
 from urllib import parse
 import os
-
+import base64
 import msgpack
 import pyarrow as pa
 import simplejson as json
@@ -29,17 +29,10 @@ from flask_appbuilder.security.sqla import models as ab_models
 from flask_appbuilder.security.sqla.models import User
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import Mail, Attachment
 
 import superset.models.core as models
-from superset import (
-    app,
-    dataframe,
-    db,
-    is_feature_enabled,
-    result_set,
-    security_manager,
-)
+from superset import app, dataframe, db, is_feature_enabled, result_set
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.exceptions import SupersetException, SupersetSecurityException
@@ -387,13 +380,16 @@ def is_slice_in_container(
 
 
 # Sendgrid email sender
-def send_sendgrid_mail(address_to, message_data, template_id):
+def send_sendgrid_mail(address_to, message_data, template_id, attachments=[]):
     message = Mail(
         from_email=("no_reply@empoweranalytics.com.au", "Empower Analytics"),
         to_emails=address_to
     )
     message.dynamic_template_data = message_data
     message.template_id = template_id
+    if len(attachments) > 0:
+        for attachment in attachments:
+            message.add_attachment(attachment)
     try:
         sendgrid_client.send(message)
         return True
@@ -402,6 +398,18 @@ def send_sendgrid_mail(address_to, message_data, template_id):
         import traceback
         traceback.print_exc()
         return False
+
+def create_attachment(file_name, file_path, file_type, disposition='attachment', content_id=None):
+    attachment = Attachment()
+    with open(file_path, 'rb') as f:
+        data = f.read()
+    file_content = base64.b64encode(data).decode()
+    attachment.file_content = file_content
+    attachment.file_type = file_type
+    attachment.file_name = file_name
+    attachment.disposition = disposition
+    attachment.content_id = content_id
+    return attachment
 
 
 def is_sublist(small, large):
@@ -460,7 +468,7 @@ def check_datasource_perms(
         force=False,
     )
 
-    security_manager.assert_viz_permission(viz_obj)
+    viz_obj.raise_for_access()
 
 
 def check_slice_perms(_self: Any, slice_id: int) -> None:
@@ -469,6 +477,9 @@ def check_slice_perms(_self: Any, slice_id: int) -> None:
 
     This function takes `self` since it must have the same signature as the
     the decorated method.
+
+    :param slice_id: The slice ID
+    :raises SupersetSecurityException: If the user cannot access the resource
     """
 
     form_data, slc = get_form_data(slice_id, use_slice_data=True)
@@ -481,13 +492,13 @@ def check_slice_perms(_self: Any, slice_id: int) -> None:
             force=False,
         )
 
-        security_manager.assert_viz_permission(viz_obj)
+        viz_obj.raise_for_access()
 
 
 def _deserialize_results_payload(
     payload: Union[bytes, str], query: Query, use_msgpack: Optional[bool] = False
 ) -> Dict[str, Any]:
-    logger.debug(f"Deserializing from msgpack: {use_msgpack}")
+    logger.debug("Deserializing from msgpack: %r", use_msgpack)
     if use_msgpack:
         with stats_timing(
             "sqllab.query.results_backend_msgpack_deserialize", stats_logger
@@ -509,11 +520,9 @@ def _deserialize_results_payload(
         )
 
         return ds_payload
-    else:
-        with stats_timing(
-            "sqllab.query.results_backend_json_deserialize", stats_logger
-        ):
-            return json.loads(payload)
+
+    with stats_timing("sqllab.query.results_backend_json_deserialize", stats_logger):
+        return json.loads(payload)
 
 
 def get_cta_schema_name(

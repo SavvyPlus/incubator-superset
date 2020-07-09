@@ -177,13 +177,14 @@ const config = {
   entry: {
     theme: path.join(APP_DIR, '/src/theme.ts'),
     preamble: PREAMBLE,
-    addSlice: addPreamble('/src/addSlice/index.jsx'),
+    addSlice: addPreamble('/src/addSlice/index.tsx'),
     explore: addPreamble('/src/explore/index.jsx'),
     dashboard: addPreamble('/src/dashboard/index.jsx'),
     sqllab: addPreamble('/src/SqlLab/index.jsx'),
     welcome: addPreamble('/src/welcome/index.jsx'),
     profile: addPreamble('/src/profile/index.jsx'),
     generation: addPreamble('/src/generation/index.jsx'),
+    assumption: addPreamble('/src/assumption/index.jsx'),
     showSavedQuery: [path.join(APP_DIR, '/src/showSavedQuery/index.jsx')],
   },
   output,
@@ -195,6 +196,7 @@ const config = {
     },
   },
   optimization: {
+    sideEffects: true,
     splitChunks: {
       chunks: 'all',
       automaticNameDelimiter: '-',

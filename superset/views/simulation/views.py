@@ -24,6 +24,7 @@ import superset.models.core as models
 from flask import flash, redirect, g, request, abort, url_for, jsonify
 from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
 from flask_appbuilder import expose, has_access, SimpleFormView
+from flask_appbuilder.actions import action
 from flask_appbuilder.urltools import get_filter_args, get_order_args, get_page_args, get_page_size_args
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import lazy_gettext as _
@@ -32,19 +33,22 @@ from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.typing import FlaskResponse
 from superset.constants import RouteMethod
 from superset.models.simulation import *
+from superset.models.slice import Slice
+from flask_appbuilder.security.sqla import models as ab_models
 from superset.connectors.sqla.models import SqlaTable
 from superset.utils import core as utils
 from superset.sql_parse import Table
-from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView
+from superset.views.base import json_success, json_error_response, DeleteMixin, SupersetModelView, common_bootstrap_payload
 from superset.views.utils import send_sendgrid_mail
 from superset.views.simulation.util import get_s3_url
-from superset.views.simulation.helper import excel_path, bucket_test, bucket_inputs
-from superset.views.simulation.simulation_config import bucket_test
+from superset.views.simulation.simulation_config import excel_path, bucket_inputs, bucket_hist
 
-from .forms import UploadAssumptionForm, AddSimulationForm
+from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
-from .assumption_process import process_assumptions, upload_assumption_file, check_assumption
-from .util import get_redirect_endpoint
+from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
+    save_as_new_tab_version, ref_day_generation_check
+from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date
+from ..utils import bootstrap_user_data, create_attachment
 
 
 def upload_stream_write(form_file_field: "FileStorage", path: str):
@@ -84,7 +88,7 @@ def handle_assumption_process(path, name, run_id, sim_num):
         db.session.merge(assumption_file)
         db.session.commit()
         g.result = 'Process success'
-        g.detail = 'The assumption detail is now on S3 empower-simulation bucket'
+        g.detail = 'The assumption detail is now on S3 {} bucket.'.format(bucket_inputs)
     except Exception as e:
         assumption_file = find_assumption_by_name(db.session, name)
         assumption_file.status = "Error"
@@ -135,7 +139,7 @@ def simulation_start_invoker(run_id, sim_num):
 
     if sim_num < 2:
         interval=300
-    elif sim_num < 5:
+    elif sim_num < 6:
         interval = 100
     else:
         interval = 60
@@ -148,46 +152,35 @@ def simulation_start_invoker(run_id, sim_num):
         simulation.status_detail = 'The assumption process failed, please check the detail of the assumption'
         db.session.commit()
     else:
-        print('generate parameters')
         try:
-            generate_parameters_for_batch(run_id, sim_num)
-        except Exception as e:
-            simulation.status = 'Run failed'
-            simulation.status_detail = repr(e)
-            db.session.commit()
-            g.result = 'Invoke failed'
-            g.detail = repr(e)
-            traceback.print_exc()
-            return None
-        index_start = 0
-        index_end = sim_num  # exclusive
-        # start_date = simulation.start_date
-        start_date = '2020-01-01'
-        # end_date = simulation.end_date
-        end_date = '2030-12-31'
-        sim_tag = run_id
-        # total_days = (start_date - end_date).days
-        # output_days = total_days + 7 - total_days%7
-
-
-        try:
-            # TODO uncomment to invoke
+            print('generate parameters')
+            generate_parameters_for_batch(simulation, sim_num)
             print('invoking')
-            batch_invoke_solver(bucket_test, sim_tag, index_start, index_end, interval=interval)
-            batch_invoke_merger_year(bucket_test, sim_tag, index_start, index_end, 4017, year_start=2020,
-                                     year_end=2030, interval=interval/2)
-            batch_invoke_merger_all(bucket_test, sim_tag, index_start, index_end, 11,
+            index_start = 0
+            index_end = sim_num  # exclusive
+            # start_date = simulation.start_date
+            start_date = simulation.start_date
+            # end_date = simulation.end_date
+            end_date = get_full_week_end_date(start_date, simulation.end_date)
+            total_days = (end_date - start_date).days
+            sim_tag = run_id
+            batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
+            batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
+                                     year_end=end_date.year+1, interval=interval/2)
+            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, end_date.year-start_date.year+1,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
-            invoker(payload={'run_id': sim_tag, 'bucket': bucket_test},
-                           function_name='spot_simulation_check_spot_price_outputs_numbers')
+            invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs},
+                    function_name='spot-simulation-prod-stk-check-spot-output')
 
             simulation.status = 'Run finished'
             db.session.commit()
             g.result = 'Invoke success, simulation finished.'
+            message = 'Simulation {} is finished successfully, an email contain links to the result will be sent to you shortly.'
+            style='info'
         except Exception as e:
             simulation.status = 'Run failed'
             simulation.status_detail = repr(e)
@@ -195,8 +188,11 @@ def simulation_start_invoker(run_id, sim_num):
             g.result = 'Invoke failed'
             g.detail = repr(e)
             traceback.print_exc()
+            # message = 'Simulation {} has failed, please check log for the detail.'
+            # style = 'danger'
         finally:
             print('invoke finished')
+            # flash(message, style)
 
 
 class AssumptionListWidget(ListWidget):
@@ -470,6 +466,139 @@ class AssumptionModelView(EmpowerModelView):
         return None
 
 
+class EditAssumptionModelView(
+    SupersetModelView, DeleteMixin
+):  # pylint: disable=too-many-ancestors
+    route_base = "/edit-assumption"
+    default_view = 'assumption'
+    datamodel = SQLAInterface(Slice)
+
+    @expose("/assumption/")
+    def assumption(self):
+        username = g.user.username
+
+        user = (
+            db.session.query(ab_models.User).filter_by(username=username).one_or_none()
+        )
+        if not user:
+            abort(404, description=f"User: {username} does not exist.")
+
+        payload = {
+            "user": bootstrap_user_data(user, include_perms=True),
+            "common": common_bootstrap_payload(),
+        }
+
+        return self.render_template(
+            "superset/basic.html",
+            title=_("Edit Assumption"),
+            entry="assumption",
+            bootstrap_data=json.dumps(
+                payload, default=utils.pessimistic_json_iso_dttm_ser
+            ),
+        )
+
+    @expose('/upload-csv/', methods=['POST'])
+    def upload_csv(self):
+        form = request.form
+        table = form['table']
+        note = form['note']
+        file = request.files.get('file')
+        scenario = None
+        if 'scenario' in form.keys():
+            scenario = form['Scenario']
+        file_name = file.name
+        extension = os.path.splitext(file_name)[1].lower()
+        path = tempfile.NamedTemporaryFile(
+            dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
+        ).name
+        try:
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
+            upload_stream_write(file.data, path)
+            tab_model = find_table_class_by_name(table)
+            tab_def_model = find_table_class_by_name(table+'Definition')
+            if extension == 'xlsx':
+                df = read_excel(path)
+            else:
+                df = read_csv(path)
+            new_def = save_as_new_tab_version(db, df, tab_def_model, tab_model, note=note, scenario=scenario)
+            message = 'Update table successful'
+        except Exception as e:
+            db.session.rollback()
+            traceback.print_exc()
+            message = repr(e)
+        finally:
+            os.remove(path)
+
+        return jsonify({
+            'message': message
+        })
+
+    @expose("/get_data/")
+    def get_data(self):
+        tab_data_model = find_table_class_by_name("ProjectProxy")
+        # ver_col = getattr()
+        tab_data = db.session.query(tab_data_model).filter_by(Version=1).all()
+        # form = request.form
+        # table = form['table']
+        # tab_def_model = find_table_class_by_name(table + 'Definition')
+        # if form['request'] == 'version':
+        #     version_list = db.session.query(tab_def_model).all()
+        #     versions = {}
+        #     for version in version_list:
+        #         versions[version.id] = version.Note
+        #
+        #     message = version
+        # else:
+        #     version = form['version']
+        #     tab_data = db.session.query(tab_def_model)
+        #     data = {}
+        return jsonify('')
+
+
+class UploadExcelView(SimpleFormView):
+    route_base = '/upload_base_excel'
+    form_title = 'Upload assumption excel'
+    form = UploadAssumptionFormForStanding
+    form_template = "appbuilder/general/model/edit.html"
+
+    def form_post(self, form):
+        file_name = form.file.data.filename
+        extension = os.path.splitext(file_name)[1].lower()
+        path = tempfile.NamedTemporaryFile(
+            dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
+        ).name
+
+        form.file.data.filename = path
+        name = form.name.data
+        g.action_object = name
+        g.action_object_type = 'Assumption'
+        try:
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
+            upload_stream_write(form.file.data, path)
+            df_dict = process_assumption_to_df_dict(path)
+            new_assum_def = AssumptionDefinition()
+            new_assum_def.Name = name
+            for tab_def_model, tab_data_model in model_list:
+                tab_def_model = find_table_class_by_name(tab_def_model)
+                tab_data_model = find_table_class_by_name(tab_data_model)
+                sheet_name = tab_def_model.get_sheet_name()
+                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name], tab_def_model, tab_data_model)
+                # set relation of assumption def with sub table definition
+                new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
+            db.session.add(new_assum_def)
+            db.session.commit()
+            message = 'success'
+            style = 'info'
+        except Exception as e:
+            traceback.print_exc()
+            db.session.rollback()
+            message = repr(e)
+            style = 'danger'
+        finally:
+            os.remove(path)
+        flash(message, style)
+        return redirect(self.route_base + '/form')
+
 class SimulationModelView(
     EmpowerModelView
 ):
@@ -488,16 +617,20 @@ class SimulationModelView(
         'send_email',
         'process_success',
         'process_failed',
-        'start_run'
+        'start_run',
+        'query_success',
+        'query_failed',
+        'query_result',
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
-    edit_exclude_columns = ['status','status_detail', 'run_id']
-    label_columns = {'run_no':'Number of simulation run'}
+    edit_exclude_columns = ['status_detail', 'run_id']
+    # label_columns = {'run_no':'Number of simulation run'}
 
     add_widget = SimulationAddWidget
-    # add_form = AddSimulationForm
+    add_form = SimulationForm
     list_widget = SimulationListWidget
+    # edit_form = SimulationForm
 
     @event_logger.log_this
     @expose('/load-results/<run_id>/<table_name>/')
@@ -510,7 +643,7 @@ class SimulationModelView(
 
         # If this is a new table, load it into Superset and redirect to its chart
         csv_table = Table(table=table_name, schema=None)
-        s3_file_path = 's3://empower-simulation/result-spot-price-forecast-simulation-statistics/' + run_id + '/' + table_name + '.csv'
+        s3_file_path = 's3://{}/result-spot-price-forecast-simulation-statistics/{}/{}.csv'.format(bucket_inputs, run_id, table_name)
 
         try:
             database = (
@@ -845,7 +978,7 @@ class SimulationModelView(
                 g.detail = message
             else:
                 if simulation.assumption.s3_path is None:
-                    path = get_s3_url(bucket_test, excel_path.format(simulation.assumption.name))
+                    path = get_s3_url(bucket_inputs, excel_path.format(simulation.assumption.name))
                     simulation.assumption.s3_path = path
                     db.session.commit()
                 try:
@@ -865,26 +998,27 @@ class SimulationModelView(
         pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
         # pass_check, message = True, ''
         if pass_check:
+            ref_day_generation_check(simulation, run_type)
             g.result = 'Started, pre-process in progress'
             if run_type == 'test':
                 message = 'Test run started'
             else:
                 message = 'Full run started'
 
-            ip = get_current_external_ip()
             msg = {
                 'excelKey': excel_path.format(simulation.assumption.name),
                 'runNo': simulation.run_id,
                 'processName': [],
-                'bucket': bucket_test,
-                'histBucket': bucket_inputs,
+                'bucket': bucket_inputs,
+                'histBucket': bucket_hist,
                 'startDate': '2017-01-01',
                 'endDate': '2019-07-31',
-                'simStartDate': '2020-01-01',
-                # 'simEndDate': simulation.end_date.strftime('%Y-%m-%d'),
-                'simEndDate': '2030-12-31',
+                # 'simStartDate': '2020-01-01',
+                'simStartDate': simulation.start_date.strftime('%Y-%m-%d'),
+                'simEndDate': get_full_week_end_date(simulation.start_date, simulation.end_date).strftime('%Y-%m-%d'),
+                # 'simEndDate': '2030-12-31',
                 'runType': run_type,
-                'supersetURL': ip,
+                'supersetURL': get_current_external_ip(),
             }
             if send_sqs_msg(json.dumps(msg)):
                 g.detail = json.dumps(msg)
@@ -924,7 +1058,7 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
-
+        flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
         return '200 OK'
 
     @simulation_logger.log_simulation(action_name='process assumption')
@@ -951,8 +1085,102 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
+        flash('The preprocess of simulation {} has failed, please check the log.'.format(simulation.name), 'danger')
         return '200 OK'
 
+    @simulation_logger.log_simulation(action_name='query result')
+    @expose('/query_success', methods=['GET', 'POST'])
+    def query_success(self):
+        import ast
+        g.user = None
+        # flash('reached query success', 'info')
+        data = json.loads(request.data.decode())
+        # print(data)
+        email = data['email']
+        s3_list = ast.literal_eval(data['outS3Keys'])
+        bucket = data['outBucket']
+        run_id = data['sim_tag']
+        simulation = db.query(Simulation).filter_by(run_id=run_id).first()
+        attachments = []
+        for s3_file in s3_list:
+            path = tempfile.NamedTemporaryFile(
+                dir=app.config["UPLOAD_FOLDER"], suffix='xlsx', delete=False
+            ).name
+            download_from_s3(bucket, s3_file, path)
+            filename = s3_file.split('/')[-1]
+            file_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            attachment = create_attachment(filename, path, file_type)
+            attachments.append(attachment)
+            os.remove(path)
+        message = {
+            'sim_name': simulation.name
+            # 'sim_name': 'Run_196'
+        }
+        if send_sendgrid_mail(email, message, 'd-49e6d877ad7c440b84fe2b63835ccea5', attachments):
+            g.result = 'query success'
+            g.detail = repr(data)
+        else:
+            g.result = 'query success, message sent failed'
+            g.detail = 'Failed to send email to {}'.format(email)
+        return '200 OK'
+
+    @simulation_logger.log_simulation(action_name='query result')
+    @expose('/query_failed', methods=['GET', 'POST'])
+    def query_failed(self):
+        g.user = None
+        data = json.loads(request.data.decode())
+        # print(data)
+        g.result = 'query failed'
+        g.detail = repr(data)
+        return '200 OK'
+
+
+    @simulation_logger.log_simulation(action_name='start query')
+    @expose('/query_result/<sim_id>/', methods=['POST'])
+    def query_result(self, sim_id):
+        query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
+        print('get query result')
+        data = request.form['duid_list']
+        data = data.strip('\t').replace('\n', '').split(',')
+        simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
+        msg = {
+            'sim_tag': simulation.run_id,
+            # 'sim_tag': 'Run_196',
+            'outBucket': bucket_inputs,
+            'query_list': [
+                'Technology_Generation_by_percentile_cal',
+                'DUID_Generation_by_percentile_cal',
+                'DUID_Average_Price_by_percentile_cal',
+                'DUID_Revenue_by_percentile_cal',
+                'DUID_Spot_Premium_by_percentile_cal',
+                'TWA_Simulation_by_simulation_cal',
+                'DUID_Generation_by_simulation_cal',
+                'DUID_Average_Price_by_simulation_cal',
+                'DUID_Revenue_by_simulation_cal'
+            ],
+            'dbname': 'dex_poc',
+            'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+            # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
+            'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+            # 'spottbl': f'spot_demand_{"Run_196".lower()}',
+            'duids': data,
+            'year_start': simulation.start_date.year,
+            'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
+            'supersetURL': get_current_external_ip(),
+            'email': g.user.email,
+        }
+        # if send_sqs_msg(msg, queue_url=query_sqs):
+        g.action_object = simulation.name
+        g.action_object_type = 'simulation'
+        if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
+            message = 'Query has been sent, the data files will be sent to your email when ready.'
+            g.result = 'send query result'
+            g.detail = json.dumps(msg)
+        else:
+            message = 'Query failed to send to sqs, please try again later or contact dev team.'
+            g.result = 'send query result'
+            g.detail=message
+        return jsonify({'message': message})
 
 class ProjectModelView(EmpowerModelView):
 

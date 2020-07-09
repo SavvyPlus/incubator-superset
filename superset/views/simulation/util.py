@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import time
 import json
 import s3fs
@@ -11,13 +11,13 @@ import pickle
 import logging
 from urllib import parse
 from requests import get
-from .simulation_config import states, sqs_url
+from .simulation_config import states, nifi_sqs_url
 
 logging.getLogger('botocore').setLevel(logging.CRITICAL)
 logging.getLogger('boto3').setLevel(logging.CRITICAL)
 
 fs = s3fs.S3FileSystem()
-client = boto3.client('s3')
+client = boto3.client('s3', region_name='ap-southeast-2')
 sqs = boto3.client('sqs', region_name='ap-southeast-2')
 
 def read_pickle_from_s3(bucket, path):
@@ -28,11 +28,9 @@ def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
 
     # TODO DEBUG do not write to s3
-    bucket = "empower-simulation"
     client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
 
 def put_file_to_s3(filename, bucket, key, is_public=False):
-    bucket = "empower-simulation"
     with open(filename, "rb") as f:
         if is_public:
             response = client.upload_fileobj(f, bucket, key, ExtraArgs={'ACL': 'public-read'})
@@ -52,6 +50,9 @@ def put_object_to_s3(binary_data, bucket, key):
                       Bucket=bucket,
                       Key=key)
 
+def download_from_s3(bucket, key, path):
+    client.download_file(bucket, key, path)
+
 def read_from_s3(bucket, path):
     bucket_uri = f's3://{bucket}/{path}'
     dataset = pq.ParquetDataset(bucket_uri, filesystem=fs)
@@ -60,7 +61,7 @@ def read_from_s3(bucket, path):
     return df
 
 def send_sqs_msg(message_body, delay=10,
-                        queue_url=sqs_url):
+                 queue_url=nifi_sqs_url):
 
     response = sqs.send_message(
         QueueUrl=queue_url,
@@ -68,6 +69,38 @@ def send_sqs_msg(message_body, delay=10,
         MessageBody=(message_body)
     )
     return response.get("MessageId", "")
+
+
+def list_object_keys(bucket, prefix):
+    key_list = []
+    response = client.list_objects_v2(
+        Bucket=bucket,
+        Prefix=prefix
+    )
+    if response['KeyCount'] <= 0:
+        return []
+    contents = response['Contents']
+    is_truncated = response['IsTruncated']
+
+    for content in contents:
+        key_list.append(content['Key'])
+
+    if is_truncated:
+        cont_token = response['NextContinuationToken']
+    while is_truncated:
+        response = client.list_objects_v2(
+            Bucket=bucket,
+            Prefix=prefix,
+            ContinuationToken=cont_token
+        )
+        contents = response['Contents']
+        is_truncated = response['IsTruncated']
+        for content in contents:
+            key_list.append(content['Key'])
+        if is_truncated:
+            cont_token = response['NextContinuationToken']
+
+    return sorted(key_list)
 
 def write_to_s3(data, bucket, path):
     bucket_uri = f's3://{bucket}/{path}'
@@ -142,9 +175,13 @@ def df_state_error_checker(f):
     return wrap
 
 
-@df_state_error_checker
+# @df_state_error_checker
 def read_excel(*args, **kwargs):
     df = pd.read_excel(*args, **kwargs)
+    return df
+
+def read_csv(*args, **kwargs):
+    df = pd.read_csv(*args, **kwargs)
     return df
 
 
@@ -190,3 +227,8 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
 def get_current_external_ip():
     # return 'http://{}:8088'.format(get('https://api.ipify.org').text)
     return 'http://{}:8088'.format('10.61.146.25')
+
+def get_full_week_end_date(start_date, end_date):
+    total_days = (end_date - start_date).days
+    end_date = end_date + timedelta(days=7 - total_days % 7)
+    return end_date

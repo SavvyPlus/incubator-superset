@@ -23,6 +23,7 @@ from sqlalchemy import and_, Boolean, Column, Integer, String, Text
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import foreign, Query, relationship, RelationshipProperty
 
+from superset import security_manager
 from superset.constants import NULL_STRING
 from superset.models.helpers import AuditMixinNullable, ImportMixin, QueryResult
 from superset.models.slice import Slice
@@ -348,7 +349,7 @@ class BaseDatasource(
                     value = utils.cast_to_num(value)
                 if value == NULL_STRING:
                     return None
-                elif value == "<empty string>":
+                if value == "<empty string>":
                     return ""
             return value
 
@@ -496,6 +497,15 @@ class BaseDatasource(
             return NotImplemented
         return self.uid == other.uid
 
+    def raise_for_access(self) -> None:
+        """
+        Raise an exception if the user cannot access the resource.
+
+        :raises SupersetSecurityException: If the user cannot access the resource
+        """
+
+        security_manager.raise_for_access(datasource=self)
+
 
 class BaseColumn(AuditMixinNullable, ImportMixin):
     """Interface for column"""
@@ -516,7 +526,7 @@ class BaseColumn(AuditMixinNullable, ImportMixin):
     export_fields: List[Any] = []
 
     def __repr__(self) -> str:
-        return self.column_name
+        return str(self.column_name)
 
     num_types = (
         "DOUBLE",

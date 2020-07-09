@@ -172,7 +172,11 @@ WTF_CSRF_ENABLED = True
 # Add endpoints that need to be exempt from CSRF protection
 WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log",
                         "superset.views.simulation.views.process_success",
-                        "superset.views.simulation.views.process_failed"]
+                        "superset.views.simulation.views.query_success",
+                        "superset.views.simulation.views.process_failed",
+                        "superset.views.simulation.views.query_failed",
+                        "superset.views.simulation.views.query_result",
+                        ]
 
 # Whether to run the web server in debug mode or not
 DEBUG = os.environ.get("FLASK_ENV") == "development"
@@ -309,7 +313,7 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     "SIP_38_VIZ_REARCHITECTURE": False,
     "TAGGING_SYSTEM": False,
     "SQLLAB_BACKEND_PERSISTENCE": False,
-    "LIST_VIEWS_NEW_UI": False,
+    "LIST_VIEWS_SIP34_FILTER_UI": False,
 }
 
 # This is merely a default.
@@ -812,7 +816,8 @@ DOCUMENTATION_URL = None
 DOCUMENTATION_TEXT = "Documentation"
 DOCUMENTATION_ICON = None  # Recommended size: 16x16
 
-# Enables the replacement react views for all the FAB views: list, edit, show.
+# Enables the replacement react views for all the FAB views (list, edit, show) with
+# designs introduced in SIP-34: https://github.com/apache/incubator-superset/issues/8976
 # This is a work in progress so not all features available in FAB have been implemented
 ENABLE_REACT_CRUD_VIEWS = False
 
@@ -911,7 +916,7 @@ if CONFIG_PATH_ENV_VAR in os.environ:
         print(f"Loaded your LOCAL configuration at [{cfg_path}]")
     except Exception:
         logger.exception(
-            f"Failed to import config for {CONFIG_PATH_ENV_VAR}={cfg_path}"
+            "Failed to import config for %s=%s", CONFIG_PATH_ENV_VAR, cfg_path
         )
         raise
 elif importlib.util.find_spec("superset_config"):

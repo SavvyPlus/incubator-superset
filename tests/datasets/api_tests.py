@@ -38,7 +38,7 @@ from superset.views.base import generate_download_headers
 from tests.base_tests import SupersetTestCase
 
 
-class DatasetApiTests(SupersetTestCase):
+class TestDatasetApi(SupersetTestCase):
     @staticmethod
     def insert_dataset(
         table_name: str, schema: str, owners: List[int], database: Database
@@ -100,6 +100,7 @@ class DatasetApiTests(SupersetTestCase):
             "kind",
             "owners",
             "schema",
+            "sql",
             "table_name",
         ]
         self.assertEqual(sorted(list(response["result"][0].keys())), expected_columns)
