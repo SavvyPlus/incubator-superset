@@ -47,7 +47,7 @@ from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormFor
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check
-from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date
+from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date, from_dict
 from ..utils import bootstrap_user_data, create_attachment
 
 
@@ -541,11 +541,12 @@ class EditAssumptionModelView(
         if request_type == 'version':
             version_list = db.session.query(tab_def_model).all()
             versions = []
-            for version in version_list:
-                versions.append({
-                    'version': version.get_version(),
-                    'note': version.Note
-                })
+            if len(version_list)>0:
+                for version in version_list:
+                    versions.append({
+                        'version': version.get_version(),
+                        'note': version.Note
+                    })
 
             message = {
                 'versions': versions
