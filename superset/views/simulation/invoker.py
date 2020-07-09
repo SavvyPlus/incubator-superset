@@ -7,7 +7,7 @@ import datetime
 from superset import celery_app, simulation_logger
 
 from .util import write_pickle_to_s3, read_pickle_from_s3, list_object_keys
-from .simulation_config import bucket_inputs
+from .simulation_config import bucket_inputs, parameters_for_batch_v2
 
 client = boto3.client('lambda', region_name='ap-southeast-2')
 s3 = boto3.client('s3', region_name='ap-southeast-2')
@@ -93,7 +93,7 @@ def backcasting(sim_tag, sim_index, start_date, end_date):
 
 
 def batch_invoke_solver(bucket_inputs, sim_tag, start_index, end_index, interval=60):
-    sim_ref_para = read_pickle_from_s3(bucket_inputs, f'cache/{sim_tag}/parameters_for_batch_test2.pickle')
+    sim_ref_para = read_pickle_from_s3(bucket_inputs, parameters_for_batch_v2.format(sim_tag))
     for sim_index in range(start_index, end_index):
         batch_invoke(sim_tag, sim_ref_para, sim_index)
         time.sleep(interval)
