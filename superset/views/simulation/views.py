@@ -1191,8 +1191,8 @@ class SimulationModelView(
             'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
             # 'spottbl': f'spot_demand_{"Run_196".lower()}',
             'duids': data,
-            'year_start': simulation.start_date.year,
-            'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
+            'year_start': str(simulation.start_date.year),
+            'year_end': str(get_full_week_end_date(simulation.start_date, simulation.end_date).year),
             'supersetURL': get_current_external_ip(),
             'email': g.user.email,
         }
