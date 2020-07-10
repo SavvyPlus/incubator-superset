@@ -80,6 +80,7 @@ function App({ username, firstName, lastName, assumption, actions }) {
                 version={assumption.version}
                 fetchingVersions={assumption.fetchingVersions}
                 fetchTableData={actions.fetchTableData}
+                saveTableData={actions.saveTableData}
               />
             </>
           )}
