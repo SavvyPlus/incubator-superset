@@ -27,6 +27,7 @@ import {
   getFormDataFromControls,
   applyMapStateToPropsToControl,
   getAllControlsState,
+  getControlsState,
 } from 'src/explore/controlUtils';
 
 describe('controlUtils', () => {
@@ -40,7 +41,6 @@ describe('controlUtils', () => {
   beforeAll(() => {
     getChartControlPanelRegistry()
       .registerValue('test-chart', {
-        requiresTime: true,
         controlPanelSections: [
           {
             label: t('Chart Options'),
@@ -84,7 +84,6 @@ describe('controlUtils', () => {
         ],
       })
       .registerValue('test-chart-override', {
-        requiresTime: true,
         controlPanelSections: [
           {
             label: t('Chart Options'),
@@ -247,6 +246,14 @@ describe('controlUtils', () => {
       };
       const control = getControlState('metrics', 'table', stateWithCount);
       expect(control.default).toEqual(['count']);
+    });
+
+    it('should not apply mapStateToProps when initializing', () => {
+      const control = getControlState('metrics', 'table', {
+        ...state,
+        isInitializing: true,
+      });
+      expect(control.default).toEqual(null);
     });
   });
 
