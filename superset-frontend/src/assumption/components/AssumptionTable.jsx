@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '@material-ui/core/Button';
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import TextField from '@material-ui/core/TextField';
 import { makeStyles } from '@material-ui/core/styles';
 import MaterialTable from './materialTable';
+import SaveDialog from './SaveDialog';
 import DeleteDialog from './DeleteDialog';
 import PreLoader from '../../components/PreLoader';
 
@@ -15,6 +16,10 @@ const useStyles = makeStyles(theme => ({
   },
   fetchBtn: {
     marginBottom: 20,
+    minWidth: 80,
+  },
+  saveBtn: {
+    float: 'right',
   },
 }));
 
@@ -27,22 +32,21 @@ export default function AssumptionTable({
   saveTableData,
 }) {
   const classes = useStyles();
-  const [openBD, setOpenBD] = React.useState(false);
-  const [savingData, setSavingData] = React.useState(false);
+  const [openBD, setOpenBD] = useState(false);
 
-  const [note, setNote] = React.useState('');
-  const [fetchingData, setFetchingData] = React.useState(false);
-  const [open, setOpen] = React.useState(false);
-  const [selctedData, setSelectedData] = React.useState([]);
+  const [columns, setColumns] = useState([]);
+  const [data, setData] = useState([]);
+  const [isModified, setIsModified] = useState(false);
 
-  useEffect(() => {
-    setNote('');
-  }, [version, table]);
+  const [fetchingData, setFetchingData] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [selctedData, setSelectedData] = useState([]);
+  const [openSave, setOpenSave] = useState(false);
 
   const getTableData = td => {
-    const columns = [];
+    const cols = [];
     for (let i = 0; i < td.columns.length; i++) {
-      columns.push({ title: td.columns[i], field: td.columns[i] });
+      cols.push({ title: td.columns[i], field: td.columns[i] });
       // if (td.columns[i] === 'Aggregate_MW' || td.columns[i] === 'Capacity_MW') {
       //   columns.push({
       //     title: td.columns[i],
@@ -53,13 +57,15 @@ export default function AssumptionTable({
       //   columns.push({ title: td.columns[i], field: td.columns[i] });
       // }
     }
-    const data = td.data;
-    return { columns, data };
+    const dt = td.data;
+    return { cols, dt };
   };
 
-  const handleNoteChange = event => {
-    setNote(event.target.value);
-  };
+  useEffect(() => {
+    const tableD = getTableData(tableData);
+    setColumns([...tableD.cols]);
+    setData([...tableD.dt]);
+  }, [tableData]);
 
   const handleFetchTableData = () => {
     setFetchingData(true);
@@ -68,50 +74,50 @@ export default function AssumptionTable({
     });
   };
 
-  const handleSaveData = () => {
-    setOpenBD(true);
-    setSavingData(true);
-    return saveTableData(version).then(() => {
-      setSavingData(false);
-    });
+  const handleDeleteClose = () => {
+    setOpenDelete(false);
   };
 
-  const handleDialogClose = () => {
-    setOpen(false);
+  const handleSaveOpen = () => {
+    setOpenSave(true);
   };
 
-  const tableD = getTableData(tableData);
+  const handleSaveClose = () => {
+    setOpenSave(false);
+  };
 
+  console.log(data);
   return (
     <div className="mb-50">
-      <h3 className="mt-50">Step 4: Write Your Note About This Modify</h3>
-      <TextField
-        required
-        fullWidth
-        id="upload-note"
-        label="Required"
-        value={note}
-        placeholder="Write your note about this upload file"
-        onChange={handleNoteChange}
-      />
-
-      <h3 className="mt-50">Step 5: Fetch and Modify</h3>
+      <h3 className="mt-50">Step 4: Fetch and Modify</h3>
       <div>
-        <Button
-          className={classes.fetchBtn}
-          disabled={!version || fetchingVersions || note === ''}
-          variant="contained"
-          color="primary"
-          onClick={handleFetchTableData}
-        >
-          {fetchingVersions || fetchingData ? (
-            <div style={{ width: 39.68 }}>
-              <PreLoader />
-            </div>
-          ) : (
-            'Fetch'
-          )}
-        </Button>
+        <div>
+          <Button
+            className={classes.fetchBtn}
+            disabled={!version || fetchingVersions}
+            variant="contained"
+            color="primary"
+            onClick={handleFetchTableData}
+          >
+            {fetchingVersions || fetchingData ? (
+              <div style={{ width: 39.68 }}>
+                <PreLoader />
+              </div>
+            ) : (
+              'Fetch'
+            )}
+          </Button>
+
+          <Button
+            className={classes.saveBtn}
+            disabled={!isModified}
+            variant="contained"
+            color="primary"
+            onClick={handleSaveOpen}
+          >
+            Save
+          </Button>
+        </div>
 
         <MaterialTable
           title={table}
@@ -122,33 +128,49 @@ export default function AssumptionTable({
                 : 'Please fetch table data first',
             },
           }}
-          columns={tableD.columns}
-          data={tableD.data}
-          editable={{
-            onRowAdd: newData =>
-              new Promise(resolve => {
-                setTimeout(() => {
-                  // resolve();
-                  console.log('adding....');
-                }, 600);
-              }),
-            onRowUpdate: (newData, oldData) => handleSaveData(),
-            // new Promise(resolve => {
-            //   setTimeout(() => {
-            //     resolve();
-            //     if (oldData) {
-            //       console.log('updating....');
-            //     }
-            //   }, 600);
-            // }),
-            onRowDelete: oldData =>
-              new Promise(resolve => {
-                setTimeout(() => {
-                  resolve();
-                  console.log('deleting....');
-                }, 600);
-              }),
-          }}
+          columns={columns}
+          data={data}
+          editable={
+            columns.length > 0
+              ? {
+                  onRowAdd: newData =>
+                    new Promise((resolve, reject) => {
+                      setTimeout(() => {
+                        setIsModified(true);
+                        setData([...data, newData]);
+
+                        resolve();
+                      }, 500);
+                    }),
+                  onRowUpdate: (newData, oldData) =>
+                    new Promise((resolve, reject) => {
+                      setTimeout(() => {
+                        setIsModified(true);
+
+                        const dataUpdate = [...data];
+                        const index = oldData.tableData.id;
+                        dataUpdate[index] = newData;
+                        setData([...dataUpdate]);
+
+                        resolve();
+                      }, 500);
+                    }),
+                  onRowDelete: oldData =>
+                    new Promise((resolve, reject) => {
+                      setTimeout(() => {
+                        setIsModified(true);
+
+                        const dataDelete = [...data];
+                        const index = oldData.tableData.id;
+                        dataDelete.splice(index, 1);
+                        setData([...dataDelete]);
+
+                        resolve();
+                      }, 500);
+                    }),
+                }
+              : null
+          }
           options={{
             selection: true,
             pageSize: 10,
@@ -157,26 +179,28 @@ export default function AssumptionTable({
             {
               tooltip: 'Remove All Selected Users',
               icon: 'delete',
-              onClick: (evt, data) => {
-                setOpen(true);
-                setSelectedData(data);
+              onClick: (evt, sData) => {
+                setOpenDelete(true);
+                setSelectedData(sData);
               },
             },
           ]}
         />
       </div>
+      <SaveDialog
+        open={openSave}
+        handleClose={handleSaveClose}
+        columns={columns}
+        data={data}
+        saveTableData={saveTableData}
+      />
       <DeleteDialog
-        open={open}
+        open={openDelete}
         data={selctedData}
-        handleClose={handleDialogClose}
+        handleClose={handleDeleteClose}
       />
       <Backdrop className={classes.backdrop} open={openBD}>
-        {savingData ? (
-          // <CircularProgress color="inherit" />
-          <h2>Saving Data...</h2>
-        ) : (
-          <h2>Success! Reloading Data...</h2>
-        )}
+        <CircularProgress color="inherit" />
       </Backdrop>
     </div>
   );

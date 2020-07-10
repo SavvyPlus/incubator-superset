@@ -575,6 +575,13 @@ class EditAssumptionModelView(
             }
         return jsonify(message)
 
+    @expose('/save-data/', methods=['POST'])
+    def save_data(self):
+        import time
+        form = request.form
+        time.sleep(3)
+        return jsonify({'message': '200'})
+
 
 class UploadExcelView(SimpleFormView):
     route_base = '/upload_base_excel'
