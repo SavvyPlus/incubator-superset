@@ -76,6 +76,7 @@ from superset.exceptions import (
     SupersetTimeoutException,
 )
 from superset.jinja_context import get_template_processor
+from superset.models.core import Database
 from superset.models.dashboard import Dashboard
 from superset.models.datasource_access_request import DatasourceAccessRequest
 from superset.models.slice import Slice
@@ -543,10 +544,15 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
     @expose("/import_dashboards", methods=["GET", "POST"])
     def import_dashboards(self) -> FlaskResponse:
         """Overrides the dashboards using json instances from the file."""
-        f = request.files.get("file")
-        if request.method == "POST" and f:
+        import_file = request.files.get("file")
+        if request.method == "POST" and import_file:
+            success = False
+            database_id = request.form.get("db_id")
             try:
-                dashboard_import_export.import_dashboards(db.session, f.stream)
+                dashboard_import_export.import_dashboards(
+                    db.session, import_file.stream, database_id
+                )
+                success = True
             except DatabaseNotFound as ex:
                 logger.exception(ex)
                 flash(
@@ -567,8 +573,14 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                     ),
                     "danger",
                 )
-            return redirect("/dashboard/list/")
-        return self.render_template("superset/import_dashboards.html")
+            if success:
+                flash("Dashboard(s) have been imported", "success")
+                return redirect("/dashboard/list/")
+
+        databases = db.session.query(Database).all()
+        return self.render_template(
+            "superset/import_dashboards.html", databases=databases
+        )
 
     @event_logger.log_this
     @has_access

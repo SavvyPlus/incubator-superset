@@ -210,14 +210,12 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
     else:
         endpoint = "/superset/explore/?form_data={}".format(
             parse.quote_plus(json.dumps({
-                "queryFields": {"metrics": "metrics", "groupby": "groupby"},
+                "queryFields": {},
                 "datasource": str(table_id) + "__table",
                 "viz_type": "multi_boxplot",
                 "url_params": {},
                 "time_range_endpoints": ["inclusive", "exclusive"],
-                "granularity_sqla": None,
-                "time_range": "Last week", "metrics": ["count"],
-                "adhoc_filters": [], "groupby": [],
+                "time_range": "Last week",
                 "whisker_options": "Min/max (no outliers)",
                 "period_type_static_picker": "CalYear", "period_finyear_picker": None,
                 "period_calyear_picker": None, "period_quarterly_picker": None},
