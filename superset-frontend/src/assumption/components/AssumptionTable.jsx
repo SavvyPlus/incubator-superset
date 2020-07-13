@@ -20,6 +20,7 @@ const useStyles = makeStyles(theme => ({
   },
   saveBtn: {
     float: 'right',
+    minWidth: 80,
   },
 }));
 
@@ -40,7 +41,7 @@ export default function AssumptionTable({
 
   const [fetchingData, setFetchingData] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
-  const [selctedData, setSelectedData] = useState([]);
+  const [selectedData, setSelectedData] = useState([]);
   const [openSave, setOpenSave] = useState(false);
 
   const getTableData = td => {
@@ -86,7 +87,16 @@ export default function AssumptionTable({
     setOpenSave(false);
   };
 
-  console.log(data);
+  const handleDeleteSelected = () => {
+    let newData = [...data];
+    selectedData.forEach(sd => {
+      newData = newData.filter(nd => nd.tableData.id !== sd.tableData.id);
+    });
+    setData(newData);
+    setOpenDelete(false);
+    setIsModified(true);
+  };
+
   return (
     <div className="mb-50">
       <h3 className="mt-50">Step 4: Fetch and Modify</h3>
@@ -196,8 +206,9 @@ export default function AssumptionTable({
       />
       <DeleteDialog
         open={openDelete}
-        data={selctedData}
+        data={selectedData}
         handleClose={handleDeleteClose}
+        handleDeleteSelected={handleDeleteSelected}
       />
       <Backdrop className={classes.backdrop} open={openBD}>
         <CircularProgress color="inherit" />

@@ -12,13 +12,19 @@ function SaveDialog({ open, handleClose, columns, data, saveTableData }) {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // console.log(data);
+
   const handleNoteChange = event => {
     setNote(event.target.value);
   };
 
   const handleSaveTableData = () => {
     setSaving(true);
-    saveTableData('1').then();
+
+    saveTableData({
+      data,
+      header: columns.map(c => c.title),
+    });
   };
 
   return (
@@ -28,6 +34,8 @@ function SaveDialog({ open, handleClose, columns, data, saveTableData }) {
         maxWidth="sm"
         open={open}
         onClose={handleClose}
+        disableBackdropClick
+        disableEscapeKeyDown
         aria-labelledby="form-dialog-title"
       >
         <DialogTitle id="form-dialog-title">Save</DialogTitle>
