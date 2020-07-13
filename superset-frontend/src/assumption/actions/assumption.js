@@ -152,20 +152,22 @@ export function saveTableDataFailed() {
   return { type: SAVE_TABLE_DATA_FAILED };
 }
 
-export function saveTableData(table, note, files) {
+export function saveTableData(table, tableData, note) {
+  console.log(table, note);
   return dispatch => {
     return SupersetClient.post({
-      endpoint: '/edit-assumption/upload-csv/',
+      endpoint: '/edit-assumption/save-data/',
       postPayload: {
         table,
+        data: tableData,
         note,
-        file: files[0],
       },
-      stringify: false,
     })
       .then(({ json }) => {
-        dispatch(saveTableDataSuccess(json));
-        dispatch(addSuccessToast(t('File was uploaded successfully.')));
+        // dispatch(saveTableDataSuccess(json));
+        dispatch(addSuccessToast(t('Save data successfully. Reloading....')));
+        window.location.href = '/edit-assumption/assumption';
+        // dispatch(addSuccessToast(t('File was uploaded successfully.')));
       })
       .catch(() => {
         dispatch(saveTableDataFailed());

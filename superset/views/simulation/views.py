@@ -565,17 +565,21 @@ class EditAssumptionModelView(
             }
         return jsonify(message)
 
-    @expose("/save_data/")
+    @expose("/save-data/", methods=['POST'])
     def save_data(self):
-        form = request.form
-        table = form['table']
-        data_list = form['data']
-        note = form['note']
-        tab_data_model = find_table_class_by_name(table)
-        tab_def_model = find_table_class_by_name(table+'Definition')
-        df = from_dict(data_list)
-        new_def = save_as_new_tab_version(db, df, tab_def_model, tab_data_model, note)
-        message = 'Data has been saved as new version'
+        try:
+            form = request.form
+            table = json.loads(form.get('table'))
+            data_list = json.loads(form.get('data'))
+            note = json.loads(form.get('note'))
+            tab_data_model = find_table_class_by_name(table)
+            tab_def_model = find_table_class_by_name(table+'Definition')
+            df = from_dict(data_list)
+            new_def = save_as_new_tab_version(db, df, tab_def_model, tab_data_model, note=note)
+            message = {'message': 'Data has been saved as new version'}
+        except Exception as e:
+            db.session.rollback()
+            message = {'message': repr(e)}
 
         return jsonify(message)
 
