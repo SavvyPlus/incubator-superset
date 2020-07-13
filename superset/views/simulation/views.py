@@ -569,9 +569,9 @@ class EditAssumptionModelView(
     def save_data(self):
         try:
             form = request.form
-            table = form.get('table')
+            table = json.loads(form.get('table'))
             data_list = json.loads(form.get('data'))
-            note = form.get('note')
+            note = json.loads(form.get('note'))
             tab_data_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
             df = from_dict(data_list)
