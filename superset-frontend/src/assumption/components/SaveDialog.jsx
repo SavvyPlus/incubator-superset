@@ -8,7 +8,14 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import PreLoader from '../../components/PreLoader';
 
-function SaveDialog({ open, handleClose, columns, data, saveTableData }) {
+function SaveDialog({
+  open,
+  handleClose,
+  columns,
+  data,
+  saveTableData,
+  table,
+}) {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -21,10 +28,14 @@ function SaveDialog({ open, handleClose, columns, data, saveTableData }) {
   const handleSaveTableData = () => {
     setSaving(true);
 
-    saveTableData({
-      data,
-      header: columns.map(c => c.title),
-    });
+    saveTableData(
+      table,
+      {
+        data,
+        header: columns.map(c => c.title),
+      },
+      note,
+    );
   };
 
   return (
@@ -56,7 +67,7 @@ function SaveDialog({ open, handleClose, columns, data, saveTableData }) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="primary">
+          <Button disabled={saving} onClick={handleClose} color="primary">
             Cancel
           </Button>
           <Button

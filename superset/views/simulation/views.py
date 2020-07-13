@@ -565,13 +565,13 @@ class EditAssumptionModelView(
             }
         return jsonify(message)
 
-    @expose("/save_data/", methods=['POST'])
+    @expose("/save-data/", methods=['POST'])
     def save_data(self):
         try:
             form = request.form
-            table = form['table']
-            data_list = form['data']
-            note = form['note']
+            table = json.loads(form.get('table'))
+            data_list = json.loads(form.get('data'))
+            note = json.loads(form.get('note'))
             tab_data_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
             df = from_dict(data_list)

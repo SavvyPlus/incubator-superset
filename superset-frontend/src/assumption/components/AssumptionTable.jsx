@@ -203,6 +203,7 @@ export default function AssumptionTable({
         columns={columns}
         data={data}
         saveTableData={saveTableData}
+        table={table}
       />
       <DeleteDialog
         open={openDelete}
