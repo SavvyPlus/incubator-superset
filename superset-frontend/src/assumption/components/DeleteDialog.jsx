@@ -20,7 +20,7 @@ const useStyles = makeStyles({
   },
 });
 
-function DeleteDialog({ open, data, handleClose }) {
+function DeleteDialog({ open, data, handleClose, handleDeleteSelected }) {
   const classes = useStyles();
 
   const getKeys = d => {
@@ -30,14 +30,15 @@ function DeleteDialog({ open, data, handleClose }) {
   const createTableRows = d => {
     const rows = [];
     const keys = getKeys(d);
+
     for (let i = 0; i < d.length; i++) {
       const row = [];
       for (let j = 0; j < keys.length; j++) {
         if (keys[j] !== 'tableData') {
-          row.push(<TableCell>{d[i][keys[j]]}</TableCell>);
+          row.push(<TableCell key={keys[j]}>{d[i][keys[j]]}</TableCell>);
         }
       }
-      rows.push(<TableRow>{row}</TableRow>);
+      rows.push(<TableRow key={i}>{row}</TableRow>);
     }
     return rows;
   };
@@ -79,7 +80,7 @@ function DeleteDialog({ open, data, handleClose }) {
           <Button onClick={handleClose} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleClose} color="primary">
+          <Button onClick={handleDeleteSelected} color="primary">
             Delete
           </Button>
         </DialogActions>
