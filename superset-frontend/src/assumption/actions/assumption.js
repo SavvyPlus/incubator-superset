@@ -152,12 +152,15 @@ export function saveTableDataFailed() {
   return { type: SAVE_TABLE_DATA_FAILED };
 }
 
-export function saveTableData(tableData) {
+export function saveTableData(table, tableData, note) {
+  console.log(table, note);
   return dispatch => {
     return SupersetClient.post({
       endpoint: '/edit-assumption/save-data/',
       postPayload: {
-        tableData,
+        table,
+        data: tableData,
+        note,
       },
     })
       .then(({ json }) => {
