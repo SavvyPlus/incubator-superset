@@ -56,7 +56,7 @@ function SaveDialog({ open, handleClose, columns, data, saveTableData }) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="primary">
+          <Button disabled={saving} onClick={handleClose} color="primary">
             Cancel
           </Button>
           <Button
