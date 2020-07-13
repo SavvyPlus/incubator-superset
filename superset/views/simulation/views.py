@@ -173,7 +173,7 @@ def simulation_start_invoker(run_id, sim_num):
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
-            invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs},
+            invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs, 'supersetURL': get_current_external_ip()},
                     function_name='spot-simulation-prod-stk-check-spot-output')
 
             simulation.status = 'Run finished'
@@ -763,8 +763,8 @@ class SimulationModelView(
 
         # Send notification email
         # base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
-        base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
-        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
+        base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
         dynamic_template_data = {
             "run_id": run_id,
             "spot_price_forecast": base_url + "spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
