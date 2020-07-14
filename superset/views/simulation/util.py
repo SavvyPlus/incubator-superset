@@ -28,7 +28,8 @@ def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
 
     # TODO DEBUG do not write to s3
-    client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
+    response = client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
+    return response
 
 def put_file_to_s3(filename, bucket, key, is_public=False):
     with open(filename, "rb") as f:
