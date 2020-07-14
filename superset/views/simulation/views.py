@@ -167,7 +167,7 @@ def simulation_start_invoker(run_id, sim_num):
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
             batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
                                      year_end=end_date.year+1, interval=interval/2)
-            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, end_date.year-start_date.year+1,
+            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, end_date.year-start_date.year,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
