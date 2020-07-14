@@ -1030,6 +1030,9 @@ class SimulationModelView(
                     message = 'Error sending to message to sqs, please try again later to contact dev team.'
                     g.detail = message
             else:
+                g.detail = json.dumps(msg)
+                simulation.status = 'Running'
+                db.session.commit()
                 g.result = 'Skip pre process to invocation'
                 g.detail = 'Found existing assumption processed data, move to lambda invocation.'
                 simulation_start_invoker.apply_async(args=[simulation.run_id, 5])
