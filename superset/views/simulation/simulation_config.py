@@ -172,6 +172,7 @@ nifi_sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi_test"
 reference_date_s3_pickle_path = 'reference_date/{}to{}/{}.pickle'  # index
 reference_date_s3_folder_format = 'reference_date/{}to{}/'
 
+cache_path = 'cache/{}/'
 pv_data_s3_pickle_path = 'cache/{}/pv.pickle'    # assumptions version
 pv_forecast_s3_new_pickle_path = 'cache/{}/pv_forecast.pickle'
 pv_history_s3_new_pickle_path = 'cache/{}/pv_history.pickle'

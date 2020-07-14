@@ -46,7 +46,7 @@ from superset.views.simulation.simulation_config import excel_path, bucket_input
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
-    save_as_new_tab_version, ref_day_generation_check
+    save_as_new_tab_version, ref_day_generation_check, check_assumption_processed
 from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date
 from ..utils import bootstrap_user_data, create_attachment
 
@@ -1020,16 +1020,19 @@ class SimulationModelView(
                 'runType': run_type,
                 'supersetURL': get_current_external_ip(),
             }
-            if send_sqs_msg(json.dumps(msg)):
-                g.detail = json.dumps(msg)
-                simulation.status = 'Running'
-                db.session.commit()
+            if not check_assumption_processed(simulation.run_id):
+                if send_sqs_msg(json.dumps(msg)):
+                    g.detail = json.dumps(msg)
+                    simulation.status = 'Running'
+                    db.session.commit()
+                else:
+                    g.result = 'Run failed'
+                    message = 'Error sending to message to sqs, please try again later to contact dev team.'
+                    g.detail = message
             else:
-                g.result = 'Run failed'
-                message = 'Error sending to message to sqs, please try again later to contact dev team.'
-                g.detail = message
-            # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
-            #                                             simulation.run_id, sim_num])
+                g.result = 'Skip pre process to invocation'
+                g.detail = 'Found existing assumption processed data, move to lambda invocation.'
+                simulation_start_invoker.apply_async(args=[simulation.run_id, 5])
 
         else:
             g.result = 'Run failed'

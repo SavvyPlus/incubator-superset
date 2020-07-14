@@ -231,5 +231,5 @@ def get_current_external_ip():
 
 def get_full_week_end_date(start_date, end_date):
     total_days = (end_date - start_date).days+1
-    end_date = end_date + timedelta(days=7 - total_days % 7) if total_days %7 > 0 else end_date
+    end_date = end_date - timedelta(days=total_days % 7)
     return end_date
