@@ -162,7 +162,7 @@ def simulation_start_invoker(run_id, sim_num):
             start_date = simulation.start_date
             # end_date = simulation.end_date
             end_date = get_full_week_end_date(start_date, simulation.end_date)
-            total_days = (end_date - start_date).days
+            total_days = (end_date - start_date).days + 1
             sim_tag = run_id
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
             batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
