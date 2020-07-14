@@ -574,11 +574,13 @@ class EditAssumptionModelView(
             note = json.loads(form.get('note'))
             tab_data_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
+            print(data_list)
             df = from_dict(data_list)
             new_def = save_as_new_tab_version(db, df, tab_def_model, tab_data_model, note=note)
             message = {'message': 'Data has been saved as new version'}
         except Exception as e:
             db.session.rollback()
+            traceback.print_exc()
             message = {'message': repr(e)}
 
         return jsonify(message)
