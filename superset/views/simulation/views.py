@@ -1103,6 +1103,22 @@ class SimulationModelView(
         simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
         simulation.assumption.status = 'Error'
         simulation.assumption.status_detail = error_msg
+        # Find the latest log of start simulation to find the user who started the sim
+        latest_sim = db.session.query(SimulationLog).filter_by(
+            action_object_type='Simulation',
+            action_object=simulation.name,
+            action='start run',
+            result='Started, pre-process in progress'
+        ).order_by(SimulationLog.dttm.desc()).first()
+        email_to = latest_sim.user.email
+        message = {
+            "sim_name": simulation.name,
+            "assu_name": simulation.assumption.name,
+            "error_log": error_msg,
+        }
+
+        if send_sendgrid_mail(email_to, message, 'd-3961c5296eed44eabd6d27ac1f14ccaf'):
+            print('process failed email notification sent')
         g.action_object = simulation.assumption.name
         g.action_object_type = 'Assumption'
         g.result = 'Process failed'
