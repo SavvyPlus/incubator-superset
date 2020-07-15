@@ -21,6 +21,7 @@ def invoker(payload, function_name='spot-simulation-prod-stk2-lp-v2'):
         LogType='Tail',
         Payload=json.dumps(payload),
     )
+    print('invoke: '+ repr(response))
     # print(payload['sim_tag'], payload['sim_index'], payload['sim_ref_dates'])
 
 
