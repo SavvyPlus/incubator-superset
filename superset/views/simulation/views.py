@@ -506,20 +506,20 @@ class EditAssumptionModelView(
         scenario = None
         if 'scenario' in form.keys():
             scenario = form['Scenario']
-        file_name = file.name
+        file_name = file.filename
         extension = os.path.splitext(file_name)[1].lower()
         path = tempfile.NamedTemporaryFile(
             dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
         ).name
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
-            upload_stream_write(file.data, path)
+            upload_stream_write(file, path)
             tab_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
-            if extension == 'xlsx':
+            if extension in ['.xlsx', '.xls']:
                 df = read_excel(path)
             else:
-                df = read_csv(path)
+                raise Exception('Please choose excel file with xlsx or xls format.')
             new_def = save_as_new_tab_version(db, df, tab_def_model, tab_model, note=note, scenario=scenario)
             message = 'Update table successful'
         except Exception as e:
