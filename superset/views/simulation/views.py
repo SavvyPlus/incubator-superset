@@ -555,7 +555,7 @@ class EditAssumptionModelView(
             tab_data_model = find_table_class_by_name(table)
             version = ver
             tab_data = db.session.query(tab_data_model).filter_by(Version=version).all()
-            headers = tab_data_model.included_keys
+            headers = tab_data_model().included_keys
             data_list = []
             for row_data in tab_data:
                 data_list.append(row_data.get_dict())
@@ -570,7 +570,10 @@ class EditAssumptionModelView(
         try:
             form = request.form
             table = json.loads(form.get('table'))
-            data_list = json.loads(form.get('data'))
+            data_list = json.loads(form.get('data'))['data']
+            if 'tableData' in data_list[0].keys():
+                for data in data_list:
+                    del data['tableData']
             note = json.loads(form.get('note'))
             tab_data_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
@@ -1089,7 +1092,7 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
-        flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
+        # flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
         return '200 OK'
 
     @simulation_logger.log_simulation(action_name='process assumption')
