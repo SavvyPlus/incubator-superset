@@ -497,8 +497,8 @@ class EditAssumptionModelView(
             ),
         )
 
-    @expose('/upload-csv/', methods=['POST'])
-    def upload_csv(self):
+    @expose('/upload-file/', methods=['POST'])
+    def upload_file(self):
         form = request.form
         table = form['table']
         note = form['note']

@@ -59,7 +59,7 @@ export function uploadFile(table, note, files) {
     formData.append('note', note);
     return (
       axios
-        .post('/edit-assumption/upload-csv/', formData, {
+        .post('/edit-assumption/upload-file/', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             'X-CSRFToken': csrfToken,
