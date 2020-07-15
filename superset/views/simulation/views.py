@@ -497,8 +497,8 @@ class EditAssumptionModelView(
             ),
         )
 
-    @expose('/upload-csv/', methods=['POST'])
-    def upload_csv(self):
+    @expose('/upload-file/', methods=['POST'])
+    def upload_file(self):
         form = request.form
         table = form['table']
         note = form['note']
@@ -555,7 +555,7 @@ class EditAssumptionModelView(
             tab_data_model = find_table_class_by_name(table)
             version = ver
             tab_data = db.session.query(tab_data_model).filter_by(Version=version).all()
-            headers = tab_data_model().included_keys
+            headers = tab_data_model().get_header_and_type()
             data_list = []
             for row_data in tab_data:
                 data_list.append(row_data.get_dict())

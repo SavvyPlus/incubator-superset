@@ -46,7 +46,6 @@ function Dropzone(props) {
     acceptedFiles,
   } = useDropzone({
     accept: [
-      'text/csv',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     ],
@@ -87,7 +86,7 @@ function Dropzone(props) {
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
         <p className="dz-font">
-          Drag 'n' drop your single csv or excel file, or click to select file
+          Drag 'n' drop your single excel file, or click to select
         </p>
       </div>
       {accFiles.length > 0 && (
