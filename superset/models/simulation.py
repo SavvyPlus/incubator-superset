@@ -163,6 +163,7 @@ class DataTableMixin:
 
     __tablename__ = None
     included_keys = None
+    column_type_dict = None
     def get_def_col_name(self):
         return self.__tablename__ + '_Definition'
 
@@ -170,7 +171,11 @@ class DataTableMixin:
         return getattr(self, self.get_def_col_name())
 
     def get_dict(self):
-        return dict((key, value) for (key, value) in self.__dict__.items() if key in self.included_keys)
+        return dict((key, value) for (key, value) in self.__dict__.items() if key in self.column_type_dict.keys())
+
+
+    def get_header_and_type(self):
+        return [{'name': key, 'type': self.column_type_dict[key]} for key in self.column_type_dict.keys() ]
 
 """Rooftop Solar History"""
 class RooftopSolarHistoryDefinition(Model):
@@ -199,6 +204,7 @@ class RooftopSolarHistory(Model, DataTableMixin):
                                                     foreign_keys=[Version],
                                                     backref="data")
     included_keys = ['State', 'Date', 'Capacity_MW', 'Aggregate_MW']
+    column_type_dict = {'State':'string','Date':'date','Capacity_MW': 'numeric', 'Aggregate_MW': 'numeric'}
 
 
 """Rooftop Solar Forecast"""
@@ -230,6 +236,7 @@ class RooftopSolarForecast(Model, DataTableMixin):
                                                     foreign_keys=[Version],
                                                     backref="data")
     included_keys = ['State', 'Year', 'Capacity_MW', 'Aggregate_MW']
+    column_type_dict = {'State': 'string', 'Year':'numeric', 'Capacity_MW': 'numeric', 'Aggregate_MW': 'numeric'}
 
 
 """Renewable Proportion"""
@@ -258,6 +265,7 @@ class RenewableProportion(Model, DataTableMixin):
                                                     foreign_keys=[Version],
                                                     backref="data")
     included_keys = ['State', 'Date', 'Maximum_HalfHour_Intermittent_Proportion']
+    column_type_dict = {'State':'string', 'Date':'date', 'Maximum_HalfHour_Intermittent_Proportion': 'numeric'}
 
 
 """Demand Growth"""
@@ -289,6 +297,7 @@ class DemandGrowth(Model, DataTableMixin):
                                                     foreign_keys=[Version],
                                                     backref="data")
     included_keys = ['State', 'Year', 'Probability', 'Growth']
+    column_type_dict = {'State':'string' ,'Year':'numeric' ,'Probability':'numeric', 'Growth':'numeric'}
 
 
 """Behind The Meter Battery"""
@@ -319,6 +328,7 @@ class BehindTheMeterBattery(Model, DataTableMixin):
                                                     foreign_keys=[Version],
                                                     backref="data")
     included_keys = ['State', 'Year', 'Aggregate_MW']
+    column_type_dict = {'State':'string','Year':'numeric','Aggregate_MW':'numeric'}
 
 
 """Project Proxy"""
@@ -351,6 +361,8 @@ class ProjectProxy(Model, DataTableMixin):
                                             foreign_keys=[Version],
                                             backref="data")
     included_keys = ['State', 'Project', 'Nameplate_Capacity_MW', 'Technology_Type', 'Latitude', 'Longitude', 'Tracking_Type']
+    column_type_dict = {'State':'string', 'Project':'string', 'Nameplate_Capacity_MW': 'numeric',
+                        'Technology_Type': 'string', 'Latitude':'numeric', 'Longitude':'numeric', 'TTracking_Typerac':'string'}
 
 
 """MPC CPT"""
@@ -379,6 +391,7 @@ class MPCCPT(Model, DataTableMixin):
                                     foreign_keys=[Version],
                                     backref="data")
     included_keys = ['FY', 'CPT', 'MPC']
+    column_type_dict = {'FY': 'string', 'CPT': 'numeric', 'MPC':'numeric'}
 
 
 """Gas Price Escalation"""
@@ -415,6 +428,9 @@ class GasPriceEscalation(Model, DataTableMixin):
                                                     foreign_keys=[Version],
                                                     backref="data")
     included_keys = ['State', 'Year', 'Case1', 'Case2', 'Case3', 'Case4', 'Case5', 'Case6', 'Case7', 'Case8', 'Case9']
+    column_type_dict = {'State': 'string', 'Year':'numeric', 'Case1':'numeric', 'Case2':'numeric', 'Case3':'numeric',
+                        'Case4':'numeric', 'Case5':'numeric', 'Case6':'numeric', 'Case7':'numeric', 'Case8':'numeric',
+                        'Case9':'numeric'}
 
 
 """Strategy Behaviour"""
@@ -444,6 +460,7 @@ class StrategicBehaviour(Model, DataTableMixin):
                                     foreign_keys=[Version],
                                     backref="data")
     included_keys = ['State', 'Bin_Not_Exceeding', 'Value', 'MW']
+    column_type_dict = {'State':'string', 'Bin_Not_Exceeding': 'numeric', 'value':'numeric', 'MW':'numeric'}
 
 """Retirement"""
 class RetirementDefinition(Model):
@@ -475,6 +492,8 @@ class Retirement(Model, DataTableMixin):
                                     foreign_keys=[Version],
                                     backref="data")
     included_keys = ['DUID','State','Registered_Capacity','Impact_To_State','Adjustment_Factor','Closure_Date','Back_To_Service_Date']
+    column_type_dict = {'DUID':'string' ,'State':'string', 'Registered_Capacity': 'numeric', 'Impact_To_State': 'string',
+                        'Adjustment_Factor': 'numeric', 'Closure_Date':'date', 'Back_To_Service_Date': 'date'}
 
 """Project List"""
 class ProjectListDefinition(Model):
@@ -513,6 +532,10 @@ class ProjectList(Model, DataTableMixin):
                                     backref="data")
     included_keys = ['DUID','Name','State','Fuel_Type','Start_Date','End_Date','Status','Offer_Rate','Maximum_Quantity',
                      'Installed_Quantity','Probability_Of_Success','Resolution','Proxy']
+    column_type_dict = {'DUID':'string', 'Name':'string','State':'string','Fuel_Type':'string', 'Start_Date':'date',
+                        'End_Date':'date', 'Status':'string', 'Offer_Rate':'numeric', 'Maximum_Quantity': 'numeric',
+                        'Installed_Quantity':'numeric', 'Probability_Of_Success':'numeric', 'Resolution':'string',
+                        'Proxy':'string'}
 
 
 model_list = {
