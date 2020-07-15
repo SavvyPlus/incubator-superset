@@ -18,6 +18,7 @@
  */
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
+import axios from 'axios';
 import {
   addSuccessToast,
   addWarningToast,
@@ -50,26 +51,40 @@ export function uploadFileFailed(error) {
 }
 
 export function uploadFile(table, note, files) {
+  const csrfToken = document.querySelector('#csrf_token').value;
   return dispatch => {
-    return SupersetClient.post({
-      endpoint: '/edit-assumption/upload-csv/',
-      postPayload: {
-        table,
-        note,
-        file: files[0],
-      },
-      stringify: false,
-    })
-      .then(({ json }) => {
-        dispatch(uploadFileSuccess(json));
-        dispatch(addSuccessToast(t('File was uploaded successfully.')));
-      })
-      .catch(() => {
-        dispatch(uploadFileFailed());
-        dispatch(
-          addDangerToast(t('Sorry, there was an error uploading this file')),
-        );
-      });
+    const formData = new FormData();
+    formData.append('file', files[0]);
+    formData.append('table', table);
+    formData.append('note', note);
+    return (
+      axios
+        .post('/edit-assumption/upload-file/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'X-CSRFToken': csrfToken,
+          },
+        })
+        // return SupersetClient.post({
+        //   endpoint: '/edit-assumption/upload-csv/',
+        //   postPayload: {
+        //     table,
+        //     note,
+        //     file: files[0],
+        //   },
+        //   stringify: false,
+        // })
+        .then(({ json }) => {
+          dispatch(uploadFileSuccess(json));
+          dispatch(addSuccessToast(t('File was uploaded successfully.')));
+        })
+        .catch(() => {
+          dispatch(uploadFileFailed());
+          dispatch(
+            addDangerToast(t('Sorry, there was an error uploading this file')),
+          );
+        })
+    );
   };
 }
 

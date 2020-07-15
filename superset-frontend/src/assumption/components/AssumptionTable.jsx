@@ -46,20 +46,25 @@ export default function AssumptionTable({
 
   const getTableData = td => {
     const cols = [];
+    const dateKeys = [];
     for (let i = 0; i < td.columns.length; i++) {
-      cols.push({ title: td.columns[i], field: td.columns[i] });
-      // if (td.columns[i] === 'Aggregate_MW' || td.columns[i] === 'Capacity_MW') {
-      //   columns.push({
-      //     title: td.columns[i],
-      //     field: td.columns[i],
-      //     type: 'numeric',
-      //   });
-      // } else {
-      //   columns.push({ title: td.columns[i], field: td.columns[i] });
-      // }
+      if (td.columns[i].type === 'date') dateKeys.push(td.columns[i].name);
+
+      cols.push({
+        title: td.columns[i].name,
+        field: td.columns[i].name,
+        type: td.columns[i].type,
+      });
     }
-    const dt = td.data;
-    return { cols, dt };
+
+    const formattedData = [...td.data];
+    for (let i = 0; i < dateKeys.length; i++) {
+      for (let j = 0; j < td.data.length; j++) {
+        formattedData[j][dateKeys[i]] = new Date(formattedData[j][dateKeys[i]]);
+      }
+    }
+    // console.log(formattedData);
+    return { cols, dt: formattedData };
   };
 
   useEffect(() => {

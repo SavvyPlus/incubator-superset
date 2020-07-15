@@ -497,8 +497,8 @@ class EditAssumptionModelView(
             ),
         )
 
-    @expose('/upload-csv/', methods=['POST'])
-    def upload_csv(self):
+    @expose('/upload-file/', methods=['POST'])
+    def upload_file(self):
         form = request.form
         table = form['table']
         note = form['note']
@@ -506,20 +506,20 @@ class EditAssumptionModelView(
         scenario = None
         if 'scenario' in form.keys():
             scenario = form['Scenario']
-        file_name = file.name
+        file_name = file.filename
         extension = os.path.splitext(file_name)[1].lower()
         path = tempfile.NamedTemporaryFile(
             dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
         ).name
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
-            upload_stream_write(file.data, path)
+            upload_stream_write(file, path)
             tab_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
-            if extension == 'xlsx':
+            if extension in ['.xlsx', '.xls']:
                 df = read_excel(path)
             else:
-                df = read_csv(path)
+                raise Exception('Please choose excel file with xlsx or xls format.')
             new_def = save_as_new_tab_version(db, df, tab_def_model, tab_model, note=note, scenario=scenario)
             message = 'Update table successful'
         except Exception as e:
@@ -555,7 +555,7 @@ class EditAssumptionModelView(
             tab_data_model = find_table_class_by_name(table)
             version = ver
             tab_data = db.session.query(tab_data_model).filter_by(Version=version).all()
-            headers = tab_data_model.included_keys
+            headers = tab_data_model().get_header_and_type()
             data_list = []
             for row_data in tab_data:
                 data_list.append(row_data.get_dict())
@@ -570,7 +570,10 @@ class EditAssumptionModelView(
         try:
             form = request.form
             table = json.loads(form.get('table'))
-            data_list = json.loads(form.get('data'))
+            data_list = json.loads(form.get('data'))['data']
+            if 'tableData' in data_list[0].keys():
+                for data in data_list:
+                    del data['tableData']
             note = json.loads(form.get('note'))
             tab_data_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
@@ -1096,7 +1099,7 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
-        flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
+        # flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
         return '200 OK'
 
     @simulation_logger.log_simulation(action_name='process assumption')
@@ -1110,6 +1113,22 @@ class SimulationModelView(
         simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
         simulation.assumption.status = 'Error'
         simulation.assumption.status_detail = error_msg
+        # Find the latest log of start simulation to find the user who started the sim
+        latest_sim = db.session.query(SimulationLog).filter_by(
+            action_object_type='Simulation',
+            action_object=simulation.name,
+            action='start run',
+            result='Started, pre-process in progress'
+        ).order_by(SimulationLog.dttm.desc()).first()
+        email_to = latest_sim.user.email
+        message = {
+            "sim_name": simulation.name,
+            "assu_name": simulation.assumption.name,
+            "error_log": error_msg,
+        }
+
+        if send_sendgrid_mail(email_to, message, 'd-3961c5296eed44eabd6d27ac1f14ccaf'):
+            print('process failed email notification sent')
         g.action_object = simulation.assumption.name
         g.action_object_type = 'Assumption'
         g.result = 'Process failed'
