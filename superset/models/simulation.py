@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func, Float
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func, DECIMAL, Float
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -195,8 +195,8 @@ class RooftopSolarHistory(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Date = Column(Date)
-    Capacity_MW = Column(Float)
-    Aggregate_MW = Column(Float)
+    Capacity_MW = Column(DECIMAL(32,16))
+    Aggregate_MW = Column(DECIMAL(32,16))
     Version = Column(Integer,
                                            ForeignKey('Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'),
                                            nullable=False)
@@ -227,16 +227,15 @@ class RooftopSolarForecast(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Year = Column(Integer)
-    Capacity_MW = Column(Float)
-    Aggregate_MW = Column(Float)
+    Aggregate_MW = Column(DECIMAL(32,16))
     Version = Column(Integer,
                                            ForeignKey('Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'),
                                            nullable=False)
     Rooftop_Solar_Forecast_Definition = relationship('RooftopSolarForecastDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
-    included_keys = ['State', 'Year', 'Capacity_MW', 'Aggregate_MW']
-    column_type_dict = {'State': 'string', 'Year':'numeric', 'Capacity_MW': 'numeric', 'Aggregate_MW': 'numeric'}
+    included_keys = ['State', 'Year', 'Aggregate_MW']
+    column_type_dict = {'State': 'string', 'Year':'numeric', 'Aggregate_MW': 'numeric'}
 
 
 """Renewable Proportion"""
@@ -257,7 +256,7 @@ class RenewableProportion(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Date = Column(Date)
-    Maximum_HalfHour_Intermittent_Proportion = Column(Float)
+    Maximum_HalfHour_Intermittent_Proportion = Column(DECIMAL(5,4))
     Version = Column(Integer,
                                            ForeignKey('Renewable_Proportion_Definition.Renewable_Proportion_Version'),
                                            nullable=False)
@@ -288,8 +287,8 @@ class DemandGrowth(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Year = Column(Integer)
-    Probability = Column(Float)
-    Growth = Column(Float)
+    Probability = Column(DECIMAL(5,4))
+    Growth = Column(DECIMAL(7,6))
     Version = Column(Integer,
                    ForeignKey('Demand_Growth_Definition.Demand_Growth_Version'),
                    nullable=False)
@@ -320,7 +319,7 @@ class BehindTheMeterBattery(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Year = Column(Integer)
-    Aggregate_MW = Column(Float)
+    Aggregate_MW = Column(DECIMAL(32,16))
     Version = Column(Integer,
                                            ForeignKey('Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'),
                                            nullable=False)
@@ -349,10 +348,10 @@ class ProjectProxy(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Project = Column(String(50))
-    Nameplate_Capacity_MW = Column(Float)
+    Nameplate_Capacity_MW = Column(DECIMAL(32,16))
     Technology_Type = Column(String(10))
-    Latitude = Column(Float)
-    Longitude = Column(Float)
+    Latitude = Column(DECIMAL(32,16))
+    Longitude = Column(DECIMAL(32,16))
     Tracking_Type = Column(String(50))
     Version = Column(Integer,
                                    ForeignKey('Project_Proxy_Definition.Project_Proxy_Version'),
@@ -382,8 +381,8 @@ class MPCCPT(Model, DataTableMixin):
     __tablename__ = "MPC_CPT"
     id = Column(Integer, primary_key=True, autoincrement=True)
     FY = Column(String(10))
-    CPT = Column(Float)
-    MPC = Column(Float)
+    CPT = Column(DECIMAL(32,16))
+    MPC = Column(DECIMAL(32,16))
     Version = Column(Integer,
                             ForeignKey('MPC_CPT_Definition.MPC_CPT_Version'),
                             nullable=False)
@@ -412,15 +411,15 @@ class GasPriceEscalation(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Year = Column(Integer)
-    Case1 = Column(Float)
-    Case2 = Column(Float)
-    Case3 = Column(Float)
-    Case4 = Column(Float)
-    Case5 = Column(Float)
-    Case6 = Column(Float)
-    Case7 = Column(Float)
-    Case8 = Column(Float)
-    Case9 = Column(Float)
+    Case1 = Column(DECIMAL(7,6))
+    Case2 = Column(DECIMAL(7,6))
+    Case3 = Column(DECIMAL(7,6))
+    Case4 = Column(DECIMAL(7,6))
+    Case5 = Column(DECIMAL(7,6))
+    Case6 = Column(DECIMAL(7,6))
+    Case7 = Column(DECIMAL(7,6))
+    Case8 = Column(DECIMAL(7,6))
+    Case9 = Column(DECIMAL(7,6))
     Version = Column(Integer,
                                         ForeignKey('Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'),
                                         nullable=False)
@@ -451,8 +450,8 @@ class StrategicBehaviour(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Bin_Not_Exceeding = Column(Integer)
-    Value = Column(Float)
-    MW = Column(Float)
+    Value = Column(DECIMAL(7,6))
+    MW = Column(DECIMAL(32,16))
     Version = Column(Integer,
                             ForeignKey('Strategic_Behaviour_Definition.Strategic_Behaviour_Version'),
                             nullable=False)
@@ -480,9 +479,9 @@ class Retirement(Model, DataTableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     DUID = Column(String(50))
     State = Column(String(10))
-    Registered_Capacity = Column(Float)
+    Registered_Capacity = Column(DECIMAL(32,16))
     Impact_To_State = Column(String(10))
-    Adjustment_Factor = Column(Float)
+    Adjustment_Factor = Column(DECIMAL(7,6))
     Closure_Date = Column(Date)
     Back_To_Service_Date = Column(Date)
     Version = Column(Integer,
@@ -518,10 +517,10 @@ class ProjectList(Model, DataTableMixin):
     Start_Date = Column(Date)
     End_Date = Column(Date)
     Status = Column(String(50))
-    Offer_Rate = Column(Float)
-    Maximum_Quantity = Column(Float)
-    Installed_Quantity = Column(Float)
-    Probability_Of_Success = Column(Float)
+    Offer_Rate = Column(DECIMAL(32,16))
+    Maximum_Quantity = Column(DECIMAL(32,16))
+    Installed_Quantity = Column(DECIMAL(32,16))
+    Probability_Of_Success = Column(DECIMAL(5,4))
     Resolution = Column(String(20))
     Proxy = Column(String(50))
     Version = Column(Integer,
