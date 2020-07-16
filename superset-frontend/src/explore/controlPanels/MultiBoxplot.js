@@ -31,9 +31,9 @@ export default {
       label: t('Empower'),
       expanded: true,
       controlSetRows: [
-        ['metrics'],
-        ['adhoc_filters'],
-        ['groupby'],
+        // ['metrics'],
+        // ['adhoc_filters'],
+        // ['groupby'],
         [
           {
             name: 'whisker_options',

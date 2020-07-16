@@ -26,21 +26,23 @@ import { t } from '@superset-ui/translation';
 import * as Actions from '../actions/assumption';
 import UpsertSelect from './UpsertSelect';
 import TableSelect from './TableSelect';
-import Dropzone from './upload/Dropzone';
+import VersionSelect from './VersionSelect';
+import Dropzone from './Dropzone';
 import ToastPresenter from '../../messageToasts/containers/ToastPresenter';
 import '../App.less';
+import AssumptionTable from './AssumptionTable';
 
 function App({ username, firstName, lastName, assumption, actions }) {
   return (
     <div className="container app">
-      <Row>
+      {/* <Row>
         <Col md={9}>
           <h1>{username}</h1>
           <h3>
             {firstName} {lastName}
           </h3>
         </Col>
-      </Row>
+      </Row> */}
       <Row>
         <Col md={8}>
           <UpsertSelect
@@ -55,8 +57,33 @@ function App({ username, firstName, lastName, assumption, actions }) {
         </Col>
       </Row>
       <Row>
-        <Col md={8}>
-          <Dropzone table={assumption.table} uploadFile={actions.uploadFile} />
+        <Col md={12}>
+          {assumption.upsert === 'upload' ? (
+            <Dropzone
+              table={assumption.table}
+              uploadFile={actions.uploadFile}
+            />
+          ) : (
+            <>
+              <VersionSelect
+                versions={assumption.versions}
+                upsert={assumption.upsert}
+                table={assumption.table}
+                version={assumption.version}
+                fetching={assumption.fetchingVersions}
+                setVersion={actions.setVersion}
+                fetchTableVersions={actions.fetchTableVersions}
+              />
+              <AssumptionTable
+                table={assumption.table}
+                tableData={assumption.tableData}
+                version={assumption.version}
+                fetchingVersions={assumption.fetchingVersions}
+                fetchTableData={actions.fetchTableData}
+                saveTableData={actions.saveTableData}
+              />
+            </>
+          )}
         </Col>
       </Row>
       <ToastPresenter />

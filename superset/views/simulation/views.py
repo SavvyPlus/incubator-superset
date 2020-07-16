@@ -46,8 +46,8 @@ from superset.views.simulation.simulation_config import excel_path, bucket_input
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
-    save_as_new_tab_version, ref_day_generation_check, check_assumption_processed
-from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date
+    save_as_new_tab_version, ref_day_generation_check
+from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date, from_dict
 from ..utils import bootstrap_user_data, create_attachment
 
 
@@ -497,8 +497,8 @@ class EditAssumptionModelView(
             ),
         )
 
-    @expose('/upload-csv/', methods=['POST'])
-    def upload_csv(self):
+    @expose('/upload-file/', methods=['POST'])
+    def upload_file(self):
         form = request.form
         table = form['table']
         note = form['note']
@@ -506,20 +506,20 @@ class EditAssumptionModelView(
         scenario = None
         if 'scenario' in form.keys():
             scenario = form['Scenario']
-        file_name = file.name
+        file_name = file.filename
         extension = os.path.splitext(file_name)[1].lower()
         path = tempfile.NamedTemporaryFile(
             dir=app.config["UPLOAD_FOLDER"], suffix=extension, delete=False
         ).name
         try:
             utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
-            upload_stream_write(file.data, path)
+            upload_stream_write(file, path)
             tab_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
-            if extension == 'xlsx':
+            if extension in ['.xlsx', '.xls']:
                 df = read_excel(path)
             else:
-                df = read_csv(path)
+                raise Exception('Please choose excel file with xlsx or xls format.')
             new_def = save_as_new_tab_version(db, df, tab_def_model, tab_model, note=note, scenario=scenario)
             message = 'Update table successful'
         except Exception as e:
@@ -533,26 +533,58 @@ class EditAssumptionModelView(
             'message': message
         })
 
-    @expose("/get_data/")
-    def get_data(self):
-        tab_data_model = find_table_class_by_name("ProjectProxy")
-        # ver_col = getattr()
-        tab_data = db.session.query(tab_data_model).filter_by(Version=1).all()
+    @expose("/get-data/<table>/<request_type>/<ver>/")
+    def get_data(self, table: str, request_type: str, ver: str):
         # form = request.form
         # table = form['table']
-        # tab_def_model = find_table_class_by_name(table + 'Definition')
-        # if form['request'] == 'version':
-        #     version_list = db.session.query(tab_def_model).all()
-        #     versions = {}
-        #     for version in version_list:
-        #         versions[version.id] = version.Note
-        #
-        #     message = version
-        # else:
-        #     version = form['version']
-        #     tab_data = db.session.query(tab_def_model)
-        #     data = {}
-        return jsonify('')
+        tab_def_model = find_table_class_by_name(table + 'Definition')
+        if request_type == 'version':
+            version_list = db.session.query(tab_def_model).all()
+            versions = []
+            if len(version_list)>0:
+                for version in version_list:
+                    versions.append({
+                        'version': version.get_version(),
+                        'note': version.Note
+                    })
+
+            message = {
+                'versions': versions
+            }
+        else:
+            tab_data_model = find_table_class_by_name(table)
+            version = ver
+            tab_data = db.session.query(tab_data_model).filter_by(Version=version).all()
+            headers = tab_data_model().get_header_and_type()
+            data_list = []
+            for row_data in tab_data:
+                data_list.append(row_data.get_dict())
+            message = {
+                'header': headers,
+                'data': data_list
+            }
+        return jsonify(message)
+
+    @expose("/save-data/", methods=['POST'])
+    def save_data(self):
+        try:
+            form = request.form
+            table = json.loads(form.get('table'))
+            data_list = json.loads(form.get('data'))['data']
+            if 'tableData' in data_list[0].keys():
+                for data in data_list:
+                    del data['tableData']
+            note = json.loads(form.get('note'))
+            tab_data_model = find_table_class_by_name(table)
+            tab_def_model = find_table_class_by_name(table+'Definition')
+            df = from_dict(data_list)
+            new_def = save_as_new_tab_version(db, df, tab_def_model, tab_data_model, note=note)
+            message = {'message': 'Data has been saved as new version'}
+        except Exception as e:
+            db.session.rollback()
+            message = {'message': repr(e)}
+
+        return jsonify(message)
 
 
 class UploadExcelView(SimpleFormView):
@@ -582,7 +614,9 @@ class UploadExcelView(SimpleFormView):
                 tab_def_model = find_table_class_by_name(tab_def_model)
                 tab_data_model = find_table_class_by_name(tab_data_model)
                 sheet_name = tab_def_model.get_sheet_name()
-                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name], tab_def_model, tab_data_model)
+                sub_tab_def = save_as_new_tab_version(db, df_dict[sheet_name],
+                                                      tab_def_model, tab_data_model,
+                                                      note=name)
                 # set relation of assumption def with sub table definition
                 new_assum_def.__setattr__(tab_def_model.__tablename__, sub_tab_def)
             db.session.add(new_assum_def)
@@ -759,17 +793,28 @@ class SimulationModelView(
             if not latest_sim:
                 return json_error_response("Simulation " + run_id + " has not started yet")
             else:
-                email_to = latest_sim.user.email
+                # email_to = latest_sim.user.email
+                email_to = 'chenyang.wang@zawee.work'
+                assumption_name = simulation.assumption.name
+                project_name = simulation.project.name
+                simulation_name = simulation.name
+                simulation_description = simulation.description or ''
+                simulation_id = str(simulation.id)
 
         # Send notification email
-        # base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
-        base_url = "http://10.61.146.25:8088/simulationmodelview/load-results/" + run_id + "/"
-        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "http://localhost:9000/simulationmodelview/"
+        base_url = "http://10.61.146.25:8088/simulationmodelview/"
+        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
         dynamic_template_data = {
             "run_id": run_id,
-            "spot_price_forecast": base_url + "spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
-            "cap_of_300": base_url + "300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
-            "spot_price_distribution": base_url + "spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
+            "assumption_name": assumption_name,
+            "project_name": project_name,
+            "simulation_name": simulation_name,
+            "simulation_description": simulation_description,
+            "simulation_url": base_url + "show/" + simulation_id,
+            "spot_price_forecast": base_url + "load-results/" + run_id + "/spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "cap_of_300": base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "spot_price_distribution": base_url + "load-results/" + run_id + "/spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
         }
         send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
 
@@ -1063,7 +1108,7 @@ class SimulationModelView(
             # sim_num = simulation.run_no
             sim_num = 5
         simulation_start_invoker.apply_async(args=[run_id, sim_num])
-        flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
+        # flash('Simulation {} has finished the preprocess and is running now.'.format(simulation.name), 'info')
         return '200 OK'
 
     @simulation_logger.log_simulation(action_name='process assumption')
@@ -1077,6 +1122,22 @@ class SimulationModelView(
         simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
         simulation.assumption.status = 'Error'
         simulation.assumption.status_detail = error_msg
+        # Find the latest log of start simulation to find the user who started the sim
+        latest_sim = db.session.query(SimulationLog).filter_by(
+            action_object_type='Simulation',
+            action_object=simulation.name,
+            action='start run',
+            result='Started, pre-process in progress'
+        ).order_by(SimulationLog.dttm.desc()).first()
+        email_to = latest_sim.user.email
+        message = {
+            "sim_name": simulation.name,
+            "assu_name": simulation.assumption.name,
+            "error_log": error_msg,
+        }
+
+        if send_sendgrid_mail(email_to, message, 'd-3961c5296eed44eabd6d27ac1f14ccaf'):
+            print('process failed email notification sent')
         g.action_object = simulation.assumption.name
         g.action_object_type = 'Assumption'
         g.result = 'Process failed'

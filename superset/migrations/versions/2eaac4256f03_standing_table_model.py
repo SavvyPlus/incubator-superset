@@ -14,17 +14,17 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""new standing table model
+"""standing table model
 
-Revision ID: a992c22b17fb
-Revises: a72cb0ebeb22
-Create Date: 2020-07-07 14:14:20.981375
+Revision ID: 2eaac4256f03
+Revises: 2f1d15e8a6af
+Create Date: 2020-07-15 15:30:17.903197
 
 """
 
 # revision identifiers, used by Alembic.
-revision = 'a992c22b17fb'
-down_revision = 'a72cb0ebeb22'
+revision = '2eaac4256f03'
+down_revision = '2f1d15e8a6af'
 
 from alembic import op
 import sqlalchemy as sa
@@ -125,7 +125,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Year', sa.Integer(), nullable=True),
-    sa.Column('Aggregate_MW', sa.Float(), nullable=True),
+    sa.Column('Aggregate_MW', sa.DECIMAL(precision=32, scale=16), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'], ),
     sa.PrimaryKeyConstraint('id')
@@ -134,8 +134,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Year', sa.Integer(), nullable=True),
-    sa.Column('Probability', sa.Float(), nullable=True),
-    sa.Column('Growth', sa.Float(), nullable=True),
+    sa.Column('Probability', sa.DECIMAL(precision=5, scale=4), nullable=True),
+    sa.Column('Growth', sa.DECIMAL(precision=7, scale=6), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['Demand_Growth_Definition.Demand_Growth_Version'], ),
     sa.PrimaryKeyConstraint('id')
@@ -144,15 +144,15 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Year', sa.Integer(), nullable=True),
-    sa.Column('Case1', sa.Float(), nullable=True),
-    sa.Column('Case2', sa.Float(), nullable=True),
-    sa.Column('Case3', sa.Float(), nullable=True),
-    sa.Column('Case4', sa.Float(), nullable=True),
-    sa.Column('Case5', sa.Float(), nullable=True),
-    sa.Column('Case6', sa.Float(), nullable=True),
-    sa.Column('Case7', sa.Float(), nullable=True),
-    sa.Column('Case8', sa.Float(), nullable=True),
-    sa.Column('Case9', sa.Float(), nullable=True),
+    sa.Column('Case1', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('Case2', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('Case3', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('Case4', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('Case5', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('Case6', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('Case7', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('Case8', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('Case9', sa.DECIMAL(precision=7, scale=6), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'], ),
     sa.PrimaryKeyConstraint('id')
@@ -160,8 +160,8 @@ def upgrade():
     op.create_table('MPC_CPT',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('FY', sa.String(length=10), nullable=True),
-    sa.Column('CPT', sa.Float(), nullable=True),
-    sa.Column('MPC', sa.Float(), nullable=True),
+    sa.Column('CPT', sa.DECIMAL(precision=32, scale=16), nullable=True),
+    sa.Column('MPC', sa.DECIMAL(precision=32, scale=16), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['MPC_CPT_Definition.MPC_CPT_Version'], ),
     sa.PrimaryKeyConstraint('id')
@@ -175,10 +175,10 @@ def upgrade():
     sa.Column('Start_Date', sa.Date(), nullable=True),
     sa.Column('End_Date', sa.Date(), nullable=True),
     sa.Column('Status', sa.String(length=50), nullable=True),
-    sa.Column('Offer_Rate', sa.Float(), nullable=True),
-    sa.Column('Maximum_Quantity', sa.Float(), nullable=True),
-    sa.Column('Installed_Quantity', sa.Float(), nullable=True),
-    sa.Column('Probability_Of_Success', sa.Float(), nullable=True),
+    sa.Column('Offer_Rate', sa.DECIMAL(precision=32, scale=16), nullable=True),
+    sa.Column('Maximum_Quantity', sa.DECIMAL(precision=32, scale=16), nullable=True),
+    sa.Column('Installed_Quantity', sa.DECIMAL(precision=32, scale=16), nullable=True),
+    sa.Column('Probability_Of_Success', sa.DECIMAL(precision=5, scale=4), nullable=True),
     sa.Column('Resolution', sa.String(length=20), nullable=True),
     sa.Column('Proxy', sa.String(length=50), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
@@ -189,10 +189,10 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Project', sa.String(length=50), nullable=True),
-    sa.Column('Nameplate_Capacity_MW', sa.Float(), nullable=True),
+    sa.Column('Nameplate_Capacity_MW', sa.DECIMAL(precision=32, scale=16), nullable=True),
     sa.Column('Technology_Type', sa.String(length=10), nullable=True),
-    sa.Column('Latitude', sa.Float(), nullable=True),
-    sa.Column('Longitude', sa.Float(), nullable=True),
+    sa.Column('Latitude', sa.DECIMAL(precision=32, scale=16), nullable=True),
+    sa.Column('Longitude', sa.DECIMAL(precision=32, scale=16), nullable=True),
     sa.Column('Tracking_Type', sa.String(length=50), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['Project_Proxy_Definition.Project_Proxy_Version'], ),
@@ -202,7 +202,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Date', sa.Date(), nullable=True),
-    sa.Column('Maximum_HalfHour_Intermittent_Proportion', sa.Float(), nullable=True),
+    sa.Column('Maximum_HalfHour_Intermittent_Proportion', sa.DECIMAL(precision=5, scale=4), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['Renewable_Proportion_Definition.Renewable_Proportion_Version'], ),
     sa.PrimaryKeyConstraint('id')
@@ -211,9 +211,9 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('DUID', sa.String(length=50), nullable=True),
     sa.Column('State', sa.String(length=10), nullable=True),
-    sa.Column('Registered_Capacity', sa.Float(), nullable=True),
+    sa.Column('Registered_Capacity', sa.DECIMAL(precision=32, scale=16), nullable=True),
     sa.Column('Impact_To_State', sa.String(length=10), nullable=True),
-    sa.Column('Adjustment_Factor', sa.Float(), nullable=True),
+    sa.Column('Adjustment_Factor', sa.DECIMAL(precision=7, scale=6), nullable=True),
     sa.Column('Closure_Date', sa.Date(), nullable=True),
     sa.Column('Back_To_Service_Date', sa.Date(), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
@@ -224,8 +224,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Year', sa.Integer(), nullable=True),
-    sa.Column('Capacity_MW', sa.Float(), nullable=True),
-    sa.Column('Aggregate_MW', sa.Float(), nullable=True),
+    sa.Column('Aggregate_MW', sa.DECIMAL(precision=32, scale=16), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'], ),
     sa.PrimaryKeyConstraint('id')
@@ -234,8 +233,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Date', sa.Date(), nullable=True),
-    sa.Column('Capacity_MW', sa.Float(), nullable=True),
-    sa.Column('Aggregate_MW', sa.Float(), nullable=True),
+    sa.Column('Capacity_MW', sa.DECIMAL(precision=32, scale=16), nullable=True),
+    sa.Column('Aggregate_MW', sa.DECIMAL(precision=32, scale=16), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'], ),
     sa.PrimaryKeyConstraint('id')
@@ -244,8 +243,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('State', sa.String(length=10), nullable=True),
     sa.Column('Bin_Not_Exceeding', sa.Integer(), nullable=True),
-    sa.Column('Value', sa.Float(), nullable=True),
-    sa.Column('MW', sa.Float(), nullable=True),
+    sa.Column('Value', sa.DECIMAL(precision=7, scale=6), nullable=True),
+    sa.Column('MW', sa.DECIMAL(precision=32, scale=16), nullable=True),
     sa.Column('Version', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['Version'], ['Strategic_Behaviour_Definition.Strategic_Behaviour_Version'], ),
     sa.PrimaryKeyConstraint('id')

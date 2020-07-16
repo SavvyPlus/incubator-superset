@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import PreLoader from '../../../components/PreLoader';
+import PreLoader from '../../components/PreLoader';
 
 const baseStyle = {
   flex: 1,
@@ -46,7 +46,6 @@ function Dropzone(props) {
     acceptedFiles,
   } = useDropzone({
     accept: [
-      'text/csv',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     ],
@@ -83,11 +82,11 @@ function Dropzone(props) {
 
   return (
     <div className="mb-50">
-      <h3 className="mt-50">Step 3: Upload Your Assumption File</h3>
+      <h3 className="mt-50">Step 3: Upload Your Table File</h3>
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
         <p className="dz-font">
-          Drag 'n' drop your single csv or excel file, or click to select file
+          Drag 'n' drop your single excel file, or click to select
         </p>
       </div>
       {accFiles.length > 0 && (

@@ -18,6 +18,7 @@
  */
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
+import axios from 'axios';
 import {
   addSuccessToast,
   addWarningToast,
@@ -34,6 +35,11 @@ export function setTable(table) {
   return { type: SET_TABLE, table };
 }
 
+export const SET_VERSION = 'SET_VERSION';
+export function setVersion(version) {
+  return { type: SET_VERSION, version };
+}
+
 export const UPLOAD_FILE_SUCCESS = 'UPLOAD_FILE_SUCCESS';
 export function uploadFileSuccess(data) {
   return { type: UPLOAD_FILE_SUCCESS, data };
@@ -45,22 +51,141 @@ export function uploadFileFailed(error) {
 }
 
 export function uploadFile(table, note, files) {
+  const csrfToken = document.querySelector('#csrf_token').value;
   return dispatch => {
-    return SupersetClient.post({
-      endpoint: '/edit-assumption/upload-csv/',
-      postPayload: {
-        table,
-        note,
-        file: files[0],
-      },
-      stringify: false,
+    const formData = new FormData();
+    formData.append('file', files[0]);
+    formData.append('table', table);
+    formData.append('note', note);
+    return (
+      axios
+        .post('/edit-assumption/upload-file/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'X-CSRFToken': csrfToken,
+          },
+        })
+        // return SupersetClient.post({
+        //   endpoint: '/edit-assumption/upload-csv/',
+        //   postPayload: {
+        //     table,
+        //     note,
+        //     file: files[0],
+        //   },
+        //   stringify: false,
+        // })
+        .then(({ json }) => {
+          dispatch(uploadFileSuccess(json));
+          dispatch(addSuccessToast(t('File was uploaded successfully.')));
+        })
+        .catch(() => {
+          dispatch(uploadFileFailed());
+          dispatch(
+            addDangerToast(t('Sorry, there was an error uploading this file')),
+          );
+        })
+    );
+  };
+}
+
+export const FETCH_TABLE_VERSIONS_STARTED = 'FETCH_TABLE_VERSIONS_STARTED';
+export function fetchTableVersionsStarted() {
+  return { type: FETCH_TABLE_VERSIONS_STARTED };
+}
+
+export const FETCH_TABLE_VERSIONS_SUCCESS = 'FETCH_TABLE_VERSIONS_SUCCESS';
+export function fetchTableVersionsSuccess(versions) {
+  return { type: FETCH_TABLE_VERSIONS_SUCCESS, versions };
+}
+
+export const FETCH_TABLE_VERSIONS_FAILED = 'FETCH_TABLE_VERSIONS_FAILED';
+export function fetchTableVersionsFailed() {
+  return { type: FETCH_TABLE_VERSIONS_FAILED };
+}
+
+export function fetchTableVersions(table) {
+  return dispatch => {
+    dispatch(fetchTableVersionsStarted());
+    return SupersetClient.get({
+      endpoint: `/edit-assumption/get-data/${table}/version/na`,
     })
       .then(({ json }) => {
-        dispatch(uploadFileSuccess(json));
-        dispatch(addSuccessToast(t('File was uploaded successfully.')));
+        dispatch(fetchTableVersionsSuccess(json.versions));
       })
       .catch(() => {
-        dispatch(uploadFileFailed());
+        dispatch(fetchTableVersionsFailed());
+        dispatch(
+          addDangerToast(
+            t('Sorry, there was an error updating table versions'),
+          ),
+        );
+      });
+  };
+}
+
+export const FETCH_TABLE_DATA_STARTED = 'FETCH_TABLE_DATA_STARTED';
+export function fetchTableDataStarted() {
+  return { type: FETCH_TABLE_DATA_STARTED };
+}
+
+export const FETCH_TABLE_DATA_SUCCESS = 'FETCH_TABLE_DATA_SUCCESS';
+export function fetchTableDataSuccuss(res) {
+  return { type: FETCH_TABLE_DATA_SUCCESS, res };
+}
+
+export const FETCH_TABLE_DATA_FAILED = 'FETCH_TABLE_DATA_FAILED';
+export function fetchTableDataFailed(data) {
+  return { type: FETCH_TABLE_DATA_FAILED, data };
+}
+
+export function fetchTableData(table, version) {
+  return dispatch => {
+    return SupersetClient.get({
+      endpoint: `/edit-assumption/get-data/${table}/data/${version}`,
+    })
+      .then(({ json }) => {
+        console.log(json);
+        dispatch(fetchTableDataSuccuss(json));
+        dispatch(addSuccessToast(t('Table data was fetched successfully')));
+      })
+      .catch(() => {
+        dispatch(fetchTableDataFailed());
+        dispatch(
+          addDangerToast(t('Sorry, there was an error fetching the data')),
+        );
+      });
+  };
+}
+
+export const SAVE_TABLE_DATA_SUCESS = 'SAVE_TABLE_DATA_SUCESS';
+export function saveTableDataSuccess(data) {
+  return { type: SAVE_TABLE_DATA_SUCESS, data };
+}
+
+export const SAVE_TABLE_DATA_FAILED = 'SAVE_TABLE_DATA_FAILED';
+export function saveTableDataFailed() {
+  return { type: SAVE_TABLE_DATA_FAILED };
+}
+
+export function saveTableData(table, tableData, note) {
+  console.log(table, note);
+  return dispatch => {
+    return SupersetClient.post({
+      endpoint: '/edit-assumption/save-data/',
+      postPayload: {
+        table,
+        data: tableData,
+        note,
+      },
+    })
+      .then(({ json }) => {
+        // dispatch(saveTableDataSuccess(json));
+        dispatch(addSuccessToast(t('Save data successfully. Reloading....')));
+        window.location.href = '/edit-assumption/assumption';
+        // dispatch(addSuccessToast(t('File was uploaded successfully.')));
+      })
+      .catch(() => {
+        dispatch(saveTableDataFailed());
         dispatch(
           addDangerToast(t('Sorry, there was an error uploading this file')),
         );
