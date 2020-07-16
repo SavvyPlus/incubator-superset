@@ -802,7 +802,7 @@ class SimulationModelView(
 
         # Send notification email
         # base_url = "http://localhost:9000/simulationmodelview/"
-        base_url = "http://10.61.146.25:8088/simulationmodelview/"
+        base_url = f"{get_current_external_ip()}/simulationmodelview/"
         # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
         dynamic_template_data = {
             "run_id": run_id,
