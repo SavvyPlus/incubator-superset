@@ -33,6 +33,7 @@ from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.typing import FlaskResponse
 from superset.constants import RouteMethod
 from superset.models.simulation import *
+from superset.models.assumption_check import *
 from superset.models.slice import Slice
 from flask_appbuilder.security.sqla import models as ab_models
 from superset.connectors.sqla.models import SqlaTable
