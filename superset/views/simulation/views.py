@@ -46,7 +46,7 @@ from superset.views.simulation.simulation_config import excel_path, bucket_input
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
-    save_as_new_tab_version, ref_day_generation_check
+    save_as_new_tab_version, ref_day_generation_check, check_assumption_processed
 from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date, from_dict
 from ..utils import bootstrap_user_data, create_attachment
 
@@ -793,8 +793,7 @@ class SimulationModelView(
             if not latest_sim:
                 return json_error_response("Simulation " + run_id + " has not started yet")
             else:
-                # email_to = latest_sim.user.email
-                email_to = 'chenyang.wang@zawee.work'
+                email_to = latest_sim.user.email
                 assumption_name = simulation.assumption.name
                 project_name = simulation.project.name
                 simulation_name = simulation.name
