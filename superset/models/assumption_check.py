@@ -39,6 +39,21 @@ class ISPCapacityDefinition(Model):
     def __str__(self):
         return f'{self.source}-{self.isp_case}-{self.scenario}'
 
+    def set_note(self, note):
+        self.note = note
+
+    def get_note(self):
+        return self.note
+
+    def set_scenario(self, scenario):
+        self.scenario = scenario
+
+    def get_scenario(self):
+        return self.scenario
+
+    def get_version(self):
+        return self.id
+
 
 class ISPCapacity(Model):
     __tablename__ = "ISP_Capacity"
@@ -61,12 +76,16 @@ class ISPCapacity(Model):
     def get_definition(self):
         return self.isp_cap_def
 
+    @staticmethod
+    def get_version_col_name():
+        return 'isp_cap_def_id'
 
-model_list = {
+
+check_model_list = {
     ('ISPCapacityDefinition', 'ISPCapacity')
 }
 
 
-def find_table_class_by_name(name):
+def find_check_table_class_by_name(name):
     import sys
     return getattr(sys.modules[__name__], name)

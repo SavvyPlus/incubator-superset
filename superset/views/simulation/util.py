@@ -233,3 +233,11 @@ def get_full_week_end_date(start_date, end_date):
     total_days = (end_date - start_date).days
     end_date = end_date + timedelta(days=7 - total_days % 7)
     return end_date
+
+def upload_stream_write(form_file_field: "FileStorage", path: str, chunk_size=4096):
+    with open(path, "bw") as file_description:
+        while True:
+            chunk = form_file_field.stream.read(chunk_size)
+            if not chunk:
+                break
+            file_description.write(chunk)

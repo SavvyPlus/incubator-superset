@@ -48,18 +48,18 @@ from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormFor
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check
-from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date, from_dict
+from .util import get_redirect_endpoint, read_excel, download_from_s3, get_full_week_end_date, from_dict, upload_stream_write
 from ..utils import bootstrap_user_data, create_attachment
 
 
-def upload_stream_write(form_file_field: "FileStorage", path: str):
-    chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
-    with open(path, "bw") as file_description:
-        while True:
-            chunk = form_file_field.stream.read(chunk_size)
-            if not chunk:
-                break
-            file_description.write(chunk)
+# def upload_stream_write(form_file_field: "FileStorage", path: str):
+#     chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
+#     with open(path, "bw") as file_description:
+#         while True:
+#             chunk = form_file_field.stream.read(chunk_size)
+#             if not chunk:
+#                 break
+#             file_description.write(chunk)
 
 
 def send_notification(simulation, template_id):
@@ -546,7 +546,7 @@ class EditAssumptionModelView(
                 for version in version_list:
                     versions.append({
                         'version': version.get_version(),
-                        'note': version.Note
+                        'note': version.get_note(),
                     })
 
             message = {
@@ -877,6 +877,7 @@ class SimulationModelView(
         item = self.datamodel.obj()
         try:
             form.populate_obj(item)
+            item.end_date = get_full_week_end_date(item.start_date, item.end_date)
             item.status = 'Waiting for start'
             g.action_object = item.name
             g.action_object_type = 'Simulation'
@@ -904,6 +905,7 @@ class SimulationModelView(
         g.detail = None
         try:
             form.populate_obj(item)
+            item.end_date = get_full_week_end_date(item.start_date, item.end_date)
             self.pre_update(item)
         except Exception as e:
             g.detail = str(e)
