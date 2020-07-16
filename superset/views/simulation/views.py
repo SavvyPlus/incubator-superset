@@ -577,11 +577,13 @@ class EditAssumptionModelView(
             note = json.loads(form.get('note'))
             tab_data_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
+            print(data_list)
             df = from_dict(data_list)
             new_def = save_as_new_tab_version(db, df, tab_def_model, tab_data_model, note=note)
             message = {'message': 'Data has been saved as new version'}
         except Exception as e:
             db.session.rollback()
+            traceback.print_exc()
             message = {'message': repr(e)}
 
         return jsonify(message)
@@ -1229,8 +1231,8 @@ class SimulationModelView(
             'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
             # 'spottbl': f'spot_demand_{"Run_196".lower()}',
             'duids': data,
-            'year_start': simulation.start_date.year,
-            'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
+            'year_start': str(simulation.start_date.year),
+            'year_end': str(get_full_week_end_date(simulation.start_date, simulation.end_date).year),
             'supersetURL': get_current_external_ip(),
             'email': g.user.email,
         }
