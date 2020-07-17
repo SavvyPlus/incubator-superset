@@ -1626,11 +1626,11 @@ class MultipleBoxPlotViz(BoxPlotViz):
             d['filter'].append({'col': 'DataGroup', 'op': '==',
                                 'val': period_type})
         # filter period
-        if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
+        if 'period_finyear_picker' in self.form_data and period_type == 'FinYear':
             periods = self.form_data['period_finyear_picker']
-        if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
+        if 'period_calyear_picker' in self.form_data and period_type == 'CalYear':
             periods = self.form_data['period_calyear_picker']
-        if self.form_data['period_quarterly_picker'] and period_type == 'Quarterly':
+        if 'period_quarterly_picker' in self.form_data and period_type == 'Quarterly':
             periods = self.form_data['period_quarterly_picker']
         if periods:
             d['filter'].append({'col': 'Period', 'op': 'in',
@@ -3682,11 +3682,11 @@ class SpotPriceHistogramViz(BaseViz):
                                 'val': period_type})
         # filter period
         periods = []
-        if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
+        if 'period_finyear_picker' in self.form_data and period_type == 'FinYear':
             periods = self.form_data['period_finyear_picker']
-        if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
+        if 'period_calyear_picker' in self.form_data and period_type == 'CalYear':
             periods = self.form_data['period_calyear_picker']
-        if self.form_data['period_quarterly_picker'] and period_type == 'Quarterly':
+        if 'period_quarterly_picker' in self.form_data and period_type == 'Quarterly':
             periods = self.form_data['period_quarterly_picker']
         if periods:
             d['filter'].append({'col': 'Period', 'op': 'in',

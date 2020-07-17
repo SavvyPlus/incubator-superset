@@ -35,7 +35,6 @@ function DeleteDialog({ open, data, handleClose, handleDeleteSelected }) {
       const row = [];
       for (let j = 0; j < keys.length; j++) {
         if (keys[j] !== 'tableData') {
-          console.log(d[i][keys[j]]);
           if (d[i][keys[j]] instanceof Date) {
             const dateObj = d[i][keys[j]];
             row.push(

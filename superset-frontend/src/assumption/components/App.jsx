@@ -28,7 +28,6 @@ import UpsertSelect from './UpsertSelect';
 import TableSelect from './TableSelect';
 import VersionSelect from './VersionSelect';
 import Dropzone from './Dropzone';
-import ToastPresenter from '../../messageToasts/containers/ToastPresenter';
 import '../App.less';
 import AssumptionTable from './AssumptionTable';
 
@@ -86,7 +85,6 @@ function App({ username, firstName, lastName, assumption, actions }) {
           )}
         </Col>
       </Row>
-      <ToastPresenter />
     </div>
   );
 }

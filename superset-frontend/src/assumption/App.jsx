@@ -22,12 +22,14 @@ import thunk from 'redux-thunk';
 import { createStore, applyMiddleware, compose } from 'redux';
 import { initFeatureFlags } from 'src/featureFlags';
 import { Provider } from 'react-redux';
+import { supersetTheme, ThemeProvider } from '@superset-ui/style';
 
 import App from './components/App';
 import { initEnhancer } from '../reduxUtils';
 import getInitialState from './reducers/getInitialState';
 import rootReducer from './reducers/index';
 import setupApp from '../setup/setupApp';
+import ToastPresenter from '../messageToasts/containers/ToastPresenter';
 
 const appContainer = document.getElementById('app');
 const bootstrapData = JSON.parse(appContainer.getAttribute('data-bootstrap'));
@@ -44,7 +46,12 @@ const store = createStore(
 
 const Application = () => (
   <Provider store={store}>
-    <App />
+    <ThemeProvider theme={supersetTheme}>
+      <div>
+        <App />
+        <ToastPresenter />
+      </div>
+    </ThemeProvider>
   </Provider>
 );
 
