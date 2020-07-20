@@ -213,9 +213,9 @@ def check_assumption(file_path, assumtpions_version, simulation):
         if df_dict[sheet]['Date'].max() < simulation.end_date:
             return False, 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
 
-    for sheet in assumption_time_ref_date:
-        if simulation.start_date not in list(df_dict[sheet]['Date'].map(lambda x: x.date())):
-            return False, 'Error: the simulation start date is not in the list of assumption history pv, please check and adjust.'
+    # for sheet in assumption_time_ref_date:
+    #     if simulation.start_date not in list(df_dict[sheet]['Date'].map(lambda x: x.date())):
+    #         return False, 'Error: the simulation start date is not in the list of assumption history pv, please check and adjust.'
     return True, 'success'
 
 

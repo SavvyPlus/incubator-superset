@@ -17,6 +17,9 @@
  * under the License.
  */
 import { t } from '@superset-ui/translation';
+import { validateNonEmpty } from '@superset-ui/validator';
+import * as v from '../validators';
+import { formatSelectOptions } from '../../modules/utils';
 
 export default {
   controlPanelSections: [
@@ -27,22 +30,119 @@ export default {
         ['metrics'],
         ['adhoc_filters'],
         ['groupby'],
-        ['whisker_options'],
-        ['fin_scenario_picker'],
-        ['fin_firm_tech_picker'],
-        ['fin_strategy_picker'],
-        ['fin_period_picker'],
-        ['fin_str_metric_picker'],
-        ['fin_str_tech_picker'],
+        [
+          {
+            name: 'whisker_options',
+            config: {
+              type: 'SelectControl',
+              freeForm: true,
+              label: t('Whisker/outlier options'),
+              default: 'Min/max (no outliers)',
+              description: t(
+                'Determines how whiskers and outliers are calculated.',
+              ),
+              choices: formatSelectOptions([
+                'Tukey',
+                'Min/max (no outliers)',
+                '2/98 percentiles',
+                '9/91 percentiles',
+              ]),
+            },
+          },
+        ],
+        [
+          {
+            name: 'fin_scenario_picker',
+            config: {
+              type: 'SelectControl',
+              multi: true,
+              label: t('Scenario'),
+              default: null,
+              description: t('Select one scenario'),
+              mapStateToProps: state => ({
+                choices: formatSelectOptions(state.fin_scenarios),
+              }),
+            },
+          },
+        ],
+        [
+          {
+            name: 'fin_firm_tech_picker',
+            config: {
+              type: 'SelectControl',
+              multi: false,
+              label: t('Firming Technology'),
+              default: null,
+              description: t('Select one firming technology'),
+              mapStateToProps: state => ({
+                choices: formatSelectOptions(state.fin_firm_techs),
+              }),
+            },
+          },
+        ],
+        [
+          {
+            name: 'fin_strategy_picker',
+            config: {
+              type: 'SelectControl',
+              multi: true,
+              label: t('Strategy'),
+              default: null,
+              description: t('Select Strategy'),
+              mapStateToProps: state => ({
+                choices: formatSelectOptions(state.fin_strategy),
+              }),
+            },
+          },
+        ],
+        [
+          {
+            name: 'fin_period_picker',
+            config: {
+              type: 'SelectControl',
+              multi: true,
+              label: t('Period'),
+              default: null,
+              description: t('Select one period'),
+              mapStateToProps: state => ({
+                choices: formatSelectOptions(state.fin_periods),
+              }),
+            },
+          },
+        ],
+        [
+          {
+            name: 'fin_str_metric_picker',
+            config: {
+              type: 'SelectControl',
+              multi: true,
+              label: t('Metric'),
+              default: null,
+              validators: [validateNonEmpty, v.onlyContainsROI],
+              description: t('Select metric'),
+              mapStateToProps: state => ({
+                choices: formatSelectOptions(state.fin_metric),
+              }),
+            },
+          },
+        ],
+        [
+          {
+            name: 'fin_str_tech_picker',
+            config: {
+              type: 'SelectControl',
+              multi: false,
+              label: t('Technology'),
+              default: null,
+              validators: [validateNonEmpty],
+              description: t('Select one technology'),
+              mapStateToProps: state => ({
+                choices: formatSelectOptions(state.fin_techs),
+              }),
+            },
+          },
+        ],
       ],
     },
-    // {
-    //   label: t('Chart Options'),
-    //   expanded: true,
-    //   controlSetRows: [
-    //     ['color_scheme', 'label_colors'],
-    //     ['whisker_options', 'x_ticks_layout'],
-    //   ],
-    // },
   ],
 };

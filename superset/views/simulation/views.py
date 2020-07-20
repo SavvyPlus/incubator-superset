@@ -654,9 +654,9 @@ class SimulationModelView(
         'process_success',
         'process_failed',
         'start_run',
-        'query_success',
-        'query_failed',
-        'query_result',
+        # 'query_success',
+        # 'query_failed',
+        # 'query_result',
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
@@ -1155,99 +1155,99 @@ class SimulationModelView(
         flash('The preprocess of simulation {} has failed, please check the log.'.format(simulation.name), 'danger')
         return '200 OK'
 
-    @simulation_logger.log_simulation(action_name='query result')
-    @expose('/query_success', methods=['GET', 'POST'])
-    def query_success(self):
-        import ast
-        g.user = None
-        # flash('reached query success', 'info')
-        data = json.loads(request.data.decode())
-        # print(data)
-        email = data['email']
-        s3_list = ast.literal_eval(data['outS3Keys'])
-        bucket = data['outBucket']
-        run_id = data['sim_tag']
-        simulation = db.query(Simulation).filter_by(run_id=run_id).first()
-        attachments = []
-        for s3_file in s3_list:
-            path = tempfile.NamedTemporaryFile(
-                dir=app.config["UPLOAD_FOLDER"], suffix='xlsx', delete=False
-            ).name
-            download_from_s3(bucket, s3_file, path)
-            filename = s3_file.split('/')[-1]
-            file_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            attachment = create_attachment(filename, path, file_type)
-            attachments.append(attachment)
-            os.remove(path)
-        message = {
-            'sim_name': simulation.name
-            # 'sim_name': 'Run_196'
-        }
-        if send_sendgrid_mail(email, message, 'd-49e6d877ad7c440b84fe2b63835ccea5', attachments):
-            g.result = 'query success'
-            g.detail = repr(data)
-        else:
-            g.result = 'query success, message sent failed'
-            g.detail = 'Failed to send email to {}'.format(email)
-        return '200 OK'
+    # @simulation_logger.log_simulation(action_name='query result')
+    # @expose('/query_success', methods=['GET', 'POST'])
+    # def query_success(self):
+    #     import ast
+    #     g.user = None
+    #     # flash('reached query success', 'info')
+    #     data = json.loads(request.data.decode())
+    #     # print(data)
+    #     email = data['email']
+    #     s3_list = ast.literal_eval(data['outS3Keys'])
+    #     bucket = data['outBucket']
+    #     run_id = data['sim_tag']
+    #     simulation = db.query(Simulation).filter_by(run_id=run_id).first()
+    #     attachments = []
+    #     for s3_file in s3_list:
+    #         path = tempfile.NamedTemporaryFile(
+    #             dir=app.config["UPLOAD_FOLDER"], suffix='xlsx', delete=False
+    #         ).name
+    #         download_from_s3(bucket, s3_file, path)
+    #         filename = s3_file.split('/')[-1]
+    #         file_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    #         attachment = create_attachment(filename, path, file_type)
+    #         attachments.append(attachment)
+    #         os.remove(path)
+    #     message = {
+    #         'sim_name': simulation.name
+    #         # 'sim_name': 'Run_196'
+    #     }
+    #     if send_sendgrid_mail(email, message, 'd-49e6d877ad7c440b84fe2b63835ccea5', attachments):
+    #         g.result = 'query success'
+    #         g.detail = repr(data)
+    #     else:
+    #         g.result = 'query success, message sent failed'
+    #         g.detail = 'Failed to send email to {}'.format(email)
+    #     return '200 OK'
 
-    @simulation_logger.log_simulation(action_name='query result')
-    @expose('/query_failed', methods=['GET', 'POST'])
-    def query_failed(self):
-        g.user = None
-        data = json.loads(request.data.decode())
-        # print(data)
-        g.result = 'query failed'
-        g.detail = repr(data)
-        return '200 OK'
+    # @simulation_logger.log_simulation(action_name='query result')
+    # @expose('/query_failed', methods=['GET', 'POST'])
+    # def query_failed(self):
+    #     g.user = None
+    #     data = json.loads(request.data.decode())
+    #     # print(data)
+    #     g.result = 'query failed'
+    #     g.detail = repr(data)
+    #     return '200 OK'
 
 
-    @simulation_logger.log_simulation(action_name='start query')
-    @expose('/query_result/<sim_id>/', methods=['POST'])
-    def query_result(self, sim_id):
-        query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
-        print('get query result')
-        data = request.form['duid_list']
-        data = data.strip('\t').replace('\n', '').split(',')
-        simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
-        msg = {
-            'sim_tag': simulation.run_id,
-            # 'sim_tag': 'Run_196',
-            'outBucket': bucket_inputs,
-            'query_list': [
-                'Technology_Generation_by_percentile_cal',
-                'DUID_Generation_by_percentile_cal',
-                'DUID_Average_Price_by_percentile_cal',
-                'DUID_Revenue_by_percentile_cal',
-                'DUID_Spot_Premium_by_percentile_cal',
-                'TWA_Simulation_by_simulation_cal',
-                'DUID_Generation_by_simulation_cal',
-                'DUID_Average_Price_by_simulation_cal',
-                'DUID_Revenue_by_simulation_cal'
-            ],
-            'dbname': 'dex_poc',
-            'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
-            # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
-            'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
-            # 'spottbl': f'spot_demand_{"Run_196".lower()}',
-            'duids': data,
-            'year_start': str(simulation.start_date.year),
-            'year_end': str(get_full_week_end_date(simulation.start_date, simulation.end_date).year),
-            'supersetURL': get_current_external_ip(),
-            'email': g.user.email,
-        }
-        # if send_sqs_msg(msg, queue_url=query_sqs):
-        g.action_object = simulation.name
-        g.action_object_type = 'simulation'
-        if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
-            message = 'Query has been sent, the data files will be sent to your email when ready.'
-            g.result = 'send query result'
-            g.detail = json.dumps(msg)
-        else:
-            message = 'Query failed to send to sqs, please try again later or contact dev team.'
-            g.result = 'send query result'
-            g.detail=message
-        return jsonify({'message': message})
+    # @simulation_logger.log_simulation(action_name='start query')
+    # @expose('/query_result/<sim_id>/', methods=['POST'])
+    # def query_result(self, sim_id):
+    #     query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
+    #     print('get query result')
+    #     data = request.form['duid_list']
+    #     data = data.strip('\t').replace('\n', '').split(',')
+    #     simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
+    #     msg = {
+    #         'sim_tag': simulation.run_id,
+    #         # 'sim_tag': 'Run_196',
+    #         'outBucket': bucket_inputs,
+    #         'query_list': [
+    #             'Technology_Generation_by_percentile_cal',
+    #             'DUID_Generation_by_percentile_cal',
+    #             'DUID_Average_Price_by_percentile_cal',
+    #             'DUID_Revenue_by_percentile_cal',
+    #             'DUID_Spot_Premium_by_percentile_cal',
+    #             'TWA_Simulation_by_simulation_cal',
+    #             'DUID_Generation_by_simulation_cal',
+    #             'DUID_Average_Price_by_simulation_cal',
+    #             'DUID_Revenue_by_simulation_cal'
+    #         ],
+    #         'dbname': 'dex_poc',
+    #         'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+    #         # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
+    #         'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+    #         # 'spottbl': f'spot_demand_{"Run_196".lower()}',
+    #         'duids': data,
+    #         'year_start': simulation.start_date.year,
+    #         'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
+    #         'supersetURL': get_current_external_ip(),
+    #         'email': g.user.email,
+    #     }
+    #     # if send_sqs_msg(msg, queue_url=query_sqs):
+    #     g.action_object = simulation.name
+    #     g.action_object_type = 'simulation'
+    #     if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
+    #         message = 'Query has been sent, the data files will be sent to your email when ready.'
+    #         g.result = 'send query result'
+    #         g.detail = json.dumps(msg)
+    #     else:
+    #         message = 'Query failed to send to sqs, please try again later or contact dev team.'
+    #         g.result = 'send query result'
+    #         g.detail=message
+    #     return jsonify({'message': message})
 
 class ProjectModelView(EmpowerModelView):
 

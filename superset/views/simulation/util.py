@@ -29,7 +29,7 @@ def write_pickle_to_s3(data, bucket, path):
 
     # TODO DEBUG do not write to s3
     response = client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
-    print('write pickle:' + repr(response))
+    print('write pickle: '+ repr(response))
     return response
 
 def put_file_to_s3(filename, bucket, key, is_public=False):
@@ -79,7 +79,7 @@ def list_object_keys(bucket, prefix):
         Bucket=bucket,
         Prefix=prefix
     )
-    print('list obj: '+ repr(response))
+    print('list_object_keys: '+ repr(response))
     if response['KeyCount'] <= 0:
         return []
     contents = response['Contents']
@@ -230,8 +230,8 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
 
 def get_current_external_ip():
     # return 'http://{}:8088'.format(get('https://api.ipify.org').text)
-    return 'http://{}:8088'.format('10.61.146.25')
-    # return 'https://app.empoweranalytics.com.au'
+    # return 'http://{}:8088'.format('10.61.146.25')
+    return 'https://app.empoweranalytics.com.au'
 
 def get_full_week_end_date(start_date, end_date):
     total_days = (end_date - start_date).days+1
