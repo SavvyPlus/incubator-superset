@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import ast
 import json
 import traceback
 import logging
@@ -173,8 +174,8 @@ def simulation_start_invoker(run_id, sim_num):
                 action='start run',
                 # result='Started, pre-process in progress'
             ).order_by(SimulationLog.dttm.desc()).first()
-            logging.info('Start run log: ' + repr(latest_sim))
-            start_run_msg = json.loads(latest_sim.detail)
+            print('Start run log: ' + repr(latest_sim))
+            start_run_msg = ast.literal_eval(latest_sim.detail)
             with open(get_s3_url(bucket_inputs, glue_crawler_template_path), 'rb') as f:
                 template = json.load(f)
             template['run_id'] = run_id
@@ -186,7 +187,7 @@ def simulation_start_invoker(run_id, sim_num):
             template['end_date'] = start_run_msg['simEndDate']
             template['supersetURL'] = start_run_msg['supersetURL']
             template['email'] = start_run_msg['email']
-            logging.info('Glue template: ' + repr(template))
+            print('Glue template: ' + repr(template))
             if not send_sqs_msg(json.dumps(template), queue_url=glue_trigger_sqs_url):
                 raise Exception('Failed to send glue crawler sqs message. Please contact dev team.')
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
@@ -1186,7 +1187,6 @@ class SimulationModelView(
     @simulation_logger.log_simulation(action_name='query result')
     @expose('/query_success', methods=['GET', 'POST'])
     def query_success(self):
-        import ast
         g.user = None
         # flash('reached query success', 'info')
         data = json.loads(request.data.decode())
