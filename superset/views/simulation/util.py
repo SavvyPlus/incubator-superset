@@ -29,6 +29,7 @@ def write_pickle_to_s3(data, bucket, path):
 
     # TODO DEBUG do not write to s3
     response = client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
+    print('write pickle: '+ repr(response))
     return response
 
 def put_file_to_s3(filename, bucket, key, is_public=False):
@@ -78,6 +79,7 @@ def list_object_keys(bucket, prefix):
         Bucket=bucket,
         Prefix=prefix
     )
+    print('list_object_keys: '+ repr(response))
     if response['KeyCount'] <= 0:
         return []
     contents = response['Contents']

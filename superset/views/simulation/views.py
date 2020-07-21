@@ -128,7 +128,7 @@ def upload_assumption(path, name):
 
 @celery_app.task
 @simulation_logger.log_simulation(action_name='invoke')
-def simulation_start_invoker(run_id, sim_num):
+def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
     from .invoker import batch_invoke_solver, batch_invoke_merger_all, batch_invoke_merger_year, invoker
     from .batch_parameters import generate_parameters_for_batch
     from .simulation_config import bucket_inputs
@@ -166,18 +166,20 @@ def simulation_start_invoker(run_id, sim_num):
             end_date = get_full_week_end_date(start_date, simulation.end_date)
             total_days = (end_date - start_date).days + 1
             sim_tag = run_id
-
-            # Find duids from last start run log
-            latest_sim = db.session.query(SimulationLog).filter_by(
-                action_object_type='Simulation',
-                action_object=simulation.name,
-                action='start run',
-                # result='Started, pre-process in progress'
-            ).order_by(SimulationLog.dttm.desc()).first()
-            print('Start run log: ' + repr(latest_sim))
-            start_run_msg = ast.literal_eval(latest_sim.detail)
+            if not start_run_msg:
+                # Find duids from last start run log
+                latest_sim = db.session.query(SimulationLog).filter_by(
+                    action_object_type='Simulation',
+                    action_object=simulation.name,
+                    action='start run',
+                    result='Started, pre-process in progress'
+                ).order_by(SimulationLog.dttm.desc()).first()
+                start_run_msg = ast.literal_eval(latest_sim.detail)
+                
             with open(get_s3_url(bucket_inputs, glue_crawler_template_path), 'rb') as f:
                 template = json.load(f)
+
+            print('Start run info: ' + start_run_msg)
             template['run_id'] = run_id
             template['num_sim'] = sim_num
             template['outSimBucket'] = bucket_inputs
@@ -822,20 +824,30 @@ class SimulationModelView(
                 return json_error_response("Simulation " + run_id + " has not started yet")
             else:
                 email_to = latest_sim.user.email
+                assumption_name = simulation.assumption.name
+                project_name = simulation.project.name
+                simulation_name = simulation.name
+                simulation_description = simulation.description or ''
+                simulation_id = str(simulation.id)
 
         # Change simulation status to finished when sending result emial
         simulation.status = 'Run finished'
         db.session.commit()
 
         # Send notification email
-        # base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
-        base_url = f"{get_current_external_ip()}/simulationmodelview/load-results/" + run_id + "/"
-        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "http://localhost:9000/simulationmodelview/"
+        base_url = f"{get_current_external_ip()}/simulationmodelview/"
+        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
         dynamic_template_data = {
             "run_id": run_id,
-            "spot_price_forecast": base_url + "spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
-            "cap_of_300": base_url + "300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
-            "spot_price_distribution": base_url + "spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
+            "assumption_name": assumption_name,
+            "project_name": project_name,
+            "simulation_name": simulation_name,
+            "simulation_description": simulation_description,
+            "simulation_url": base_url + "show/" + simulation_id,
+            "spot_price_forecast": base_url + "load-results/" + run_id + "/spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "cap_of_300": base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "spot_price_distribution": base_url + "load-results/" + run_id + "/spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
         }
         send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
 
@@ -1107,8 +1119,7 @@ class SimulationModelView(
                 db.session.commit()
                 g.result = 'Skip pre process to invocation'
                 g.detail = 'Found existing assumption processed data, move to lambda invocation.'
-                simulation_start_invoker.apply_async(args=[simulation.run_id, 5])
-
+                simulation_start_invoker.apply_async(args=[simulation.run_id, 5, msg])
         else:
             g.result = 'Run failed'
             g.detail = message
@@ -1234,51 +1245,52 @@ class SimulationModelView(
         return '200 OK'
 
 
-    @simulation_logger.log_simulation(action_name='start query')
-    @expose('/query_result/<sim_id>/', methods=['POST'])
-    def query_result(self, sim_id):
-        print('get query result')
-        data = request.form['duid_list']
-        data = data.strip('\t').replace('\n', '').split(',')
-        simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
-        msg = {
-            'sim_tag': simulation.run_id,
-            # 'sim_tag': 'Run_196',
-            'outBucket': bucket_inputs,
-            'query_list': [
-                'Technology_Generation_by_percentile_cal',
-                'DUID_Generation_by_percentile_cal',
-                'DUID_Average_Price_by_percentile_cal',
-                'DUID_Revenue_by_percentile_cal',
-                'DUID_Spot_Premium_by_percentile_cal',
-                'TWA_Simulation_by_simulation_cal',
-                'DUID_Generation_by_simulation_cal',
-                'DUID_Average_Price_by_simulation_cal',
-                'DUID_Revenue_by_simulation_cal'
-            ],
-            'dbname': 'dex_poc',
-            'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
-            # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
-            'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
-            # 'spottbl': f'spot_demand_{"Run_196".lower()}',
-            'duids': data,
-            'year_start': str(simulation.start_date.year),
-            'year_end': str(get_full_week_end_date(simulation.start_date, simulation.end_date).year),
-            'supersetURL': get_current_external_ip(),
-            'email': g.user.email,
-        }
-        # if send_sqs_msg(msg, queue_url=query_sqs):
-        g.action_object = simulation.name
-        g.action_object_type = 'simulation'
-        if send_sqs_msg(json.dumps(msg), queue_url=query_sqs_url):
-            message = 'Query has been sent, the data files will be sent to your email when ready.'
-            g.result = 'send query result'
-            g.detail = json.dumps(msg)
-        else:
-            message = 'Query failed to send to sqs, please try again later or contact dev team.'
-            g.result = 'send query result'
-            g.detail=message
-        return jsonify({'message': message})
+    # @simulation_logger.log_simulation(action_name='start query')
+    # @expose('/query_result/<sim_id>/', methods=['POST'])
+    # def query_result(self, sim_id):
+    #     query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
+    #     print('get query result')
+    #     data = request.form['duid_list']
+    #     data = data.strip('\t').replace('\n', '').split(',')
+    #     simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
+    #     msg = {
+    #         'sim_tag': simulation.run_id,
+    #         # 'sim_tag': 'Run_196',
+    #         'outBucket': bucket_inputs,
+    #         'query_list': [
+    #             'Technology_Generation_by_percentile_cal',
+    #             'DUID_Generation_by_percentile_cal',
+    #             'DUID_Average_Price_by_percentile_cal',
+    #             'DUID_Revenue_by_percentile_cal',
+    #             'DUID_Spot_Premium_by_percentile_cal',
+    #             'TWA_Simulation_by_simulation_cal',
+    #             'DUID_Generation_by_simulation_cal',
+    #             'DUID_Average_Price_by_simulation_cal',
+    #             'DUID_Revenue_by_simulation_cal'
+    #         ],
+    #         'dbname': 'dex_poc',
+    #         'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+    #         # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
+    #         'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+    #         # 'spottbl': f'spot_demand_{"Run_196".lower()}',
+    #         'duids': data,
+    #         'year_start': simulation.start_date.year,
+    #         'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
+    #         'supersetURL': get_current_external_ip(),
+    #         'email': g.user.email,
+    #     }
+    #     # if send_sqs_msg(msg, queue_url=query_sqs):
+    #     g.action_object = simulation.name
+    #     g.action_object_type = 'simulation'
+    #     if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
+    #         message = 'Query has been sent, the data files will be sent to your email when ready.'
+    #         g.result = 'send query result'
+    #         g.detail = json.dumps(msg)
+    #     else:
+    #         message = 'Query failed to send to sqs, please try again later or contact dev team.'
+    #         g.result = 'send query result'
+    #         g.detail=message
+    #     return jsonify({'message': message})
 
 class ProjectModelView(EmpowerModelView):
 

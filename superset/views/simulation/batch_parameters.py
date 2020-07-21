@@ -36,5 +36,5 @@ def generate_parameters_for_batch(simulation, sim_num):
                 week_tmp.append(tmp_dict)
             parameter_dic[i].append(week_tmp)
         print(i)
-    print(write_pickle_to_s3(parameter_dic, bucket_inputs, parameters_for_batch_v2.format(sim_tag)))
+    write_pickle_to_s3(parameter_dic, bucket_inputs, parameters_for_batch_v2.format(sim_tag))
 
