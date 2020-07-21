@@ -177,7 +177,7 @@ def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
                 ).order_by(SimulationLog.dttm.desc()).first()
                 start_run_msg = ast.literal_eval(latest_sim.detail)
                 
-            template = json.load(read_file_byte_from_s3(bucket_inputs, glue_crawler_template_path))
+            template = json.loads(read_file_byte_from_s3(bucket_inputs, glue_crawler_template_path))
 
             print('Start run info: ' + start_run_msg)
             template['run_id'] = run_id
