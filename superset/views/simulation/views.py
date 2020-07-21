@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import ast
 import json
 import traceback
 import logging
@@ -33,6 +34,7 @@ from superset import app, db, event_logger, simulation_logger, celery_app
 from superset.typing import FlaskResponse
 from superset.constants import RouteMethod
 from superset.models.simulation import *
+from superset.models.assumption_check import *
 from superset.models.slice import Slice
 from flask_appbuilder.security.sqla import models as ab_models
 from superset.connectors.sqla.models import SqlaTable
@@ -47,18 +49,19 @@ from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormFor
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check, check_assumption_processed
-from .util import get_redirect_endpoint, read_excel, read_csv, download_from_s3, get_full_week_end_date, from_dict
+from .util import get_redirect_endpoint, read_excel, download_from_s3, get_full_week_end_date, from_dict, upload_stream_write,\
+    read_file_byte_from_s3
 from ..utils import bootstrap_user_data, create_attachment
 
 
-def upload_stream_write(form_file_field: "FileStorage", path: str):
-    chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
-    with open(path, "bw") as file_description:
-        while True:
-            chunk = form_file_field.stream.read(chunk_size)
-            if not chunk:
-                break
-            file_description.write(chunk)
+# def upload_stream_write(form_file_field: "FileStorage", path: str):
+#     chunk_size = app.config["UPLOAD_CHUNK_SIZE"]
+#     with open(path, "bw") as file_description:
+#         while True:
+#             chunk = form_file_field.stream.read(chunk_size)
+#             if not chunk:
+#                 break
+#             file_description.write(chunk)
 
 
 def send_notification(simulation, template_id):
@@ -126,7 +129,7 @@ def upload_assumption(path, name):
 
 @celery_app.task
 @simulation_logger.log_simulation(action_name='invoke')
-def simulation_start_invoker(run_id, sim_num):
+def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
     from .invoker import batch_invoke_solver, batch_invoke_merger_all, batch_invoke_merger_year, invoker
     from .batch_parameters import generate_parameters_for_batch
     from .simulation_config import bucket_inputs
@@ -164,6 +167,31 @@ def simulation_start_invoker(run_id, sim_num):
             end_date = get_full_week_end_date(start_date, simulation.end_date)
             total_days = (end_date - start_date).days + 1
             sim_tag = run_id
+            if not start_run_msg:
+                # Find duids from last start run log
+                latest_sim = db.session.query(SimulationLog).filter_by(
+                    action_object_type='Simulation',
+                    action_object=simulation.name,
+                    action='start run',
+                    result='Started, pre-process in progress'
+                ).order_by(SimulationLog.dttm.desc()).first()
+                start_run_msg = ast.literal_eval(latest_sim.detail)
+                
+            template = json.loads(read_file_byte_from_s3(bucket_inputs, glue_crawler_template_path))
+
+            print('Start run info: ' + repr(start_run_msg))
+            template['run_id'] = run_id
+            template['num_sim'] = str(sim_num)
+            template['outSimBucket'] = bucket_inputs
+            template['outExcelBucket'] = bucket_inputs
+            template['duids'] = start_run_msg['duids']
+            template['start_date'] = start_run_msg['simStartDate']
+            template['end_date'] = start_run_msg['simEndDate']
+            template['supersetURL'] = start_run_msg['supersetURL']
+            template['email'] = start_run_msg['email']
+            print('Glue template: ' + repr(template))
+            if not send_sqs_msg(json.dumps(template), queue_url=glue_trigger_sqs_url):
+                raise Exception('Failed to send glue crawler sqs message. Please contact dev team.')
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
             batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
                                      year_end=end_date.year+1, interval=interval/2)
@@ -176,11 +204,11 @@ def simulation_start_invoker(run_id, sim_num):
             invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs, 'supersetURL': get_current_external_ip()},
                     function_name='spot-simulation-prod-stk-check-spot-output')
 
-            simulation.status = 'Run finished'
-            db.session.commit()
+            # simulation.status = 'Run finished'
+            # db.session.commit()
             g.result = 'Invoke success, simulation finished.'
-            message = 'Simulation {} is finished successfully, an email contain links to the result will be sent to you shortly.'
-            style='info'
+            # message = 'Simulation {} is finished successfully, an email contain links to the result will be sent to you shortly.'
+            # style='info'
         except Exception as e:
             simulation.status = 'Run failed'
             simulation.status_detail = repr(e)
@@ -545,7 +573,7 @@ class EditAssumptionModelView(
                 for version in version_list:
                     versions.append({
                         'version': version.get_version(),
-                        'note': version.Note
+                        'note': version.get_note(),
                     })
 
             message = {
@@ -654,9 +682,9 @@ class SimulationModelView(
         'process_success',
         'process_failed',
         'start_run',
-        # 'query_success',
-        # 'query_failed',
-        # 'query_result',
+        'query_success',
+        'query_failed',
+        'query_result',
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
     list_columns = ['name','assumption', 'project', 'status']
@@ -790,7 +818,7 @@ class SimulationModelView(
                 action_object_type='Simulation',
                 action_object=simulation.name,
                 action='start run',
-                result='Started, pre-process in progress'
+                # result='Started, pre-process in progress'
             ).order_by(SimulationLog.dttm.desc()).first()
             if not latest_sim:
                 return json_error_response("Simulation " + run_id + " has not started yet")
@@ -801,6 +829,10 @@ class SimulationModelView(
                 simulation_name = simulation.name
                 simulation_description = simulation.description or ''
                 simulation_id = str(simulation.id)
+
+        # Change simulation status to finished when sending result emial
+        simulation.status = 'Run finished'
+        db.session.commit()
 
         # Send notification email
         # base_url = "http://localhost:9000/simulationmodelview/"
@@ -888,6 +920,7 @@ class SimulationModelView(
         item = self.datamodel.obj()
         try:
             form.populate_obj(item)
+            item.end_date = get_full_week_end_date(item.start_date, item.end_date)
             item.status = 'Waiting for start'
             g.action_object = item.name
             g.action_object_type = 'Simulation'
@@ -915,6 +948,7 @@ class SimulationModelView(
         g.detail = None
         try:
             form.populate_obj(item)
+            item.end_date = get_full_week_end_date(item.start_date, item.end_date)
             self.pre_update(item)
         except Exception as e:
             g.detail = str(e)
@@ -1004,9 +1038,10 @@ class SimulationModelView(
         return result
 
     @simulation_logger.log_simulation(action_name='start run')
-    @expose('/start_run/<id>/<run_type>/')
+    @expose('/start_run/<id>/<run_type>/', methods=['GET', 'POST'])
     def start_run(self,id,run_type):
         simulation = db.session.query(Simulation).filter_by(id=id).one_or_none()
+
         if not simulation:
             message = 'No simulation found for this run id, please refresh the page and try again.'
             g.result = 'Run failed'
@@ -1028,7 +1063,9 @@ class SimulationModelView(
                     simulation.assumption.s3_path = path
                     db.session.commit()
                 try:
-                    message = self.pre_run_check_process(simulation, run_type)
+                    data = request.form['duid_list']
+                    data = data.strip('\t').replace('\n', '').split(',')
+                    message = self.pre_run_check_process(simulation, run_type, duid_list=data)
 
                 except Exception as e:
                     g.result = 'Run failed'
@@ -1040,7 +1077,7 @@ class SimulationModelView(
             'message': message,
         })
 
-    def pre_run_check_process(self, simulation, run_type):
+    def pre_run_check_process(self, simulation, run_type, duid_list=[]):
         pass_check, message = check_assumption(simulation.assumption.s3_path, simulation.assumption.name, simulation)
         # pass_check, message = True, ''
         if pass_check:
@@ -1065,6 +1102,8 @@ class SimulationModelView(
                 # 'simEndDate': '2030-12-31',
                 'runType': run_type,
                 'supersetURL': get_current_external_ip(),
+                'duids': duid_list,
+                'email': g.user.email,
             }
             if not check_assumption_processed(simulation.run_id):
                 if send_sqs_msg(json.dumps(msg)):
@@ -1080,8 +1119,7 @@ class SimulationModelView(
                 db.session.commit()
                 g.result = 'Skip pre process to invocation'
                 g.detail = 'Found existing assumption processed data, move to lambda invocation.'
-                simulation_start_invoker.apply_async(args=[simulation.run_id, 5])
-
+                simulation_start_invoker.apply_async(args=[simulation.run_id, 5, msg])
         else:
             g.result = 'Run failed'
             g.detail = message
@@ -1119,10 +1157,12 @@ class SimulationModelView(
         g.user = None
         data = json.loads(request.data.decode())
         run_id = data['runNo']
-        error_msg = data['procStatus'].replace('\n', ' ')
+        error_msg = data['procStatus']
         simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
         simulation.assumption.status = 'Error'
         simulation.assumption.status_detail = error_msg
+        simulation.status = 'Run failed'
+        simulation.status_detail = 'Error in pre-process for assumption file, please check the assumption detail.'
         # Find the latest log of start simulation to find the user who started the sim
         latest_sim = db.session.query(SimulationLog).filter_by(
             action_object_type='Simulation',
@@ -1151,55 +1191,58 @@ class SimulationModelView(
         else:
             # sim_num = simulation.run_no
             sim_num = 5
-        simulation_start_invoker.apply_async(args=[run_id, sim_num])
-        flash('The preprocess of simulation {} has failed, please check the log.'.format(simulation.name), 'danger')
+        # simulation_start_invoker.apply_async(args=[run_id, sim_num])
+        # flash('The preprocess of simulation {} has failed, please check the log.'.format(simulation.name), 'danger')
         return '200 OK'
 
-    # @simulation_logger.log_simulation(action_name='query result')
-    # @expose('/query_success', methods=['GET', 'POST'])
-    # def query_success(self):
-    #     import ast
-    #     g.user = None
-    #     # flash('reached query success', 'info')
-    #     data = json.loads(request.data.decode())
-    #     # print(data)
-    #     email = data['email']
-    #     s3_list = ast.literal_eval(data['outS3Keys'])
-    #     bucket = data['outBucket']
-    #     run_id = data['sim_tag']
-    #     simulation = db.query(Simulation).filter_by(run_id=run_id).first()
-    #     attachments = []
-    #     for s3_file in s3_list:
-    #         path = tempfile.NamedTemporaryFile(
-    #             dir=app.config["UPLOAD_FOLDER"], suffix='xlsx', delete=False
-    #         ).name
-    #         download_from_s3(bucket, s3_file, path)
-    #         filename = s3_file.split('/')[-1]
-    #         file_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    #         attachment = create_attachment(filename, path, file_type)
-    #         attachments.append(attachment)
-    #         os.remove(path)
-    #     message = {
-    #         'sim_name': simulation.name
-    #         # 'sim_name': 'Run_196'
-    #     }
-    #     if send_sendgrid_mail(email, message, 'd-49e6d877ad7c440b84fe2b63835ccea5', attachments):
-    #         g.result = 'query success'
-    #         g.detail = repr(data)
-    #     else:
-    #         g.result = 'query success, message sent failed'
-    #         g.detail = 'Failed to send email to {}'.format(email)
-    #     return '200 OK'
+    @simulation_logger.log_simulation(action_name='query result')
+    @expose('/query_success', methods=['GET', 'POST'])
+    def query_success(self):
+        g.user = None
+        # flash('reached query success', 'info')
+        data = json.loads(request.data.decode())
+        # print(data)
+        email = data['email']
+        s3_list = ast.literal_eval(data['outS3Keys'])
+        bucket = data['outBucket']
+        run_id = data['sim_tag']
+        simulation = db.query(Simulation).filter_by(run_id=run_id).first()
+        attachments = []
+        for s3_file in s3_list:
+            path = tempfile.NamedTemporaryFile(
+                dir=app.config["UPLOAD_FOLDER"], suffix='xlsx', delete=False
+            ).name
+            download_from_s3(bucket, s3_file, path)
+            filename = s3_file.split('/')[-1]
+            file_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            attachment = create_attachment(filename, path, file_type)
+            attachments.append(attachment)
+            os.remove(path)
+        message = {
+            'sim_name': simulation.name
+            # 'sim_name': 'Run_196'
+        }
+        if send_sendgrid_mail(email, message, 'd-49e6d877ad7c440b84fe2b63835ccea5', attachments):
+            g.result = 'query success'
+            g.detail = repr(data)
+        else:
+            g.result = 'query success, message sent failed'
+            g.detail = 'Failed to send email to {}'.format(email)
+        return '200 OK'
 
-    # @simulation_logger.log_simulation(action_name='query result')
-    # @expose('/query_failed', methods=['GET', 'POST'])
-    # def query_failed(self):
-    #     g.user = None
-    #     data = json.loads(request.data.decode())
-    #     # print(data)
-    #     g.result = 'query failed'
-    #     g.detail = repr(data)
-    #     return '200 OK'
+    @simulation_logger.log_simulation(action_name='query result')
+    @expose('/query_failed', methods=['GET', 'POST'])
+    def query_failed(self):
+        g.user = None
+        data = json.loads(request.data.decode())
+        # print(data)
+        status_keys = ['s3Status', 'glueStats', 'crawlerStatus', 'msgSQS', 'queryId', 'queryStatus', 'updateStatus', 'exportStatus']
+        for key in status_keys:
+            if key in data.keys() and ('error' in data[key] or 'timeout' in data[key] or 'failure' in data[key]):
+                error = f'{key} error: {data[key]}'
+        g.result = 'query failed'
+        g.detail = error
+        return '200 OK'
 
 
     # @simulation_logger.log_simulation(action_name='start query')

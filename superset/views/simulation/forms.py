@@ -87,6 +87,49 @@ class UploadAssumptionFormForStanding(DynamicForm):
         ],
     )
 
+class UploadISPForm(DynamicForm):
+    isp_case = StringField(
+        _("ISP case"),
+        description=_("Name of the ISP case."),
+        validators=[DataRequired()],
+        widget=BS3TextFieldWidget(),
+    )
+
+    source = StringField(
+        _("Source"),
+        description=_("Source of the ISP case."),
+        validators=[DataRequired()],
+        widget=BS3TextFieldWidget(),
+    )
+
+    scenario = StringField(
+        _("ISP scenario"),
+        description=_("Name of the scenario."),
+        validators=[DataRequired()],
+        widget=BS3TextFieldWidget(),
+    )
+    note = StringField(
+        _("Description"),
+        description=_("Note of the scenario and type, etc"),
+        widget=BS3TextFieldWidget(),
+    )
+
+    file = FileField(
+        _("Data File"),
+        description=_("Select the csv file."),
+        validators=[
+            FileRequired(),
+            FileAllowed(
+                ["csv"],
+                _(
+                    "Only the following file extensions are allowed: "
+                    "%(allowed_extensions)s",
+                    allowed_extensions=", ".join(["csv"]),
+                ),
+            ),
+        ],
+    )
+
 
 def possible_assumptions():
     # from flask_appbuilder.models.sqla.interface import SQLAInterface
