@@ -49,7 +49,8 @@ from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormFor
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
     save_as_new_tab_version, ref_day_generation_check, check_assumption_processed
-from .util import get_redirect_endpoint, read_excel, download_from_s3, get_full_week_end_date, from_dict, upload_stream_write
+from .util import get_redirect_endpoint, read_excel, download_from_s3, get_full_week_end_date, from_dict, upload_stream_write,\
+    read_file_byte_from_s3
 from ..utils import bootstrap_user_data, create_attachment
 
 
@@ -176,8 +177,7 @@ def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
                 ).order_by(SimulationLog.dttm.desc()).first()
                 start_run_msg = ast.literal_eval(latest_sim.detail)
                 
-            with open(get_s3_url(bucket_inputs, glue_crawler_template_path), 'rb') as f:
-                template = json.load(f)
+            template = json.load(read_file_byte_from_s3(bucket_inputs, glue_crawler_template_path))
 
             print('Start run info: ' + start_run_msg)
             template['run_id'] = run_id

@@ -24,6 +24,10 @@ def read_pickle_from_s3(bucket, path):
     pickle_data = client.get_object(Bucket=bucket, Key=path)
     return pickle.loads(pickle_data['Body'].read())
 
+def read_file_byte_from_s3(bucket, path):
+    obj = client.get_object(Bucket=bucket, Key=path)
+    return object['Body'].read()
+
 def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
 
