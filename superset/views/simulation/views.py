@@ -179,7 +179,7 @@ def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
                 
             template = json.loads(read_file_byte_from_s3(bucket_inputs, glue_crawler_template_path))
 
-            print('Start run info: ' + start_run_msg)
+            print('Start run info: ' + repr(start_run_msg))
             template['run_id'] = run_id
             template['num_sim'] = sim_num
             template['outSimBucket'] = bucket_inputs
