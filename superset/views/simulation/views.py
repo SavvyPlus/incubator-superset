@@ -760,16 +760,26 @@ class SimulationModelView(
                 return json_error_response("Simulation " + run_id + " has not started yet")
             else:
                 email_to = latest_sim.user.email
+                assumption_name = simulation.assumption.name
+                project_name = simulation.project.name
+                simulation_name = simulation.name
+                simulation_description = simulation.description or ''
+                simulation_id = str(simulation.id)
 
         # Send notification email
-        # base_url = "http://localhost:9000/simulationmodelview/load-results/" + run_id + "/"
-        base_url = f"{get_current_external_ip()}/simulationmodelview/load-results/" + run_id + "/"
-        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/load-results/" + run_id + "/"
+        # base_url = "http://localhost:9000/simulationmodelview/"
+        base_url = f"{get_current_external_ip()}/simulationmodelview/"
+        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
         dynamic_template_data = {
             "run_id": run_id,
-            "spot_price_forecast": base_url + "spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
-            "cap_of_300": base_url + "300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
-            "spot_price_distribution": base_url + "spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
+            "assumption_name": assumption_name,
+            "project_name": project_name,
+            "simulation_name": simulation_name,
+            "simulation_description": simulation_description,
+            "simulation_url": base_url + "show/" + simulation_id,
+            "spot_price_forecast": base_url + "load-results/" + run_id + "/spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "cap_of_300": base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
+            "spot_price_distribution": base_url + "load-results/" + run_id + "/spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
         }
         send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
 
