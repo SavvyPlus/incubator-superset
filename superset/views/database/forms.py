@@ -266,7 +266,8 @@ class ExcelToDatabaseForm(DynamicForm):
                     user is able to upload to schema in schemas_allowed_for_csv_upload
         """
         if (
-            security_manager.database_access(database)
+            # security_manager.database_access(database)
+            security_manager.can_access_database(database)
             or security_manager.all_datasource_access()
         ):
             return True

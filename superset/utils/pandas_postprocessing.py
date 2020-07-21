@@ -15,17 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 import geohash as geohash_lib
 import numpy as np
 from flask_babel import gettext as _
 from geopy.point import Point
-from pandas import DataFrame, NamedAgg
+from pandas import DataFrame, NamedAgg, Series
 
 from superset.exceptions import QueryObjectValidationError
+from superset.utils.core import DTTM_ALIAS, PostProcessingContributionOrientation
 
-WHITELIST_NUMPY_FUNCTIONS = (
+ALLOWLIST_NUMPY_FUNCTIONS = (
     "average",
     "argmin",
     "argmax",
@@ -48,7 +49,7 @@ WHITELIST_NUMPY_FUNCTIONS = (
     "var",
 )
 
-WHITELIST_ROLLING_FUNCTIONS = (
+DENYLIST_ROLLING_FUNCTIONS = (
     "count",
     "corr",
     "cov",
@@ -64,7 +65,7 @@ WHITELIST_ROLLING_FUNCTIONS = (
     "quantile",
 )
 
-WHITELIST_CUMULATIVE_FUNCTIONS = (
+ALLOWLIST_CUMULATIVE_FUNCTIONS = (
     "cummax",
     "cummin",
     "cumprod",
@@ -141,7 +142,7 @@ def _get_aggregate_funcs(
                 _("Operator undefined for aggregator: %(name)s", name=name,)
             )
         operator = agg_obj["operator"]
-        if operator not in WHITELIST_NUMPY_FUNCTIONS or not hasattr(np, operator):
+        if operator not in ALLOWLIST_NUMPY_FUNCTIONS or not hasattr(np, operator):
             raise QueryObjectValidationError(
                 _("Invalid numpy function: %(operator)s", operator=operator,)
             )
@@ -330,7 +331,7 @@ def rolling(  # pylint: disable=too-many-arguments
         kwargs["win_type"] = win_type
 
     df_rolling = df_rolling.rolling(**kwargs)
-    if rolling_type not in WHITELIST_ROLLING_FUNCTIONS or not hasattr(
+    if rolling_type not in DENYLIST_ROLLING_FUNCTIONS or not hasattr(
         df_rolling, rolling_type
     ):
         raise QueryObjectValidationError(
@@ -421,7 +422,7 @@ def cum(df: DataFrame, columns: Dict[str, str], operator: str) -> DataFrame:
     """
     df_cum = df[columns.keys()]
     operation = "cum" + operator
-    if operation not in WHITELIST_CUMULATIVE_FUNCTIONS or not hasattr(
+    if operation not in ALLOWLIST_CUMULATIVE_FUNCTIONS or not hasattr(
         df_cum, operation
     ):
         raise QueryObjectValidationError(
@@ -517,3 +518,29 @@ def geodetic_parse(
         return _append_columns(df, geodetic_df, columns)
     except ValueError:
         raise QueryObjectValidationError(_("Invalid geodetic string"))
+
+
+def contribution(
+    df: DataFrame, orientation: PostProcessingContributionOrientation
+) -> DataFrame:
+    """
+    Calculate cell contibution to row/column total.
+
+    :param df: DataFrame containing all-numeric data (temporal column ignored)
+    :param orientation: calculate by dividing cell with row/column total
+    :return: DataFrame with contributions, with temporal column at beginning if present
+    """
+    temporal_series: Optional[Series] = None
+    contribution_df = df.copy()
+    if DTTM_ALIAS in df.columns:
+        temporal_series = cast(Series, contribution_df.pop(DTTM_ALIAS))
+
+    if orientation == PostProcessingContributionOrientation.ROW:
+        contribution_dft = contribution_df.T
+        contribution_df = (contribution_dft / contribution_dft.sum()).T
+    else:
+        contribution_df = contribution_df / contribution_df.sum()
+
+    if temporal_series is not None:
+        contribution_df.insert(0, DTTM_ALIAS, temporal_series)
+    return contribution_df

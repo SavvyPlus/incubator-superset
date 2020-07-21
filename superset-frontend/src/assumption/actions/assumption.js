@@ -144,7 +144,6 @@ export function fetchTableData(table, version) {
       endpoint: `/edit-assumption/get-data/${table}/data/${version}`,
     })
       .then(({ json }) => {
-        console.log(json);
         dispatch(fetchTableDataSuccuss(json));
         dispatch(addSuccessToast(t('Table data was fetched successfully')));
       })
@@ -168,7 +167,6 @@ export function saveTableDataFailed() {
 }
 
 export function saveTableData(table, tableData, note) {
-  console.log(table, note);
   return dispatch => {
     return SupersetClient.post({
       endpoint: '/edit-assumption/save-data/',
