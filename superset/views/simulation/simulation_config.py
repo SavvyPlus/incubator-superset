@@ -121,7 +121,7 @@ db_pass_mysql = "Elecmms_2020"
 db_schema_ElecMMS3 = "ElecMMS3"
 
 # S3 data folders:
-bucket_inputs = "empower-simulation"
+bucket_inputs = "spot-price-forecast-simulation-prod"
 bucket_hist = '007-spot-price-forecast-physical'
 rooftop_pv_path = 'historical-generation/{}/rooftop-pv'  # state
 public_holiday_path = 'public_holiday/{}.pickle'  # state
