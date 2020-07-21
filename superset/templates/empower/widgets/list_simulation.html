@@ -59,11 +59,11 @@
             {% endif %}
             {% for value in include_columns %}
                 {% set formatter = formatters_columns.get(value) %}
-                {% if formatter %}
-                    <td>{{ formatter(item[value]) }}</td>
-                {% else %}
-                    <td>{{ item[value] }}</td>
-                {% endif %}
+                    {% if formatter %}
+                        <td>{{ formatter(item[value]) }}</td>
+                    {% else %}
+                        <td>{{ item[value] }}</td>
+                    {% endif %}
             {% endfor %}
             <td>
                 {% if item['status']=='Running' %}
@@ -217,51 +217,51 @@
             });
         })
 
-        $('[id^=query-btn]').click(function(e) {
-            e.preventDefault();
-            // let button = this
-            // let href = '/simulationmodelview/query_result/'
-            //
-            // button.innerHTML = 'Sending query'
-            // this.setAttribute('disabled', true)
-            // let pk = this.name
-            // // let query_input = document.getElementById('query-input-'+pk).value
-            // var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-            // // let formdata = new FormData();
-            // // formdata.append('duid_list', query_input)
-            // href = href + pk + '/'
-            // $.ajax({
-            //     type: "POST",
-            //     url: href,
-            //     xhr: function () {
-            //         var myXhr = $.ajaxSettings.xhr();
-            //         return myXhr;
-            //     },
-            //     success: function (data) {
-            //         alert(data['message'])
-            //         button.removeAttribute('disabled')
-            //         // console.log(document.getElementById('assumption'))
-            //         button.innerHTML = 'Start query'
-            //         window.location.reload(true)
-            //     },
-            //     error: function(error, str){
-            //         if (str =='timeout'){
-            //             alert('Timeout, please try again later.')
-            //         }
-            //         else if (str == 'error'){
-            //             alert(error['message'])
-            //         }
-            //         button.removeAttribute('disabled')
-            //         button.innerHTML = 'Start query'
-            //     },
-            //     timeout: 30000,
-            //     async: true,
-            //     data:formdata,
-            //     cache: false,
-            //     contentType: false,
-            //     processData: false,
-            // });
-        })
+        // $('[id^=query-btn]').click(function(e) {
+        //     e.preventDefault();
+        //     let button = this
+        //     let href = '/simulationmodelview/query_result/'
+        //
+        //     button.innerHTML = 'Sending query'
+        //     this.setAttribute('disabled', true)
+        //     let pk = this.name
+        //     let query_input = document.getElementById('query-input-'+pk).value
+        //     var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+        //     let formdata = new FormData();
+        //     formdata.append('duid_list', query_input)
+        //     href = href + pk + '/'
+        //     $.ajax({
+        //         type: "POST",
+        //         url: href,
+        //         xhr: function () {
+        //             var myXhr = $.ajaxSettings.xhr();
+        //             return myXhr;
+        //         },
+        //         success: function (data) {
+        //             alert(data['message'])
+        //             button.removeAttribute('disabled')
+        //             // console.log(document.getElementById('assumption'))
+        //             button.innerHTML = 'Start run'
+        //             window.location.reload(true)
+        //         },
+        //         error: function(error, str){
+        //             if (str =='timeout'){
+        //                 alert('Timeout, please try again later.')
+        //             }
+        //             else if (str == 'error'){
+        //                 alert(error['message'])
+        //             }
+        //             button.removeAttribute('disabled')
+        //             button.innerHTML = 'Start run'
+        //         },
+        //         timeout: 30000,
+        //         async: true,
+        //         data:formdata,
+        //         cache: false,
+        //         contentType: false,
+        //         processData: false,
+        //     });
+        // })
     </script>
 {% endblock %}
 

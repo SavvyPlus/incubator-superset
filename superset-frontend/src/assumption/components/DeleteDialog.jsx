@@ -35,7 +35,21 @@ function DeleteDialog({ open, data, handleClose, handleDeleteSelected }) {
       const row = [];
       for (let j = 0; j < keys.length; j++) {
         if (keys[j] !== 'tableData') {
-          row.push(<TableCell key={keys[j]}>{d[i][keys[j]]}</TableCell>);
+          console.log(d[i][keys[j]]);
+          if (d[i][keys[j]] instanceof Date) {
+            const dateObj = d[i][keys[j]];
+            row.push(
+              <TableCell key={keys[j]}>
+                {('0' + dateObj.getDate()).slice(-2) +
+                  '/' +
+                  ('0' + (dateObj.getMonth() + 1)).slice(-2) +
+                  '/' +
+                  dateObj.getFullYear()}
+              </TableCell>,
+            );
+          } else {
+            row.push(<TableCell key={keys[j]}>{d[i][keys[j]]}</TableCell>);
+          }
         }
       }
       rows.push(<TableRow key={i}>{row}</TableRow>);
