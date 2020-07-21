@@ -48,7 +48,7 @@ from superset.views.simulation.simulation_config import excel_path, bucket_input
 from .forms import UploadAssumptionForm, SimulationForm, UploadAssumptionFormForStanding
 from .util import send_sqs_msg, get_current_external_ip
 from .assumption_process import process_assumptions, upload_assumption_file, check_assumption, process_assumption_to_df_dict,\
-    save_as_new_tab_version, ref_day_generation_check
+    save_as_new_tab_version, ref_day_generation_check, check_assumption_processed
 from .util import get_redirect_endpoint, read_excel, download_from_s3, get_full_week_end_date, from_dict, upload_stream_write
 from ..utils import bootstrap_user_data, create_attachment
 
@@ -164,7 +164,7 @@ def simulation_start_invoker(run_id, sim_num):
             start_date = simulation.start_date
             # end_date = simulation.end_date
             end_date = get_full_week_end_date(start_date, simulation.end_date)
-            total_days = (end_date - start_date).days
+            total_days = (end_date - start_date).days + 1
             sim_tag = run_id
 
             # Find duids from last start run log
@@ -193,13 +193,13 @@ def simulation_start_invoker(run_id, sim_num):
             batch_invoke_solver(bucket_inputs, sim_tag, index_start, index_end, interval=interval)
             batch_invoke_merger_year(bucket_inputs, sim_tag, index_start, index_end, total_days, year_start=start_date.year,
                                      year_end=end_date.year+1, interval=interval/2)
-            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, end_date.year-start_date.year+1,
+            batch_invoke_merger_all(bucket_inputs, sim_tag, index_start, index_end, end_date.year-start_date.year,
                                     interval=interval/2)
             # batch_invoke_solver(bucket_inputs, 'Run_191', 0, 1, interval=500)
             # batch_invoke_merger_year(bucket_test, 'Run_191', 0, 1, output_days, year_start=simulation.start_date.year,
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
-            invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs},
+            invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs, 'supersetURL': get_current_external_ip()},
                     function_name='spot-simulation-prod-stk-check-spot-output')
 
             # simulation.status = 'Run finished'
@@ -603,11 +603,13 @@ class EditAssumptionModelView(
             note = json.loads(form.get('note'))
             tab_data_model = find_table_class_by_name(table)
             tab_def_model = find_table_class_by_name(table+'Definition')
+            print(data_list)
             df = from_dict(data_list)
             new_def = save_as_new_tab_version(db, df, tab_def_model, tab_data_model, note=note)
             message = {'message': 'Data has been saved as new version'}
         except Exception as e:
             db.session.rollback()
+            traceback.print_exc()
             message = {'message': repr(e)}
 
         return jsonify(message)
@@ -1091,16 +1093,21 @@ class SimulationModelView(
                 'duids': duid_list,
                 'email': g.user.email,
             }
-            if send_sqs_msg(json.dumps(msg)):
-                g.detail = json.dumps(msg)
+            if not check_assumption_processed(simulation.run_id):
+                if send_sqs_msg(json.dumps(msg)):
+                    g.detail = json.dumps(msg)
+                    simulation.status = 'Running'
+                    db.session.commit()
+                else:
+                    g.result = 'Run failed'
+                    message = 'Error sending to message to sqs, please try again later to contact dev team.'
+                    g.detail = message
+            else:
                 simulation.status = 'Running'
                 db.session.commit()
-            else:
-                g.result = 'Run failed'
-                message = 'Error sending to message to sqs, please try again later to contact dev team.'
-                g.detail = message
-            # handle_assumption_process.apply_async(args=[simulation.assumption.s3_path, simulation.assumption.name,
-            #                                             simulation.run_id, sim_num])
+                g.result = 'Skip pre process to invocation'
+                g.detail = 'Found existing assumption processed data, move to lambda invocation.'
+                simulation_start_invoker.apply_async(args=[simulation.run_id, 5])
 
         else:
             g.result = 'Run failed'
@@ -1255,8 +1262,8 @@ class SimulationModelView(
             'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
             # 'spottbl': f'spot_demand_{"Run_196".lower()}',
             'duids': data,
-            'year_start': simulation.start_date.year,
-            'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
+            'year_start': str(simulation.start_date.year),
+            'year_end': str(get_full_week_end_date(simulation.start_date, simulation.end_date).year),
             'supersetURL': get_current_external_ip(),
             'email': g.user.email,
         }

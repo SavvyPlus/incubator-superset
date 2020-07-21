@@ -121,7 +121,7 @@ db_pass_mysql = "Elecmms_2020"
 db_schema_ElecMMS3 = "ElecMMS3"
 
 # S3 data folders:
-bucket_inputs = "spot-price-forecast-simulation-prod"
+bucket_inputs = "empower-simulation"
 bucket_hist = '007-spot-price-forecast-physical'
 rooftop_pv_path = 'historical-generation/{}/rooftop-pv'  # state
 public_holiday_path = 'public_holiday/{}.pickle'  # state
@@ -177,6 +177,7 @@ glue_trigger_sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/ni
 reference_date_s3_pickle_path = 'reference_date/{}to{}/{}.pickle'  # index
 reference_date_s3_folder_format = 'reference_date/{}to{}/'
 
+cache_path = 'cache/{}/'
 pv_data_s3_pickle_path = 'cache/{}/pv.pickle'    # assumptions version
 pv_forecast_s3_new_pickle_path = 'cache/{}/pv_forecast.pickle'
 pv_history_s3_new_pickle_path = 'cache/{}/pv_history.pickle'

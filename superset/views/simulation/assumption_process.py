@@ -283,3 +283,11 @@ def save_as_new_tab_version(db, df, tab_model, tab_data_model, note=None, scenar
     df[ver_col_name] = new_ver
     df.to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
     return new_tab_def
+
+def check_assumption_processed(run_id):
+    object_list = list_object_keys(bucket_inputs, cache_path.format(run_id))
+    if len(object_list) > 0:
+        return True
+    else:
+        return False
+

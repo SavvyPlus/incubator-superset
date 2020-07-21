@@ -28,7 +28,8 @@ def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
 
     # TODO DEBUG do not write to s3
-    client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
+    response = client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
+    return response
 
 def put_file_to_s3(filename, bucket, key, is_public=False):
     with open(filename, "rb") as f:
@@ -227,11 +228,12 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
 
 def get_current_external_ip():
     # return 'http://{}:8088'.format(get('https://api.ipify.org').text)
-    return 'http://{}:8088'.format('10.61.146.25')
+    return 'http://{}:8088'.format('10.61.145.120')
+    # return 'https://app.empoweranalytics.com.au'
 
 def get_full_week_end_date(start_date, end_date):
-    total_days = (end_date - start_date).days
-    end_date = end_date + timedelta(days=7 - total_days % 7)
+    total_days = (end_date - start_date).days+1
+    end_date = end_date - timedelta(days=total_days % 7)
     return end_date
 
 def upload_stream_write(form_file_field: "FileStorage", path: str, chunk_size=4096):
