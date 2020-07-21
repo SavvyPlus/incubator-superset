@@ -181,7 +181,7 @@ def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
 
             print('Start run info: ' + repr(start_run_msg))
             template['run_id'] = run_id
-            template['num_sim'] = sim_num
+            template['num_sim'] = str(sim_num)
             template['outSimBucket'] = bucket_inputs
             template['outExcelBucket'] = bucket_inputs
             template['duids'] = start_run_msg['duids']
