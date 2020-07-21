@@ -128,7 +128,7 @@ def upload_assumption(path, name):
 
 @celery_app.task
 @simulation_logger.log_simulation(action_name='invoke')
-def simulation_start_invoker(run_id, sim_num):
+def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
     from .invoker import batch_invoke_solver, batch_invoke_merger_all, batch_invoke_merger_year, invoker
     from .batch_parameters import generate_parameters_for_batch
     from .simulation_config import bucket_inputs
@@ -166,18 +166,20 @@ def simulation_start_invoker(run_id, sim_num):
             end_date = get_full_week_end_date(start_date, simulation.end_date)
             total_days = (end_date - start_date).days + 1
             sim_tag = run_id
-
-            # Find duids from last start run log
-            latest_sim = db.session.query(SimulationLog).filter_by(
-                action_object_type='Simulation',
-                action_object=simulation.name,
-                action='start run',
-                # result='Started, pre-process in progress'
-            ).order_by(SimulationLog.dttm.desc()).first()
-            print('Start run log: ' + repr(latest_sim))
-            start_run_msg = ast.literal_eval(latest_sim.detail)
+            if not start_run_msg:
+                # Find duids from last start run log
+                latest_sim = db.session.query(SimulationLog).filter_by(
+                    action_object_type='Simulation',
+                    action_object=simulation.name,
+                    action='start run',
+                    result='Started, pre-process in progress'
+                ).order_by(SimulationLog.dttm.desc()).first()
+                start_run_msg = ast.literal_eval(latest_sim.detail)
+                
             with open(get_s3_url(bucket_inputs, glue_crawler_template_path), 'rb') as f:
                 template = json.load(f)
+
+            print('Start run info: ' + start_run_msg)
             template['run_id'] = run_id
             template['num_sim'] = sim_num
             template['outSimBucket'] = bucket_inputs
@@ -1117,8 +1119,7 @@ class SimulationModelView(
                 db.session.commit()
                 g.result = 'Skip pre process to invocation'
                 g.detail = 'Found existing assumption processed data, move to lambda invocation.'
-                simulation_start_invoker.apply_async(args=[simulation.run_id, 5])
-
+                simulation_start_invoker.apply_async(args=[simulation.run_id, 5, msg])
         else:
             g.result = 'Run failed'
             g.detail = message
