@@ -1621,6 +1621,14 @@ class MultipleBoxPlotViz(BoxPlotViz):
                                 'fromFormData': True,
                                 'label': 'State'})
 
+        d['metrics'].append({'expressionType': 'SQL',
+                                'sqlExpression': 'Percentile',
+                                'column': None,
+                                'aggregate': None,
+                                'hasCustomLabel': False,
+                                'fromFormData': True,
+                                'label': 'Percentile'})
+
         period_type = self.form_data['period_type_static_picker']
         if period_type:
             d['filter'].append({'col': 'DataGroup', 'op': '==',
