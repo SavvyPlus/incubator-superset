@@ -19,6 +19,17 @@
  * under the License.
  */
 
+const REGION_BORDER_COLOR = {
+  NSW: '#1F497D',
+  QLD: '#F2C80F',
+  SA: '#BE4A47',
+  TAS: '#01B8AA',
+  VIC: '#77933C',
+  ACT: '#666666',
+  NT: '#7D4F73',
+  WA: '#BF714D',
+};
+
 // Round integers to nearest multiple of 10
 function RoundUp(toRound) {
   if (toRound % 10 === 0) return toRound;
@@ -178,9 +189,9 @@ export function getOption(queryResponse) {
         type: 'boxplot',
         data: d.boxData,
         tooltip: { formatter: boxplotFormatter },
-        // itemStyle: {
-        //   color: '#fff6a6',
-        // },
+        itemStyle: {
+          borderColor: REGION_BORDER_COLOR[regions[i]],
+        },
       })),
     };
   } else if (viz_type === 'spot_price_histogram') {
