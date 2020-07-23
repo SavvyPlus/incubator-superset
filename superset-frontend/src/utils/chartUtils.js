@@ -158,7 +158,7 @@ export function getOption(queryResponse) {
           fontWeight: 'bold',
         },
         nameGap: 40,
-        boundaryGap: [0, '40%'],
+        boundaryGap: [0, '5%'],
         // min: 0,
         // max: yMax,
         splitArea: {
