@@ -172,6 +172,7 @@ WTF_CSRF_ENABLED = True
 
 # Add endpoints that need to be exempt from CSRF protection
 WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log",
+                        "superset.charts.api.data",
                         "superset.views.simulation.views.process_success",
                         "superset.views.simulation.views.query_success",
                         "superset.views.simulation.views.process_failed",
@@ -341,7 +342,10 @@ GET_FEATURE_FLAGS_FUNC: Optional[Callable[[Dict[str, bool]], Dict[str, bool]]] =
 # Thumbnail config (behind feature flag)
 # ---------------------------------------------------
 THUMBNAIL_SELENIUM_USER = "Admin"
-THUMBNAIL_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "null"}
+THUMBNAIL_CACHE_CONFIG: CacheConfig = {
+    "CACHE_TYPE": "null",
+    "CACHE_NO_NULL_WARNING": True,
+}
 
 # ---------------------------------------------------
 # Image and file configuration
@@ -381,7 +385,7 @@ SUPERSET_WEBSERVER_DOMAINS = None
 
 # Allowed format types for upload on Database view
 EXCEL_EXTENSIONS = {"xlsx", "xls"}
-CSV_EXTENSIONS = {"csv", "tsv"}
+CSV_EXTENSIONS = {"csv", "tsv", "txt"}
 ALLOWED_EXTENSIONS = {*EXCEL_EXTENSIONS, *CSV_EXTENSIONS}
 
 # CSV Options: key/value pairs that will be passed as argument to DataFrame.to_csv

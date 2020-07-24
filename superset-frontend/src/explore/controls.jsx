@@ -137,7 +137,7 @@ const groupByControl = {
   valueRenderer: c => <ColumnOption column={c} />,
   valueKey: 'column_name',
   allowAll: true,
-  filterOption: ({ label, value, data: opt }, text) =>
+  filterOption: ({ data: opt }, text) =>
     (opt.column_name &&
       opt.column_name.toLowerCase().indexOf(text.toLowerCase()) >= 0) ||
     (opt.verbose_name &&

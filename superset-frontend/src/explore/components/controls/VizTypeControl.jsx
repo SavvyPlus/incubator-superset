@@ -150,6 +150,8 @@ export default class VizTypeControl extends React.PureComponent {
 
     return (
       <div
+        role="button"
+        tabIndex={0}
         className={`viztype-selector-container ${isSelected ? 'selected' : ''}`}
         onClick={this.onChange.bind(this, key)}
       >
