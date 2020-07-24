@@ -18,7 +18,7 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { MenuItem, SplitButton, Tab, Tabs } from 'react-bootstrap';
+import { MenuItem, DropdownButton, Tab, Tabs } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import URI from 'urijs';
@@ -29,6 +29,7 @@ import * as Actions from '../actions/sqlLab';
 import SqlEditor from './SqlEditor';
 import { areArraysShallowEqual } from '../../reduxUtils';
 import TabStatusIcon from './TabStatusIcon';
+import Icon from '../../components/Icon';
 
 const propTypes = {
   actions: PropTypes.object.isRequired,
@@ -288,22 +289,24 @@ class TabbedSqlEditors extends React.PureComponent {
 
       const title = (
         <>
-          <TabStatusIcon
-            onClose={() => this.removeQueryEditor(qe)}
-            tabState={state}
-          />{' '}
-          {qe.title}{' '}
+          {qe.title} <TabStatusIcon tabState={state} />{' '}
+          <Icon
+            role="button"
+            tabIndex={0}
+            cursor="pointer"
+            name="cancel-x"
+            onClick={() => this.removeQueryEditor(qe)}
+          />
         </>
       );
       const tabTitle = (
         <>
-          <span className="ddbtn-tab">{title}</span>
           {isSelected && (
-            <SplitButton
+            <DropdownButton
               bsSize="small"
-              id={'ddbtn-tab-' + i}
-              className="ddbtn-tab"
-              title="&nbsp;"
+              id={`ddbtn-tab-${i}`}
+              title={' '}
+              noCaret
             >
               <MenuItem
                 className="close-btn"
@@ -347,8 +350,9 @@ class TabbedSqlEditors extends React.PureComponent {
                 </div>
                 {t('Duplicate tab')}
               </MenuItem>
-            </SplitButton>
+            </DropdownButton>
           )}
+          <span className="ddbtn-tab">{title}</span>
         </>
       );
       return (

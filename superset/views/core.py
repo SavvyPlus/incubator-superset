@@ -76,6 +76,7 @@ from superset.exceptions import (
     SupersetTimeoutException,
 )
 from superset.jinja_context import get_template_processor
+from superset.models.core import Database
 from superset.models.dashboard import Dashboard
 from superset.models.datasource_access_request import DatasourceAccessRequest
 from superset.models.slice import Slice
@@ -543,10 +544,15 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
     @expose("/import_dashboards", methods=["GET", "POST"])
     def import_dashboards(self) -> FlaskResponse:
         """Overrides the dashboards using json instances from the file."""
-        f = request.files.get("file")
-        if request.method == "POST" and f:
+        import_file = request.files.get("file")
+        if request.method == "POST" and import_file:
+            success = False
+            database_id = request.form.get("db_id")
             try:
-                dashboard_import_export.import_dashboards(db.session, f.stream)
+                dashboard_import_export.import_dashboards(
+                    db.session, import_file.stream, database_id
+                )
+                success = True
             except DatabaseNotFound as ex:
                 logger.exception(ex)
                 flash(
@@ -567,8 +573,14 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                     ),
                     "danger",
                 )
-            return redirect("/dashboard/list/")
-        return self.render_template("superset/import_dashboards.html")
+            if success:
+                flash("Dashboard(s) have been imported", "success")
+                return redirect("/dashboard/list/")
+
+        databases = db.session.query(Database).all()
+        return self.render_template(
+            "superset/import_dashboards.html", databases=databases
+        )
 
     @event_logger.log_this
     @has_access
@@ -927,11 +939,14 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         # Adding slice to a dashboard if requested
         dash: Optional[Dashboard] = None
 
-        if request.args.get("add_to_dash") == "existing":
+        save_to_dashboard_id = request.args.get("save_to_dashboard_id")
+        new_dashboard_name = request.args.get("new_dashboard_name")
+        if save_to_dashboard_id:
+            # Adding the chart to an existing dashboard
             dash = cast(
                 Dashboard,
                 db.session.query(Dashboard)
-                .filter_by(id=int(request.args["save_to_dashboard_id"]))
+                .filter_by(id=int(save_to_dashboard_id))
                 .one(),
             )
             # check edit dashboard permissions
@@ -950,7 +965,8 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                 ),
                 "info",
             )
-        elif request.args.get("add_to_dash") == "new":
+        elif new_dashboard_name:
+            # Creating and adding to a new dashboard
             # check create dashboard permissions
             dash_add_perm = security_manager.can_access("can_add", "DashboardModelView")
             if not dash_add_perm:
@@ -982,7 +998,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             "can_overwrite": is_owner(slc, g.user),
             "form_data": slc.form_data,
             "slice": slc.data,
-            "dashboard_id": dash.id if dash else None,
+            "dashboard_url": dash.url if dash else None,
         }
 
         if dash and request.args.get("goto_dash") == "true":
@@ -2020,7 +2036,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                 )
         except SupersetTimeoutException as ex:
             logger.exception(ex)
-            return json_error_response(timeout_msg)
+            return json_errors_response([ex.error])
         except Exception as ex:  # pylint: disable=broad-except
             return json_error_response(utils.error_msg_from_exception(ex))
 
@@ -2215,7 +2231,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         logger.info("Query %i: Running query on a Celery worker", query.id)
         # Ignore the celery future object and the request may time out.
         try:
-            sql_lab.get_sql_results.delay(
+            task = sql_lab.get_sql_results.delay(
                 query.id,
                 rendered_query,
                 return_results=False,
@@ -2225,6 +2241,10 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                 expand_data=expand_data,
                 log_params=log_params,
             )
+
+            # Explicitly forget the task to ensure the task metadata is removed from the
+            # Celery results backend in a timely manner.
+            task.forget()
         except Exception as ex:  # pylint: disable=broad-except
             logger.exception("Query %i: %s", query.id, str(ex))
             msg = _(
@@ -2261,6 +2281,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         :param rendered_query: The rendered query (included templates)
         :param query: The query SQL (SQLAlchemy) object
         :return: A Flask Response
+        :raises: SupersetTimeoutException
         """
         try:
             timeout = config["SQLLAB_TIMEOUT"]
@@ -2287,6 +2308,9 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                 ignore_nan=True,
                 encoding=None,
             )
+        except SupersetTimeoutException as ex:
+            # re-raise exception for api exception handler
+            raise ex
         except Exception as ex:  # pylint: disable=broad-except
             logger.exception("Query %i: %s", query.id, str(ex))
             return json_error_response(utils.error_msg_from_exception(ex))
@@ -2295,6 +2319,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         return json_success(payload)
 
     @has_access_api
+    @handle_api_exception
     @expose("/sql_json/", methods=["POST"])
     @event_logger.log_this
     def sql_json(self) -> FlaskResponse:

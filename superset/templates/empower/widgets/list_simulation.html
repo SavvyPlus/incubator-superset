@@ -85,12 +85,18 @@
                                     <h5 class="modal-title" id="modal-title-run">Start Run for {{item['name']}}</h5>
                                 </div>
                                 <div class="modal-body">
+                                    <div>
                                     <label for="project-select-{{ pk }}">Choose to start a test run or full run</label>
                                     <select id="run-select-{{ pk }}" name="{{pk}}" class="select2-chosen">
                                         <option value="test">Test run</option>
                                         <option value="full">Full run</option>
                                     </select>
-
+                                    </div>
+                                    <div>
+                                    <label for="query-trigger-input-{{ pk }}">Please input the list of DUIDs:</label>
+                                    <textarea id="query-trigger-input-{{ pk }}" name="{{pk}}" placeholder="XNUMURKAHSF, COLEASF1, ..."
+                                    rows="5" cols="40"></textarea>
+                                    </div>
                                 </div>
                                 <div class="modal-footer">
                                     <button class="btn btn-primary" id="run-btn-{{pk}}" name="{{ pk }}">Start run</button>
@@ -166,10 +172,20 @@
             this.setAttribute('disabled', true)
             let pk = this.name
             let run_select = document.getElementById('run-select-'+pk).value
+            let query_input = document.getElementById('query-trigger-input-'+pk).value
+            let formdata = new FormData();
+            formdata.append('duid_list', query_input)
             var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
             href = href + pk + '/' + run_select + '/'
+            $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                            }
+                        }
+                    });
             $.ajax({
-                type: "GET",
+                type: "POST",
                 url: href,
                 xhr: function () {
                     var myXhr = $.ajaxSettings.xhr();
@@ -179,7 +195,7 @@
                     alert(data['message'])
                     button.removeAttribute('disabled')
                     // console.log(document.getElementById('assumption'))
-                    button.innerHTML = 'Start query'
+                    button.innerHTML = 'Start run'
                     window.location.reload(true)
                 },
                 error: function(error, str){
@@ -190,13 +206,14 @@
                         alert(error['message'])
                     }
                     button.removeAttribute('disabled')
-                    button.innerHTML = 'Start query'
+                    button.innerHTML = 'Start run'
                 },
                 timeout: 30000,
                 async: true,
                 cache: false,
                 contentType: false,
                 processData: false,
+                data: formdata,
             });
         })
 

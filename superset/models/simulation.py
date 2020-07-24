@@ -23,7 +23,7 @@ import sqlalchemy as sqla
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from markupsafe import escape, Markup
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func, Float
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Date, DateTime, Text, func, DECIMAL, Float
 from sqlalchemy.orm import make_transient, relationship
 
 from superset import ConnectorRegistry, db, is_feature_enabled, security_manager
@@ -158,10 +158,48 @@ class SimulationLog(Model):
     result = Column(String(128))
     detail = Column(Text)
 
+"""Data table interface"""
+class DataTableMixin:
 
+    __tablename__ = None
+    included_keys = None
+    column_type_dict = None
+    def get_def_col_name(self):
+        return self.__tablename__ + '_Definition'
+
+    def get_definition(self):
+        return getattr(self, self.get_def_col_name())
+
+    def get_dict(self):
+        return dict((key, value) for (key, value) in self.__dict__.items() if key in self.column_type_dict.keys())
+
+    def get_header_and_type(self):
+        return [{'name': key, 'type': self.column_type_dict[key]} for key in self.column_type_dict.keys() ]
+
+    @staticmethod
+    def get_version_col_name():
+        return 'Version'
+
+class DefTableMixin:
+    Note = None
+    Assumption_Scenario = None
+    Assumption_Scenario_Version = None
+
+    def set_scenario(self, scenario, version=1):
+        self.Assumption_Scenario = scenario
+        self.Assumption_Scenario_Version = version
+
+    def get_scenario(self):
+        return self.Assumption_Scenario
+
+    def set_note(self, note):
+        self.Note = note
+
+    def get_note(self):
+        return self.Note
 
 """Rooftop Solar History"""
-class RooftopSolarHistoryDefinition(Model):
+class RooftopSolarHistoryDefinition(Model, DefTableMixin):
     __tablename__ = "Rooftop_Solar_History_Definition"
     Rooftop_Solar_History_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -173,29 +211,25 @@ class RooftopSolarHistoryDefinition(Model):
     def get_sheet_name():
         return sheet_pv_history
 
-class RooftopSolarHistory(Model):
+class RooftopSolarHistory(Model, DataTableMixin):
     __tablename__ = "Rooftop_Solar_History"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Date = Column(Date)
-    Capacity_MW = Column(Float)
-    Aggregate_MW = Column(Float)
+    Capacity_MW = Column(DECIMAL(32,16))
+    Aggregate_MW = Column(DECIMAL(32,16))
     Version = Column(Integer,
                                            ForeignKey('Rooftop_Solar_History_Definition.Rooftop_Solar_History_Version'),
                                            nullable=False)
     Rooftop_Solar_History_Definition = relationship('RooftopSolarHistoryDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Date', 'Capacity_MW', 'Aggregate_MW']
+    column_type_dict = {'State':'string','Date':'date','Capacity_MW': 'numeric', 'Aggregate_MW': 'numeric'}
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Rooftop_Solar_History_Version'
-
-    def get_definition(self):
-        return self.Rooftop_Solar_History_Definition
 
 """Rooftop Solar Forecast"""
-class RooftopSolarForecastDefinition(Model):
+class RooftopSolarForecastDefinition(Model, DefTableMixin):
     __tablename__ = "Rooftop_Solar_Forecast_Definition"
     Rooftop_Solar_Forecast_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -209,29 +243,24 @@ class RooftopSolarForecastDefinition(Model):
     def get_sheet_name():
         return sheet_pv_forecast
 
-class RooftopSolarForecast(Model):
+class RooftopSolarForecast(Model, DataTableMixin):
     __tablename__ = "Rooftop_Solar_Forecast"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Year = Column(Integer)
-    Capacity_MW = Column(Float)
-    Aggregate_MW = Column(Float)
+    Aggregate_MW = Column(DECIMAL(32,16))
     Version = Column(Integer,
                                            ForeignKey('Rooftop_Solar_Forecast_Definition.Rooftop_Solar_Forecast_Version'),
                                            nullable=False)
     Rooftop_Solar_Forecast_Definition = relationship('RooftopSolarForecastDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Year', 'Aggregate_MW']
+    column_type_dict = {'State': 'string', 'Year':'numeric', 'Aggregate_MW': 'numeric'}
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Rooftop_Solar_Forecast_Version'
-
-    def get_definition(self):
-        return self.Rooftop_Solar_Forecast_Definition
 
 """Renewable Proportion"""
-class RenewableProportionDefinition(Model):
+class RenewableProportionDefinition(Model, DefTableMixin):
     __tablename__ = "Renewable_Proportion_Definition"
     Renewable_Proportion_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -243,29 +272,24 @@ class RenewableProportionDefinition(Model):
     def get_sheet_name():
         return sheet_renewable_proportion
 
-class RenewableProportion(Model):
+class RenewableProportion(Model, DataTableMixin):
     __tablename__ = "Renewable_Proportion"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Date = Column(Date)
-    Maximum_HalfHour_Intermittent_Proportion = Column(Float)
+    Maximum_HalfHour_Intermittent_Proportion = Column(DECIMAL(5,4))
     Version = Column(Integer,
                                            ForeignKey('Renewable_Proportion_Definition.Renewable_Proportion_Version'),
                                            nullable=False)
     Renewable_Proportion_Definition = relationship('RenewableProportionDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
-
-    @staticmethod
-    def get_version_col_name():
-        return 'Renewable_Proportion_Version'
-
-    def get_definition(self):
-        return self.Renewable_Proportion_Definition
+    included_keys = ['State', 'Date', 'Maximum_HalfHour_Intermittent_Proportion']
+    column_type_dict = {'State':'string', 'Date':'date', 'Maximum_HalfHour_Intermittent_Proportion': 'numeric'}
 
 
 """Demand Growth"""
-class DemandGrowthDefinition(Model):
+class DemandGrowthDefinition(Model, DefTableMixin):
     __tablename__ = "Demand_Growth_Definition"
     Demand_Growth_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -279,29 +303,25 @@ class DemandGrowthDefinition(Model):
     def get_sheet_name():
         return sheet_demand_growth
 
-class DemandGrowth(Model):
+class DemandGrowth(Model, DataTableMixin):
     __tablename__ = "Demand_Growth"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Year = Column(Integer)
-    Probability = Column(Float)
-    Growth = Column(Float)
+    Probability = Column(DECIMAL(5,4))
+    Growth = Column(DECIMAL(7,6))
     Version = Column(Integer,
                    ForeignKey('Demand_Growth_Definition.Demand_Growth_Version'),
                    nullable=False)
     Demand_Growth_Definition = relationship('DemandGrowthDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Year', 'Probability', 'Growth']
+    column_type_dict = {'State':'string' ,'Year':'numeric' ,'Probability':'numeric', 'Growth':'numeric'}
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Demand_Growth_Version'
-
-    def get_definition(self):
-        return self.Demand_Growth_Definition
 
 """Behind The Meter Battery"""
-class BehindTheMeterBatteryDefinition(Model):
+class BehindTheMeterBatteryDefinition(Model, DefTableMixin):
     __tablename__ = "Behind_The_Meter_Battery_Definition"
     Behind_The_Meter_Battery_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -315,28 +335,24 @@ class BehindTheMeterBatteryDefinition(Model):
     def get_sheet_name():
         return sheet_behind_the_meter_battery
 
-class BehindTheMeterBattery(Model):
+class BehindTheMeterBattery(Model, DataTableMixin):
     __tablename__ = "Behind_The_Meter_Battery"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Year = Column(Integer)
-    Aggregate_MW = Column(Float)
+    Aggregate_MW = Column(DECIMAL(32,16))
     Version = Column(Integer,
                                            ForeignKey('Behind_The_Meter_Battery_Definition.Behind_The_Meter_Battery_Version'),
                                            nullable=False)
     Behind_The_Meter_Battery_Definition = relationship('BehindTheMeterBatteryDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Year', 'Aggregate_MW']
+    column_type_dict = {'State':'string','Year':'numeric','Aggregate_MW':'numeric'}
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Behind_The_Meter_Battery_Version'
-
-    def get_definition(self):
-        return self.Behind_The_Meter_Battery_Definition
 
 """Project Proxy"""
-class ProjectProxyDefinition(Model):
+class ProjectProxyDefinition(Model, DefTableMixin):
     __tablename__ = "Project_Proxy_Definition"
     Project_Proxy_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -348,15 +364,15 @@ class ProjectProxyDefinition(Model):
     def get_sheet_name():
         return sheet_project_proxy
 
-class ProjectProxy(Model):
+class ProjectProxy(Model, DataTableMixin):
     __tablename__ = "Project_Proxy"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Project = Column(String(50))
-    Nameplate_Capacity_MW = Column(Float)
+    Nameplate_Capacity_MW = Column(DECIMAL(32,16))
     Technology_Type = Column(String(10))
-    Latitude = Column(Float)
-    Longitude = Column(Float)
+    Latitude = Column(DECIMAL(32,16))
+    Longitude = Column(DECIMAL(32,16))
     Tracking_Type = Column(String(50))
     Version = Column(Integer,
                                    ForeignKey('Project_Proxy_Definition.Project_Proxy_Version'),
@@ -364,16 +380,13 @@ class ProjectProxy(Model):
     Project_Proxy_Definition = relationship('ProjectProxyDefinition',
                                             foreign_keys=[Version],
                                             backref="data")
+    included_keys = ['State', 'Project', 'Nameplate_Capacity_MW', 'Technology_Type', 'Latitude', 'Longitude', 'Tracking_Type']
+    column_type_dict = {'State':'string', 'Project':'string', 'Nameplate_Capacity_MW': 'numeric',
+                        'Technology_Type': 'string', 'Latitude':'numeric', 'Longitude':'numeric', 'TTracking_Typerac':'string'}
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Project_Proxy_Version'
-
-    def get_definition(self):
-        return self.Project_Proxy_Definition
 
 """MPC CPT"""
-class MPCCPTDefinition(Model):
+class MPCCPTDefinition(Model, DefTableMixin):
     __tablename__ = "MPC_CPT_Definition"
     MPC_CPT_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -385,28 +398,24 @@ class MPCCPTDefinition(Model):
     def get_sheet_name():
         return sheet_mpc
 
-class MPCCPT(Model):
+class MPCCPT(Model, DataTableMixin):
     __tablename__ = "MPC_CPT"
     id = Column(Integer, primary_key=True, autoincrement=True)
     FY = Column(String(10))
-    CPT = Column(Float)
-    MPC = Column(Float)
+    CPT = Column(DECIMAL(32,16))
+    MPC = Column(DECIMAL(32,16))
     Version = Column(Integer,
                             ForeignKey('MPC_CPT_Definition.MPC_CPT_Version'),
                             nullable=False)
     MPC_CPT_Definition = relationship('MPCCPTDefinition',
                                     foreign_keys=[Version],
                                     backref="data")
+    included_keys = ['FY', 'CPT', 'MPC']
+    column_type_dict = {'FY': 'string', 'CPT': 'numeric', 'MPC':'numeric'}
 
-    @staticmethod
-    def get_version_col_name():
-        return 'MPC_CPT_Version'
-
-    def get_definition(self):
-        return self.MPC_CPT_Definition
 
 """Gas Price Escalation"""
-class GasPriceEscalationDefinition(Model):
+class GasPriceEscalationDefinition(Model, DefTableMixin):
     __tablename__ = "Gas_Price_Escalation_Definition"
     Gas_Price_Escalation_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -418,36 +427,34 @@ class GasPriceEscalationDefinition(Model):
     def get_sheet_name():
         return sheet_escalation
 
-class GasPriceEscalation(Model):
+class GasPriceEscalation(Model, DataTableMixin):
     __tablename__ = "Gas_Price_Escalation"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Year = Column(Integer)
-    Case1 = Column(Float)
-    Case2 = Column(Float)
-    Case3 = Column(Float)
-    Case4 = Column(Float)
-    Case5 = Column(Float)
-    Case6 = Column(Float)
-    Case7 = Column(Float)
-    Case8 = Column(Float)
-    Case9 = Column(Float)
+    Case1 = Column(DECIMAL(7,6))
+    Case2 = Column(DECIMAL(7,6))
+    Case3 = Column(DECIMAL(7,6))
+    Case4 = Column(DECIMAL(7,6))
+    Case5 = Column(DECIMAL(7,6))
+    Case6 = Column(DECIMAL(7,6))
+    Case7 = Column(DECIMAL(7,6))
+    Case8 = Column(DECIMAL(7,6))
+    Case9 = Column(DECIMAL(7,6))
     Version = Column(Integer,
                                         ForeignKey('Gas_Price_Escalation_Definition.Gas_Price_Escalation_Version'),
                                         nullable=False)
     Gas_Price_Escalation_Definition = relationship('GasPriceEscalationDefinition',
                                                     foreign_keys=[Version],
                                                     backref="data")
+    included_keys = ['State', 'Year', 'Case1', 'Case2', 'Case3', 'Case4', 'Case5', 'Case6', 'Case7', 'Case8', 'Case9']
+    column_type_dict = {'State': 'string', 'Year':'numeric', 'Case1':'numeric', 'Case2':'numeric', 'Case3':'numeric',
+                        'Case4':'numeric', 'Case5':'numeric', 'Case6':'numeric', 'Case7':'numeric', 'Case8':'numeric',
+                        'Case9':'numeric'}
 
-    @staticmethod
-    def get_version_col_name():
-        return 'Gas_Price_Escalation_Version'
-
-    def get_definition(self):
-        return self.Gas_Price_Escalation_Definition
 
 """Strategy Behaviour"""
-class StrategicBehaviourDefinition(Model):
+class StrategicBehaviourDefinition(Model, DefTableMixin):
     __tablename__ = "Strategic_Behaviour_Definition"
     Strategic_Behaviour_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -459,29 +466,24 @@ class StrategicBehaviourDefinition(Model):
     def get_sheet_name():
         return sheet_strategic_behaviour
 
-class StrategicBehaviour(Model):
+class StrategicBehaviour(Model, DataTableMixin):
     __tablename__ = "Strategic_Behaviour"
     id = Column(Integer, primary_key=True, autoincrement=True)
     State = Column(String(10))
     Bin_Not_Exceeding = Column(Integer)
-    Value = Column(Float)
-    MW = Column(Float)
+    Value = Column(DECIMAL(7,6))
+    MW = Column(DECIMAL(32,16))
     Version = Column(Integer,
                             ForeignKey('Strategic_Behaviour_Definition.Strategic_Behaviour_Version'),
                             nullable=False)
     Strategic_Behaviour_Definition = relationship('StrategicBehaviourDefinition',
                                     foreign_keys=[Version],
                                     backref="data")
-
-    @staticmethod
-    def get_version_col_name():
-        return 'Strategic_Behaviour_Version'
-
-    def get_definition(self):
-        return self.Strategic_Behaviour_Definition
+    included_keys = ['State', 'Bin_Not_Exceeding', 'Value', 'MW']
+    column_type_dict = {'State':'string', 'Bin_Not_Exceeding': 'numeric', 'value':'numeric', 'MW':'numeric'}
 
 """Retirement"""
-class RetirementDefinition(Model):
+class RetirementDefinition(Model, DefTableMixin):
     __tablename__ = "Retirement_Definition"
     Retirement_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -493,14 +495,14 @@ class RetirementDefinition(Model):
     def get_sheet_name():
         return sheet_retirement
 
-class Retirement(Model):
+class Retirement(Model, DataTableMixin):
     __tablename__ = "Retirement"
     id = Column(Integer, primary_key=True, autoincrement=True)
     DUID = Column(String(50))
     State = Column(String(10))
-    Registered_Capacity = Column(Float)
+    Registered_Capacity = Column(DECIMAL(32,16))
     Impact_To_State = Column(String(10))
-    Adjustment_Factor = Column(Float)
+    Adjustment_Factor = Column(DECIMAL(7,6))
     Closure_Date = Column(Date)
     Back_To_Service_Date = Column(Date)
     Version = Column(Integer,
@@ -509,16 +511,12 @@ class Retirement(Model):
     Retirement_Definition = relationship('RetirementDefinition',
                                     foreign_keys=[Version],
                                     backref="data")
-
-    @staticmethod
-    def get_version_col_name():
-        return 'Retirement_Version'
-
-    def get_definition(self):
-        return self.Retirement_Definition
+    included_keys = ['DUID','State','Registered_Capacity','Impact_To_State','Adjustment_Factor','Closure_Date','Back_To_Service_Date']
+    column_type_dict = {'DUID':'string' ,'State':'string', 'Registered_Capacity': 'numeric', 'Impact_To_State': 'string',
+                        'Adjustment_Factor': 'numeric', 'Closure_Date':'date', 'Back_To_Service_Date': 'date'}
 
 """Project List"""
-class ProjectListDefinition(Model):
+class ProjectListDefinition(Model, DefTableMixin):
     __tablename__ = "Project_List_Definition"
     Project_List_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -530,7 +528,7 @@ class ProjectListDefinition(Model):
     def get_sheet_name():
         return sheet_project_list
 
-class ProjectList(Model):
+class ProjectList(Model, DataTableMixin):
     __tablename__ = "Project_List"
     id = Column(Integer, primary_key=True, autoincrement=True)
     DUID = Column(String(50))
@@ -540,10 +538,10 @@ class ProjectList(Model):
     Start_Date = Column(Date)
     End_Date = Column(Date)
     Status = Column(String(50))
-    Offer_Rate = Column(Float)
-    Maximum_Quantity = Column(Float)
-    Installed_Quantity = Column(Float)
-    Probability_Of_Success = Column(Float)
+    Offer_Rate = Column(DECIMAL(32,16))
+    Maximum_Quantity = Column(DECIMAL(32,16))
+    Installed_Quantity = Column(DECIMAL(32,16))
+    Probability_Of_Success = Column(DECIMAL(5,4))
     Resolution = Column(String(20))
     Proxy = Column(String(50))
     Version = Column(Integer,
@@ -552,13 +550,12 @@ class ProjectList(Model):
     Project_List_Definition = relationship('ProjectListDefinition',
                                     foreign_keys=[Version],
                                     backref="data")
-
-    @staticmethod
-    def get_version_col_name():
-        return 'Project_List_Version'
-
-    def get_definition(self):
-        return self.Project_List_Definition
+    included_keys = ['DUID','Name','State','Fuel_Type','Start_Date','End_Date','Status','Offer_Rate','Maximum_Quantity',
+                     'Installed_Quantity','Probability_Of_Success','Resolution','Proxy']
+    column_type_dict = {'DUID':'string', 'Name':'string','State':'string','Fuel_Type':'string', 'Start_Date':'date',
+                        'End_Date':'date', 'Status':'string', 'Offer_Rate':'numeric', 'Maximum_Quantity': 'numeric',
+                        'Installed_Quantity':'numeric', 'Probability_Of_Success':'numeric', 'Resolution':'string',
+                        'Proxy':'string'}
 
 
 model_list = {

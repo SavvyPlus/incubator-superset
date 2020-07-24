@@ -17,7 +17,6 @@
  * under the License.
  */
 /* eslint-disable camelcase */
-import { isString } from 'lodash';
 
 export default function (bootstrapData) {
   const { user } = bootstrapData;
@@ -27,7 +26,13 @@ export default function (bootstrapData) {
     assumption: {
       upsert: 'upload',
       table: 'RooftopSolarHistory',
-      isLoading: false,
+      tableData: {
+        columns: [],
+        data: [],
+      },
+      version: undefined,
+      fetchingVersions: false,
+      versions: [],
     },
     messageToasts: [],
   };

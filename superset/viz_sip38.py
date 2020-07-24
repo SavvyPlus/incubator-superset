@@ -22,7 +22,6 @@ Superset can render.
 """
 # mypy: ignore-errors
 import copy
-import dataclasses
 import hashlib
 import inspect
 import logging
@@ -34,6 +33,7 @@ from datetime import datetime, timedelta
 from itertools import product
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
+import dataclasses
 import geohash
 import numpy as np
 import pandas as pd
@@ -2823,6 +2823,6 @@ viz_types = {
     if (
         inspect.isclass(o)
         and issubclass(o, BaseViz)
-        and o.viz_type not in config["VIZ_TYPE_BLACKLIST"]
+        and o.viz_type not in config["VIZ_TYPE_DENYLIST"]
     )
 }

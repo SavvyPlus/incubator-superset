@@ -24,6 +24,10 @@ def read_pickle_from_s3(bucket, path):
     pickle_data = client.get_object(Bucket=bucket, Key=path)
     return pickle.loads(pickle_data['Body'].read())
 
+def read_file_byte_from_s3(bucket, path):
+    data = client.get_object(Bucket=bucket, Key=path)
+    return data['Body'].read()
+
 def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
 
@@ -187,6 +191,9 @@ def read_csv(*args, **kwargs):
     df = pd.read_csv(*args, **kwargs)
     return df
 
+def from_dict(dict_list):
+    return pd.DataFrame.from_dict(dict_list)
+
 
 def get_redirect_endpoint(table_name: str, table_id: int) -> str:
     if 'distribution' in table_name:
@@ -210,14 +217,12 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
     else:
         endpoint = "/superset/explore/?form_data={}".format(
             parse.quote_plus(json.dumps({
-                "queryFields": {"metrics": "metrics", "groupby": "groupby"},
+                "queryFields": {},
                 "datasource": str(table_id) + "__table",
                 "viz_type": "multi_boxplot",
                 "url_params": {},
                 "time_range_endpoints": ["inclusive", "exclusive"],
-                "granularity_sqla": None,
-                "time_range": "Last week", "metrics": ["count"],
-                "adhoc_filters": [], "groupby": [],
+                "time_range": "Last week",
                 "whisker_options": "Min/max (no outliers)",
                 "period_type_static_picker": "CalYear", "period_finyear_picker": None,
                 "period_calyear_picker": None, "period_quarterly_picker": None},
@@ -229,10 +234,18 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
 
 def get_current_external_ip():
     # return 'http://{}:8088'.format(get('https://api.ipify.org').text)
-    # return 'http://{}:8088'.format('10.61.146.25')
-    return 'https://app.empoweranalytics.com.au'
+    return 'http://{}:8088'.format('10.61.146.25')
+    # return 'https://app.empoweranalytics.com.au'
 
 def get_full_week_end_date(start_date, end_date):
     total_days = (end_date - start_date).days+1
     end_date = end_date - timedelta(days=total_days % 7)
     return end_date
+
+def upload_stream_write(form_file_field: "FileStorage", path: str, chunk_size=4096):
+    with open(path, "bw") as file_description:
+        while True:
+            chunk = form_file_field.stream.read(chunk_size)
+            if not chunk:
+                break
+            file_description.write(chunk)

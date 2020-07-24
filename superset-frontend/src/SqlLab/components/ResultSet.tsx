@@ -21,6 +21,7 @@ import { Alert, Button, ButtonGroup, ProgressBar } from 'react-bootstrap';
 import shortid from 'shortid';
 import { t } from '@superset-ui/translation';
 
+import ErrorMessageWithStackTrace from 'src/components/ErrorMessage/ErrorMessageWithStackTrace';
 import Loading from '../../components/Loading';
 import ExploreCtasResultsButton from './ExploreCtasResultsButton';
 import ExploreResultsButton from './ExploreResultsButton';
@@ -157,6 +158,7 @@ export default class ResultSet extends React.PureComponent<
               this.props.database &&
               this.props.database.allows_virtual_table_explore && (
                 <ExploreResultsButton
+                  // @ts-ignore Redux types are difficult to work with, ignoring for now
                   query={this.props.query}
                   database={this.props.database}
                   actions={this.props.actions}
@@ -165,7 +167,7 @@ export default class ResultSet extends React.PureComponent<
             {this.props.csv && (
               <Button
                 bsSize="small"
-                href={'/superset/csv/' + this.props.query.id}
+                href={`/superset/csv/${this.props.query.id}`}
               >
                 <i className="fa fa-file-text-o" /> {t('.CSV')}
               </Button>
@@ -215,15 +217,14 @@ export default class ResultSet extends React.PureComponent<
       return <Alert bsStyle="warning">Query was stopped</Alert>;
     } else if (query.state === 'failed') {
       return (
-        <Alert bsStyle="danger">
-          {query.errorMessage}
-          {query.link && (
-            <a href={query.link} target="_blank" rel="noopener noreferrer">
-              {' '}
-              {t('(Request Access)')}{' '}
-            </a>
-          )}
-        </Alert>
+        <div className="result-set-error-message">
+          <ErrorMessageWithStackTrace
+            error={query?.errors?.[0]}
+            message={query.errorMessage || undefined}
+            link={query.link}
+            source="sqllab"
+          />
+        </div>
       );
     } else if (query.state === 'success' && query.ctas) {
       const { tempSchema, tempTable } = query;
@@ -249,6 +250,7 @@ export default class ResultSet extends React.PureComponent<
                 {t('Query in a new tab')}
               </Button>
               <ExploreCtasResultsButton
+                // @ts-ignore Redux types are difficult to work with, ignoring for now
                 table={tempTable}
                 schema={tempSchema}
                 dbId={exploreDBId}

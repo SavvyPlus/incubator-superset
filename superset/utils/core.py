@@ -79,6 +79,7 @@ from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.sql.type_api import Variant
 from sqlalchemy.types import TEXT, TypeDecorator
 
+from superset.errors import ErrorLevel, SupersetErrorType
 from superset.exceptions import (
     CertificateException,
     SupersetException,
@@ -617,7 +618,12 @@ class timeout:  # pylint: disable=invalid-name
         self, signum: int, frame: Any
     ) -> None:
         logger.error("Process timed out")
-        raise SupersetTimeoutException(self.error_message)
+        raise SupersetTimeoutException(
+            error_type=SupersetErrorType.BACKEND_TIMEOUT_ERROR,
+            message=self.error_message,
+            level=ErrorLevel.ERROR,
+            extra={"timeout": self.seconds},
+        )
 
     def __enter__(self) -> None:
         try:
@@ -721,7 +727,7 @@ def send_email_smtp(  # pylint: disable=invalid-name,too-many-arguments,too-many
     config: Dict[str, Any],
     files: Optional[List[str]] = None,
     data: Optional[Dict[str, str]] = None,
-    images: Optional[Dict[str, str]] = None,
+    images: Optional[Dict[str, bytes]] = None,
     dryrun: bool = False,
     cc: Optional[str] = None,
     bcc: Optional[str] = None,
@@ -778,8 +784,8 @@ def send_email_smtp(  # pylint: disable=invalid-name,too-many-arguments,too-many
 
     # Attach any inline images, which may be required for display in
     # HTML content (inline)
-    for msgid, body in (images or {}).items():
-        image = MIMEImage(body)
+    for msgid, imgdata in (images or {}).items():
+        image = MIMEImage(imgdata)
         image.add_header("Content-ID", "<%s>" % msgid)
         image.add_header("Content-Disposition", "inline")
         msg.attach(image)
@@ -1476,3 +1482,12 @@ class TemporalType(str, Enum):
     TEXT = "TEXT"
     TIME = "TIME"
     TIMESTAMP = "TIMESTAMP"
+
+
+class PostProcessingContributionOrientation(str, Enum):
+    """
+    Calculate cell contibution to row/column total
+    """
+
+    ROW = "row"
+    COLUMN = "column"

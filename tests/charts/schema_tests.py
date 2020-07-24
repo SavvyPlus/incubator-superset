@@ -18,15 +18,12 @@
 """Unit tests for Superset"""
 from typing import Any, Dict, Tuple
 
+from marshmallow import ValidationError
 from tests.test_app import app
 from superset.charts.schemas import ChartDataQueryContextSchema
 from superset.common.query_context import QueryContext
 from tests.base_tests import SupersetTestCase
 from tests.fixtures.query_context import get_query_context
-
-
-def load_query_context(payload: Dict[str, Any]) -> Tuple[QueryContext, Dict[str, Any]]:
-    return ChartDataQueryContextSchema().load(payload)
 
 
 class TestSchema(SupersetTestCase):
@@ -39,8 +36,7 @@ class TestSchema(SupersetTestCase):
         # Use defaults
         payload["queries"][0].pop("row_limit", None)
         payload["queries"][0].pop("row_offset", None)
-        query_context, errors = load_query_context(payload)
-        self.assertEqual(errors, {})
+        query_context = ChartDataQueryContextSchema().load(payload)
         query_object = query_context.queries[0]
         self.assertEqual(query_object.row_limit, app.config["ROW_LIMIT"])
         self.assertEqual(query_object.row_offset, 0)
@@ -48,8 +44,7 @@ class TestSchema(SupersetTestCase):
         # Valid limit and offset
         payload["queries"][0]["row_limit"] = 100
         payload["queries"][0]["row_offset"] = 200
-        query_context, errors = ChartDataQueryContextSchema().load(payload)
-        self.assertEqual(errors, {})
+        query_context = ChartDataQueryContextSchema().load(payload)
         query_object = query_context.queries[0]
         self.assertEqual(query_object.row_limit, 100)
         self.assertEqual(query_object.row_offset, 200)
@@ -57,16 +52,48 @@ class TestSchema(SupersetTestCase):
         # too low limit and offset
         payload["queries"][0]["row_limit"] = 0
         payload["queries"][0]["row_offset"] = -1
-        query_context, errors = ChartDataQueryContextSchema().load(payload)
-        self.assertIn("row_limit", errors["queries"][0])
-        self.assertIn("row_offset", errors["queries"][0])
+        with self.assertRaises(ValidationError) as context:
+            _ = ChartDataQueryContextSchema().load(payload)
+        self.assertIn("row_limit", context.exception.messages["queries"][0])
+        self.assertIn("row_offset", context.exception.messages["queries"][0])
 
     def test_query_context_null_timegrain(self):
         self.login(username="admin")
         table_name = "birth_names"
         table = self.get_table_by_name(table_name)
         payload = get_query_context(table.name, table.id, table.type)
-
         payload["queries"][0]["extras"]["time_grain_sqla"] = None
-        _, errors = ChartDataQueryContextSchema().load(payload)
-        self.assertEqual(errors, {})
+        _ = ChartDataQueryContextSchema().load(payload)
+
+    def test_query_context_series_limit(self):
+        self.login(username="admin")
+        table_name = "birth_names"
+        table = self.get_table_by_name(table_name)
+        payload = get_query_context(table.name, table.id, table.type)
+
+        payload["queries"][0]["timeseries_limit"] = 2
+        payload["queries"][0]["timeseries_limit_metric"] = {
+            "expressionType": "SIMPLE",
+            "column": {
+                "id": 334,
+                "column_name": "gender",
+                "filterable": True,
+                "groupby": True,
+                "is_dttm": False,
+                "type": "VARCHAR(16)",
+                "optionName": "_col_gender",
+            },
+            "aggregate": "COUNT_DISTINCT",
+            "label": "COUNT_DISTINCT(gender)",
+        }
+        _ = ChartDataQueryContextSchema().load(payload)
+
+    def test_query_context_null_post_processing_op(self):
+        self.login(username="admin")
+        table_name = "birth_names"
+        table = self.get_table_by_name(table_name)
+        payload = get_query_context(table.name, table.id, table.type)
+
+        payload["queries"][0]["post_processing"] = [None]
+        query_context = ChartDataQueryContextSchema().load(payload)
+        self.assertEqual(query_context.queries[0].post_processing, [])

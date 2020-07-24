@@ -35,12 +35,12 @@ describe('controlUtils', () => {
       columns: ['a', 'b', 'c'],
       metrics: [{ metric_name: 'first' }, { metric_name: 'second' }],
     },
+    controls: {},
   };
 
   beforeAll(() => {
     getChartControlPanelRegistry()
       .registerValue('test-chart', {
-        requiresTime: true,
         controlPanelSections: [
           {
             label: t('Chart Options'),
@@ -84,7 +84,6 @@ describe('controlUtils', () => {
         ],
       })
       .registerValue('test-chart-override', {
-        requiresTime: true,
         controlPanelSections: [
           {
             label: t('Chart Options'),
@@ -248,12 +247,30 @@ describe('controlUtils', () => {
       const control = getControlState('metrics', 'table', stateWithCount);
       expect(control.default).toEqual(['count']);
     });
+
+    it('should not apply mapStateToProps when initializing', () => {
+      const control = getControlState('metrics', 'table', {
+        ...state,
+        controls: undefined,
+      });
+      expect(typeof control.default).toBe('function');
+      expect(control.value).toBe(undefined);
+    });
   });
 
   describe('validateControl', () => {
     it('validates the control, returns an error if empty', () => {
       const control = getControlState('metric', 'table', state, null);
       expect(control.validationErrors).toEqual(['cannot be empty']);
+    });
+    it('should not validate if control panel is initializing', () => {
+      const control = getControlState(
+        'metric',
+        'table',
+        { ...state, controls: undefined },
+        undefined,
+      );
+      expect(control.validationErrors).toBeUndefined();
     });
   });
 

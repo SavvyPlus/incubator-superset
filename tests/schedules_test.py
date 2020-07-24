@@ -19,7 +19,9 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, PropertyMock
 
 from flask_babel import gettext as __
+import pytest
 from selenium.common.exceptions import WebDriverException
+from slack import errors, WebClient
 
 from tests.test_app import app
 from superset import db
@@ -242,7 +244,7 @@ class TestSchedules(SupersetTestCase):
         send_email_smtp.assert_called_once()
         self.assertIsNone(send_email_smtp.call_args[1]["images"])
         self.assertEqual(
-            send_email_smtp.call_args[1]["data"]["screenshot.png"],
+            send_email_smtp.call_args[1]["data"]["screenshot"],
             element.screenshot_as_png,
         )
 
@@ -425,7 +427,7 @@ class TestSchedules(SupersetTestCase):
         send_email_smtp.assert_called_once()
 
         self.assertEqual(
-            send_email_smtp.call_args[1]["data"]["screenshot.png"],
+            send_email_smtp.call_args[1]["data"]["screenshot"],
             element.screenshot_as_png,
         )
 
@@ -530,3 +532,11 @@ class TestSchedules(SupersetTestCase):
                 "title": "[Report]  Participants",
             },
         )
+
+
+def test_slack_client_compatibility():
+    c2 = WebClient()
+    # slackclient >2.5.0 raises TypeError: a bytes-like object is required, not 'str
+    # and requires to path a filepath instead of the bytes directly
+    with pytest.raises(errors.SlackApiError):
+        c2.files_upload(channels="#bogdan-test2", file=b"blabla", title="Test upload")

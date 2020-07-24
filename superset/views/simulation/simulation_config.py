@@ -165,8 +165,13 @@ all_units_list_in_offerbands_path = 'nem-pricing-v2/source_information/all_units
 excel_path = 'assumption-excel/{}.xlsx'
 template_path = 'template run 188.xlsx'
 
+# Glue crawler msg template path
+glue_crawler_template_path = 'cache/SQS_GLUE_CRAWLER_TEMPLATE.json'
+
 # nifi sqs url
 nifi_sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi_test"
+query_sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries"
+glue_trigger_sqs_url = "https://sqs.ap-southeast-2.amazonaws.com/000581985601/nifi-sim-glue-crawler"
 
 # S3 pickle cache path
 reference_date_s3_pickle_path = 'reference_date/{}to{}/{}.pickle'  # index
