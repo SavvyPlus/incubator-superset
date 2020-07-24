@@ -173,12 +173,33 @@ class DataTableMixin:
     def get_dict(self):
         return dict((key, value) for (key, value) in self.__dict__.items() if key in self.column_type_dict.keys())
 
-
     def get_header_and_type(self):
         return [{'name': key, 'type': self.column_type_dict[key]} for key in self.column_type_dict.keys() ]
 
+    @staticmethod
+    def get_version_col_name():
+        return 'Version'
+
+class DefTableMixin:
+    Note = None
+    Assumption_Scenario = None
+    Assumption_Scenario_Version = None
+
+    def set_scenario(self, scenario, version=1):
+        self.Assumption_Scenario = scenario
+        self.Assumption_Scenario_Version = version
+
+    def get_scenario(self):
+        return self.Assumption_Scenario
+
+    def set_note(self, note):
+        self.Note = note
+
+    def get_note(self):
+        return self.Note
+
 """Rooftop Solar History"""
-class RooftopSolarHistoryDefinition(Model):
+class RooftopSolarHistoryDefinition(Model, DefTableMixin):
     __tablename__ = "Rooftop_Solar_History_Definition"
     Rooftop_Solar_History_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -208,7 +229,7 @@ class RooftopSolarHistory(Model, DataTableMixin):
 
 
 """Rooftop Solar Forecast"""
-class RooftopSolarForecastDefinition(Model):
+class RooftopSolarForecastDefinition(Model, DefTableMixin):
     __tablename__ = "Rooftop_Solar_Forecast_Definition"
     Rooftop_Solar_Forecast_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -239,7 +260,7 @@ class RooftopSolarForecast(Model, DataTableMixin):
 
 
 """Renewable Proportion"""
-class RenewableProportionDefinition(Model):
+class RenewableProportionDefinition(Model, DefTableMixin):
     __tablename__ = "Renewable_Proportion_Definition"
     Renewable_Proportion_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -268,7 +289,7 @@ class RenewableProportion(Model, DataTableMixin):
 
 
 """Demand Growth"""
-class DemandGrowthDefinition(Model):
+class DemandGrowthDefinition(Model, DefTableMixin):
     __tablename__ = "Demand_Growth_Definition"
     Demand_Growth_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -300,7 +321,7 @@ class DemandGrowth(Model, DataTableMixin):
 
 
 """Behind The Meter Battery"""
-class BehindTheMeterBatteryDefinition(Model):
+class BehindTheMeterBatteryDefinition(Model, DefTableMixin):
     __tablename__ = "Behind_The_Meter_Battery_Definition"
     Behind_The_Meter_Battery_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -331,7 +352,7 @@ class BehindTheMeterBattery(Model, DataTableMixin):
 
 
 """Project Proxy"""
-class ProjectProxyDefinition(Model):
+class ProjectProxyDefinition(Model, DefTableMixin):
     __tablename__ = "Project_Proxy_Definition"
     Project_Proxy_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -365,7 +386,7 @@ class ProjectProxy(Model, DataTableMixin):
 
 
 """MPC CPT"""
-class MPCCPTDefinition(Model):
+class MPCCPTDefinition(Model, DefTableMixin):
     __tablename__ = "MPC_CPT_Definition"
     MPC_CPT_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -394,7 +415,7 @@ class MPCCPT(Model, DataTableMixin):
 
 
 """Gas Price Escalation"""
-class GasPriceEscalationDefinition(Model):
+class GasPriceEscalationDefinition(Model, DefTableMixin):
     __tablename__ = "Gas_Price_Escalation_Definition"
     Gas_Price_Escalation_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -433,7 +454,7 @@ class GasPriceEscalation(Model, DataTableMixin):
 
 
 """Strategy Behaviour"""
-class StrategicBehaviourDefinition(Model):
+class StrategicBehaviourDefinition(Model, DefTableMixin):
     __tablename__ = "Strategic_Behaviour_Definition"
     Strategic_Behaviour_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -462,7 +483,7 @@ class StrategicBehaviour(Model, DataTableMixin):
     column_type_dict = {'State':'string', 'Bin_Not_Exceeding': 'numeric', 'value':'numeric', 'MW':'numeric'}
 
 """Retirement"""
-class RetirementDefinition(Model):
+class RetirementDefinition(Model, DefTableMixin):
     __tablename__ = "Retirement_Definition"
     Retirement_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))
@@ -495,7 +516,7 @@ class Retirement(Model, DataTableMixin):
                         'Adjustment_Factor': 'numeric', 'Closure_Date':'date', 'Back_To_Service_Date': 'date'}
 
 """Project List"""
-class ProjectListDefinition(Model):
+class ProjectListDefinition(Model, DefTableMixin):
     __tablename__ = "Project_List_Definition"
     Project_List_Version = Column(Integer, primary_key=True, autoincrement=True)
     Note = Column(String(512))

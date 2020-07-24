@@ -24,12 +24,16 @@ def read_pickle_from_s3(bucket, path):
     pickle_data = client.get_object(Bucket=bucket, Key=path)
     return pickle.loads(pickle_data['Body'].read())
 
+def read_file_byte_from_s3(bucket, path):
+    data = client.get_object(Bucket=bucket, Key=path)
+    return data['Body'].read()
+
 def write_pickle_to_s3(data, bucket, path):
     pickle_data = pickle.dumps(data)
 
     # TODO DEBUG do not write to s3
     response = client.put_object(Bucket=bucket, Body=pickle_data, Key=path)
-    print('write pickle:' + repr(response))
+    print('write pickle: '+ repr(response))
     return response
 
 def put_file_to_s3(filename, bucket, key, is_public=False):
@@ -79,7 +83,7 @@ def list_object_keys(bucket, prefix):
         Bucket=bucket,
         Prefix=prefix
     )
-    print('list obj: '+ repr(response))
+    print('list_object_keys: '+ repr(response))
     if response['KeyCount'] <= 0:
         return []
     contents = response['Contents']
@@ -237,3 +241,11 @@ def get_full_week_end_date(start_date, end_date):
     total_days = (end_date - start_date).days+1
     end_date = end_date - timedelta(days=total_days % 7)
     return end_date
+
+def upload_stream_write(form_file_field: "FileStorage", path: str, chunk_size=4096):
+    with open(path, "bw") as file_description:
+        while True:
+            chunk = form_file_field.stream.read(chunk_size)
+            if not chunk:
+                break
+            file_description.write(chunk)

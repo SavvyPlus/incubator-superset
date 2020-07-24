@@ -174,6 +174,9 @@ class SupersetAppInitializer:
             UploadExcelView,
             EditAssumptionModelView,
         )
+        from superset.views.simulation.assumption_check import (
+            UploadISPView,
+        )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
         from superset.views.schedules import (
@@ -282,30 +285,40 @@ class SupersetAppInitializer:
             icon="fa-dashboard",
             category="Modeling",
         )
-        appbuilder.add_view(
-            EditAssumptionModelView,
-            "Edit Assumption",
-            label=__("Edit Assumption"),
-            icon="fa-edit",
-            category="Modeling",
-            category_icon="",
-        )
         appbuilder.add_separator("Modeling")
-        appbuilder.add_link(
-            "Upload assumption file",
-            label="Upload Assumption excel",
-            href="/upload_base_excel/form",
-            icon="fa-upload",
-            category="Modeling",
-            category_label="Modeling",
-            category_icon="fa-wrench",
-        )
         appbuilder.add_view(
             SimulationLogModelView,
             'Logs',
             label=__("Logs"),
             icon="fa-list-ol",
             category="Modeling",
+        )
+        appbuilder.add_view(
+            EditAssumptionModelView,
+            "Edit Assumption",
+            label=__("Edit Assumption"),
+            icon="fa-edit",
+            category="Assumption Book",
+            category_icon="",
+        )
+        appbuilder.add_separator("Assumption Book")
+        appbuilder.add_link(
+            "Upload assumption file",
+            label="Upload Assumption excel",
+            href="/upload_base_excel/form",
+            icon="fa-upload",
+            category="Assumption Book",
+            category_label="Assumption Book",
+            category_icon="fa-wrench",
+        )
+        appbuilder.add_link(
+            "Upload ISP case",
+            label="Upload ISP case",
+            href="/upload_isp/form",
+            icon="fa-upload",
+            category="Assumption Book",
+            category_label="Assumption Book",
+            category_icon="fa-wrench"
         )
         appbuilder.add_view(
             CssTemplateModelView,
@@ -369,6 +382,7 @@ class SupersetAppInitializer:
         appbuilder.add_view_no_menu(TableSchemaView)
         appbuilder.add_view_no_menu(TabStateView)
         appbuilder.add_view_no_menu(UploadExcelView)
+        appbuilder.add_view_no_menu(UploadISPView)
 
         if feature_flag_manager.is_feature_enabled("TAGGING_SYSTEM"):
             appbuilder.add_view_no_menu(TagView)
