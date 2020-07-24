@@ -19,11 +19,7 @@
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
 import axios from 'axios';
-import {
-  addSuccessToast,
-  addWarningToast,
-  addDangerToast,
-} from '../../messageToasts/actions';
+import { addSuccessToast, addDangerToast } from '../../messageToasts/actions';
 
 export const SET_UPSERT = 'SET_UPSERT';
 export function setUpsert(upsert) {
@@ -176,7 +172,7 @@ export function saveTableData(table, tableData, note) {
         note,
       },
     })
-      .then(({ json }) => {
+      .then(() => {
         // dispatch(saveTableDataSuccess(json));
         dispatch(addSuccessToast(t('Save data successfully. Reloading....')));
         window.location.href = '/edit-assumption/assumption';

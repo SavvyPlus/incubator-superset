@@ -43,6 +43,7 @@ function Dropzone(props) {
     isDragActive,
     isDragAccept,
     isDragReject,
+    // eslint-disable-next-line no-unused-vars
     acceptedFiles,
   } = useDropzone({
     accept: [

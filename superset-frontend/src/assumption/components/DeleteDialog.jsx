@@ -39,11 +39,9 @@ function DeleteDialog({ open, data, handleClose, handleDeleteSelected }) {
             const dateObj = d[i][keys[j]];
             row.push(
               <TableCell key={keys[j]}>
-                {('0' + dateObj.getDate()).slice(-2) +
-                  '/' +
-                  ('0' + (dateObj.getMonth() + 1)).slice(-2) +
-                  '/' +
-                  dateObj.getFullYear()}
+                {`${`0${dateObj.getDate()}`.slice(-2)}/${`0${`0${
+                  dateObj.getMonth() + 1
+                }`.slice(-2)}`.slice(-2)}/${dateObj.getFullYear()}`}
               </TableCell>,
             );
           } else {

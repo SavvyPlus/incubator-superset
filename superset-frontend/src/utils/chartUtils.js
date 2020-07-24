@@ -31,57 +31,55 @@ const REGION_BORDER_COLOR = {
 };
 
 // Round integers to nearest multiple of 10
-function RoundUp(toRound) {
-  if (toRound % 10 === 0) return toRound;
-  return 10 - (toRound % 10) + toRound;
-}
+// function RoundUp(toRound) {
+//   if (toRound % 10 === 0) return toRound;
+//   return 10 - (toRound % 10) + toRound;
+// }
 
-function maxBoxData(data) {
-  // Map all boxData to a 2D array
-  const boxData2DArr = [].concat(...data.map(d => d.boxData));
-  // Get an array with each row's maximum value
-  const maxRow = boxData2DArr.map(function (row) {
-    return Math.max(...row);
-  });
-  // Get the maximum box data
-  const max = Math.max(...maxRow);
-  return max;
-}
+// function maxBoxData(data) {
+//   // Map all boxData to a 2D array
+//   const boxData2DArr = [].concat(...data.map(d => d.boxData));
+//   // Get an array with each row's maximum value
+//   const maxRow = boxData2DArr.map(function (row) {
+//     return Math.max(...row);
+//   });
+//   // Get the maximum box data
+//   const max = Math.max(...maxRow);
+//   return max;
+// }
 
-function getBoxPlotYMax(allBoxData) {
-  return RoundUp(maxBoxData(allBoxData));
-}
+// function getBoxPlotYMax(allBoxData) {
+//   return RoundUp(maxBoxData(allBoxData));
+// }
 
 export function boxplotFormatter(param) {
   return [
     'Whiker Type: <strong>Min/Max</strong>',
-    'Region: <strong>' + param.seriesName + '</strong>',
-    'Period: <strong>' + param.name + '</strong>',
-    'Minimum: <strong>' + param.data[1].toFixed(2) + '</strong>',
-    'Q1: <strong>' + param.data[2].toFixed(2) + '</strong>',
-    'Median: <strong>' + param.data[3].toFixed(2) + '</strong>',
-    'Q3: <strong>' + param.data[4].toFixed(2) + '</strong>',
-    'Maximum: <strong>' + param.data[5].toFixed(2) + '</strong>',
+    `Region: <strong>${param.seriesName}</strong>`,
+    `Period: <strong>${param.name}</strong>`,
+    `Minimum: <strong>${param.data[1].toFixed(2)}</strong>`,
+    `Q1: <strong>${param.data[2].toFixed(2)}</strong>`,
+    `Median: <strong>${param.data[3].toFixed(2)}</strong>`,
+    `Q3: <strong>${param.data[4].toFixed(2)}</strong>`,
+    `Maximum: <strong>${param.data[5].toFixed(2)}</strong>`,
   ].join('<br/>');
 }
 
 function barPropFormatter(param) {
   return [
-    'Period: <strong>' + param.name + '</strong>',
-    'Price Bucket: <strong>' + param.seriesName + '</strong>',
-    'Percentage: <strong>' +
-      param.value.toFixed(2) +
-      ' (' +
-      (param.value * 100).toFixed(2) +
-      '%)</strong>',
+    `Period: <strong>${param.name}</strong>`,
+    `Price Bucket: <strong>${param.seriesName}</strong>`,
+    `Percentage: <strong>${param.value.toFixed(2)} (${(
+      param.value * 100
+    ).toFixed(2)}%)</strong>`,
   ].join('<br/>');
 }
 
 function barValueFormatter(param) {
   return [
-    'Period: <strong>' + param.name + '</strong>',
-    'Price Bucket: <strong>' + param.seriesName + '</strong>',
-    'ProportionByValue: <strong>$' + param.value.toFixed(2) + '</strong>',
+    `Period: <strong>${param.name}</strong>`,
+    `Price Bucket: <strong>${param.seriesName}</strong>`,
+    `ProportionByValue: <strong>$${param.value.toFixed(2)}</strong>`,
   ].join('<br/>');
 }
 
@@ -91,7 +89,7 @@ export function getOption(queryResponse) {
     const queryData = queryResponse.data;
     const regions = Object.keys(queryData);
     const data = Object.values(queryData);
-    const yMax = getBoxPlotYMax(data);
+    // const yMax = getBoxPlotYMax(data);
 
     return {
       title: {
@@ -195,6 +193,7 @@ export function getOption(queryResponse) {
       })),
     };
   } else if (viz_type === 'spot_price_histogram') {
+    // eslint-disable-next-line no-unused-vars
     const { chart_type, state, data } = queryResponse.data;
     const legendData = data.map(d => d.priceBin);
     const xAxisData = data[0].labels;
@@ -247,8 +246,8 @@ export function getOption(queryResponse) {
           formatter:
             chart_type === 'value'
               ? // ? value => '$' + value / Math.pow(10, 6) + 'M'
-                value => '$' + value
-              : value => value * 100 + '%',
+                value => `$${value}`
+              : value => `${value * 100}%`,
           fontSize: 16,
         },
       },
