@@ -210,7 +210,9 @@ def check_assumption(file_path, assumtpions_version, simulation):
     for sheet in assumption_time_foreacast_date:
         if df_dict[sheet]['Date'].min() > simulation.start_date:
             return False, 'Error: The forecast data in {} is later than the simulation start date.'.format(sheet)
-        if df_dict[sheet]['Date'].max() < simulation.end_date:
+        if df_dict[sheet]['Date'].max().year < simulation.end_date.year or \
+                (df_dict[sheet]['Date'].max().year == simulation.end_date.year and
+                df_dict[sheet]['Date'].max().month < simulation.end_date.month):
             return False, 'Error: The forecast data in {} ends before the simulation end date.'.format(sheet)
 
     # for sheet in assumption_time_ref_date:
