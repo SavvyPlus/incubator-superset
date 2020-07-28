@@ -133,6 +133,7 @@ class Simulation(
     project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     project = relationship("Project", foreign_keys=[project_id], backref="simulations")
     run_no = Column(Integer, nullable=False)
+    run_dttm = Column(DateTime)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     # report_type = Column(String(200), nullable=False)
@@ -143,6 +144,22 @@ class Simulation(
     def __repr__(self):
         return self.name
 
+class ChartLink(Model):
+    __tablename__ = 'chart_simulation'
+    id = Column(Integer, primary_key=True)
+    chart_name = Column(String(128))
+    simulation_id = Column(Integer, ForeignKey("simulation.id"), nullable=False)
+    simulation = relationship("Simulation", foreign_keys=[simulation_id], backref="chart_links")
+    chart_link = Column(String(1024))
+
+    def __repr__(self):
+        return self.chart_name
+
+    def __init__(self, chart_name, simulation, chart_link):
+        self.chart_name = chart_name
+        self.simulation = simulation
+        self.simulation_id = simulation.id
+        self.chart_link = chart_link
 
 class SimulationLog(Model):
     __tablename__ = "simulation_log"
