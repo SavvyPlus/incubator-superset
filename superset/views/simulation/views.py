@@ -21,6 +21,7 @@ import traceback
 import logging
 import os
 import tempfile
+import pytz
 import superset.models.core as models
 from flask import flash, redirect, g, request, abort, url_for, jsonify
 from flask_appbuilder.widgets import ListWidget, FormWidget, ShowWidget
@@ -205,6 +206,7 @@ def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
                     function_name='spot-simulation-prod-stk-check-spot-output')
 
             # simulation.status = 'Run finished'
+            #
             # db.session.commit()
             g.result = 'Invoke success, simulation finished.'
             # message = 'Simulation {} is finished successfully, an email contain links to the result will be sent to you shortly.'
@@ -673,6 +675,9 @@ class SimulationModelView(
     class SimulationListWidget(ListWidget):
         template = 'empower/widgets/list_simulation.html'
 
+    class SimulationShowWidget(ShowWidget):
+        template = 'empower/widgets/show_simulation.html'
+
     route_base = "/simulationmodelview"
     datamodel = SQLAInterface(Simulation)
     include_route_methods = RouteMethod.CRUD_SET | {
@@ -687,13 +692,14 @@ class SimulationModelView(
         'query_result',
     }
     add_columns = ['name', 'project', 'assumption','description', 'run_no', 'report_type', 'start_date', 'end_date']
-    list_columns = ['name','assumption', 'project', 'status']
-    edit_exclude_columns = ['status_detail', 'run_id']
+    list_columns = ['name','assumption', 'project', 'run_dttm', 'status']
+    edit_exclude_columns = ['status_detail', 'run_id', 'chart_links']
     # label_columns = {'run_no':'Number of simulation run'}
 
     add_widget = SimulationAddWidget
     add_form = SimulationForm
     list_widget = SimulationListWidget
+    show_widget = SimulationShowWidget
     # edit_form = SimulationForm
 
     @event_logger.log_this
@@ -830,14 +836,13 @@ class SimulationModelView(
                 simulation_description = simulation.description or ''
                 simulation_id = str(simulation.id)
 
-        # Change simulation status to finished when sending result emial
-        simulation.status = 'Run finished'
-        db.session.commit()
-
         # Send notification email
         # base_url = "http://localhost:9000/simulationmodelview/"
         # base_url = f"{get_current_external_ip()}/simulationmodelview/"
         base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
+        forecast_url = base_url + "load-results/" + run_id + "/spot_price_percentiles_" + run_id + "_" + sim_num + "sims/"
+        cap_url = base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/"
+        distribution_url = base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/"
         dynamic_template_data = {
             "run_id": run_id,
             "assumption_name": assumption_name,
@@ -845,11 +850,25 @@ class SimulationModelView(
             "simulation_name": simulation_name,
             "simulation_description": simulation_description,
             "simulation_url": base_url + "show/" + simulation_id,
-            "spot_price_forecast": base_url + "load-results/" + run_id + "/spot_price_percentiles_" + run_id + "_" + sim_num + "sims/",
-            "cap_of_300": base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/",
-            "spot_price_distribution": base_url + "load-results/" + run_id + "/spot_price_distribution_" + run_id + "_" + sim_num + "sims/",
+            "spot_price_forecast": forecast_url,
+            "cap_of_300": cap_url,
+            "spot_price_distribution": distribution_url,
         }
         send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
+
+        # Change simulation status to finished when sending result emial
+        simulation.status = 'Run finished'
+        simulation.status_detail = None
+        # record run finish datetime
+        aest = pytz.timezone('Australia/Melbourne')
+        simulation.run_dttm = datetime.datetime.now(aest)
+        chart_link1 = ChartLink('Spot Price Forecast', simulation, forecast_url)
+        chart_link2 = ChartLink('300 Cap', simulation, cap_url)
+        chart_link3 = ChartLink('Spot Price Distribution', simulation, distribution_url)
+        db.session.add(chart_link1)
+        db.session.add(chart_link2)
+        db.session.add(chart_link3)
+        db.session.commit()
 
         return json_success(json.dumps({
             'email_to': email_to,

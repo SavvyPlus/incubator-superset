@@ -17,7 +17,7 @@
 """init assumption check models
 
 Revision ID: 17dd6ab24acb
-Revises: a992c22b17fb
+Revises: 2eaac4256f03
 Create Date: 2020-07-13 13:36:46.024897
 
 """
