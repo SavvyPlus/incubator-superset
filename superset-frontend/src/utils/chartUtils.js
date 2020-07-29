@@ -104,10 +104,10 @@ export function getOption(queryResponse) {
       legend: {
         top: '10%',
         data: regions,
-        selected: {
-          TAS: false,
-          QLD: false,
-        },
+        // selected: {
+        //   TAS: false,
+        //   QLD: false,
+        // },
         textStyle: {
           fontSize: 16,
         },
@@ -170,7 +170,7 @@ export function getOption(queryResponse) {
         {
           type: 'inside',
           start: 0,
-          end: 20,
+          end: 100,
         },
         {
           show: true,
