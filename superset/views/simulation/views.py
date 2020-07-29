@@ -838,8 +838,8 @@ class SimulationModelView(
 
         # Send notification email
         # base_url = "http://localhost:9000/simulationmodelview/"
-        base_url = f"{get_current_external_ip()}/simulationmodelview/"
-        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
+        # base_url = f"{get_current_external_ip()}/simulationmodelview/"
+        base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
         forecast_url = base_url + "load-results/" + run_id + "/spot_price_percentiles_" + run_id + "_" + sim_num + "sims/"
         cap_url = base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/"
         distribution_url = base_url + "load-results/" + run_id + "/spot_price_distribution_" + run_id + "_" + sim_num + "sims/"
