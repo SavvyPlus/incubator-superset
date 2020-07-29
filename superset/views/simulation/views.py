@@ -842,7 +842,7 @@ class SimulationModelView(
         base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
         forecast_url = base_url + "load-results/" + run_id + "/spot_price_percentiles_" + run_id + "_" + sim_num + "sims/"
         cap_url = base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/"
-        distribution_url = base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/"
+        distribution_url = base_url + "load-results/" + run_id + "/spot_price_distribution_" + run_id + "_" + sim_num + "sims/"
         dynamic_template_data = {
             "run_id": run_id,
             "assumption_name": assumption_name,
