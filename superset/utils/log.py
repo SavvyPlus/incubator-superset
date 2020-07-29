@@ -185,6 +185,8 @@ class SimulationLogger(AbstractEventLogger):
         def wrap(f):
             @functools.wraps(f)
             def wrapped(*args, **kwargs):
+                import pytz
+                aest = pytz.timezone('Australia/Melbourne')
                 user_id = None
                 g.action_object = None
                 g.action_object_type = None
@@ -192,7 +194,7 @@ class SimulationLogger(AbstractEventLogger):
                 g.detail = None
 
                 value = f(*args, **kwargs)
-                dttm = datetime.now()
+                dttm = datetime.now(aest)
 
                 if g.user:
                     user_id = g.user.get_id()

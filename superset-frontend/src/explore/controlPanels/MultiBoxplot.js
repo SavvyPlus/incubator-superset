@@ -23,10 +23,16 @@ import {
   periodFinyearPicker,
   periodCalyearPicker,
   periodQuarterlyPicker,
+  assumptionFile,
 } from './Shared_Empower';
 
 export default {
   controlPanelSections: [
+    {
+      label: t('Basic Info'),
+      expanded: true,
+      controlSetRows: [[assumptionFile]],
+    },
     {
       label: t('Empower'),
       expanded: true,
