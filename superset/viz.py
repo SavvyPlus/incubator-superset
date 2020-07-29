@@ -1075,7 +1075,7 @@ class BoxPlotFinViz(BoxPlotViz):
         d['filter'].append({
             'col': 'Percentile',
             'op': 'in',
-            'val': ['0', '0.25', '0.5', '0.75', '1']
+            'val': ['0', '0.25', '0.50', '0.75', '1']
         })
 
         metric = self.form_data['fin_metric_picker']
@@ -1292,7 +1292,7 @@ class BoxPlotFinStrViz(BoxPlotViz):
         d['filter'].append({
             'col': 'Percentile',
             'op': 'in',
-            'val': ['0', '0.25', '0.5', '0.75', '1']
+            'val': ['0', '0.25', '0.50', '0.75', '1']
         })
 
         self.form_data['group_column'] = group_column
@@ -1649,7 +1649,7 @@ class MultipleBoxPlotViz(BoxPlotViz):
         d['filter'].append({
             'col': 'Percentile',
             'op': 'in',
-            'val': ['0', '0.25', '0.5', '0.75', '0.95', '1']
+            'val': ['0', '0.25', '0.50', '0.75', '1']
         })
 
         self.form_data['groupby'] = group_column
