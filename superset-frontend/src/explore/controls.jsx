@@ -690,7 +690,9 @@ export const controls = {
     visibility(props) {
       const {
         time_range: timeRange,
+        // eslint-disable-next-line no-unused-vars
         viz_type: vizType,
+        // eslint-disable-next-line no-unused-vars
         show_trend_line: showTrendLine,
       } = props.form_data;
       // only display this option when a time range is selected

@@ -1,6 +1,6 @@
 import { t } from '@superset-ui/translation';
 import { validateNonEmpty } from '@superset-ui/validator';
-import { columnChoices, controls } from '../controls';
+// import { columnChoices, controls } from '../controls';
 import { formatSelectOptions } from '../../modules/utils';
 
 export const periodTypeStaticPicker = {
@@ -51,5 +51,16 @@ export const periodQuarterlyPicker = {
     mapStateToProps: state => ({
       choices: formatSelectOptions(state.period_quarterly),
     }),
+  },
+};
+
+export const assumptionFile = {
+  name: 'assumption_file',
+  config: {
+    type: 'TextControl',
+    label: t('Assumption File'),
+    disabled: true,
+    description: t('Assumption file used for this chart'),
+    default: 'ABC.txt',
   },
 };
