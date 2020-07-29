@@ -19,19 +19,19 @@
 import React from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
-import { Col, Row, Tabs, Tab, Panel } from 'react-bootstrap';
-import { t } from '@superset-ui/translation';
+// import PropTypes from 'prop-types';
+import { Col, Row } from 'react-bootstrap';
+// import { t } from '@superset-ui/translation';
 
 import * as Actions from '../actions/assumption';
 import UpsertSelect from './UpsertSelect';
 import TableSelect from './TableSelect';
 import VersionSelect from './VersionSelect';
 import Dropzone from './Dropzone';
-import ToastPresenter from '../../messageToasts/containers/ToastPresenter';
 import '../App.less';
 import AssumptionTable from './AssumptionTable';
 
+// eslint-disable-next-line no-unused-vars
 function App({ username, firstName, lastName, assumption, actions }) {
   return (
     <div className="container app">
@@ -86,7 +86,6 @@ function App({ username, firstName, lastName, assumption, actions }) {
           )}
         </Col>
       </Row>
-      <ToastPresenter />
     </div>
   );
 }

@@ -24,7 +24,6 @@ from flask import Flask, redirect
 from flask_appbuilder import expose, IndexView
 from flask_babel import gettext as __, lazy_gettext as _
 from flask_compress import Compress
-from flask_wtf import CSRFProtect
 
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.extensions import (
@@ -33,6 +32,7 @@ from superset.extensions import (
     appbuilder,
     cache_manager,
     celery_app,
+    csrf,
     db,
     feature_flag_manager,
     jinja_context_manager,
@@ -158,7 +158,7 @@ class SupersetAppInitializer:
             Dashboard,
             DashboardModelViewAsync,
         )
-        from superset.views.database.api import DatabaseRestApi
+        from superset.databases.api import DatabaseRestApi
         from superset.views.database.views import (
             DatabaseView,
             CsvToDatabaseView,
@@ -188,7 +188,6 @@ class SupersetAppInitializer:
             AlertLogModelView,
         )
         from superset.views.sql_lab import (
-            QueryView,
             SavedQueryViewApi,
             SavedQueryView,
             TabStateView,
@@ -293,33 +292,33 @@ class SupersetAppInitializer:
             icon="fa-list-ol",
             category="Modeling",
         )
-        appbuilder.add_view(
-            EditAssumptionModelView,
-            "Edit Assumption",
-            label=__("Edit Assumption"),
-            icon="fa-edit",
-            category="Assumption Book",
-            category_icon="",
-        )
-        appbuilder.add_separator("Assumption Book")
-        appbuilder.add_link(
-            "Upload assumption file",
-            label="Upload Assumption excel",
-            href="/upload_base_excel/form",
-            icon="fa-upload",
-            category="Assumption Book",
-            category_label="Assumption Book",
-            category_icon="fa-wrench",
-        )
-        appbuilder.add_link(
-            "Upload ISP case",
-            label="Upload ISP case",
-            href="/upload_isp/form",
-            icon="fa-upload",
-            category="Assumption Book",
-            category_label="Assumption Book",
-            category_icon="fa-wrench"
-        )
+        # appbuilder.add_view(
+        #     EditAssumptionModelView,
+        #     "Edit Assumption",
+        #     label=__("Edit Assumption"),
+        #     icon="fa-edit",
+        #     category="Assumption Book",
+        #     category_icon="",
+        # )
+        # appbuilder.add_separator("Assumption Book")
+        # appbuilder.add_link(
+        #     "Upload assumption file",
+        #     label="Upload Assumption excel",
+        #     href="/upload_base_excel/form",
+        #     icon="fa-upload",
+        #     category="Assumption Book",
+        #     category_label="Assumption Book",
+        #     category_icon="fa-wrench",
+        # )
+        # appbuilder.add_link(
+        #     "Upload ISP case",
+        #     label="Upload ISP case",
+        #     href="/upload_isp/form",
+        #     icon="fa-upload",
+        #     category="Assumption Book",
+        #     category_label="Assumption Book",
+        #     category_icon="fa-wrench"
+        # )
         appbuilder.add_view(
             CssTemplateModelView,
             "CSS Templates",
@@ -328,14 +327,6 @@ class SupersetAppInitializer:
             category="Manage",
             category_label=__("Manage"),
             category_icon="",
-        )
-        appbuilder.add_view(
-            QueryView,
-            "Queries",
-            label=__("Queries"),
-            category="Manage",
-            category_label=__("Manage"),
-            icon="fa-search",
         )
         appbuilder.add_view(
             NemModelView,
@@ -725,7 +716,7 @@ class SupersetAppInitializer:
 
     def configure_wtf(self) -> None:
         if self.config["WTF_CSRF_ENABLED"]:
-            csrf = CSRFProtect(self.flask_app)
+            csrf.init_app(self.flask_app)
             csrf_exempt_list = self.config["WTF_CSRF_EXEMPT_LIST"]
             for ex in csrf_exempt_list:
                 csrf.exempt(ex)

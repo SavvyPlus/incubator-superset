@@ -105,7 +105,8 @@ def batch_invoke_merger_year(bucket_outputs, sim_tag, start_index, end_index, ou
         res_list = list_object_keys(bucket_outputs, f'simulation-result/{sim_tag}/{sim_index}/')
         if len(res_list) < output_count:
             # Originally check equal, for this check if less
-            print(f"{len(res_list)} records found, expect {output_count}")
+            raise Exception(f"Merging year, {len(res_list)} records found, expect {output_count}")
+
             break
         for year in range(year_start,year_end):
             merger2(sim_index, sim_tag, str(year), f"SUMMARY-{year}.pickle", bucket_outputs, bucket_outputs)
@@ -119,7 +120,7 @@ def batch_invoke_merger_all(bucket_inputs, sim_tag, start_index, end_index, outp
         res_list = list_object_keys(bucket_inputs, f'result-spot-price-simulation-lp/{sim_tag}/{sim_index}/SUMMARY-')
         if len(res_list) < output_count:
             # Originally check equal, for this check if less
-            print(f"{len(res_list)} records found, expect {output_count}")
+            raise Exception(f"Merging all: {len(res_list)} records found, expect {output_count}")
             break
         merger2(sim_index, sim_tag, 'SUMMARY-', 'SUMMARY.pickle', bucket_inputs, bucket_inputs)
         print(f"{len(res_list)} record found, check passed, continue next batch soon")

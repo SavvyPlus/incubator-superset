@@ -33,7 +33,6 @@ import DeckPath from '../explore/controlPanels/DeckPath';
 import DeckPolygon from '../explore/controlPanels/DeckPolygon';
 import DeckScatter from '../explore/controlPanels/DeckScatter';
 import DeckScreengrid from '../explore/controlPanels/DeckScreengrid';
-import FilterBox from '../explore/controlPanels/FilterBox';
 import HistogramSpotPrice from '../explore/controlPanels/HistogramSpotPrice';
 import Separator from '../explore/controlPanels/Separator';
 import TimeTable from '../explore/controlPanels/TimeTable';
@@ -47,7 +46,6 @@ export default function setupPlugins() {
     .registerValue('box_plot_fin', BoxPlotFin)
     .registerValue('box_plot_fin_str', BoxPlotFinStr)
     .registerValue('multi_boxplot', MultiBoxplot)
-    .registerValue('filter_box', FilterBox)
     .registerValue('spot_price_histogram', HistogramSpotPrice)
     .registerValue('separator', Separator)
     .registerValue('time_table', TimeTable)

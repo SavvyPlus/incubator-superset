@@ -18,7 +18,7 @@
  */
 import { t } from '@superset-ui/translation';
 import { validateNonEmpty } from '@superset-ui/validator';
-import * as v from '../validators';
+// import * as v from '../validators';
 import { formatSelectOptions } from '../../modules/utils';
 
 export default {
