@@ -122,7 +122,8 @@ db_schema_ElecMMS3 = "ElecMMS3"
 
 # S3 data folders:
 bucket_inputs = "spot-price-forecast-simulation-prod"
-bucket_hist = '007-spot-price-forecast-physical'
+# bucket_hist = '007-spot-price-forecast-physical'
+bucket_hist = "spot-price-forecast-simulation-prod"
 rooftop_pv_path = 'historical-generation/{}/rooftop-pv'  # state
 public_holiday_path = 'public_holiday/{}.pickle'  # state
 wind_solar_path = 'historical-generation/{}/{}/{}'  # state, wind/solar, duid
@@ -209,6 +210,18 @@ nem_price_distribution_s3_pickle_path = 'result-spot-price-simulation-lp/{}/{}/n
 ad_hoc_results_for_westwind = 'projects/WestWind/adhoc/{}/{}/dispatch_spot_hh_sims.pickle'  # sim_tag, sim_index
 
 # simulation_tag = 'Run_126'
+
+# chart data source (and S3 result files) prefix
+spot_price_percentile = 'spot_price_percentiles_'
+cap_300 = '300_Cap_Payouts_percentiles_'
+spot_price_distribution = 'spot_price_distribution_'
+
+datasource_prefix_list = [
+    spot_price_percentile,
+    cap_300,
+    spot_price_distribution,
+]
+
 
 # New Generator Probabilistic Arrivals
 p_dic = {'Committed': [0.5, 0.75, 0.85, 0.9, 0.93, 0.95, 1],

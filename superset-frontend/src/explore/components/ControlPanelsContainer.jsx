@@ -27,7 +27,7 @@ import { t } from '@superset-ui/translation';
 import ControlPanelSection from './ControlPanelSection';
 import ControlRow from './ControlRow';
 import Control from './Control';
-import controlConfigs from '../controls';
+// import controlConfigs from '../controls';
 import { sectionsToRender } from '../controlUtils';
 import * as exploreActions from '../actions/exploreActions';
 
