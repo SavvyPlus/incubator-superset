@@ -61,6 +61,9 @@ export const assumptionFile = {
     label: t('Assumption File'),
     disabled: true,
     description: t('Assumption file used for this chart'),
-    default: 'ABC.txt',
+    mapStateToProps: state => ({
+      default: state.assumption_name,
+    }),
+    // default: 'ABC.txt',
   },
 };
