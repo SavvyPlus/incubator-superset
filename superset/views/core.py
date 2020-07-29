@@ -44,6 +44,7 @@ from sqlalchemy.orm.session import Session
 from werkzeug.urls import Href
 
 import superset.models.core as models
+from superset.models.simulation import Simulation
 from superset import (
     app,
     appbuilder,
@@ -124,6 +125,7 @@ from superset.views.utils import (
     get_viz,
     is_owner,
 )
+from superset.views.simulation.simulation_config import datasource_prefix_list
 from superset.viz import BaseViz
 
 config = app.config
@@ -714,6 +716,25 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         fin_year = []
         daylike = []
 
+        # if the datasource is one of simulation result, get simulation assumption file to display
+        run_id = None
+        for prefix in datasource_prefix_list:
+            if prefix in datasource.datasource_name:
+                sub_str = datasource.datasource_name.split('_')
+                for sub in sub_str:
+                    try:
+                        if int(sub) > 10000:
+                            run_id = sub
+                            break
+                    except Exception:
+                        continue
+
+        assumption_name = None
+        if run_id:
+            simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+            assumption_name = simulation.assumption.name
+
+
         period_calyear = []
         period_finyear = []
         period_quarterly = []
@@ -838,6 +859,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             "period_finyear": period_finyear,
             "period_quarterly": period_quarterly,
             "price_bins": price_bins,
+            "assumption_name": assumption_name or None,
         }
         table_name = (
             datasource.table_name
