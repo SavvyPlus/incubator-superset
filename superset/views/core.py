@@ -761,7 +761,6 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             for row in result:
                 price_bins.append(row[0])
 
-
         # data for financial charts
         fin_scenarios = []
         if 'Scenario' in datasource.column_names:

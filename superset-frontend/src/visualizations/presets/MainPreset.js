@@ -58,10 +58,10 @@ import {
 } from '@superset-ui/legacy-preset-chart-nvd3';
 import { LegacyBoxPlotChartPlugin } from '@superset-ui/preset-chart-xy';
 import { DeckGLChartPreset } from '@superset-ui/legacy-preset-chart-deckgl';
+import { AxisBreakChartPlugin } from '@superset-ui/plugin-chart-axis-break';
 
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
-import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPlugin';
 import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
 
 export default class MainPreset extends Preset {
@@ -71,6 +71,7 @@ export default class MainPreset extends Preset {
       presets: [new DeckGLChartPreset()],
       plugins: [
         new AreaChartPlugin().configure({ key: 'area' }),
+        new AxisBreakChartPlugin().configure({ key: 'axis_break' }),
         new BarChartPlugin().configure({ key: 'bar' }),
         new BigNumberChartPlugin().configure({ key: 'big_number' }),
         new BigNumberTotalChartPlugin().configure({ key: 'big_number_total' }),
@@ -92,9 +93,6 @@ export default class MainPreset extends Preset {
         new ForceDirectedChartPlugin().configure({ key: 'directed_force' }),
         new HeatmapChartPlugin().configure({ key: 'heatmap' }),
         new HistogramChartPlugin().configure({ key: 'histogram' }),
-        new SpotPriceHistogramPlugin().configure({
-          key: 'spot_price_histogram',
-        }),
         new HorizonChartPlugin().configure({ key: 'horizon' }),
         new IframeChartPlugin().configure({ key: 'iframe' }),
         new LineChartPlugin().configure({ key: 'line' }),

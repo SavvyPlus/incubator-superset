@@ -98,6 +98,7 @@
     "@superset-ui/legacy-preset-chart-deckgl": "^0.2.4",
     "@superset-ui/legacy-preset-chart-nvd3": "^0.14.9",
     "@superset-ui/number-format": "^0.14.9",
+    "@superset-ui/plugin-chart-axis-break": "^0.0.0",
     "@superset-ui/plugin-chart-table": "^0.14.11",
     "@superset-ui/plugin-chart-word-cloud": "^0.14.9",
     "@superset-ui/preset-chart-xy": "^0.14.9",
