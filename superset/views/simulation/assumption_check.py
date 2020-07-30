@@ -90,3 +90,32 @@ class UploadISPView(SimpleFormView):
             os.remove(path)
         flash(message, style)
         return redirect(self.route_base + '/form')
+
+
+class AssumptionBookModelView(
+    SupersetModelView, DeleteMixin
+):  # pylint: disable=too-many-ancestors
+    route_base = "/assumption-book"
+    default_view = 'comparison'
+    datamodel = SQLAInterface(AssumptionDefinition)
+
+    @expose("/comparison/")
+    def comparison(self):
+        username = g.user.username
+        user = (
+            db.session.query(ab_models.User).filter_by(username=username).one_or_none()
+        )
+        if not user:
+            abort(404, description=f"User: {username} does not exist.")
+        payload = {
+            "user": bootstrap_user_data(user, include_perms=True),
+            "common": common_bootstrap_payload(),
+        }
+        return self.render_template(
+            "superset/basic.html",
+            title=_("Comparison"),
+            entry="comparison",
+            bootstrap_data=json.dumps(
+                payload, default=utils.pessimistic_json_iso_dttm_ser
+            ),
+        )
