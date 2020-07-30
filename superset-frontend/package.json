@@ -59,6 +59,7 @@
   "homepage": "https://superset.apache.org/",
   "dependencies": {
     "@babel/runtime-corejs3": "^7.8.4",
+    "@cyw233/plugin-chart-axis-break": "0.0.0",
     "@data-ui/sparkline": "^0.0.54",
     "@emotion/core": "^10.0.28",
     "@material-ui/core": "^4.9.14",
@@ -98,7 +99,6 @@
     "@superset-ui/legacy-preset-chart-deckgl": "^0.2.4",
     "@superset-ui/legacy-preset-chart-nvd3": "^0.14.9",
     "@superset-ui/number-format": "^0.14.9",
-    "@superset-ui/plugin-chart-axis-break": "^0.0.0",
     "@superset-ui/plugin-chart-table": "^0.14.11",
     "@superset-ui/plugin-chart-word-cloud": "^0.14.9",
     "@superset-ui/preset-chart-xy": "^0.14.9",
