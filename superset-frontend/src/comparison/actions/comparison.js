@@ -16,6 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { t } from '@superset-ui/translation';
+import { SupersetClient } from '@superset-ui/connection';
+import { addSuccessToast, addDangerToast } from '../../messageToasts/actions';
+
 export const SET_REGION = 'SET_REGION';
 export function setRegion(region) {
   return { type: SET_REGION, region };
@@ -39,4 +43,37 @@ export function setIsp(isp) {
 export const SET_SCENARIO = 'SET_SCENARIO';
 export function setScenario(scenario) {
   return { type: SET_SCENARIO, scenario };
+}
+
+export const FETCH_TABLE_DATA_STARTED = 'FETCH_TABLE_DATA_STARTED';
+export function fetchTableDataStarted() {
+  return { type: FETCH_TABLE_DATA_STARTED };
+}
+
+export const FETCH_TABLE_DATA_SUCCESS = 'FETCH_TABLE_DATA_SUCCESS';
+export function fetchTableDataSuccuss(res) {
+  return { type: FETCH_TABLE_DATA_SUCCESS, res };
+}
+
+export const FETCH_TABLE_DATA_FAILED = 'FETCH_TABLE_DATA_FAILED';
+export function fetchTableDataFailed(data) {
+  return { type: FETCH_TABLE_DATA_FAILED, data };
+}
+
+export function fetchTableData(table, version) {
+  return dispatch => {
+    return SupersetClient.get({
+      endpoint: `/edit-assumption/get-data/${table}/data/${version}`,
+    })
+      .then(({ json }) => {
+        dispatch(fetchTableDataSuccuss(json));
+        dispatch(addSuccessToast(t('Table data was fetched successfully')));
+      })
+      .catch(() => {
+        dispatch(fetchTableDataFailed());
+        dispatch(
+          addDangerToast(t('Sorry, there was an error fetching the data')),
+        );
+      });
+  };
 }

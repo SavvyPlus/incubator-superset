@@ -25,6 +25,7 @@ import { Col, Row } from 'react-bootstrap';
 import * as Actions from '../actions/comparison';
 import CustomToggle from './CustomToggle';
 import ProjectListVersionSelect from './ProjectListVersionSelect';
+import BarChart from './BarChart';
 
 const regions = ['NSW', 'QLD', 'SA', 'TAS', 'VIC'];
 const fuels = ['Wind', 'Solar'];
@@ -40,34 +41,55 @@ function App({ username, firstName, lastName, comparison, actions }) {
           <h3>
             {firstName} {lastName}
           </h3>
+        </Col>
+      </Row>
+      <Row>
+        <Col sm={1}></Col>
+        <Col sm={3}>
           <CustomToggle
             name="region"
             value={comparison.region}
             setValue={actions.setRegion}
             values={regions}
           />
+        </Col>
+        <Col sm={3}>
           <CustomToggle
             name="fuels"
             value={comparison.fuel}
             setValue={actions.setFuel}
             values={fuels}
           />
+        </Col>
+        <Col sm={5}>
           <ProjectListVersionSelect
             version={comparison.version}
             setVersion={actions.setVersion}
           />
+        </Col>
+      </Row>
+      <Row>
+        <Col sm={1}></Col>
+        <Col sm={6}>
           <CustomToggle
             name="isps"
             value={comparison.isp}
             setValue={actions.setIsp}
             values={isps}
           />
+        </Col>
+        <Col sm={5}>
           <CustomToggle
             name="scenario"
             value={comparison.scenario}
             setValue={actions.setScenario}
             values={scenarios}
           />
+        </Col>
+      </Row>
+      <Row>
+        <Col md={12}>
+          <BarChart />
         </Col>
       </Row>
     </div>
