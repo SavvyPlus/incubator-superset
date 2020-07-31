@@ -17,11 +17,18 @@
  * under the License.
  */
 /* eslint-disable camelcase */
-
 export default function (bootstrapData) {
   const { user } = bootstrapData;
 
   return {
     user,
+    comparison: {
+      region: 'NSW',
+      fuel: 'Wind',
+      version: 1,
+      isp: 'Counterfactual',
+      scenario: 'Central',
+    },
+    messageToasts: [],
   };
 }

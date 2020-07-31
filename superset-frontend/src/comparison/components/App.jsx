@@ -17,12 +17,21 @@
  * under the License.
  */
 import React from 'react';
+import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-// import PropTypes from 'prop-types';
 import { Col, Row } from 'react-bootstrap';
 // import { t } from '@superset-ui/translation';
 
-function App({ username, firstName, lastName }) {
+import * as Actions from '../actions/comparison';
+import CustomToggle from './CustomToggle';
+import ProjectListVersionSelect from './ProjectListVersionSelect';
+
+const regions = ['NSW', 'QLD', 'SA', 'TAS', 'VIC'];
+const fuels = ['Wind', 'Solar'];
+const isps = ['Counterfactual', 'Optimal'];
+const scenarios = ['Central', 'High DER'];
+
+function App({ username, firstName, lastName, comparison, actions }) {
   return (
     <div className="container app">
       <Row>
@@ -31,6 +40,34 @@ function App({ username, firstName, lastName }) {
           <h3>
             {firstName} {lastName}
           </h3>
+          <CustomToggle
+            name="region"
+            value={comparison.region}
+            setValue={actions.setRegion}
+            values={regions}
+          />
+          <CustomToggle
+            name="fuels"
+            value={comparison.fuel}
+            setValue={actions.setFuel}
+            values={fuels}
+          />
+          <ProjectListVersionSelect
+            version={comparison.version}
+            setVersion={actions.setVersion}
+          />
+          <CustomToggle
+            name="isps"
+            value={comparison.isp}
+            setValue={actions.setIsp}
+            values={isps}
+          />
+          <CustomToggle
+            name="scenario"
+            value={comparison.scenario}
+            setValue={actions.setScenario}
+            values={scenarios}
+          />
         </Col>
       </Row>
     </div>
@@ -38,13 +75,21 @@ function App({ username, firstName, lastName }) {
 }
 
 function mapStateToProps(state) {
-  const { user } = state;
+  const { user, comparison } = state;
 
   return {
     username: user.username,
     firstName: user.firstName,
     lastName: user.lastName,
+    comparison,
   };
 }
 
-export default connect(mapStateToProps)(App);
+function mapDispatchToProps(dispatch) {
+  return {
+    actions: bindActionCreators(Actions, dispatch),
+  };
+}
+
+export { App };
+export default connect(mapStateToProps, mapDispatchToProps)(App);

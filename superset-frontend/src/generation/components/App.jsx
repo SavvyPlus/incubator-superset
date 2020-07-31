@@ -19,9 +19,7 @@
 import React from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
-import { Col, Row, Tabs, Tab, Panel } from 'react-bootstrap';
-import { t } from '@superset-ui/translation';
+import { Col, Row } from 'react-bootstrap';
 import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import RegionSelect from './RegionSelect';
 import HeadSelect from './HeadSelect';

@@ -16,14 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { combineReducers } from 'redux';
+import {
+  SET_REGION,
+  SET_FUEL,
+  SET_VERSION,
+  SET_ISP,
+  SET_SCENARIO,
+} from '../actions/comparison';
 
-import user from './user';
-import comparison from './comparison';
-import messageToasts from '../../messageToasts/reducers';
+export default function comparisonReducer(state = {}, action) {
+  const actionHandlers = {
+    [SET_REGION]() {
+      return { ...state, region: action.region };
+    },
+    [SET_FUEL]() {
+      return { ...state, fuel: action.fuel };
+    },
+    [SET_VERSION]() {
+      return { ...state, version: action.version };
+    },
+    [SET_ISP]() {
+      return { ...state, isp: action.isp };
+    },
+    [SET_SCENARIO]() {
+      return { ...state, scenario: action.scenario };
+    },
+  };
 
-export default combineReducers({
-  user,
-  comparison,
-  messageToasts,
-});
+  if (action.type in actionHandlers) {
+    return actionHandlers[action.type]();
+  }
+  return state;
+}
