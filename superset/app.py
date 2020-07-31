@@ -176,6 +176,7 @@ class SupersetAppInitializer:
         )
         from superset.views.simulation.assumption_check import (
             UploadISPView,
+            AssumptionBookModelView,
         )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
@@ -292,33 +293,42 @@ class SupersetAppInitializer:
             icon="fa-list-ol",
             category="Modeling",
         )
-        # appbuilder.add_view(
-        #     EditAssumptionModelView,
-        #     "Edit Assumption",
-        #     label=__("Edit Assumption"),
-        #     icon="fa-edit",
-        #     category="Assumption Book",
-        #     category_icon="",
-        # )
-        # appbuilder.add_separator("Assumption Book")
-        # appbuilder.add_link(
-        #     "Upload assumption file",
-        #     label="Upload Assumption excel",
-        #     href="/upload_base_excel/form",
-        #     icon="fa-upload",
-        #     category="Assumption Book",
-        #     category_label="Assumption Book",
-        #     category_icon="fa-wrench",
-        # )
-        # appbuilder.add_link(
-        #     "Upload ISP case",
-        #     label="Upload ISP case",
-        #     href="/upload_isp/form",
-        #     icon="fa-upload",
-        #     category="Assumption Book",
-        #     category_label="Assumption Book",
-        #     category_icon="fa-wrench"
-        # )
+        appbuilder.add_view(
+            EditAssumptionModelView,
+            "Edit Assumption",
+            label=__("Edit Assumption"),
+            icon="fa-edit",
+            category="Assumption Book",
+            category_icon="",
+        )
+        appbuilder.add_separator("Assumption Book")
+        appbuilder.add_view(
+            AssumptionBookModelView,
+            "Assumption Book",
+            label="Comparison",
+            icon="fa-upload",
+            category="Assumption Book",
+            category_label="Assumption Book",
+            category_icon="",
+        )
+        appbuilder.add_link(
+            "Upload assumption file",
+            label="Upload Assumption excel",
+            href="/upload_base_excel/form",
+            icon="fa-upload",
+            category="Assumption Book",
+            category_label="Assumption Book",
+            category_icon="fa-wrench",
+        )
+        appbuilder.add_link(
+            "Upload ISP case",
+            label="Upload ISP case",
+            href="/upload_isp/form",
+            icon="fa-upload",
+            category="Assumption Book",
+            category_label="Assumption Book",
+            category_icon="fa-wrench"
+        )
         appbuilder.add_view(
             CssTemplateModelView,
             "CSS Templates",
