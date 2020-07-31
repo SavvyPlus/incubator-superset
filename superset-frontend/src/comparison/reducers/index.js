@@ -18,12 +18,10 @@
  */
 import { combineReducers } from 'redux';
 
-import user from './user';
 import comparison from './comparison';
 import messageToasts from '../../messageToasts/reducers';
 
 export default combineReducers({
-  user,
   comparison,
   messageToasts,
 });

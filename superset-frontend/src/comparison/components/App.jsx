@@ -32,7 +32,7 @@ const fuels = ['Wind', 'Solar'];
 const isps = ['Counterfactual', 'Optimal'];
 const scenarios = ['Central', 'High DER'];
 
-function App({ username, firstName, lastName, comparison, actions }) {
+function App({ comparison, actions }) {
   return (
     <div className="container app">
       <Row>
@@ -97,12 +97,9 @@ function App({ username, firstName, lastName, comparison, actions }) {
 }
 
 function mapStateToProps(state) {
-  const { user, comparison } = state;
+  const { comparison } = state;
 
   return {
-    username: user.username,
-    firstName: user.firstName,
-    lastName: user.lastName,
     comparison,
   };
 }
