@@ -110,7 +110,7 @@ class AssumptionBookModelView(
             abort(404, description=f"User: {username} does not exist.")
 
         project_list_versions = db.session.query(ProjectListDefinition).all()
-        project_list = [{'version' :project.id,
+        project_list = [{'version' :project.Project_List_Version,
                          'note': project.Note} for project in project_list_versions]
         payload = {
             "user": bootstrap_user_data(user, include_perms=True),
@@ -131,6 +131,12 @@ class AssumptionBookModelView(
         # form = request.form
         # topic =
         header, data = self.get_project_list_data('SA1', 'Solar', 1)
+        # Choose the latest version of the isp scenario
+        isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case='Counterfactual',scenario='Central').order_by(
+            ISPCapacityDefinition.id.desc()).first()
+        tab_data = db.session.query(ISPCapacity).filter_by(isp_cap_def_id=isp_version.id, technology='Solar', region='SA').all()
+        for data_row in tab_data:
+            data.append(data_row.get_dict())
         return jsonify(
             {'header': header,
              'data': data}
@@ -147,9 +153,9 @@ class AssumptionBookModelView(
         row_list = []
         for row in result:
             row_list.append(list(row))
-        df = pd.DataFrame(row_list, columns=['state', 'fuel_type','year','capacity', 'source'])
-
+        df = pd.DataFrame(row_list, columns=['region', 'technology','year','value', 'source'])
+        df['region'] = df['region'].map(lambda x: x[:-1])
         # Aggregate generation of each year starting from last year
         for index, row in df.iterrows():
-            df.loc[index, 'capacity'] = df[df['year'] <= row['year']]['capacity'].sum()
+            df.loc[index, 'value'] = float(df[df['year'] <= row['year']]['value'].sum())
         return list(df.columns), df.iloc[::-1].to_dict(orient='records')
