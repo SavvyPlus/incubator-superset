@@ -19,6 +19,7 @@ import json
 import traceback
 import logging
 import os
+import pandas as pd
 import tempfile
 import superset.models.core as models
 from flask import flash, redirect, g, request, abort, url_for, jsonify
@@ -96,26 +97,59 @@ class AssumptionBookModelView(
     SupersetModelView, DeleteMixin
 ):  # pylint: disable=too-many-ancestors
     route_base = "/assumption-book"
-    default_view = 'comparison'
     datamodel = SQLAInterface(AssumptionDefinition)
 
     @expose("/comparison/")
     def comparison(self):
         username = g.user.username
+
         user = (
             db.session.query(ab_models.User).filter_by(username=username).one_or_none()
         )
         if not user:
             abort(404, description=f"User: {username} does not exist.")
+
+        project_list_versions = db.session.query(ProjectListDefinition).all()
+        project_list = [{'version' :project.id,
+                         'note': project.Note} for project in project_list_versions]
         payload = {
             "user": bootstrap_user_data(user, include_perms=True),
+            "project_list": project_list,
             "common": common_bootstrap_payload(),
         }
+
         return self.render_template(
             "superset/basic.html",
-            title=_("Comparison"),
-            entry="comparison",
+            title=_("Edit Assumption"),
             bootstrap_data=json.dumps(
                 payload, default=utils.pessimistic_json_iso_dttm_ser
             ),
         )
+
+    @expose("/get-data")
+    def get_data(self):
+        # form = request.form
+        # topic =
+        header, data = self.get_project_list_data('SA1', 'Solar', 1)
+        return jsonify(
+            {'header': header,
+             'data': data}
+        )
+
+
+    def get_project_list_data(self, state, fuel_type, version):
+        sql = "SELECT State as region, Fuel_Type as technology, YEAR(Start_Date) as year, SUM(Maximum_Quantity) as capacity, 'Empower' as source "\
+                "FROM Project_List " \
+                "WHERE State = :state and Fuel_Type = :fuel_type and Version = :version_id "\
+                "GROUP BY region, technology, year " \
+                "ORDER BY year desc"
+        result = db.session.execute(sql, {"state": state, "fuel_type": fuel_type, "version_id": version})
+        row_list = []
+        for row in result:
+            row_list.append(list(row))
+        df = pd.DataFrame(row_list, columns=['state', 'fuel_type','year','capacity', 'source'])
+
+        # Aggregate generation of each year starting from last year
+        for index, row in df.iterrows():
+            df.loc[index, 'capacity'] = df[df['year'] <= row['year']]['capacity'].sum()
+        return list(df.columns), df.iloc[::-1].to_dict(orient='records')

@@ -301,15 +301,16 @@ class SupersetAppInitializer:
             category="Assumption Book",
             category_icon="",
         )
+        appbuilder.add_separator("Assumption Book")
         appbuilder.add_view(
             AssumptionBookModelView,
-            "Comparison",
-            label=__("Comparison"),
-            icon="fa-edit",
+            "Assumption Book",
+            label="Comparison",
+            icon="fa-upload",
             category="Assumption Book",
+            category_label="Assumption Book",
             category_icon="",
         )
-        appbuilder.add_separator("Assumption Book")
         appbuilder.add_link(
             "Upload assumption file",
             label="Upload Assumption excel",
