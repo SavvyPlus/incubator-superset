@@ -45,32 +45,32 @@ export function setScenario(scenario) {
   return { type: SET_SCENARIO, scenario };
 }
 
-export const FETCH_TABLE_DATA_STARTED = 'FETCH_TABLE_DATA_STARTED';
-export function fetchTableDataStarted() {
-  return { type: FETCH_TABLE_DATA_STARTED };
+export const FETCH_CHART_DATA_STARTED = 'FETCH_CHART_DATA_STARTED';
+export function fetchChartDataStarted() {
+  return { type: FETCH_CHART_DATA_STARTED };
 }
 
-export const FETCH_TABLE_DATA_SUCCESS = 'FETCH_TABLE_DATA_SUCCESS';
-export function fetchTableDataSuccuss(res) {
-  return { type: FETCH_TABLE_DATA_SUCCESS, res };
+export const FETCH_CHART_DATA_SUCCESS = 'FETCH_CHART_DATA_SUCCESS';
+export function fetchChartDataSuccuss(res) {
+  return { type: FETCH_CHART_DATA_SUCCESS, res };
 }
 
-export const FETCH_TABLE_DATA_FAILED = 'FETCH_TABLE_DATA_FAILED';
-export function fetchTableDataFailed(data) {
-  return { type: FETCH_TABLE_DATA_FAILED, data };
+export const FETCH_CHART_DATA_FAILED = 'FETCH_CHART_DATA_FAILED';
+export function fetchChartDataFailed(data) {
+  return { type: FETCH_CHART_DATA_FAILED, data };
 }
 
-export function fetchTableData(table, version) {
+export function fetchCHARTData(CHART, version) {
   return dispatch => {
     return SupersetClient.get({
-      endpoint: `/edit-assumption/get-data/${table}/data/${version}`,
+      endpoint: `/edit-assumption/get-data/${CHART}/data/${version}`,
     })
       .then(({ json }) => {
-        dispatch(fetchTableDataSuccuss(json));
+        dispatch(fetchChartDataSuccuss(json));
         dispatch(addSuccessToast(t('Table data was fetched successfully')));
       })
       .catch(() => {
-        dispatch(fetchTableDataFailed());
+        dispatch(fetchChartDataFailed());
         dispatch(
           addDangerToast(t('Sorry, there was an error fetching the data')),
         );
