@@ -18,10 +18,9 @@
  */
 /* eslint-disable camelcase */
 export default function (bootstrapData) {
-  const { user } = bootstrapData;
+  const { projectList } = bootstrapData;
 
   return {
-    user,
     comparison: {
       region: 'NSW',
       fuel: 'Wind',

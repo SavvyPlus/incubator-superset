@@ -97,6 +97,7 @@ class AssumptionBookModelView(
     SupersetModelView, DeleteMixin
 ):  # pylint: disable=too-many-ancestors
     route_base = "/assumption-book"
+    default_view = 'comparison'
     datamodel = SQLAInterface(AssumptionDefinition)
 
     @expose("/comparison/")
@@ -114,12 +115,13 @@ class AssumptionBookModelView(
                          'note': project.Note} for project in project_list_versions]
         payload = {
             "user": bootstrap_user_data(user, include_perms=True),
-            "project_list": project_list,
+            "projectList": project_list,
             "common": common_bootstrap_payload(),
         }
 
         return self.render_template(
             "superset/basic.html",
+            entry="comparison",
             title=_("Edit Assumption"),
             bootstrap_data=json.dumps(
                 payload, default=utils.pessimistic_json_iso_dttm_ser

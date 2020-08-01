@@ -36,14 +36,6 @@ function App({ comparison, actions }) {
   return (
     <div className="container app">
       <Row>
-        <Col md={9}>
-          <h1>{username}</h1>
-          <h3>
-            {firstName} {lastName}
-          </h3>
-        </Col>
-      </Row>
-      <Row>
         <Col sm={1}></Col>
         <Col sm={3}>
           <CustomToggle
