@@ -30,6 +30,7 @@ export default function (bootstrapData) {
       projectList,
       years: [],
       data: [],
+      fetching: false,
     },
     messageToasts: [],
   };

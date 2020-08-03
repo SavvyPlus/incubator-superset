@@ -63,12 +63,13 @@ export function fetchChartDataFailed() {
 export function fetchChartData(region, fuel, version) {
   console.log(region, fuel, version);
   return dispatch => {
+    dispatch(fetchChartDataStarted());
     return SupersetClient.get({
       endpoint: `/assumption-book/get-data/`,
     })
       .then(({ json }) => {
         dispatch(fetchChartDataSuccuss(json));
-        dispatch(addSuccessToast(t('Chart data was fetched successfully')));
+        // dispatch(addSuccessToast(t('Chart data was fetched successfully')));
       })
       .catch(() => {
         dispatch(fetchChartDataFailed());
