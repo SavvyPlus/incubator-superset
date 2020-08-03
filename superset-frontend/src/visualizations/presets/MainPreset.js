@@ -58,8 +58,8 @@ import {
 } from '@superset-ui/legacy-preset-chart-nvd3';
 import { LegacyBoxPlotChartPlugin } from '@superset-ui/preset-chart-xy';
 import { DeckGLChartPreset } from '@superset-ui/legacy-preset-chart-deckgl';
-// import { AxisBreakChartPlugin } from '@superset-ui/plugin-chart-axis-break';
-import { AxisBreakChartPlugin } from '@cyw233/plugin-chart-axis-break';
+import { AxisBreakChartPlugin } from '@superset-ui/plugin-chart-axis-break';
+// import { AxisBreakChartPlugin } from '@cyw233/plugin-chart-axis-break';
 
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
