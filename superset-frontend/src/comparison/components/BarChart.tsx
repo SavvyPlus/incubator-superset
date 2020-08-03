@@ -29,7 +29,7 @@ function BarChart({
 }: BarChartProps) {
   useEffect(() => {
     fetchChartData('SA1', '23', 2);
-  }, [region]);
+  }, [region, fuel]);
 
   console.log(region, fuel, version);
 

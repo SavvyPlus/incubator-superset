@@ -129,7 +129,7 @@ class AssumptionBookModelView(
         )
 
     @expose("/get-data/<state>/<technology>/")
-    def get_data(self):
+    def get_data(self, state, technology):
         # form = request.form
         # topic =
         header, empower_data = self.get_project_list_data('SA1', 'Solar', 1)
