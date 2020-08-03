@@ -19,6 +19,7 @@ import json
 import traceback
 import logging
 import os
+import pandas as pd
 import tempfile
 import superset.models.core as models
 from flask import flash, redirect, g, request, abort, url_for, jsonify
@@ -90,3 +91,99 @@ class UploadISPView(SimpleFormView):
             os.remove(path)
         flash(message, style)
         return redirect(self.route_base + '/form')
+
+
+class AssumptionBookModelView(
+    SupersetModelView, DeleteMixin
+):  # pylint: disable=too-many-ancestors
+    route_base = "/assumption-book"
+    default_view = 'comparison'
+    datamodel = SQLAInterface(AssumptionDefinition)
+
+    @expose("/comparison/")
+    def comparison(self):
+        username = g.user.username
+
+        user = (
+            db.session.query(ab_models.User).filter_by(username=username).one_or_none()
+        )
+        if not user:
+            abort(404, description=f"User: {username} does not exist.")
+
+        project_list_versions = db.session.query(ProjectListDefinition).all()
+        project_list = [{'version' :project.Project_List_Version,
+                         'note': project.Note} for project in project_list_versions]
+        payload = {
+            "user": bootstrap_user_data(user, include_perms=True),
+            "projectList": project_list,
+            "common": common_bootstrap_payload(),
+        }
+
+        return self.render_template(
+            "superset/basic.html",
+            entry="comparison",
+            title=_("Edit Assumption"),
+            bootstrap_data=json.dumps(
+                payload, default=utils.pessimistic_json_iso_dttm_ser
+            ),
+        )
+
+    @expose("/get-data/")
+    def get_data(self):
+        # form = request.form
+        # topic =
+        header, empower_data = self.get_project_list_data('SA1', 'Solar', 1)
+        # Choose the latest version of the isp scenario
+        isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case='Counterfactual',scenario='Central').order_by(
+            ISPCapacityDefinition.id.desc()).first()
+        tab_data = db.session.query(ISPCapacity).filter_by(isp_cap_def_id=isp_version.id, technology='Solar', region='SA').all()
+        isp_data = []
+        for data_row in tab_data:
+            isp_data.append(data_row.get_dict())
+
+        empower_years = set()
+        isp_years = set()
+        empower_dict = dict()
+        isp_dict = dict()
+        for item in empower_data:
+            empower_years.add(item['year'])
+            empower_dict[item['year']] = item['value']
+
+        for item in isp_data:
+            isp_years.add(item['year'])
+            isp_dict[item['year']] = item['value']
+
+        years = sorted(empower_years.union(isp_years))
+
+        empower_values = []
+        isp_values = []
+        for year in years:
+            empower_values.append(empower_dict[year] if year in empower_dict else 0)
+            isp_values.append(isp_dict[year] if year in isp_dict else 0)
+
+        return jsonify(
+            {'header': header,
+             'years': years,
+             'data': [
+                 {'name': 'Empower', 'values': empower_values},
+                 {'name': 'ISP', 'values': isp_values},
+             ]}
+        )
+
+
+    def get_project_list_data(self, state, fuel_type, version):
+        sql = "SELECT State as region, Fuel_Type as technology, YEAR(Start_Date) as year, SUM(Maximum_Quantity) as capacity, 'Empower' as source "\
+                "FROM Project_List " \
+                "WHERE State = :state and Fuel_Type = :fuel_type and Version = :version_id "\
+                "GROUP BY region, technology, year " \
+                "ORDER BY year desc"
+        result = db.session.execute(sql, {"state": state, "fuel_type": fuel_type, "version_id": version})
+        row_list = []
+        for row in result:
+            row_list.append(list(row))
+        df = pd.DataFrame(row_list, columns=['region', 'technology','year','value', 'source'])
+        df['region'] = df['region'].map(lambda x: x[:-1])
+        # Aggregate generation of each year starting from last year
+        for index, row in df.iterrows():
+            df.loc[index, 'value'] = float(df[df['year'] <= row['year']]['value'].sum())
+        return list(df.columns), df.iloc[::-1].to_dict(orient='records')

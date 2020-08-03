@@ -23,6 +23,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Alert, Tab, Tabs } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
+import styled from '@superset-ui/style';
 
 import ControlPanelSection from './ControlPanelSection';
 import ControlRow from './ControlRow';
@@ -40,6 +41,25 @@ const propTypes = {
   form_data: PropTypes.object.isRequired,
   isDatasourceMetaLoading: PropTypes.bool.isRequired,
 };
+
+const Styles = styled.div`
+  max-height: 100%;
+  .remove-alert {
+    cursor: 'pointer';
+  }
+  #controlSections {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+  }
+  .nav-tabs {
+    flex: 0 0 1;
+  }
+  .tab-content {
+    // overflow: auto;
+    flex: 1 1 100%;
+  }
+`;
 
 class ControlPanelsContainer extends React.Component {
   constructor(props) {
@@ -172,6 +192,7 @@ class ControlPanelsContainer extends React.Component {
       </ControlPanelSection>
     );
   }
+
   render() {
     const { viz_type } = this.props.form_data;
     const allSectionsToRender = this.sectionsToRender();
@@ -234,32 +255,30 @@ class ControlPanelsContainer extends React.Component {
     });
 
     return (
-      <div className="scrollbar-container">
-        <div className="scrollbar-content">
-          {this.props.alert && (
-            <Alert bsStyle="warning">
-              {this.props.alert}
-              <i
-                role="button"
-                tabIndex={0}
-                className="fa fa-close pull-right"
-                onClick={this.removeAlert}
-                style={{ cursor: 'pointer' }}
-              />
-            </Alert>
-          )}
-          <Tabs id="controlSections">
-            <Tab eventKey="query" title={t('Data')}>
-              {querySectionsToRender.map(this.renderControlPanelSection)}
+      <Styles>
+        {this.props.alert && (
+          <Alert bsStyle="warning">
+            {this.props.alert}
+            <i
+              role="button"
+              tabIndex={0}
+              className="fa fa-close pull-right"
+              onClick={this.removeAlert}
+              style={{ cursor: 'pointer' }}
+            />
+          </Alert>
+        )}
+        <Tabs id="controlSections">
+          <Tab eventKey="query" title={t('Data')}>
+            {querySectionsToRender.map(this.renderControlPanelSection)}
+          </Tab>
+          {displaySectionsToRender.length > 0 && (
+            <Tab eventKey="display" title={t('Customize')}>
+              {displaySectionsToRender.map(this.renderControlPanelSection)}
             </Tab>
-            {displaySectionsToRender.length > 0 && (
-              <Tab eventKey="display" title={t('Customize')}>
-                {displaySectionsToRender.map(this.renderControlPanelSection)}
-              </Tab>
-            )}
-          </Tabs>
-        </div>
-      </div>
+          )}
+        </Tabs>
+      </Styles>
     );
   }
 }

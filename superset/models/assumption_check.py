@@ -20,6 +20,7 @@ from flask_appbuilder import Model
 from sqlalchemy.orm import relationship
 from sqlalchemy import (Column, ForeignKey, Integer,
                         String, UniqueConstraint, Float)
+from .simulation import DataTableMixin
 
 
 class ISPCapacityDefinition(Model):
@@ -55,7 +56,7 @@ class ISPCapacityDefinition(Model):
         return self.id
 
 
-class ISPCapacity(Model):
+class ISPCapacity(Model, DataTableMixin):
     __tablename__ = "ISP_Capacity"
     __table_args__ = (UniqueConstraint('region', 'technology',
                                        'year', 'isp_cap_def_id'),)
@@ -79,6 +80,9 @@ class ISPCapacity(Model):
     @staticmethod
     def get_version_col_name():
         return 'isp_cap_def_id'
+
+    def get_dict(self):
+        return {'region': self.region, 'technology':self.technology, 'year': self.year, 'value': self.value, 'source':'ISP'}
 
 
 check_model_list = {
