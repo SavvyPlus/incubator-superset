@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactEcharts from 'echarts-for-react';
+import PreLoader from '../../components/PreLoader';
+import { barFormatter } from '../../utils/chartUtils';
 
 interface ChartData {
   name: string;
@@ -12,6 +14,7 @@ interface BarChartProps {
   region: string;
   fuel: string;
   version: number;
+  fetching: boolean;
   fetchChartData: (region: string, fuel: string, version: number) => any;
 }
 
@@ -21,22 +24,32 @@ function BarChart({
   region,
   fuel,
   version,
+  fetching,
   fetchChartData,
 }: BarChartProps) {
   useEffect(() => {
     fetchChartData('SA1', '23', 2);
-  }, []);
+  }, [region, fuel]);
 
   console.log(region, fuel, version);
 
   return (
-    <div>
-      {data.length > 0 && (
+    <div style={{ marginTop: 20, marginBottom: 50 }}>
+      {fetching || data.length === 0 ? (
+        <div style={{ marginTop: '20rem' }}>
+          <PreLoader position="floating" />
+        </div>
+      ) : (
         <ReactEcharts
-          // key={`${chartId}${webpackHash}`}
-          // id={`chart-id-${chartId}`}
           option={{
-            // color: ['#003366', '#006699', '#4cabce', '#e5323e'],
+            color: ['#efcb48', '#b3b3b3'],
+            title: {
+              left: 'center',
+              text: `${fuel} Generation`,
+              textStyle: {
+                fontSize: 26,
+              },
+            },
             tooltip: {
               trigger: 'axis',
               axisPointer: {
@@ -44,34 +57,55 @@ function BarChart({
               },
             },
             legend: {
+              top: '8%',
+              icon: 'circle',
+              textStyle: {
+                fontSize: 16,
+              },
               data: [data[0].name, data[1].name],
             },
-            // toolbox: {
-            //   show: true,
-            //   orient: 'vertical',
-            //   left: 'right',
-            //   top: 'center',
-            //   feature: {
-            //     mark: { show: true },
-            //     dataView: { show: true, readOnly: false },
-            //     magicType: {
-            //       show: true,
-            //       type: ['line', 'bar', 'stack', 'tiled'],
-            //     },
-            //     restore: { show: true },
-            //     saveAsImage: { show: true },
-            //   },
-            // },
+            grid: {
+              top: '20%',
+            },
+            toolbox: {
+              show: true,
+              right: '10%',
+              top: 'top',
+              feature: {
+                dataView: {
+                  show: true,
+                  readOnly: true,
+                  title: 'View data',
+                  lang: ['Data', 'Close'],
+                },
+                saveAsImage: { show: true, title: 'Save as image' },
+              },
+            },
             xAxis: [
               {
                 type: 'category',
                 axisTick: { show: false },
                 data: years,
+                name: 'Year',
+                nameLocation: 'center',
+                nameGap: 30,
+                nameTextStyle: {
+                  fontSize: 16,
+                },
               },
             ],
             yAxis: [
               {
                 type: 'value',
+                name: 'Generation (MW)',
+                nameLocation: 'center',
+                nameGap: 40,
+                nameTextStyle: {
+                  fontSize: 16,
+                },
+                axisLabel: {
+                  formatter: barFormatter,
+                },
               },
             ],
             series: [
@@ -92,7 +126,6 @@ function BarChart({
           }}
           // style={{ height: `${height}px`, width: `${width}px` }}
           style={{ height: '550px' }}
-          theme="light"
         />
       )}
     </div>

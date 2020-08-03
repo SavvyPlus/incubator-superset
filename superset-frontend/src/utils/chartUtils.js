@@ -52,6 +52,10 @@ const REGION_BORDER_COLOR = {
 //   return RoundUp(maxBoxData(allBoxData));
 // }
 
+export function barFormatter(value) {
+  return `${value / 1000}K`;
+}
+
 export function boxplotFormatter(param) {
   return [
     'Whiker Type: <strong>Min/Max</strong>',

@@ -18,7 +18,7 @@
  */
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
-import { addSuccessToast, addDangerToast } from '../../messageToasts/actions';
+import { addDangerToast } from '../../messageToasts/actions';
 
 export const SET_REGION = 'SET_REGION';
 export function setRegion(region) {
@@ -63,12 +63,13 @@ export function fetchChartDataFailed() {
 export function fetchChartData(region, fuel, version) {
   console.log(region, fuel, version);
   return dispatch => {
+    dispatch(fetchChartDataStarted());
     return SupersetClient.get({
-      endpoint: `/assumption-book/get-data/`,
+      endpoint: `/assumption-book/get-data/${region}/${fuel}/`,
     })
       .then(({ json }) => {
         dispatch(fetchChartDataSuccuss(json));
-        dispatch(addSuccessToast(t('Chart data was fetched successfully')));
+        // dispatch(addSuccessToast(t('Chart data was fetched successfully')));
       })
       .catch(() => {
         dispatch(fetchChartDataFailed());

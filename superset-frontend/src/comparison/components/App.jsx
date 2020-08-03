@@ -37,7 +37,7 @@ function App({ comparison, actions }) {
     <div className="container app">
       <Row>
         <Col>
-          <h2>Comparison</h2>
+          <h2>Renewable Generation Assumptions</h2>
         </Col>
       </Row>
       <Row>
@@ -93,6 +93,7 @@ function App({ comparison, actions }) {
             region={comparison.region}
             fuel={comparison.fuel}
             version={comparison.version}
+            fetching={comparison.fetching}
             fetchChartData={actions.fetchChartData}
           />
         </Col>

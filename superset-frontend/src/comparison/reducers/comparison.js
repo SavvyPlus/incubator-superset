@@ -22,6 +22,7 @@ import {
   SET_VERSION,
   SET_ISP,
   SET_SCENARIO,
+  FETCH_CHART_DATA_STARTED,
   FETCH_CHART_DATA_SUCCESS,
   FETCH_CHART_DATA_FAILED,
 } from '../actions/comparison';
@@ -43,15 +44,22 @@ export default function comparisonReducer(state = {}, action) {
     [SET_SCENARIO]() {
       return { ...state, scenario: action.scenario };
     },
+    [FETCH_CHART_DATA_STARTED]() {
+      return {
+        ...state,
+        fetching: true,
+      };
+    },
     [FETCH_CHART_DATA_SUCCESS]() {
       return {
         ...state,
         data: action.res.data,
         years: action.res.years,
+        fetching: false,
       };
     },
     [FETCH_CHART_DATA_FAILED]() {
-      return { ...state };
+      return { ...state, fetching: false };
     },
   };
 
