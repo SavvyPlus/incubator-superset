@@ -42,7 +42,8 @@ function BarChart({
       ) : (
         <ReactEcharts
           option={{
-            color: ['#efcb48', '#b3b3b3'],
+            color:
+              fuel === 'Wind' ? ['#398880', '#b3b3b3'] : ['#efcb48', '#b3b3b3'],
             title: {
               left: 'center',
               text: `${fuel} Generation`,
