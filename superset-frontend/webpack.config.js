@@ -185,6 +185,7 @@ const config = {
     profile: addPreamble('/src/profile/index.tsx'),
     generation: addPreamble('/src/generation/index.tsx'),
     assumption: addPreamble('/src/assumption/index.tsx'),
+    comparison: addPreamble('/src/comparison/index.tsx'),
     showSavedQuery: [path.join(APP_DIR, '/src/showSavedQuery/index.jsx')],
   },
   output,

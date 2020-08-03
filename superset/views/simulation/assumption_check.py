@@ -97,6 +97,7 @@ class AssumptionBookModelView(
     SupersetModelView, DeleteMixin
 ):  # pylint: disable=too-many-ancestors
     route_base = "/assumption-book"
+    default_view = 'comparison'
     datamodel = SQLAInterface(AssumptionDefinition)
 
     @expose("/comparison/")
@@ -114,32 +115,59 @@ class AssumptionBookModelView(
                          'note': project.Note} for project in project_list_versions]
         payload = {
             "user": bootstrap_user_data(user, include_perms=True),
-            "project_list": project_list,
+            "projectList": project_list,
             "common": common_bootstrap_payload(),
         }
 
         return self.render_template(
             "superset/basic.html",
+            entry="comparison",
             title=_("Edit Assumption"),
             bootstrap_data=json.dumps(
                 payload, default=utils.pessimistic_json_iso_dttm_ser
             ),
         )
 
-    @expose("/get-data")
+    @expose("/get-data/")
     def get_data(self):
         # form = request.form
         # topic =
-        header, data = self.get_project_list_data('SA1', 'Solar', 1)
+        header, empower_data = self.get_project_list_data('SA1', 'Solar', 1)
         # Choose the latest version of the isp scenario
         isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case='Counterfactual',scenario='Central').order_by(
             ISPCapacityDefinition.id.desc()).first()
         tab_data = db.session.query(ISPCapacity).filter_by(isp_cap_def_id=isp_version.id, technology='Solar', region='SA').all()
+        isp_data = []
         for data_row in tab_data:
-            data.append(data_row.get_dict())
+            isp_data.append(data_row.get_dict())
+
+        empower_years = set()
+        isp_years = set()
+        empower_dict = dict()
+        isp_dict = dict()
+        for item in empower_data:
+            empower_years.add(item['year'])
+            empower_dict[item['year']] = item['value']
+
+        for item in isp_data:
+            isp_years.add(item['year'])
+            isp_dict[item['year']] = item['value']
+
+        years = sorted(empower_years.union(isp_years))
+
+        empower_values = []
+        isp_values = []
+        for year in years:
+            empower_values.append(empower_dict[year] if year in empower_dict else 0)
+            isp_values.append(isp_dict[year] if year in isp_dict else 0)
+
         return jsonify(
             {'header': header,
-             'data': data}
+             'years': years,
+             'data': [
+                 {'name': 'Empower', 'values': empower_values},
+                 {'name': 'ISP', 'values': isp_values},
+             ]}
         )
 
 
