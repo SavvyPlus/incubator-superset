@@ -87,7 +87,14 @@ function App({ comparison, actions }) {
       </Row>
       <Row>
         <Col md={12}>
-          <BarChart fetchChartData={actions.fetchChartData} />
+          <BarChart
+            years={comparison.years}
+            data={comparison.data}
+            region={comparison.region}
+            fuel={comparison.fuel}
+            version={comparison.version}
+            fetchChartData={actions.fetchChartData}
+          />
         </Col>
       </Row>
     </div>

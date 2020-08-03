@@ -28,7 +28,9 @@ export default function ProjectListVersionSelect({
     <FormControl variant="outlined" className={classes.formControl}>
       <Select value={version} onChange={handleChange}>
         {projectList.map(pl => (
-          <MenuItem value={pl.version}>{pl.note}</MenuItem>
+          <MenuItem key={pl.version} value={pl.version}>
+            {pl.note}
+          </MenuItem>
         ))}
       </Select>
     </FormControl>

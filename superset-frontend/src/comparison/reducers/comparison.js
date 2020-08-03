@@ -47,6 +47,7 @@ export default function comparisonReducer(state = {}, action) {
       return {
         ...state,
         data: action.res.data,
+        years: action.res.years,
       };
     },
     [FETCH_CHART_DATA_FAILED]() {

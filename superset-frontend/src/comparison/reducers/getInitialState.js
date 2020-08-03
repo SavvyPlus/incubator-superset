@@ -28,6 +28,8 @@ export default function (bootstrapData) {
       isp: 'Counterfactual',
       scenario: 'Central',
       projectList,
+      years: [],
+      data: [],
     },
     messageToasts: [],
   };
