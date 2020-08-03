@@ -306,7 +306,7 @@ class SupersetAppInitializer:
             AssumptionBookModelView,
             "Assumption Book",
             label="Comparison",
-            icon="fa-upload",
+            icon="fa-bar-chart",
             category="Assumption Book",
             category_label="Assumption Book",
             category_icon="",

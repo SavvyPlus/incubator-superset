@@ -128,7 +128,7 @@ class AssumptionBookModelView(
             ),
         )
 
-    @expose("/get-data")
+    @expose("/get-data/")
     def get_data(self):
         # form = request.form
         # topic =

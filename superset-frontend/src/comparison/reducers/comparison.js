@@ -22,6 +22,8 @@ import {
   SET_VERSION,
   SET_ISP,
   SET_SCENARIO,
+  FETCH_CHART_DATA_SUCCESS,
+  FETCH_CHART_DATA_FAILED,
 } from '../actions/comparison';
 
 export default function comparisonReducer(state = {}, action) {
@@ -40,6 +42,15 @@ export default function comparisonReducer(state = {}, action) {
     },
     [SET_SCENARIO]() {
       return { ...state, scenario: action.scenario };
+    },
+    [FETCH_CHART_DATA_SUCCESS]() {
+      return {
+        ...state,
+        data: action.res.data,
+      };
+    },
+    [FETCH_CHART_DATA_FAILED]() {
+      return { ...state };
     },
   };
 

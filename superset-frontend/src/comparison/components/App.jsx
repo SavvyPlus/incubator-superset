@@ -36,7 +36,12 @@ function App({ comparison, actions }) {
   return (
     <div className="container app">
       <Row>
-        <Col sm={1}></Col>
+        <Col>
+          <h2>Comparison</h2>
+        </Col>
+      </Row>
+      <Row>
+        <Col sm={1} />
         <Col sm={3}>
           <CustomToggle
             name="region"
@@ -55,13 +60,14 @@ function App({ comparison, actions }) {
         </Col>
         <Col sm={5}>
           <ProjectListVersionSelect
+            projectList={comparison.projectList}
             version={comparison.version}
             setVersion={actions.setVersion}
           />
         </Col>
       </Row>
       <Row>
-        <Col sm={1}></Col>
+        <Col sm={1} />
         <Col sm={6}>
           <CustomToggle
             name="isps"
@@ -81,7 +87,7 @@ function App({ comparison, actions }) {
       </Row>
       <Row>
         <Col md={12}>
-          <BarChart />
+          <BarChart fetchChartData={actions.fetchChartData} />
         </Col>
       </Row>
     </div>

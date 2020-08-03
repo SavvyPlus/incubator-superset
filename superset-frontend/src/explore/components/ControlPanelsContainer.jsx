@@ -56,7 +56,7 @@ const Styles = styled.div`
     flex: 0 0 1;
   }
   .tab-content {
-    overflow: auto;
+    // overflow: auto;
     flex: 1 1 100%;
   }
 `;

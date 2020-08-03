@@ -24,9 +24,10 @@ export default function (bootstrapData) {
     comparison: {
       region: 'NSW',
       fuel: 'Wind',
-      version: 1,
+      version: projectList[0].version,
       isp: 'Counterfactual',
       scenario: 'Central',
+      projectList,
     },
     messageToasts: [],
   };

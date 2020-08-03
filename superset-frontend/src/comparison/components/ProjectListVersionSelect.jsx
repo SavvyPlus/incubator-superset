@@ -14,7 +14,11 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export default function ProjectListVersionSelect({ version, setVersion }) {
+export default function ProjectListVersionSelect({
+  version,
+  setVersion,
+  projectList,
+}) {
   const classes = useStyles();
 
   const handleChange = event => {
@@ -23,10 +27,9 @@ export default function ProjectListVersionSelect({ version, setVersion }) {
   return (
     <FormControl variant="outlined" className={classes.formControl}>
       <Select value={version} onChange={handleChange}>
-        <MenuItem value="1">1</MenuItem>
-        <MenuItem value="2">2</MenuItem>
-        <MenuItem value="3">3</MenuItem>
-        <MenuItem value="4">4</MenuItem>
+        {projectList.map(pl => (
+          <MenuItem value={pl.version}>{pl.note}</MenuItem>
+        ))}
       </Select>
     </FormControl>
   );

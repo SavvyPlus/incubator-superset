@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactEcharts from 'echarts-for-react';
 
-function BarChart() {
+function BarChart({ fetchChartData }) {
+  useEffect(() => {
+    fetchChartData('SA1', '23', 2);
+  }, []);
+
   return (
     <div>
       <ReactEcharts

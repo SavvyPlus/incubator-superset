@@ -56,18 +56,19 @@ export function fetchChartDataSuccuss(res) {
 }
 
 export const FETCH_CHART_DATA_FAILED = 'FETCH_CHART_DATA_FAILED';
-export function fetchChartDataFailed(data) {
-  return { type: FETCH_CHART_DATA_FAILED, data };
+export function fetchChartDataFailed() {
+  return { type: FETCH_CHART_DATA_FAILED };
 }
 
-export function fetchCHARTData(CHART, version) {
+export function fetchChartData(region, fuel, version) {
+  console.log(region, fuel, version);
   return dispatch => {
     return SupersetClient.get({
-      endpoint: `/edit-assumption/get-data/${CHART}/data/${version}`,
+      endpoint: `/assumption-book/get-data/`,
     })
       .then(({ json }) => {
         dispatch(fetchChartDataSuccuss(json));
-        dispatch(addSuccessToast(t('Table data was fetched successfully')));
+        dispatch(addSuccessToast(t('Chart data was fetched successfully')));
       })
       .catch(() => {
         dispatch(fetchChartDataFailed());
