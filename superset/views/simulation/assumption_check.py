@@ -128,7 +128,7 @@ class AssumptionBookModelView(
             ),
         )
 
-    @expose("/get-data/")
+    @expose("/get-data/<state>/<technology>/")
     def get_data(self):
         # form = request.form
         # topic =
@@ -182,8 +182,19 @@ class AssumptionBookModelView(
         for row in result:
             row_list.append(list(row))
         df = pd.DataFrame(row_list, columns=['region', 'technology','year','value', 'source'])
-        df['region'] = df['region'].map(lambda x: x[:-1])
+        df['value'] = df['value'].map(lambda x: float(x))
+        max_year, min_year = df['year'].max(), df['year'].min()
+
+        full_df = pd.DataFrame(columns=['year'])
+        for index, year in zip(range(max_year-min_year+1), range(max_year, min_year-1, -1)):
+            full_df.loc[index, 'year'] = year
+        df = pd.merge(df, full_df, how='outer', on='year').sort_values('year', ascending=False)
         # Aggregate generation of each year starting from last year
         for index, row in df.iterrows():
+            df.loc[index, 'region'] = state
+            df.loc[index, 'tecnology'] = fuel_type
             df.loc[index, 'value'] = float(df[df['year'] <= row['year']]['value'].sum())
-        return list(df.columns), df.iloc[::-1].to_dict(orient='records')
+            df.loc[index, 'source'] = 'Empower'
+        # Make region from xx1 to xx format
+        df['region'] = df['region'].map(lambda x: x[:-1])
+        return list(df.columns), df.sort_values('year').to_dict(orient='records')
