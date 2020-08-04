@@ -48,6 +48,8 @@ export default function comparisonReducer(state = {}, action) {
       return {
         ...state,
         fetching: true,
+        error: false,
+        errorMsg: '',
       };
     },
     [FETCH_CHART_DATA_SUCCESS]() {
@@ -59,7 +61,7 @@ export default function comparisonReducer(state = {}, action) {
       };
     },
     [FETCH_CHART_DATA_FAILED]() {
-      return { ...state, fetching: false };
+      return { ...state, fetching: false, error: true, errorMsg: action.msg };
     },
   };
 

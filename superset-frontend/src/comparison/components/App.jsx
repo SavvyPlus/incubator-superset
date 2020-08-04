@@ -92,8 +92,12 @@ function App({ comparison, actions }) {
             data={comparison.data}
             region={comparison.region}
             fuel={comparison.fuel}
+            isp={comparison.isp}
+            scenario={comparison.scenario}
             version={comparison.version}
             fetching={comparison.fetching}
+            error={comparison.error}
+            errorMsg={comparison.errorMsg}
             fetchChartData={actions.fetchChartData}
           />
         </Col>
