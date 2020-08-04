@@ -264,6 +264,7 @@ def process_assumption_to_df_dict(file_path):
     return df_dict
 
 def save_as_new_tab_version(db, df, tab_model, tab_data_model, note=None, scenario=None, **kwargs):
+    from sqlalchemy import exc
     new_tab_def = tab_model()
     new_tab_def.set_note(note)
     if scenario:
@@ -281,7 +282,14 @@ def save_as_new_tab_version(db, df, tab_model, tab_data_model, note=None, scenar
     new_ver = new_tab_def.get_version()
     ver_col_name = tab_data_model.get_version_col_name()
     df[ver_col_name] = new_ver
-    df.to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
+    # df.to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
+    for i in range(len(df)):
+        try:
+            df.iloc[i:i+1].to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
+        except exc.IntegrityError:
+            pass
+
+
     return new_tab_def
 
 def check_assumption_processed(run_id):
