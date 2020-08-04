@@ -128,15 +128,15 @@ class AssumptionBookModelView(
             ),
         )
 
-    @expose("/get-data/<state>/<technology>/")
-    def get_data(self, state, technology):
+    @expose("/get-data/<state>/<technology>/<project_id>/<isp_case>/<isp_scen>/<isp_dev_path>/")
+    def get_data(self, state, technology, project_id, isp_case, isp_scen, isp_dev_path=None):
         # form = request.form
         # topic =
-        header, empower_data = self.get_project_list_data('SA1', 'Solar', 1)
+        header, empower_data = self.get_project_list_data(state, technology, project_id)
         # Choose the latest version of the isp scenario
-        isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case='Counterfactual',scenario='Central').order_by(
+        isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case=isp_case,scenario=isp_scen).order_by(
             ISPCapacityDefinition.id.desc()).first()
-        tab_data = db.session.query(ISPCapacity).filter_by(isp_cap_def_id=isp_version.id, technology='Solar', region='SA').all()
+        tab_data = db.session.query(ISPCapacity).filter_by(isp_cap_def_id=isp_version.id, technology=technology, region=state[:-1]).all()
         isp_data = []
         for data_row in tab_data:
             isp_data.append(data_row.get_dict())
