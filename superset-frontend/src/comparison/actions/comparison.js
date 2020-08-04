@@ -18,7 +18,7 @@
  */
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
-import { addSuccessToast, addDangerToast } from '../../messageToasts/actions';
+import { addDangerToast } from '../../messageToasts/actions';
 
 export const SET_REGION = 'SET_REGION';
 export function setRegion(region) {
