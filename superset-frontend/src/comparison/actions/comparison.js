@@ -18,7 +18,8 @@
  */
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
-import { addDangerToast } from '../../messageToasts/actions';
+// import { addDangerToast } from '../../messageToasts/actions';
+import getClientErrorObject from '../../utils/getClientErrorObject';
 
 export const SET_REGION = 'SET_REGION';
 export function setRegion(region) {
@@ -56,26 +57,28 @@ export function fetchChartDataSuccuss(res) {
 }
 
 export const FETCH_CHART_DATA_FAILED = 'FETCH_CHART_DATA_FAILED';
-export function fetchChartDataFailed() {
-  return { type: FETCH_CHART_DATA_FAILED };
+export function fetchChartDataFailed(msg) {
+  return { type: FETCH_CHART_DATA_FAILED, msg };
 }
 
-export function fetchChartData(region, fuel, version) {
-  console.log(region, fuel, version);
+export function fetchChartData(region, fuel, version, ispCase, ispScen) {
   return dispatch => {
     dispatch(fetchChartDataStarted());
     return SupersetClient.get({
-      endpoint: `/assumption-book/get-data/`,
+      endpoint: `/assumption-book/get-data/${region}/${fuel}/${version}/${ispCase}/${ispScen}/0/`,
     })
       .then(({ json }) => {
         dispatch(fetchChartDataSuccuss(json));
         // dispatch(addSuccessToast(t('Chart data was fetched successfully')));
       })
-      .catch(() => {
-        dispatch(fetchChartDataFailed());
-        dispatch(
-          addDangerToast(t('Sorry, there was an error fetching the data')),
-        );
+      .catch(response => {
+        getClientErrorObject(response).then(({ error }) => {
+          dispatch(fetchChartDataFailed(t(error)));
+
+          // dispatch(
+          //   addDangerToast(t('Sorry, there was an error fetching the data')),
+          // );
+        });
       });
   };
 }

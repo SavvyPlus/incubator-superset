@@ -128,15 +128,32 @@ class AssumptionBookModelView(
             ),
         )
 
-    @expose("/get-data/")
-    def get_data(self):
+    @expose("/get-data/<state>/<technology>/<project_id>/<isp_case>/<isp_scen>/<isp_dev_path>/")
+    def get_data(self, state, technology, project_id, isp_case, isp_scen, isp_dev_path=None):
         # form = request.form
         # topic =
-        header, empower_data = self.get_project_list_data('SA1', 'Solar', 1)
+        header, empower_data = self.get_project_list_data(state, technology, project_id)
+        if len(empower_data) == 0:
+            return json_error_response(
+                f"{technology} data of {state[:-1]} not found. "
+                f"Please upload first."
+            )
+
         # Choose the latest version of the isp scenario
-        isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case='Counterfactual',scenario='Central').order_by(
+        isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case=isp_case,
+                                                                        scenario=isp_scen).order_by(
             ISPCapacityDefinition.id.desc()).first()
-        tab_data = db.session.query(ISPCapacity).filter_by(isp_cap_def_id=isp_version.id, technology='Solar', region='SA').all()
+
+        tab = None
+        if isp_version is None:
+            return json_error_response(
+                "Data under current ISP not found. Please upload first."
+            )
+        else:
+            tab_data = db.session.query(ISPCapacity).filter_by(
+                isp_cap_def_id=isp_version.id, technology=technology,
+                region=state[:-1]).all()
+
         isp_data = []
         for data_row in tab_data:
             isp_data.append(data_row.get_dict())
@@ -181,9 +198,23 @@ class AssumptionBookModelView(
         row_list = []
         for row in result:
             row_list.append(list(row))
+
+        if len(row_list) == 0:
+            return [], []
+
         df = pd.DataFrame(row_list, columns=['region', 'technology','year','value', 'source'])
-        df['region'] = df['region'].map(lambda x: x[:-1])
+        df['value'] = df['value'].map(lambda x: float(x))
+        max_year, min_year = df['year'].max(), df['year'].min()
+        full_df = pd.DataFrame(columns=['year'])
+        for index, year in zip(range(max_year-min_year+1), range(max_year, min_year-1, -1)):
+            full_df.loc[index, 'year'] = year
+        df = pd.merge(df, full_df, how='outer', on='year').sort_values('year', ascending=False)
         # Aggregate generation of each year starting from last year
         for index, row in df.iterrows():
+            df.loc[index, 'region'] = state
+            df.loc[index, 'tecnology'] = fuel_type
             df.loc[index, 'value'] = float(df[df['year'] <= row['year']]['value'].sum())
-        return list(df.columns), df.iloc[::-1].to_dict(orient='records')
+            df.loc[index, 'source'] = 'Empower'
+        # Make region from xx1 to xx format
+        df['region'] = df['region'].map(lambda x: x[:-1])
+        return list(df.columns), df.sort_values('year').to_dict(orient='records')
