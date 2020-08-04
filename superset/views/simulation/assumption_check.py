@@ -133,10 +133,27 @@ class AssumptionBookModelView(
         # form = request.form
         # topic =
         header, empower_data = self.get_project_list_data(state, technology, project_id)
+        if len(empower_data) == 0:
+            return json_error_response(
+                f"{technology} data of {state[:-1]} not found. "
+                f"Please upload first."
+            )
+
         # Choose the latest version of the isp scenario
-        isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case=isp_case,scenario=isp_scen).order_by(
+        isp_version = db.session.query(ISPCapacityDefinition).filter_by(isp_case=isp_case,
+                                                                        scenario=isp_scen).order_by(
             ISPCapacityDefinition.id.desc()).first()
-        tab_data = db.session.query(ISPCapacity).filter_by(isp_cap_def_id=isp_version.id, technology=technology, region=state[:-1]).all()
+
+        tab = None
+        if isp_version is None:
+            return json_error_response(
+                "Data under current ISP not found. Please upload first."
+            )
+        else:
+            tab_data = db.session.query(ISPCapacity).filter_by(
+                isp_cap_def_id=isp_version.id, technology=technology,
+                region=state[:-1]).all()
+
         isp_data = []
         for data_row in tab_data:
             isp_data.append(data_row.get_dict())
@@ -181,10 +198,13 @@ class AssumptionBookModelView(
         row_list = []
         for row in result:
             row_list.append(list(row))
+
+        if len(row_list) == 0:
+            return [], []
+
         df = pd.DataFrame(row_list, columns=['region', 'technology','year','value', 'source'])
         df['value'] = df['value'].map(lambda x: float(x))
         max_year, min_year = df['year'].max(), df['year'].min()
-
         full_df = pd.DataFrame(columns=['year'])
         for index, year in zip(range(max_year-min_year+1), range(max_year, min_year-1, -1)):
             full_df.loc[index, 'year'] = year

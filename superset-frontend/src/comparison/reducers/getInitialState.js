@@ -31,6 +31,8 @@ export default function (bootstrapData) {
       years: [],
       data: [],
       fetching: false,
+      error: false,
+      errorMsg: '',
     },
     messageToasts: [],
   };
