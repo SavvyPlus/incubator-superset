@@ -41,6 +41,9 @@ const defaultProps = {
       name: 'main',
     },
   },
+  actions: {
+    setDatasource: sinon.spy(),
+  },
   onChange: sinon.spy(),
 };
 
@@ -59,27 +62,27 @@ describe('DatasourceControl', () => {
 
   it('renders a Modal', () => {
     const wrapper = setup();
-    expect(wrapper.find(DatasourceModal)).toHaveLength(1);
+    expect(wrapper.find(DatasourceModal)).toExist();
   });
 
   it('renders a ChangeDatasourceModal', () => {
     const wrapper = setup();
-    expect(wrapper.find(ChangeDatasourceModal)).toHaveLength(1);
+    expect(wrapper.find(ChangeDatasourceModal)).toExist();
   });
 
   it('show or hide Edit Datasource option', () => {
     let wrapper = setup();
-    expect(wrapper.find('#datasource_menu')).toHaveLength(1);
+    expect(wrapper.find('#datasource_menu')).toExist();
     expect(wrapper.find('#datasource_menu').dive().find(MenuItem)).toHaveLength(
-      2,
+      3,
     );
 
     wrapper = setup({
-      onDatasourceSave: () => {},
+      isEditable: false,
     });
-    expect(wrapper.find('#datasource_menu')).toHaveLength(1);
+    expect(wrapper.find('#datasource_menu')).toExist();
     expect(wrapper.find('#datasource_menu').dive().find(MenuItem)).toHaveLength(
-      3,
+      2,
     );
   });
 });

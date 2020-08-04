@@ -21,11 +21,12 @@ import styled from '@superset-ui/style';
 
 interface Props {
   position?: string;
+  width?: number;
 }
 
 const LoaderImg = styled.img`
   z-index: 1000;
-  width: 50px;
+  width: ${props => props.width}px;
   position: relative;
   margin: 10px;
   &.inline {
@@ -41,9 +42,10 @@ const LoaderImg = styled.img`
     transform: translate(-50%, -50%);
   }
 `;
-export default function Loading({ position = 'inline' }: Props) {
+export default function Loading({ position = 'inline', width = 50 }: Props) {
   return (
     <LoaderImg
+      width={width}
       className={`loading ${position}`}
       alt="Loading..."
       src="/static/assets/images/preloader.gif"

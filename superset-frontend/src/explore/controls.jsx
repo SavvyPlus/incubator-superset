@@ -137,7 +137,7 @@ const groupByControl = {
   valueRenderer: c => <ColumnOption column={c} />,
   valueKey: 'column_name',
   allowAll: true,
-  filterOption: ({ label, value, data: opt }, text) =>
+  filterOption: ({ data: opt }, text) =>
     (opt.column_name &&
       opt.column_name.toLowerCase().indexOf(text.toLowerCase()) >= 0) ||
     (opt.verbose_name &&
@@ -205,9 +205,9 @@ export const controls = {
     label: t('Datasource'),
     default: null,
     description: null,
-    mapStateToProps: (state, control, actions) => ({
-      datasource: state.datasource,
-      onDatasourceSave: actions ? actions.setDatasource : () => {},
+    mapStateToProps: ({ datasource }) => ({
+      datasource,
+      isEditable: !!datasource,
     }),
   },
 
@@ -690,7 +690,9 @@ export const controls = {
     visibility(props) {
       const {
         time_range: timeRange,
+        // eslint-disable-next-line no-unused-vars
         viz_type: vizType,
+        // eslint-disable-next-line no-unused-vars
         show_trend_line: showTrendLine,
       } = props.form_data;
       // only display this option when a time range is selected

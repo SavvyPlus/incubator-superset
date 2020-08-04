@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 # pylint: disable=ungrouped-imports
 import humanize
 import pandas as pd
+import pytz
 import sqlalchemy as sa
 import yaml
 from flask import escape, g, Markup
@@ -33,9 +34,9 @@ from flask_appbuilder.models.mixins import AuditMixin
 from flask_appbuilder.security.sqla.models import User
 from sqlalchemy import and_, or_, UniqueConstraint
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import MultipleResultsFound
 
+from superset.extensions import db
 from superset.utils.core import QueryStatus
 
 logger = logging.getLogger(__name__)
@@ -126,7 +127,6 @@ class ImportMixin:
     @classmethod
     def import_from_dict(  # pylint: disable=too-many-arguments,too-many-branches,too-many-locals
         cls,
-        session: Session,
         dict_rep: Dict[Any, Any],
         parent: Optional[Any] = None,
         recursive: bool = True,
@@ -177,7 +177,7 @@ class ImportMixin:
 
         # Check if object already exists in DB, break if more than one is found
         try:
-            obj_query = session.query(cls).filter(and_(*filters))
+            obj_query = db.session.query(cls).filter(and_(*filters))
             obj = obj_query.one_or_none()
         except MultipleResultsFound as ex:
             logger.error(
@@ -195,7 +195,7 @@ class ImportMixin:
             logger.info("Importing new %s %s", obj.__tablename__, str(obj))
             if cls.export_parent and parent:
                 setattr(obj, cls.export_parent, parent)
-            session.add(obj)
+            db.session.add(obj)
         else:
             is_new_obj = False
             logger.info("Updating %s %s", obj.__tablename__, str(obj))
@@ -213,7 +213,7 @@ class ImportMixin:
                 for c_obj in new_children.get(child, []):
                     added.append(
                         child_class.import_from_dict(
-                            session=session, dict_rep=c_obj, parent=obj, sync=sync
+                            dict_rep=c_obj, parent=obj, sync=sync
                         )
                     )
                 # If children should get synced, delete the ones that did not
@@ -227,11 +227,11 @@ class ImportMixin:
                         for k in back_refs.keys()
                     ]
                     to_delete = set(
-                        session.query(child_class).filter(and_(*delete_filters))
+                        db.session.query(child_class).filter(and_(*delete_filters))
                     ).difference(set(added))
                     for o in to_delete:
                         logger.info("Deleting %s %s", child, str(obj))
-                        session.delete(o)
+                        db.session.delete(o)
 
         return obj
 
@@ -365,8 +365,8 @@ class AuditMixinNullable(AuditMixin):
 
     @property
     def changed_by_name(self) -> str:
-        if self.created_by:
-            return escape("{}".format(self.created_by))
+        if self.changed_by:
+            return escape("{}".format(self.changed_by))
         return ""
 
     @renders("created_by")
@@ -380,6 +380,15 @@ class AuditMixinNullable(AuditMixin):
     @renders("changed_on")
     def changed_on_(self) -> Markup:
         return Markup(f'<span class="no-wrap">{self.changed_on}</span>')
+
+    @renders("changed_on")
+    def changed_on_delta_humanized(self) -> str:
+        return self.changed_on_humanized
+
+    @renders("changed_on")
+    def changed_on_utc(self) -> str:
+        # Convert naive datetime to UTC
+        return self.changed_on.astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%S.%f%z")
 
     @property
     def changed_on_humanized(self) -> str:

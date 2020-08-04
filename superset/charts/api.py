@@ -41,10 +41,9 @@ from superset.charts.commands.exceptions import (
     ChartUpdateFailedError,
 )
 from superset.charts.commands.update import UpdateChartCommand
-from superset.charts.dao import ChartDAO
 from superset.charts.filters import ChartFilter, ChartNameOrDescriptionFilter
 from superset.charts.schemas import (
-    CHART_DATA_SCHEMAS,
+    CHART_SCHEMAS,
     ChartDataQueryContextSchema,
     ChartPostSchema,
     ChartPutSchema,
@@ -84,7 +83,6 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "bulk_delete",  # not using RouteMethod since locally defined
         "data",
         "viz_types",
-        "datasources",
     }
     class_permission_name = "SliceModelView"
     show_columns = [
@@ -101,19 +99,17 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "cache_timeout",
     ]
     show_select_columns = show_columns + ["table.id"]
-
     list_columns = [
         "id",
         "slice_name",
         "url",
         "description",
-        "changed_by_fk",
-        "created_by_fk",
         "changed_by_name",
         "changed_by_url",
         "changed_by.first_name",
         "changed_by.last_name",
-        "changed_on",
+        "changed_on_utc",
+        "changed_on_delta_humanized",
         "datasource_id",
         "datasource_type",
         "datasource_name_text",
@@ -124,13 +120,13 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "params",
         "cache_timeout",
     ]
-
+    list_select_columns = list_columns + ["changed_on", "changed_by_fk"]
     order_columns = [
         "slice_name",
         "viz_type",
         "datasource_name",
-        "changed_by_fk",
-        "changed_on",
+        "changed_by.first_name",
+        "changed_on_delta_humanized",
     ]
     search_columns = (
         "slice_name",
@@ -154,7 +150,12 @@ class ChartRestApi(BaseSupersetModelRestApi):
 
     openapi_spec_tag = "Charts"
     """ Override the name set for this collection of endpoints """
-    openapi_spec_component_schemas = CHART_DATA_SCHEMAS
+    openapi_spec_component_schemas = CHART_SCHEMAS
+
+    apispec_parameter_schemas = {
+        "screenshot_query_schema": screenshot_query_schema,
+        "get_delete_ids_schema": get_delete_ids_schema,
+    }
     """ Add extra schemas to the OpenAPI components schema section """
     openapi_spec_methods = openapi_spec_methods_override
     """ Overrides GET methods OpenApi descriptions """
@@ -374,9 +375,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
             content:
               application/json:
                 schema:
-                  type: array
-                  items:
-                    type: integer
+                  $ref: '#/components/schemas/get_delete_ids_schema'
           responses:
             200:
               description: Charts bulk delete
@@ -419,7 +418,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
     @protect()
     @safe
     @statsd_metrics
-    def data(self) -> Response:
+    def data(self) -> Response:  # pylint: disable=too-many-return-statements
         """
         Takes a query context constructed in the client and returns payload
         data response for the given query.
@@ -462,13 +461,16 @@ class ChartRestApi(BaseSupersetModelRestApi):
             return self.response_400(message="Request is incorrect")
         except ValidationError as error:
             return self.response_400(
-                _("Request is incorrect: %(error)s", error=error.messages)
+                message=_("Request is incorrect: %(error)s", error=error.messages)
             )
         try:
             query_context.raise_for_access()
         except SupersetSecurityException:
             return self.response_401()
         payload = query_context.get_payload()
+        for query in payload:
+            if query.get("error"):
+                return self.response_400(message=f"Error: {query['error']}")
         result_format = query_context.result_format
         if result_format == ChartDataResultFormat.CSV:
             # return the first result
@@ -488,7 +490,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
             resp.headers["Content-Type"] = "application/json; charset=utf-8"
             return resp
 
-        raise self.response_400(message=f"Unsupported result_format: {result_format}")
+        return self.response_400(message=f"Unsupported result_format: {result_format}")
 
     @expose("/<pk>/cache_screenshot/", methods=["GET"])
     @protect()
@@ -496,33 +498,28 @@ class ChartRestApi(BaseSupersetModelRestApi):
     @safe
     @statsd_metrics
     def cache_screenshot(self, pk: int, **kwargs: Dict[str, bool]) -> WerkzeugResponse:
-        """Get Chart screenshot
+        """
         ---
         get:
-          description: Compute or get already computed screenshot from cache.
+          description: Compute and cache a screenshot.
           parameters:
           - in: path
             schema:
               type: integer
             name: pk
-          - in: path
-            schema:
-              type: string
-            name: sha
+          - in: query
+            name: q
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/screenshot_query_schema'
           responses:
             200:
-              description: Chart thumbnail image
+              description: Chart async result
               content:
                 application/json:
                   schema:
-                    type: object
-                    properties:
-                      cache_key:
-                        type: string
-                      chart_url:
-                        type: string
-                      image_url:
-                        type: string
+                    $ref: "#/components/schemas/ChartCacheScreenshotResponseSchema"
             302:
               description: Redirects to the current digest
             400:
@@ -646,7 +643,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
           responses:
             200:
               description: Chart thumbnail image
-              /content:
+              content:
                image/*:
                  schema:
                    type: string
@@ -694,57 +691,3 @@ class ChartRestApi(BaseSupersetModelRestApi):
         return Response(
             FileWrapper(screenshot), mimetype="image/png", direct_passthrough=True
         )
-
-    @expose("/datasources", methods=["GET"])
-    @protect()
-    @safe
-    def datasources(self) -> Response:
-        """Get available datasources
-        ---
-        get:
-          description: Get available datasources.
-          responses:
-            200:
-              description: charts unique datasource data
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      count:
-                        type: integer
-                      result:
-                        type: object
-                        properties:
-                          label:
-                            type: string
-                          value:
-                            type: object
-                            properties:
-                              database_id:
-                                type: integer
-                              database_type:
-                                type: string
-            400:
-              $ref: '#/components/responses/400'
-            401:
-              $ref: '#/components/responses/401'
-            404:
-              $ref: '#/components/responses/404'
-            422:
-              $ref: '#/components/responses/422'
-            500:
-              $ref: '#/components/responses/500'
-        """
-        datasources = ChartDAO.fetch_all_datasources()
-        if not datasources:
-            return self.response(200, count=0, result=[])
-
-        result = [
-            {
-                "label": str(ds),
-                "value": {"datasource_id": ds.id, "datasource_type": ds.type},
-            }
-            for ds in datasources
-        ]
-        return self.response(200, count=len(result), result=result)

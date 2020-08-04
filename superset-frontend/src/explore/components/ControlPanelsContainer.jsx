@@ -22,15 +22,13 @@ import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Alert, Tab, Tabs } from 'react-bootstrap';
-import { isPlainObject } from 'lodash';
 import { t } from '@superset-ui/translation';
-import { getChartControlPanelRegistry } from '@superset-ui/chart';
-import { sharedControls } from '@superset-ui/chart-controls';
+import styled from '@superset-ui/style';
 
 import ControlPanelSection from './ControlPanelSection';
 import ControlRow from './ControlRow';
 import Control from './Control';
-import controlConfigs from '../controls';
+// import controlConfigs from '../controls';
 import { sectionsToRender } from '../controlUtils';
 import * as exploreActions from '../actions/exploreActions';
 
@@ -43,6 +41,25 @@ const propTypes = {
   form_data: PropTypes.object.isRequired,
   isDatasourceMetaLoading: PropTypes.bool.isRequired,
 };
+
+const Styles = styled.div`
+  max-height: 100%;
+  .remove-alert {
+    cursor: 'pointer';
+  }
+  #controlSections {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+  }
+  .nav-tabs {
+    flex: 0 0 1;
+  }
+  .tab-content {
+    // overflow: auto;
+    flex: 1 1 100%;
+  }
+`;
 
 class ControlPanelsContainer extends React.Component {
   constructor(props) {
@@ -65,17 +82,16 @@ class ControlPanelsContainer extends React.Component {
   }
 
   renderControl({ name, config }) {
-    const { actions, controls, exploreState, form_data: formData } = this.props;
+    const { actions, controls, form_data: formData } = this.props;
     const { visibility } = config;
+
     // If the control item is not an object, we have to look up the control data from
     // the centralized controls file.
     // When it is an object we read control data straight from `config` instead
     const controlData = {
-      ...controls[name],
       ...config,
+      ...controls[name],
       name,
-      // apply current value in formData
-      value: formData[name],
     };
     const {
       validationErrors,
@@ -176,6 +192,7 @@ class ControlPanelsContainer extends React.Component {
       </ControlPanelSection>
     );
   }
+
   render() {
     const { viz_type } = this.props.form_data;
     const allSectionsToRender = this.sectionsToRender();
@@ -238,30 +255,30 @@ class ControlPanelsContainer extends React.Component {
     });
 
     return (
-      <div className="scrollbar-container">
-        <div className="scrollbar-content">
-          {this.props.alert && (
-            <Alert bsStyle="warning">
-              {this.props.alert}
-              <i
-                className="fa fa-close pull-right"
-                onClick={this.removeAlert}
-                style={{ cursor: 'pointer' }}
-              />
-            </Alert>
-          )}
-          <Tabs id="controlSections">
-            <Tab eventKey="query" title={t('Data')}>
-              {querySectionsToRender.map(this.renderControlPanelSection)}
+      <Styles>
+        {this.props.alert && (
+          <Alert bsStyle="warning">
+            {this.props.alert}
+            <i
+              role="button"
+              tabIndex={0}
+              className="fa fa-close pull-right"
+              onClick={this.removeAlert}
+              style={{ cursor: 'pointer' }}
+            />
+          </Alert>
+        )}
+        <Tabs id="controlSections">
+          <Tab eventKey="query" title={t('Data')}>
+            {querySectionsToRender.map(this.renderControlPanelSection)}
+          </Tab>
+          {displaySectionsToRender.length > 0 && (
+            <Tab eventKey="display" title={t('Customize')}>
+              {displaySectionsToRender.map(this.renderControlPanelSection)}
             </Tab>
-            {displaySectionsToRender.length > 0 && (
-              <Tab eventKey="display" title={t('Customize')}>
-                {displaySectionsToRender.map(this.renderControlPanelSection)}
-              </Tab>
-            )}
-          </Tabs>
-        </div>
-      </div>
+          )}
+        </Tabs>
+      </Styles>
     );
   }
 }

@@ -18,8 +18,8 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Panel } from 'react-bootstrap';
 import { ParentSize } from '@vx/responsive';
+import styled from '@superset-ui/style';
 import { chartPropShape } from '../../dashboard/util/propShapes';
 import ChartContainer from '../../chart/ChartContainer';
 import ExploreChartHeader from './ExploreChartHeader';
@@ -49,6 +49,19 @@ const propTypes = {
   triggerRender: PropTypes.bool,
 };
 
+const Styles = styled.div`
+  background-color: ${({ theme }) => theme.colors.grayscale.light5};
+  padding: ${({ theme }) => theme.gridUnit * 4}px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-content: stretch;
+  div:last-of-type {
+    flex-basis: 100%;
+  }
+`;
+
 class ExploreChartPanel extends React.PureComponent {
   renderChart() {
     const { chart } = this.props;
@@ -72,6 +85,7 @@ class ExploreChartPanel extends React.PureComponent {
               errorMessage={this.props.errorMessage}
               formData={this.props.form_data}
               onQuery={this.props.onQuery}
+              owners={this.props?.slice?.owners}
               queryResponse={chart.queryResponse}
               refreshOverlayVisible={this.props.refreshOverlayVisible}
               setControlValue={this.props.actions.setControlValue}
@@ -102,6 +116,7 @@ class ExploreChartPanel extends React.PureComponent {
         addHistory={this.props.addHistory}
         can_overwrite={this.props.can_overwrite}
         can_download={this.props.can_download}
+        chartHeight={this.props.height}
         isStarred={this.props.isStarred}
         slice={this.props.slice}
         sliceName={this.props.sliceName}
@@ -111,13 +126,12 @@ class ExploreChartPanel extends React.PureComponent {
         chart={this.props.chart}
       />
     );
+
     return (
-      <div className="chart-container">
-        <Panel style={{ height: this.props.height }}>
-          <Panel.Heading>{header}</Panel.Heading>
-          <Panel.Body>{this.renderChart()}</Panel.Body>
-        </Panel>
-      </div>
+      <Styles className="chart-container">
+        <div>{header}</div>
+        <div>{this.renderChart()}</div>
+      </Styles>
     );
   }
 }

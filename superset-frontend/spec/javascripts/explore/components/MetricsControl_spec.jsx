@@ -65,7 +65,7 @@ const sumValueAdhocMetric = new AdhocMetric({
 describe('MetricsControl', () => {
   it('renders an OnPasteSelect', () => {
     const { wrapper } = setup();
-    expect(wrapper.find(OnPasteSelect)).toHaveLength(1);
+    expect(wrapper.find(OnPasteSelect)).toExist();
   });
 
   describe('constructor', () => {
@@ -85,7 +85,7 @@ describe('MetricsControl', () => {
         { optionName: '_col_value', type: 'DOUBLE', column_name: 'value' },
         ...Object.keys(AGGREGATES).map(aggregate => ({
           aggregate_name: aggregate,
-          optionName: '_aggregate_' + aggregate,
+          optionName: `_aggregate_${aggregate}`,
         })),
         {
           optionName: 'sum__value',

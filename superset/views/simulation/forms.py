@@ -147,14 +147,14 @@ class SimulationForm(DynamicForm):
         _("Project"),
         query_factory=lambda: db.session().query(sim_models.Project),
         allow_blank=False,
-        widget=Select2Widget(),
+        widget=Select2Widget(style=u"width:100%"),
         validators=[DataRequired()],
     )
     assumption = QuerySelectField(
         _("Assumption"),
         query_factory=lambda: db.session().query(sim_models.Assumption),
         allow_blank=False,
-        widget=Select2Widget(),
+        widget=Select2Widget(style=u"width:100%"),
         validators=[DataRequired()],
     )
     description = StringField(
@@ -177,7 +177,7 @@ class SimulationForm(DynamicForm):
             ("9", "9"),
             ("10", "10"),
         ],
-        widget=Select2Widget(),
+        widget=Select2Widget(style=u"width:100%"),
         validators=[DataRequired()],
     )
     report_type = QuerySelectMultipleField(

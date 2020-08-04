@@ -177,17 +177,20 @@ class Slice(
             data["error"] = str(ex)
         return {
             "cache_timeout": self.cache_timeout,
+            "changed_on": self.changed_on.isoformat(),
+            "changed_on_humanized": self.changed_on_humanized,
             "datasource": self.datasource_name,
             "description": self.description,
             "description_markeddown": self.description_markeddown,
             "edit_url": self.edit_url,
             "form_data": self.form_data,
+            "modified": self.modified(),
+            "owners": [
+                f"{owner.first_name} {owner.last_name}" for owner in self.owners
+            ],
             "slice_id": self.id,
             "slice_name": self.slice_name,
             "slice_url": self.slice_url,
-            "modified": self.modified(),
-            "changed_on_humanized": self.changed_on_humanized,
-            "changed_on": self.changed_on.isoformat(),
         }
 
     @property
@@ -266,7 +269,7 @@ class Slice(
 
     @property
     def changed_by_url(self) -> str:
-        return f"/superset/profile/{self.created_by.username}"  # type: ignore
+        return f"/superset/profile/{self.changed_by.username}"  # type: ignore
 
     @property
     def icons(self) -> str:
@@ -297,7 +300,6 @@ class Slice(
         :returns: The resulting id for the imported slice
         :rtype: int
         """
-        session = db.session
         make_transient(slc_to_import)
         slc_to_import.dashboards = []
         slc_to_import.alter_params(remote_id=slc_to_import.id, import_time=import_time)
@@ -306,7 +308,6 @@ class Slice(
         slc_to_import.reset_ownership()
         params = slc_to_import.params_dict
         datasource = ConnectorRegistry.get_datasource_by_name(
-            session,
             slc_to_import.datasource_type,
             params["datasource_name"],
             params["schema"],
@@ -315,11 +316,11 @@ class Slice(
         slc_to_import.datasource_id = datasource.id  # type: ignore
         if slc_to_override:
             slc_to_override.override(slc_to_import)
-            session.flush()
+            db.session.flush()
             return slc_to_override.id
-        session.add(slc_to_import)
+        db.session.add(slc_to_import)
         logger.info("Final slice: %s", str(slc_to_import.to_json()))
-        session.flush()
+        db.session.flush()
         return slc_to_import.id
 
     @property

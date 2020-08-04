@@ -61,12 +61,11 @@ describe('ExploreChartHeader', () => {
   });
 
   it('renders', () => {
-    expect(wrapper.find(EditableTitle)).toHaveLength(1);
-    expect(wrapper.find(ExploreActionButtons)).toHaveLength(1);
+    expect(wrapper.find(EditableTitle)).toExist();
+    expect(wrapper.find(ExploreActionButtons)).toExist();
   });
 
   it('should update title but not save', () => {
-    const newTitle = 'New Chart Title';
     const editableTitle = wrapper.find(EditableTitle);
     expect(editableTitle.props().onSaveTitle).toBe(updateChartTitleStub);
   });

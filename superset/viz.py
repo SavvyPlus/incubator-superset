@@ -29,7 +29,18 @@ import uuid
 from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
 from itertools import product
-from typing import Any, cast, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+)
 
 import dataclasses
 import geohash
@@ -667,21 +678,19 @@ class TableViz(BaseViz):
         # Transform the data frame to adhere to the UI ordering of the columns and
         # metrics whilst simultaneously computing the percentages (via normalization)
         # for the percent metrics.
-        if not df.empty:
-            columns, percent_columns = self.columns, self.percent_columns
-            if DTTM_ALIAS in df and self.is_timeseries:
-                columns = [DTTM_ALIAS] + columns
-            df = pd.concat(
-                [
-                    df[columns],
-                    (
-                        df[percent_columns]
-                        .div(df[percent_columns].sum())
-                        .add_prefix("%")
-                    ),
-                ],
-                axis=1,
-            )
+        if df.empty:
+            return None
+
+        columns, percent_columns = self.columns, self.percent_columns
+        if DTTM_ALIAS in df and self.is_timeseries:
+            columns = [DTTM_ALIAS] + columns
+        df = pd.concat(
+            [
+                df[columns],
+                (df[percent_columns].div(df[percent_columns].sum()).add_prefix("%")),
+            ],
+            axis=1,
+        )
         return self.handle_js_int_overflow(
             dict(records=df.to_dict(orient="records"), columns=list(df.columns))
         )
@@ -742,6 +751,7 @@ class PivotTableViz(BaseViz):
     verbose_name = _("Pivot Table")
     credits = 'a <a href="https://github.com/airbnb/superset">Superset</a> original'
     is_timeseries = False
+    enforce_numerical_metrics = False
 
     def query_obj(self) -> QueryObjectDict:
         d = super().query_obj()
@@ -772,6 +782,18 @@ class PivotTableViz(BaseViz):
             raise QueryObjectValidationError(_("Group By' and 'Columns' can't overlap"))
         return d
 
+    @staticmethod
+    def get_aggfunc(
+        metric: str, df: pd.DataFrame, form_data: Dict[str, Any]
+    ) -> Union[str, Callable[[Any], Any]]:
+        aggfunc = form_data.get("pandas_aggfunc") or "sum"
+        if pd.api.types.is_numeric_dtype(df[metric]):
+            # Ensure that Pandas's sum function mimics that of SQL.
+            if aggfunc == "sum":
+                return lambda x: x.sum(min_count=1)
+        # only min and max work properly for non-numerics
+        return aggfunc if aggfunc in ("min", "max") else "max"
+
     def get_data(self, df: pd.DataFrame) -> VizData:
         if df.empty:
             return None
@@ -779,22 +801,21 @@ class PivotTableViz(BaseViz):
         if self.form_data.get("granularity") == "all" and DTTM_ALIAS in df:
             del df[DTTM_ALIAS]
 
-        aggfunc = self.form_data.get("pandas_aggfunc") or "sum"
-
-        # Ensure that Pandas's sum function mimics that of SQL.
-        if aggfunc == "sum":
-            aggfunc = lambda x: x.sum(min_count=1)
+        metrics = [utils.get_metric_name(m) for m in self.form_data["metrics"]]
+        aggfuncs: Dict[str, Union[str, Callable[[Any], Any]]] = {}
+        for metric in metrics:
+            aggfuncs[metric] = self.get_aggfunc(metric, df, self.form_data)
 
         groupby = self.form_data.get("groupby")
         columns = self.form_data.get("columns")
         if self.form_data.get("transpose_pivot"):
             groupby, columns = columns, groupby
-        metrics = [utils.get_metric_name(m) for m in self.form_data["metrics"]]
+
         df = df.pivot_table(
             index=groupby,
             columns=columns,
             values=metrics,
-            aggfunc=aggfunc,
+            aggfunc=aggfuncs,
             margins=self.form_data.get("pivot_margins"),
         )
 
@@ -858,6 +879,9 @@ class CalHeatmapViz(BaseViz):
     is_timeseries = True
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
+
         form_data = self.form_data
 
         data = {}
@@ -1621,16 +1645,24 @@ class MultipleBoxPlotViz(BoxPlotViz):
                                 'fromFormData': True,
                                 'label': 'State'})
 
+        d['metrics'].append({'expressionType': 'SQL',
+                                'sqlExpression': 'Percentile',
+                                'column': None,
+                                'aggregate': None,
+                                'hasCustomLabel': False,
+                                'fromFormData': True,
+                                'label': 'Percentile'})
+
         period_type = self.form_data['period_type_static_picker']
         if period_type:
             d['filter'].append({'col': 'DataGroup', 'op': '==',
                                 'val': period_type})
         # filter period
-        if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
+        if 'period_finyear_picker' in self.form_data and period_type == 'FinYear':
             periods = self.form_data['period_finyear_picker']
-        if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
+        if 'period_calyear_picker' in self.form_data and period_type == 'CalYear':
             periods = self.form_data['period_calyear_picker']
-        if self.form_data['period_quarterly_picker'] and period_type == 'Quarterly':
+        if 'period_quarterly_picker' in self.form_data and period_type == 'Quarterly':
             periods = self.form_data['period_quarterly_picker']
         if periods:
             d['filter'].append({'col': 'Period', 'op': 'in',
@@ -1640,7 +1672,7 @@ class MultipleBoxPlotViz(BoxPlotViz):
         d['filter'].append({
             'col': 'Percentile',
             'op': 'in',
-            'val': ['0', '0.25', '0.5', '0.75', '0.95', '1']
+            'val': ['0', '0.25', '0.50', '0.75', '1']
         })
 
         self.form_data['groupby'] = group_column
@@ -1749,6 +1781,8 @@ class BulletViz(NVD3Viz):
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
         df["metric"] = df[[utils.get_metric_name(self.metric)]]
         values = df["metric"].values
         return {
@@ -2196,13 +2230,45 @@ class DistributionPieViz(NVD3Viz):
     is_timeseries = False
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        def _label_aggfunc(labels: pd.Series) -> str:
+            """
+            Convert a single or multi column label into a single label, replacing
+            null values with `NULL_STRING` and joining multiple columns together
+            with a comma. Examples:
+
+            >>> _label_aggfunc(pd.Series(["abc"]))
+            'abc'
+            >>> _label_aggfunc(pd.Series([1]))
+            '1'
+            >>> _label_aggfunc(pd.Series(["abc", "def"]))
+            'abc, def'
+            >>> # note: integer floats are stripped of decimal digits
+            >>> _label_aggfunc(pd.Series([0.1, 2.0, 0.3]))
+            '0.1, 2, 0.3'
+            >>> _label_aggfunc(pd.Series([1, None, "abc", 0.8], dtype="object"))
+            '1, <NULL>, abc, 0.8'
+            """
+            label_list: List[str] = []
+            for label in labels:
+                if isinstance(label, str):
+                    label_recast = label
+                elif label is None or isinstance(label, float) and math.isnan(label):
+                    label_recast = NULL_STRING
+                elif isinstance(label, float) and label.is_integer():
+                    label_recast = str(int(label))
+                else:
+                    label_recast = str(label)
+                label_list.append(label_recast)
+
+            return ", ".join(label_list)
+
         if df.empty:
             return None
         metric = self.metric_labels[0]
-        df = df.pivot_table(index=self.groupby, values=[metric])
-        df.sort_values(by=metric, ascending=False, inplace=True)
-        df = df.reset_index()
-        df.columns = ["x", "y"]
+        df = pd.DataFrame(
+            {"x": df[self.groupby].agg(func=_label_aggfunc, axis=1), "y": df[metric]}
+        )
+        df.sort_values(by="y", ascending=False, inplace=True)
         return df.to_dict(orient="records")
 
 
@@ -2340,6 +2406,8 @@ class SunburstViz(BaseViz):
     )
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
         fd = self.form_data
         cols = fd.get("groupby") or []
         cols.extend(["m1", "m2"])
@@ -2390,6 +2458,8 @@ class SankeyViz(BaseViz):
         return qry
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
         source, target = self.groupby
         (value,) = self.metric_labels
         df.rename(
@@ -2449,6 +2519,8 @@ class DirectedForceViz(BaseViz):
         return qry
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
         df.columns = ["source", "target", "value"]
         return df.to_dict(orient="records")
 
@@ -2502,6 +2574,8 @@ class CountryMapViz(BaseViz):
         return qry
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
         fd = self.form_data
         cols = [fd.get("entity")]
         metric = self.metric_labels[0]
@@ -3590,6 +3664,8 @@ class PartitionViz(NVD3TimeSeriesViz):
         ]
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
         fd = self.form_data
         groups = fd.get("groupby", [])
         time_op = fd.get("time_series_option", "not_time")
@@ -3682,11 +3758,11 @@ class SpotPriceHistogramViz(BaseViz):
                                 'val': period_type})
         # filter period
         periods = []
-        if self.form_data['period_finyear_picker'] and period_type == 'FinYear':
+        if 'period_finyear_picker' in self.form_data and period_type == 'FinYear':
             periods = self.form_data['period_finyear_picker']
-        if self.form_data['period_calyear_picker'] and period_type == 'CalYear':
+        if 'period_calyear_picker' in self.form_data and period_type == 'CalYear':
             periods = self.form_data['period_calyear_picker']
-        if self.form_data['period_quarterly_picker'] and period_type == 'Quarterly':
+        if 'period_quarterly_picker' in self.form_data and period_type == 'Quarterly':
             periods = self.form_data['period_quarterly_picker']
         if periods:
             d['filter'].append({'col': 'Period', 'op': 'in',
@@ -3750,6 +3826,6 @@ viz_types = {
     if (
         inspect.isclass(o)
         and issubclass(o, BaseViz)
-        and o.viz_type not in config["VIZ_TYPE_BLACKLIST"]
+        and o.viz_type not in config["VIZ_TYPE_DENYLIST"]
     )
 }

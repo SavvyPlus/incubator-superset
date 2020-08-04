@@ -79,6 +79,7 @@ from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.sql.type_api import Variant
 from sqlalchemy.types import TEXT, TypeDecorator
 
+from superset.errors import ErrorLevel, SupersetErrorType
 from superset.exceptions import (
     CertificateException,
     SupersetException,
@@ -617,7 +618,12 @@ class timeout:  # pylint: disable=invalid-name
         self, signum: int, frame: Any
     ) -> None:
         logger.error("Process timed out")
-        raise SupersetTimeoutException(self.error_message)
+        raise SupersetTimeoutException(
+            error_type=SupersetErrorType.BACKEND_TIMEOUT_ERROR,
+            message=self.error_message,
+            level=ErrorLevel.ERROR,
+            extra={"timeout": self.seconds},
+        )
 
     def __enter__(self) -> None:
         try:
@@ -824,6 +830,13 @@ def get_email_address_list(address_string: str) -> List[str]:
     if isinstance(address_string, str):
         address_string_list = re.split(r",|\s|;", address_string)
     return [x.strip() for x in address_string_list if x.strip()]
+
+
+def get_email_address_str(address_string: str) -> str:
+    address_list = get_email_address_list(address_string)
+    address_list_str = ", ".join(address_list)
+
+    return address_list_str
 
 
 def choicify(values: Iterable[Any]) -> List[Tuple[Any, Any]]:
@@ -1476,3 +1489,12 @@ class TemporalType(str, Enum):
     TEXT = "TEXT"
     TIME = "TIME"
     TIMESTAMP = "TIMESTAMP"
+
+
+class PostProcessingContributionOrientation(str, Enum):
+    """
+    Calculate cell contibution to row/column total
+    """
+
+    ROW = "row"
+    COLUMN = "column"

@@ -19,7 +19,9 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, PropertyMock
 
 from flask_babel import gettext as __
+import pytest
 from selenium.common.exceptions import WebDriverException
+from slack import errors, WebClient
 
 from tests.test_app import app
 from superset import db
@@ -60,7 +62,7 @@ class TestSchedules(SupersetTestCase):
             )
 
             # Pick up a random slice and dashboard
-            slce = db.session.query(Slice).all()[0]
+            slce = db.session.query(Slice).filter_by(slice_name="Participants").all()[0]
             dashboard = db.session.query(Dashboard).all()[0]
 
             dashboard_schedule = DashboardEmailSchedule(**cls.common_data)
@@ -530,3 +532,11 @@ class TestSchedules(SupersetTestCase):
                 "title": "[Report]  Participants",
             },
         )
+
+
+def test_slack_client_compatibility():
+    c2 = WebClient()
+    # slackclient >2.5.0 raises TypeError: a bytes-like object is required, not 'str
+    # and requires to path a filepath instead of the bytes directly
+    with pytest.raises(errors.SlackApiError):
+        c2.files_upload(channels="#bogdan-test2", file=b"blabla", title="Test upload")

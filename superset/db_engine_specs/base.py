@@ -268,7 +268,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
     def get_time_grain_expressions(cls) -> Dict[Optional[str], str]:
         """
         Return a dict of all supported time grains including any potential added grains
-        but excluding any potentially blacklisted grains in the config file.
+        but excluding any potentially disabled grains in the config file.
 
         :return: All time grain expressions supported by the engine
         """
@@ -276,8 +276,8 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         time_grain_expressions = cls._time_grain_expressions.copy()
         grain_addon_expressions = config["TIME_GRAIN_ADDON_EXPRESSIONS"]
         time_grain_expressions.update(grain_addon_expressions.get(cls.engine, {}))
-        blacklist: List[str] = config["TIME_GRAIN_BLACKLIST"]
-        for key in blacklist:
+        denylist: List[str] = config["TIME_GRAIN_DENYLIST"]
+        for key in denylist:
             time_grain_expressions.pop(key)
         return time_grain_expressions
 
@@ -438,10 +438,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         """
         kwargs["encoding"] = "utf-8"
         kwargs["iterator"] = True
-        chunks = pd.io.excel.read_excel(
-            io=kwargs["filepath_or_buffer"], sheet_name=kwargs["sheet_name"]
-        )
-        df = pd.concat(chunk for chunk in chunks.values())
+        df = pd.read_excel(**kwargs)
         return df
 
     @staticmethod
@@ -513,7 +510,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         Create table from contents of a excel. Note: this method does not create
         metadata for the table.
         """
-        df = cls.excel_to_df(filepath_or_buffer=filename, **excel_to_df_kwargs,)
+        df = cls.excel_to_df(io=filename, **excel_to_df_kwargs,)
         engine = cls.get_engine(database)
         if table.schema:
             # only add schema when it is preset and non empty

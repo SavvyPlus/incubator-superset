@@ -703,6 +703,17 @@ npm run cypress open
 
 See [`superset-frontend/cypress_build.sh`](https://github.com/apache/incubator-superset/blob/master/superset-frontend/cypress_build.sh).
 
+### Storybook
+
+Superset includes a [Storybook](https://storybook.js.org/) to preview the layout/styling of various Superset components, and variations thereof. To open and view the Storybook:  
+
+```bash
+cd superset-frontend
+npm run storybool
+```
+
+When contributing new React components to Superset, please try to add a Story alongside the component's `jsx/tsx` file.
+
 ## Translating
 
 We use [Babel](http://babel.pocoo.org/en/latest/) to translate Superset.
@@ -828,6 +839,14 @@ npm run dev-server
 When `superset-ui` packages are linked with `npm link`, the dev server will automatically load a package's source code from its `/src` directory, instead of the built modules in `lib/` or `esm/`.
 
 Note that every time you do `npm install`, you will lose the symlink(s) and may have to run `npm link` again.
+
+
+### Visualization Plugins
+
+The topic of authoring new plugins, whether you'd like to contribute
+it back or not has been well documented in the
+[So, You Want to Build a Superset Viz Plugin...](https://preset.io/blog/2020-07-02-hello-world/) blog post
+
 
 ### Adding a DB migration
 

@@ -18,7 +18,10 @@
  */
 import { SupersetClientResponse } from '@superset-ui/connection';
 import { t } from '@superset-ui/translation';
-import { SupersetError } from 'src/components/ErrorMessage/types';
+import {
+  SupersetError,
+  ErrorTypeEnum,
+} from 'src/components/ErrorMessage/types';
 import COMMON_ERR_MESSAGES from './errorMessages';
 
 // The response always contains an error attribute, can contain anything from the
@@ -33,7 +36,7 @@ export type ClientErrorObject = {
 } & Partial<SupersetClientResponse>;
 
 export default function getClientErrorObject(
-  response: SupersetClientResponse | string,
+  response: SupersetClientResponse | (Response & { timeout: number }) | string,
 ): Promise<ClientErrorObject> {
   // takes a SupersetClientResponse as input, attempts to read response as Json if possible,
   // and returns a Promise that resolves to a plain object with error key and text value.
@@ -84,6 +87,39 @@ export default function getClientErrorObject(
               resolve({ ...responseObject, error: errorText });
             });
           });
+      } else if (
+        'statusText' in response &&
+        response.statusText === 'timeout' &&
+        'timeout' in response
+      ) {
+        resolve({
+          ...responseObject,
+          error: 'Request timed out',
+          errors: [
+            {
+              error_type: ErrorTypeEnum.FRONTEND_TIMEOUT_ERROR,
+              extra: {
+                timeout: response.timeout / 1000,
+                issue_codes: [
+                  {
+                    code: 1000,
+                    message: t(
+                      'Issue 1000 - The datasource is too large to query.',
+                    ),
+                  },
+                  {
+                    code: 1001,
+                    message: t(
+                      'Issue 1001 - The database is under an unusual load.',
+                    ),
+                  },
+                ],
+              },
+              level: 'error',
+              message: 'Request timed out',
+            },
+          ],
+        });
       } else {
         // fall back to Response.statusText or generic error of we cannot read the response
         const error =

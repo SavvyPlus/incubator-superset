@@ -165,6 +165,7 @@ export function useListViewState({
     gotoPage,
     setAllFilters,
     selectedFlatRows,
+    toggleAllRowsSelected,
     state: { pageIndex, pageSize, sortBy, filters },
   } = useTable(
     {
@@ -177,6 +178,7 @@ export function useListViewState({
       manualFilters: true,
       manualPagination: true,
       manualSortBy: true,
+      autoResetFilters: false,
       pageCount: Math.ceil(count / initialPageSize),
     },
     useFilters,
@@ -224,18 +226,6 @@ export function useListViewState({
     }
   }, [query]);
 
-  const filtersApplied = internalFilters.every(
-    ({ id, value, operator }, index) =>
-      id &&
-      filters[index]?.id === id &&
-      filters[index]?.value === value &&
-      // @ts-ignore
-      filters[index]?.operator === operator,
-  );
-
-  const updateInternalFilter = (index: number, update: object) =>
-    setInternalFilters(updateInList(internalFilters, index, update));
-
   const applyFilterValue = (index: number, value: any) => {
     // skip redunundant updates
     if (internalFilters[index].value === value) {
@@ -248,18 +238,9 @@ export function useListViewState({
     gotoPage(0); // clear pagination on filter
   };
 
-  const removeFilterAndApply = (index: number) => {
-    const updated = removeFromList(internalFilters, index);
-    setInternalFilters(updated);
-    setAllFilters(convertFilters(updated));
-  };
-
   return {
-    applyFilters: () => setAllFilters(convertFilters(internalFilters)),
-    removeFilterAndApply,
     canNextPage,
     canPreviousPage,
-    filtersApplied,
     getTableBodyProps,
     getTableProps,
     gotoPage,
@@ -269,9 +250,8 @@ export function useListViewState({
     rows,
     selectedFlatRows,
     setAllFilters,
-    setInternalFilters,
     state: { pageIndex, pageSize, sortBy, filters, internalFilters },
-    updateInternalFilter,
+    toggleAllRowsSelected,
     applyFilterValue,
   };
 }

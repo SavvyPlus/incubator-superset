@@ -23,7 +23,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from superset import app, cache, db, security_manager
+from superset import app, cache, security_manager
 from superset.common.query_object import QueryObject
 from superset.connectors.base.models import BaseDatasource
 from superset.connectors.connector_registry import ConnectorRegistry
@@ -64,7 +64,7 @@ class QueryContext:
         result_format: Optional[utils.ChartDataResultFormat] = None,
     ) -> None:
         self.datasource = ConnectorRegistry.get_datasource(
-            str(datasource["type"]), int(datasource["id"]), db.session
+            str(datasource["type"]), int(datasource["id"])
         )
         self.queries = [QueryObject(**query_obj) for query_obj in queries]
         self.force = force
@@ -111,8 +111,7 @@ class QueryContext:
                 self.df_metrics_to_num(df, query_object)
 
             df.replace([np.inf, -np.inf], np.nan)
-
-        df = query_object.exec_post_processing(df)
+            df = query_object.exec_post_processing(df)
 
         return {
             "query": result.query,
@@ -160,10 +159,7 @@ class QueryContext:
         df = payload["df"]
         status = payload["status"]
         if status != utils.QueryStatus.FAILED:
-            if df.empty:
-                payload["error"] = "No data"
-            else:
-                payload["data"] = self.get_data(df)
+            payload["data"] = self.get_data(df)
         del payload["df"]
         if self.result_type == utils.ChartDataResultType.RESULTS:
             return {"data": payload["data"]}

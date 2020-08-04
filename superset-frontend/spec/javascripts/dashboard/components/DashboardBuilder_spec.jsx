@@ -22,6 +22,7 @@ import { shallow, mount } from 'enzyme';
 import sinon from 'sinon';
 
 import { ParentSize } from '@vx/responsive';
+import { supersetTheme, ThemeProvider } from '@superset-ui/style';
 import { Sticky, StickyContainer } from 'react-sticky';
 import { TabContainer, TabContent, TabPane } from 'react-bootstrap';
 
@@ -77,6 +78,10 @@ describe('DashboardBuilder', () => {
           <Provider store={store}>
             <WithDragDropContext>{builder}</WithDragDropContext>
           </Provider>,
+          {
+            wrappingComponent: ThemeProvider,
+            wrappingComponentProps: { theme: supersetTheme },
+          },
         )
       : shallow(builder);
   }
@@ -98,7 +103,7 @@ describe('DashboardBuilder', () => {
 
   it('should render a DragDroppable DashboardHeader', () => {
     const wrapper = setup(null, true);
-    expect(wrapper.find(DashboardHeader)).toHaveLength(1);
+    expect(wrapper.find(DashboardHeader)).toExist();
   });
 
   it('should render a Sticky top-level Tabs if the dashboard has tabs', () => {
@@ -145,26 +150,26 @@ describe('DashboardBuilder', () => {
 
   it('should render a BuilderComponentPane if editMode=true and user selects "Insert Components" pane', () => {
     const wrapper = setup();
-    expect(wrapper.find(BuilderComponentPane)).toHaveLength(0);
+    expect(wrapper.find(BuilderComponentPane)).not.toExist();
 
     wrapper.setProps({
       ...props,
       editMode: true,
       builderPaneType: BUILDER_PANE_TYPE.ADD_COMPONENTS,
     });
-    expect(wrapper.find(BuilderComponentPane)).toHaveLength(1);
+    expect(wrapper.find(BuilderComponentPane)).toExist();
   });
 
   it('should render a BuilderComponentPane if editMode=true and user selects "Colors" pane', () => {
     const wrapper = setup();
-    expect(wrapper.find(BuilderComponentPane)).toHaveLength(0);
+    expect(wrapper.find(BuilderComponentPane)).not.toExist();
 
     wrapper.setProps({
       ...props,
       editMode: true,
       builderPaneType: BUILDER_PANE_TYPE.COLORS,
     });
-    expect(wrapper.find(BuilderComponentPane)).toHaveLength(1);
+    expect(wrapper.find(BuilderComponentPane)).toExist();
   });
 
   it('should change redux state if a top-level Tab is clicked', () => {

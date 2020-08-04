@@ -17,7 +17,6 @@
  * under the License.
  */
 /* eslint-disable camelcase */
-import { isString } from 'lodash';
 
 export default function (bootstrapData) {
   const { user } = bootstrapData;

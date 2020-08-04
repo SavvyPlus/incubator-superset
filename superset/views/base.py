@@ -48,7 +48,11 @@ from superset import (
 )
 from superset.connectors.sqla import models
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
-from superset.exceptions import SupersetException, SupersetSecurityException
+from superset.exceptions import (
+    SupersetException,
+    SupersetSecurityException,
+    SupersetTimeoutException,
+)
 from superset.models.helpers import ImportMixin
 from superset.translations.utils import get_language_pack
 from superset.typing import FlaskResponse
@@ -176,6 +180,9 @@ def handle_api_exception(
             return json_errors_response(
                 errors=[ex.error], status=ex.status, payload=ex.payload
             )
+        except SupersetTimeoutException as ex:
+            logger.warning(ex)
+            return json_errors_response(errors=[ex.error], status=ex.status)
         except SupersetException as ex:
             logger.exception(ex)
             return json_error_response(
@@ -480,8 +487,7 @@ def check_ownership(obj: Any, raise_if_false: bool = True) -> bool:
     roles = [r.name for r in get_user_roles()]
     if "Admin" in roles:
         return True
-    scoped_session = db.create_scoped_session()
-    orig_obj = scoped_session.query(obj.__class__).filter_by(id=obj.id).first()
+    orig_obj = db.session.query(obj.__class__).filter_by(id=obj.id).first()
 
     # Making a list of owners that works across ORM models
     owners: List[User] = []
