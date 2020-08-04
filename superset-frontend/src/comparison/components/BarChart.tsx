@@ -15,7 +15,7 @@ interface BarChartProps {
   fuel: string;
   version: number;
   fetching: boolean;
-  fetchChartData: (region: string, fuel: string, version: number) => any;
+  fetchChartData: (region: string, fuel: string, version: number, isp_case: string, isp_scen: string) => any;
 }
 
 function BarChart({
@@ -28,7 +28,7 @@ function BarChart({
   fetchChartData,
 }: BarChartProps) {
   useEffect(() => {
-    fetchChartData('SA1', '23', 2);
+    fetchChartData('SA1', 'Solar', 1, 'Counterfactual', 'Central');
   }, [region, fuel]);
 
   console.log(region, fuel, version);

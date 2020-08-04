@@ -60,12 +60,12 @@ export function fetchChartDataFailed() {
   return { type: FETCH_CHART_DATA_FAILED };
 }
 
-export function fetchChartData(region, fuel, version) {
+export function fetchChartData(region, fuel, version, isp_case, isp_scen) {
   console.log(region, fuel, version);
   return dispatch => {
     dispatch(fetchChartDataStarted());
     return SupersetClient.get({
-      endpoint: `/assumption-book/get-data/${region}/${fuel}/`,
+      endpoint: `/assumption-book/get-data/${region}/${fuel}/${version}/${isp_case}/${isp_scen}/0/`,
     })
       .then(({ json }) => {
         dispatch(fetchChartDataSuccuss(json));
