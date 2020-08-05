@@ -204,7 +204,8 @@ class ControlPanelsContainer extends React.Component {
           viz_type === 'box_plot_fin' ||
           viz_type === 'box_plot_fin_str' ||
           viz_type === 'multi_boxplot' ||
-          viz_type === 'spot_price_histogram') &&
+          viz_type === 'spot_price_histogram' ||
+          viz_type === 'axis_break') &&
         section.label === 'Time'
       ) {
         return;
