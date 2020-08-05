@@ -289,3 +289,12 @@ export function getOption(queryResponse) {
   }
   return {};
 }
+
+export const forcedUpdateCharts = [
+  'box_plot_run_comp',
+  'box_plot_fin',
+  'box_plot_fin_str',
+  'multi_boxplot',
+  'spot_price_histogram',
+  'axis_break',
+];

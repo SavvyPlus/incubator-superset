@@ -23,7 +23,7 @@ import { SuperChart } from '@superset-ui/chart';
 // import echarts from 'echarts';
 import ReactEcharts from 'echarts-for-react';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
-import { getOption } from '../utils/chartUtils';
+import { getOption, forcedUpdateCharts } from '../utils/chartUtils';
 // import worldland from '../utils/worldland.json';
 
 const propTypes = {
@@ -83,23 +83,7 @@ class ChartRenderer extends React.Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    if (nextProps.vizType === 'box_plot_run_comp') {
-      return true;
-    }
-
-    if (nextProps.vizType === 'box_plot_fin') {
-      return true;
-    }
-
-    if (nextProps.vizType === 'box_plot_fin_str') {
-      return true;
-    }
-
-    if (nextProps.vizType === 'multi_boxplot') {
-      return true;
-    }
-
-    if (nextProps.vizType === 'spot_price_histogram') {
+    if (forcedUpdateCharts.includes(nextProps.vizType)) {
       return true;
     }
 
