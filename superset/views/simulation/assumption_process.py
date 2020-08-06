@@ -258,6 +258,12 @@ def process_assumption_to_df_dict(file_path):
             if col not in df_dict[sheet].columns:
                 raise Exception('Missing {} in sheet {}'.format(col, sheet))
 
+        for col in df_dict[sheet].columns:
+            drop_list = []
+            if col not in sheet_col_dict[sheet]:
+                drop_list.append(col)
+            df_dict[sheet] = df_dict[sheet].drop(columns=drop_list)
+
     for sheet in sheet_col_name_to_tab_col_name_dict.keys():
         df_dict[sheet] = df_dict[sheet].rename(columns=sheet_col_name_to_tab_col_name_dict[sheet])
 
@@ -277,17 +283,24 @@ def save_as_new_tab_version(db, df, tab_model, tab_data_model, note=None, scenar
         for key in kwargs.keys():
             new_tab_def.__setattr__(key, kwargs[key])
     db.session.add(new_tab_def)
-    # db.session.flush()
-    db.session.commit()
+    db.session.flush()
+    # db.session.commit()
     new_ver = new_tab_def.get_version()
     ver_col_name = tab_data_model.get_version_col_name()
     df[ver_col_name] = new_ver
+    df = df.fillna('')
+    if 'ID' in df.columns:
+        df = df.drop(columns=['ID'])
     # df.to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
-    for i in range(len(df)):
-        try:
-            df.iloc[i:i+1].to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
-        except exc.IntegrityError:
-            pass
+    for index, row in df.iterrows():
+        row_item = tab_data_model(**row.to_dict())
+        db.session.add(row_item)
+    db.session.commit()
+    # for i in range(len(df)):
+    #     try:
+    #         df.iloc[i:i+1].to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
+    #     except exc.IntegrityError:
+    #         pass
 
 
     return new_tab_def
