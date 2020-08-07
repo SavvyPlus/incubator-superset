@@ -20,11 +20,9 @@ import { snakeCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { SuperChart } from '@superset-ui/chart';
-// import echarts from 'echarts';
 import ReactEcharts from 'echarts-for-react';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
-import { getOption } from '../utils/chartUtils';
-// import worldland from '../utils/worldland.json';
+import { getOption, empowerCharts } from '../utils/chartUtils';
 
 const propTypes = {
   annotationData: PropTypes.object,
@@ -83,23 +81,7 @@ class ChartRenderer extends React.Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    if (nextProps.vizType === 'box_plot_run_comp') {
-      return true;
-    }
-
-    if (nextProps.vizType === 'box_plot_fin') {
-      return true;
-    }
-
-    if (nextProps.vizType === 'box_plot_fin_str') {
-      return true;
-    }
-
-    if (nextProps.vizType === 'multi_boxplot') {
-      return true;
-    }
-
-    if (nextProps.vizType === 'spot_price_histogram') {
+    if (empowerCharts.includes(nextProps.vizType)) {
       return true;
     }
 

@@ -19,6 +19,15 @@
  * under the License.
  */
 
+export const empowerCharts = [
+  'box_plot_run_comp',
+  'box_plot_fin',
+  'box_plot_fin_str',
+  'multi_boxplot',
+  'spot_price_histogram',
+  // 'axis_break',
+];
+
 const REGION_BORDER_COLOR = {
   NSW: '#1F497D',
   QLD: '#F2C80F',

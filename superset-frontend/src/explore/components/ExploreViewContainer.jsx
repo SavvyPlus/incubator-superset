@@ -60,7 +60,7 @@ const propTypes = {
 const Styles = styled.div`
   height: ${({ height }) => height};
   min-height: ${({ height }) => height};
-  overflow: hidden;
+  overflow: auto;
   text-align: left;
   position: relative;
   width: 100%;
