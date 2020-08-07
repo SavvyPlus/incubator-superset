@@ -113,9 +113,14 @@ class AssumptionBookModelView(
         project_list_versions = db.session.query(ProjectListDefinition).all()
         project_list = [{'version' :project.Project_List_Version,
                          'note': project.Note} for project in project_list_versions]
+        query = db.session.query(ISPCapacityDefinition.scenario.distinct().label('scenario'))
+        scenarios = [ {'name': row.scenario,
+                       'scenario': row.scenario} for row in query.all()]
+
         payload = {
             "user": bootstrap_user_data(user, include_perms=True),
             "projectList": project_list,
+            "scenarios": scenarios,
             "common": common_bootstrap_payload(),
         }
 
