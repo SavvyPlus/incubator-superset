@@ -129,6 +129,14 @@ wtforms==2.3.3            # via flask-wtf, wtforms-json
 xlrd==1.2.0               # via tabulator
 yarl==1.5.1               # via aiohttp
 zipp==3.1.0               # via importlib-metadata
+Flask-Split==0.4.0
+Cython==0.29.14
+sendgrid==6.1.0
+s3fs==0.4.2
+sentry-sdk==0.13.5
+stripe==2.37.2
+PyAthenaJDBC==2.0.5
+
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
