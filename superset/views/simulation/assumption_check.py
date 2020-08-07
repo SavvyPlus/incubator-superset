@@ -120,7 +120,7 @@ class AssumptionBookModelView(
         payload = {
             "user": bootstrap_user_data(user, include_perms=True),
             "projectList": project_list,
-            "scenarios": scenarios,
+            "scenarioList": scenarios,
             "common": common_bootstrap_payload(),
         }
 
