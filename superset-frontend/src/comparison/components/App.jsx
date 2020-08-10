@@ -25,12 +25,13 @@ import { Col, Row } from 'react-bootstrap';
 import * as Actions from '../actions/comparison';
 import CustomToggle from './CustomToggle';
 import ProjectListVersionSelect from './ProjectListVersionSelect';
+import ScenarioSelect from './ScenarioSelect';
 import BarChart from './BarChart';
 
 const regions = ['NSW', 'QLD', 'SA', 'TAS', 'VIC'];
 const fuels = ['Wind', 'Solar'];
 const isps = ['Counterfactual', 'Optimal'];
-const scenarios = ['Central', 'High DER'];
+// const scenarios = ['Central', 'High DER'];
 
 function App({ comparison, actions }) {
   return (
@@ -77,11 +78,16 @@ function App({ comparison, actions }) {
           />
         </Col>
         <Col sm={5}>
-          <CustomToggle
+          {/* <CustomToggle
             name="scenario"
             value={comparison.scenario}
             setValue={actions.setScenario}
             values={scenarios}
+          /> */}
+          <ScenarioSelect
+            scenario={comparison.scenario}
+            setScenario={actions.setScenario}
+            scenarioList={comparison.scenarioList}
           />
         </Col>
       </Row>

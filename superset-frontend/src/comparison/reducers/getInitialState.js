@@ -18,7 +18,7 @@
  */
 /* eslint-disable camelcase */
 export default function (bootstrapData) {
-  const { projectList } = bootstrapData;
+  const { projectList, scenarioList } = bootstrapData;
 
   return {
     comparison: {
@@ -26,8 +26,9 @@ export default function (bootstrapData) {
       fuel: 'Wind',
       version: projectList[0].version,
       isp: 'Counterfactual',
-      scenario: 'Central',
+      scenario: scenarioList[0].name,
       projectList,
+      scenarioList,
       years: [],
       data: [],
       fetching: false,
