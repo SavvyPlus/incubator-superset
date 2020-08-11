@@ -16,29 +16,40 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React from 'react';
-import { hot } from 'react-hot-loader/root';
-import { Provider } from 'react-redux';
+import { shallow as enzymeShallow, mount as enzymeMount } from 'enzyme';
 import { supersetTheme, ThemeProvider } from '@superset-ui/style';
-import ToastPresenter from '../messageToasts/containers/ToastPresenter';
-import ExploreViewContainer from './components/ExploreViewContainer';
-import setupApp from '../setup/setupApp';
-import setupPlugins from '../setup/setupPlugins';
-import './main.less';
-import '../../stylesheets/reactable-pagination.less';
+import { ReactElement } from 'react';
 
-setupApp();
-setupPlugins();
+type optionsType = {
+  wrappingComponentProps?: any;
+  wrappingComponent?: ReactElement;
+  context?: any;
+};
 
-const App = ({ store }) => (
-  <Provider store={store}>
-    <ThemeProvider theme={supersetTheme}>
-      <>
-        <ExploreViewContainer />
-        <ToastPresenter />
-      </>
-    </ThemeProvider>
-  </Provider>
-);
+export function styledMount(
+  component: ReactElement,
+  options: optionsType = {},
+) {
+  return enzymeMount(component, {
+    ...options,
+    wrappingComponent: ThemeProvider,
+    wrappingComponentProps: {
+      theme: supersetTheme,
+      ...options?.wrappingComponentProps,
+    },
+  });
+}
 
-export default hot(App);
+export function styledShallow(
+  component: ReactElement,
+  options: optionsType = {},
+) {
+  return enzymeShallow(component, {
+    ...options,
+    wrappingComponent: ThemeProvider,
+    wrappingComponentProps: {
+      theme: supersetTheme,
+      ...options?.wrappingComponentProps,
+    },
+  });
+}

@@ -24,9 +24,9 @@ export default function (bootstrapData) {
     comparison: {
       region: 'NSW',
       fuel: 'Wind',
-      version: projectList[0].version,
+      version: projectList.length > 0 ? projectList[0].version : '',
       isp: 'Counterfactual',
-      scenario: scenarioList[0].name,
+      scenario: scenarioList.length > 0 ? scenarioList[0].name : '',
       projectList,
       scenarioList,
       years: [],

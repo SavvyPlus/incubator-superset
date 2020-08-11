@@ -1,10 +1,21 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, Theme } from '@material-ui/core/styles';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 
-const useStyles = makeStyles(theme => ({
+type ProjectListVersion = {
+  version: number;
+  note: string;
+};
+
+interface ProjectListVersionProps {
+  version: number;
+  setVersion: (value: number) => void;
+  projectList: ProjectListVersion[];
+}
+
+const useStyles = makeStyles((theme: Theme) => ({
   formControl: {
     minWidth: 120,
     marginTop: 15,
@@ -18,10 +29,10 @@ export default function ProjectListVersionSelect({
   version,
   setVersion,
   projectList,
-}) {
+}: ProjectListVersionProps) {
   const classes = useStyles();
 
-  const handleChange = event => {
+  const handleChange = (event: React.ChangeEvent<{ value: number }>) => {
     setVersion(event.target.value);
   };
   return (
