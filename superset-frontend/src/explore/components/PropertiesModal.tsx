@@ -38,6 +38,7 @@ import FormLabel from 'src/components/FormLabel';
 import getClientErrorObject from '../../utils/getClientErrorObject';
 
 export type Slice = {
+  id?: number;
   slice_id: number;
   slice_name: string;
   description: string | null;
@@ -262,17 +263,17 @@ function PropertiesModal({ slice, onHide, onSave }: InternalProps) {
         </Row>
       </Modal.Body>
       <Modal.Footer>
+        <Button type="button" bsSize="sm" onClick={onHide}>
+          {t('Cancel')}
+        </Button>
         <Button
           type="submit"
           bsSize="sm"
           bsStyle="primary"
           className="m-r-5"
-          disabled={!owners || submitting}
+          disabled={!owners || submitting || !name}
         >
           {t('Save')}
-        </Button>
-        <Button type="button" bsSize="sm" onClick={onHide}>
-          {t('Cancel')}
         </Button>
         <Dialog ref={errorDialog} />
       </Modal.Footer>

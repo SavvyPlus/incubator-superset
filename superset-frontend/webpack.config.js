@@ -112,14 +112,13 @@ const plugins = [
     checkSyntacticErrors: true,
   }),
 
-  new CopyPlugin(
-    [
+  new CopyPlugin({
+    patterns: [
       'package.json',
       { from: 'images', to: 'images' },
       { from: 'stylesheets', to: 'stylesheets' },
     ],
-    { copyUnmodified: true },
-  ),
+  }),
 ];
 if (!process.env.CI) {
   plugins.push(new webpack.ProgressPlugin());
@@ -181,7 +180,7 @@ const config = {
     explore: addPreamble('/src/explore/index.jsx'),
     dashboard: addPreamble('/src/dashboard/index.jsx'),
     sqllab: addPreamble('/src/SqlLab/index.tsx'),
-    welcome: addPreamble('/src/welcome/index.tsx'),
+    crudViews: addPreamble('/src/views/index.tsx'),
     profile: addPreamble('/src/profile/index.tsx'),
     generation: addPreamble('/src/generation/index.tsx'),
     assumption: addPreamble('/src/assumption/index.tsx'),
@@ -234,6 +233,7 @@ const config = {
       },
       {
         test: /\.tsx?$/,
+        exclude: [/\.test.tsx?$/],
         use: [
           'thread-loader',
           babelLoader,
@@ -259,8 +259,8 @@ const config = {
       },
       {
         test: /\.jsx?$/,
-        // include source code for plugins, but exclude node_modules within them
-        exclude: [/superset-ui.*\/node_modules\//],
+        // include source code for plugins, but exclude node_modules and test files within them
+        exclude: [/superset-ui.*\/node_modules\//, /\.test.jsx?$/],
         include: [
           new RegExp(`${APP_DIR}/src`),
           /superset-ui.*\/src/,
@@ -296,6 +296,7 @@ const config = {
             loader: 'less-loader',
             options: {
               sourceMap: isDevMode,
+              javascriptEnabled: true,
             },
           },
         ],

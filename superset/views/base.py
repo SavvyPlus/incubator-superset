@@ -14,13 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import dataclasses
 import functools
 import logging
 import traceback
 from datetime import datetime
 from typing import Any, Callable, cast, Dict, List, Optional, TYPE_CHECKING, Union
 
-import dataclasses
 import simplejson as json
 import yaml
 from flask import abort, flash, g, get_flashed_messages, redirect, Response, session
@@ -333,8 +333,8 @@ class SupersetModelView(ModelView):
             "common": common_bootstrap_payload(),
         }
         return self.render_template(
-            "superset/welcome.html",
-            entry="welcome",
+            "superset/crud_views.html",
+            entry="crudViews",
             bootstrap_data=json.dumps(
                 payload, default=utils.pessimistic_json_iso_dttm_ser
             ),
@@ -487,7 +487,8 @@ def check_ownership(obj: Any, raise_if_false: bool = True) -> bool:
     roles = [r.name for r in get_user_roles()]
     if "Admin" in roles:
         return True
-    orig_obj = db.session.query(obj.__class__).filter_by(id=obj.id).first()
+    scoped_session = db.create_scoped_session()
+    orig_obj = scoped_session.query(obj.__class__).filter_by(id=obj.id).first()
 
     # Making a list of owners that works across ORM models
     owners: List[User] = []

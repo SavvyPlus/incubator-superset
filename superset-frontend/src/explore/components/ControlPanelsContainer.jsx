@@ -28,7 +28,6 @@ import styled from '@superset-ui/style';
 import ControlPanelSection from './ControlPanelSection';
 import ControlRow from './ControlRow';
 import Control from './Control';
-// import controlConfigs from '../controls';
 import { sectionsToRender } from '../controlUtils';
 import * as exploreActions from '../actions/exploreActions';
 
@@ -43,6 +42,7 @@ const propTypes = {
 };
 
 const Styles = styled.div`
+  height: 100%;
   max-height: 100%;
   .remove-alert {
     cursor: 'pointer';
@@ -50,6 +50,7 @@ const Styles = styled.div`
   #controlSections {
     display: flex;
     flex-direction: column;
+    height: 100%;
     max-height: 100%;
   }
   .nav-tabs {
