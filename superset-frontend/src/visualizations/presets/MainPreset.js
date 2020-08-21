@@ -61,6 +61,7 @@ import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
 import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPlugin';
 import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
+import { AmchartsStockChartPlugin } from '../AmchartsStock/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -68,6 +69,7 @@ export default class MainPreset extends Preset {
       name: 'Legacy charts',
       presets: [new DeckGLChartPreset()],
       plugins: [
+        new AmchartsStockChartPlugin().configure({ key: 'amcharts_stock' }),
         new AreaChartPlugin().configure({ key: 'area' }),
         new BarChartPlugin().configure({ key: 'bar' }),
         new BigNumberChartPlugin().configure({ key: 'big_number' }),
