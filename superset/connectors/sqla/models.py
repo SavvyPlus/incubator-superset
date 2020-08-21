@@ -14,8 +14,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import json
 import logging
 from collections import OrderedDict
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Dict, Hashable, List, NamedTuple, Optional, Tuple, Union
 
@@ -82,6 +84,13 @@ class QueryStringExtended(NamedTuple):
     sql: str
 
 
+@dataclass
+class MetadataResult:
+    added: List[str] = field(default_factory=list)
+    removed: List[str] = field(default_factory=list)
+    modified: List[str] = field(default_factory=list)
+
+
 class AnnotationDatasource(BaseDatasource):
     """ Dummy object so we can query annotations using 'Viz' objects just like
         regular datasources.
@@ -90,6 +99,19 @@ class AnnotationDatasource(BaseDatasource):
     cache_timeout = 0
     changed_on = None
     type = "annotation"
+    column_names = [
+        "created_on",
+        "changed_on",
+        "id",
+        "start_dttm",
+        "end_dttm",
+        "layer_id",
+        "short_descr",
+        "long_descr",
+        "json_metadata",
+        "created_by_fk",
+        "changed_by_fk",
+    ]
 
     def query(self, query_obj: QueryObjectDict) -> QueryResult:
         error_message = None
@@ -330,6 +352,7 @@ class SqlMetric(Model, BaseMetric):
         foreign_keys=[table_id],
     )
     expression = Column(Text, nullable=False)
+    extra = Column(Text)
 
     export_fields = [
         "metric_name",
@@ -339,6 +362,7 @@ class SqlMetric(Model, BaseMetric):
         "expression",
         "description",
         "d3format",
+        "extra",
         "warning_text",
     ]
     update_from_object_fields = list(
@@ -377,6 +401,32 @@ class SqlMetric(Model, BaseMetric):
             )
 
         return import_datasource.import_simple_obj(db.session, i_metric, lookup_obj)
+
+    def get_extra_dict(self) -> Dict[str, Any]:
+        try:
+            return json.loads(self.extra)
+        except (TypeError, json.JSONDecodeError):
+            return {}
+
+    @property
+    def is_certified(self) -> bool:
+        return bool(self.get_extra_dict().get("certification"))
+
+    @property
+    def certified_by(self) -> Optional[str]:
+        return self.get_extra_dict().get("certification", {}).get("certified_by")
+
+    @property
+    def certification_details(self) -> Optional[str]:
+        return self.get_extra_dict().get("certification", {}).get("details")
+
+    @property
+    def data(self) -> Dict[str, Any]:
+        attrs = ("is_certified", "certified_by", "certification_details")
+        attr_dict = {s: getattr(self, s) for s in attrs}
+
+        attr_dict.update(super().data)
+        return attr_dict
 
 
 sqlatable_user = Table(
@@ -721,7 +771,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         expression_type = metric.get("expressionType")
         label = utils.get_metric_name(metric)
 
-        if expression_type == utils.ADHOC_METRIC_EXPRESSION_TYPES["SIMPLE"]:
+        if expression_type == utils.AdhocMetricExpressionType.SIMPLE:
             column_name = metric["column"].get("column_name")
             table_column = columns_by_name.get(column_name)
             if table_column:
@@ -729,7 +779,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
             else:
                 sqla_column = column(column_name)
             sqla_metric = self.sqla_aggregations[metric["aggregate"]](sqla_column)
-        elif expression_type == utils.ADHOC_METRIC_EXPRESSION_TYPES["SQL"]:
+        elif expression_type == utils.AdhocMetricExpressionType.SQL:
             sqla_metric = literal_column(metric.get("sqlExpression"))
         else:
             return None
@@ -1230,10 +1280,15 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
     def get_sqla_table_object(self) -> Table:
         return self.database.get_table(self.table_name, schema=self.schema)
 
-    def fetch_metadata(self, commit: bool = True) -> None:
-        """Fetches the metadata for the table and merges it in"""
+    def fetch_metadata(self, commit: bool = True) -> MetadataResult:
+        """
+        Fetches the metadata for the table and merges it in
+
+        :param commit: should the changes be committed or not.
+        :return: Tuple with lists of added, removed and modified column names.
+        """
         try:
-            table_ = self.get_sqla_table_object()
+            new_table = self.get_sqla_table_object()
         except SQLAlchemyError:
             raise QueryObjectValidationError(
                 _(
@@ -1247,35 +1302,46 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         any_date_col = None
         db_engine_spec = self.database.db_engine_spec
         db_dialect = self.database.get_dialect()
-        dbcols = (
-            db.session.query(TableColumn)
-            .filter(TableColumn.table == self)
-            .filter(or_(TableColumn.column_name == col.name for col in table_.columns))
-        )
-        dbcols = {dbcol.column_name: dbcol for dbcol in dbcols}
+        old_columns = db.session.query(TableColumn).filter(TableColumn.table == self)
 
-        for col in table_.columns:
+        old_columns_by_name = {col.column_name: col for col in old_columns}
+        results = MetadataResult(
+            removed=[
+                col
+                for col in old_columns_by_name
+                if col not in {col.name for col in new_table.columns}
+            ]
+        )
+
+        # clear old columns before adding modified columns back
+        self.columns = []
+        for col in new_table.columns:
             try:
                 datatype = db_engine_spec.column_datatype_to_string(
                     col.type, db_dialect
                 )
             except Exception as ex:  # pylint: disable=broad-except
                 datatype = "UNKNOWN"
-                logger.error("Unrecognized data type in %s.%s", table_, col.name)
+                logger.error("Unrecognized data type in %s.%s", new_table, col.name)
                 logger.exception(ex)
-            dbcol = dbcols.get(col.name, None)
-            if not dbcol:
-                dbcol = TableColumn(column_name=col.name, type=datatype, table=self)
-                dbcol.is_dttm = dbcol.is_temporal
-                db_engine_spec.alter_new_orm_column(dbcol)
+            old_column = old_columns_by_name.get(col.name, None)
+            if not old_column:
+                results.added.append(col.name)
+                new_column = TableColumn(
+                    column_name=col.name, type=datatype, table=self
+                )
+                new_column.is_dttm = new_column.is_temporal
+                db_engine_spec.alter_new_orm_column(new_column)
             else:
-                dbcol.type = datatype
-            dbcol.groupby = True
-            dbcol.filterable = True
-            self.columns.append(dbcol)
-            if not any_date_col and dbcol.is_temporal:
+                new_column = old_column
+                if new_column.type != datatype:
+                    results.modified.append(col.name)
+                new_column.type = datatype
+            new_column.groupby = True
+            new_column.filterable = True
+            self.columns.append(new_column)
+            if not any_date_col and new_column.is_temporal:
                 any_date_col = col.name
-
         metrics.append(
             SqlMetric(
                 metric_name="count",
@@ -1294,6 +1360,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         db.session.merge(self)
         if commit:
             db.session.commit()
+        return results
 
     @classmethod
     def import_obj(

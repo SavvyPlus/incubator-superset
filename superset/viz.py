@@ -72,6 +72,7 @@ from superset.utils.core import (
     QueryMode,
     to_adhoc,
 )
+from superset.utils.dates import datetime_to_epoch
 from superset.utils.hashing import md5_sha_from_str
 
 from superset.calculation.financial.metrics import generate_fin_metric
@@ -486,6 +487,24 @@ class BaseViz:
 
         if query_obj and not is_loaded:
             try:
+                invalid_columns = [
+                    col
+                    for col in (query_obj.get("columns") or [])
+                    + (query_obj.get("groupby") or [])
+                    + utils.get_column_names_from_metrics(
+                        cast(
+                            List[Union[str, Dict[str, Any]]], query_obj.get("metrics"),
+                        )
+                    )
+                    if col not in self.datasource.column_names
+                ]
+                if invalid_columns:
+                    raise QueryObjectValidationError(
+                        _(
+                            "Columns missing in datasource: %(invalid_columns)s",
+                            invalid_columns=invalid_columns,
+                        )
+                    )
                 df = self.get_df(query_obj)
                 if self.status != utils.QueryStatus.FAILED:
                     stats_logger.incr("loaded_from_source")
@@ -827,8 +846,20 @@ class PivotTableViz(BaseViz):
         for metric in metrics:
             aggfuncs[metric] = self.get_aggfunc(metric, df, self.form_data)
 
-        groupby = self.form_data.get("groupby")
-        columns = self.form_data.get("columns")
+        groupby = self.form_data.get("groupby") or []
+        columns = self.form_data.get("columns") or []
+
+        def _format_datetime(value: Any) -> Optional[str]:
+            if isinstance(value, str):
+                return f"__timestamp:{datetime_to_epoch(pd.Timestamp(value))}"
+            return None
+
+        for column_name in groupby + columns:
+            column = self.datasource.get_column(column_name)
+            if column and column.type in ("DATE", "DATETIME", "TIMESTAMP"):
+                ts = df[column_name].apply(_format_datetime)
+                df[column_name] = ts
+
         if self.form_data.get("transpose_pivot"):
             groupby, columns = columns, groupby
 
@@ -2728,25 +2759,6 @@ class FilterBoxViz(BaseViz):
             else:
                 df[col] = []
         return d
-
-
-class IFrameViz(BaseViz):
-
-    """You can squeeze just about anything in this iFrame component"""
-
-    viz_type = "iframe"
-    verbose_name = _("iFrame")
-    credits = 'a <a href="https://github.com/airbnb/superset">Superset</a> original'
-    is_timeseries = False
-
-    def query_obj(self) -> QueryObjectDict:
-        return {}
-
-    def get_df(self, query_obj: Optional[QueryObjectDict] = None) -> pd.DataFrame:
-        return pd.DataFrame()
-
-    def get_data(self, df: pd.DataFrame) -> VizData:
-        return {"iframe": True}
 
 
 class ParallelCoordinatesViz(BaseViz):

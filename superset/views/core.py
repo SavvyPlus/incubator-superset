@@ -1800,6 +1800,13 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         )
 
         dashboard_data = dash.data
+        if is_feature_enabled("REMOVE_SLICE_LEVEL_LABEL_COLORS"):
+            # dashboard metadata has dashboard-level label_colors,
+            # so remove slice-level label_colors from its form_data
+            for slc in dashboard_data.get("slices"):
+                form_data = slc.get("form_data")
+                form_data.pop("label_colors", None)
+
         dashboard_data.update(
             {
                 "standalone_mode": standalone_mode,
@@ -2680,8 +2687,8 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         }
 
         return self.render_template(
-            "superset/welcome.html",
-            entry="welcome",
+            "superset/crud_views.html",
+            entry="crudViews",
             bootstrap_data=json.dumps(
                 payload, default=utils.pessimistic_json_iso_dttm_ser
             ),

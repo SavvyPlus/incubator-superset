@@ -313,10 +313,12 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     # Exposes API endpoint to compute thumbnails
     "THUMBNAILS": False,
     "REDUCE_DASHBOARD_BOOTSTRAP_PAYLOAD": True,
+    "REMOVE_SLICE_LEVEL_LABEL_COLORS": False,
     "SHARE_QUERIES_VIA_KV_STORE": False,
     "SIP_38_VIZ_REARCHITECTURE": False,
     "TAGGING_SYSTEM": False,
     "SQLLAB_BACKEND_PERSISTENCE": False,
+    "SIP_34_DATABASE_UI": False,
 }
 
 # This is merely a default.
@@ -814,7 +816,7 @@ EMAIL_REPORTS_SUBJECT_PREFIX = "[Report] "
 # chrome:
 #   Requires: headless chrome
 #   Limitations: unable to generate screenshots of elements
-EMAIL_REPORTS_WEBDRIVER = "firefox"
+WEBDRIVER_TYPE = "firefox"
 
 # Window size - this will impact the rendering of the data
 WEBDRIVER_WINDOW = {"dashboard": (1600, 2000), "slice": (3000, 1200)}
