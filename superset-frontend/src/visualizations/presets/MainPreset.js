@@ -56,7 +56,8 @@ import {
 } from '@superset-ui/legacy-preset-chart-nvd3';
 import { LegacyBoxPlotChartPlugin } from '@superset-ui/preset-chart-xy';
 import { DeckGLChartPreset } from '@superset-ui/legacy-preset-chart-deckgl';
-import { AxisBreakChartPlugin } from '@superset-ui/plugin-chart-axis-break';
+// import { AxisBreakChartPlugin } from '@superset-ui/plugin-chart-axis-break';
+import { AmchartsStockChartPlugin } from '@superset-ui/plugin-chart-amcharts-stock';
 // import { AxisBreakChartPlugin } from '@cyw233/plugin-chart-axis-break';
 
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
@@ -70,7 +71,8 @@ export default class MainPreset extends Preset {
       presets: [new DeckGLChartPreset()],
       plugins: [
         new AreaChartPlugin().configure({ key: 'area' }),
-        new AxisBreakChartPlugin().configure({ key: 'axis_break' }),
+        // new AxisBreakChartPlugin().configure({ key: 'axis_break' }),
+        new AmchartsStockChartPlugin().configure({ key: 'amcharts_stock' }),
         new BarChartPlugin().configure({ key: 'bar' }),
         new BigNumberChartPlugin().configure({ key: 'big_number' }),
         new BigNumberTotalChartPlugin().configure({ key: 'big_number_total' }),
