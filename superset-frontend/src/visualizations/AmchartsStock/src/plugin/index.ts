@@ -25,7 +25,7 @@ import thumbnail from '../images/thumbnail.png';
 
 const metadata = new ChartMetadata({
   description: 'Amcharts stock chart',
-  name: t('AmchartsStock'),
+  name: t('Amcharts Stock'),
   thumbnail,
 });
 

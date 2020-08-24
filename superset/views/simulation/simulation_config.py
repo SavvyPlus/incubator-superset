@@ -134,9 +134,9 @@ db_pass_mysql = "Elecmms_2020"
 db_schema_ElecMMS3 = "ElecMMS3"
 
 # S3 data folders:
-bucket_inputs = "spot-price-forecast-simulation-prod"
+bucket_inputs = "spot-price-forecast-simulation-staging"
 # bucket_hist = '007-spot-price-forecast-physical'
-bucket_hist = "spot-price-forecast-simulation-prod"
+bucket_hist = "spot-price-forecast-simulation-staging"
 rooftop_pv_path = 'historical-generation/{}/rooftop-pv'  # state
 public_holiday_path = 'public_holiday/{}.pickle'  # state
 wind_solar_path = 'historical-generation/{}/{}/{}'  # state, wind/solar, duid
