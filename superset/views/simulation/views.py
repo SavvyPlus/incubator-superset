@@ -1038,7 +1038,7 @@ class SimulationModelView(
     def post_add(self, item):
         db.session.flush()
         g.id = item.id
-        item.run_id = item.id + 10000
+        item.run_id = item.id + 20000
         db.session.commit()
 
 
