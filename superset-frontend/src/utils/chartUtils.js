@@ -25,7 +25,7 @@ export const empowerCharts = [
   'box_plot_fin_str',
   'multi_boxplot',
   'spot_price_histogram',
-  // 'axis_break',
+  'amcharts_stock',
 ];
 
 const REGION_BORDER_COLOR = {

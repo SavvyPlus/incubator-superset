@@ -30,6 +30,7 @@ import ControlRow from './ControlRow';
 import Control from './Control';
 import { sectionsToRender } from '../controlUtils';
 import * as exploreActions from '../actions/exploreActions';
+import { empowerCharts } from '../../utils/chartUtils';
 
 const propTypes = {
   actions: PropTypes.object.isRequired,
@@ -200,14 +201,7 @@ class ControlPanelsContainer extends React.Component {
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
     allSectionsToRender.forEach(section => {
-      if (
-        (viz_type === 'box_plot_run_comp' ||
-          viz_type === 'box_plot_fin' ||
-          viz_type === 'box_plot_fin_str' ||
-          viz_type === 'multi_boxplot' ||
-          viz_type === 'spot_price_histogram') &&
-        section.label === 'Time'
-      ) {
+      if (empowerCharts.includes(viz_type) && section.label === 'Time') {
         return;
       }
       // if at least one control in the secion is not `renderTrigger`
