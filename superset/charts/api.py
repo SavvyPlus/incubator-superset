@@ -41,7 +41,6 @@ from superset.charts.commands.exceptions import (
     ChartUpdateFailedError,
 )
 from superset.charts.commands.update import UpdateChartCommand
-from superset.charts.dao import ChartDAO
 from superset.charts.filters import ChartFilter, ChartNameOrDescriptionFilter
 from superset.charts.schemas import (
     CHART_SCHEMAS,
@@ -84,61 +83,66 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "bulk_delete",  # not using RouteMethod since locally defined
         "data",
         "viz_types",
-        "datasources",
     }
     class_permission_name = "SliceModelView"
     show_columns = [
-        "slice_name",
+        "cache_timeout",
+        "dashboards.dashboard_title",
+        "dashboards.id",
         "description",
+        "owners.first_name",
+        "owners.id",
+        "owners.last_name",
+        "owners.username",
+        "params",
+        "slice_name",
+        "viz_type",
+    ]
+    show_select_columns = show_columns + ["table.id"]
+    list_columns = [
+        "cache_timeout",
+        "changed_by.first_name",
+        "changed_by.last_name",
+        "changed_by_name",
+        "changed_by_url",
+        "changed_on_delta_humanized",
+        "changed_on_utc",
+        "datasource_id",
+        "datasource_name_text",
+        "datasource_type",
+        "datasource_url",
+        "description",
+        "id",
+        "params",
+        "slice_name",
+        "table.default_endpoint",
+        "table.table_name",
+        "thumbnail_url",
+        "url",
         "owners.id",
         "owners.username",
         "owners.first_name",
         "owners.last_name",
-        "dashboards.id",
-        "dashboards.dashboard_title",
         "viz_type",
-        "params",
-        "cache_timeout",
     ]
-    show_select_columns = show_columns + ["table.id"]
-    list_columns = [
-        "id",
-        "slice_name",
-        "url",
-        "description",
-        "changed_by_name",
-        "changed_by_url",
-        "changed_by.first_name",
-        "changed_by.last_name",
-        "changed_on_utc",
-        "changed_on_delta_humanized",
-        "datasource_id",
-        "datasource_type",
-        "datasource_name_text",
-        "datasource_url",
-        "table.default_endpoint",
-        "table.table_name",
-        "viz_type",
-        "params",
-        "cache_timeout",
-    ]
-    list_select_columns = list_columns + ["changed_on", "changed_by_fk"]
+    list_select_columns = list_columns + ["changed_by_fk", "changed_on"]
     order_columns = [
-        "slice_name",
-        "viz_type",
-        "datasource_name",
         "changed_by.first_name",
         "changed_on_delta_humanized",
-    ]
-    search_columns = (
-        "slice_name",
-        "description",
-        "viz_type",
-        "datasource_name",
         "datasource_id",
+        "datasource_name",
+        "slice_name",
+        "viz_type",
+    ]
+    search_columns = [
+        "datasource_id",
+        "datasource_name",
         "datasource_type",
+        "description",
         "owners",
-    )
+        "slice_name",
+        "viz_type",
+    ]
     base_order = ("changed_on", "desc")
     base_filters = [["id", ChartFilter, lambda: []]]
     search_filters = {"slice_name": [ChartNameOrDescriptionFilter]}
@@ -693,42 +697,3 @@ class ChartRestApi(BaseSupersetModelRestApi):
         return Response(
             FileWrapper(screenshot), mimetype="image/png", direct_passthrough=True
         )
-
-    @expose("/datasources", methods=["GET"])
-    @protect()
-    @safe
-    def datasources(self) -> Response:
-        """Get available datasources
-        ---
-        get:
-          description: Get available datasources.
-          responses:
-            200:
-              description: Query result
-              content:
-                application/json:
-                  schema:
-                    $ref: "#/components/schemas/ChartGetDatasourceResponseSchema"
-            400:
-              $ref: '#/components/responses/400'
-            401:
-              $ref: '#/components/responses/401'
-            404:
-              $ref: '#/components/responses/404'
-            422:
-              $ref: '#/components/responses/422'
-            500:
-              $ref: '#/components/responses/500'
-        """
-        datasources = ChartDAO.fetch_all_datasources()
-        if not datasources:
-            return self.response(200, count=0, result=[])
-
-        result = [
-            {
-                "label": str(ds),
-                "value": {"datasource_id": ds.id, "datasource_type": ds.type},
-            }
-            for ds in datasources
-        ]
-        return self.response(200, count=len(result), result=result)

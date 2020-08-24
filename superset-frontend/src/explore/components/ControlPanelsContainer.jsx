@@ -23,13 +23,14 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Alert, Tab, Tabs } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
+import styled from '@superset-ui/style';
 
 import ControlPanelSection from './ControlPanelSection';
 import ControlRow from './ControlRow';
 import Control from './Control';
-// import controlConfigs from '../controls';
 import { sectionsToRender } from '../controlUtils';
 import * as exploreActions from '../actions/exploreActions';
+import { empowerCharts } from '../../utils/chartUtils';
 
 const propTypes = {
   actions: PropTypes.object.isRequired,
@@ -40,6 +41,27 @@ const propTypes = {
   form_data: PropTypes.object.isRequired,
   isDatasourceMetaLoading: PropTypes.bool.isRequired,
 };
+
+const Styles = styled.div`
+  height: 100%;
+  max-height: 100%;
+  .remove-alert {
+    cursor: 'pointer';
+  }
+  #controlSections {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 100%;
+  }
+  .nav-tabs {
+    flex: 0 0 1;
+  }
+  .tab-content {
+    // overflow: auto;
+    flex: 1 1 100%;
+  }
+`;
 
 class ControlPanelsContainer extends React.Component {
   constructor(props) {
@@ -172,20 +194,14 @@ class ControlPanelsContainer extends React.Component {
       </ControlPanelSection>
     );
   }
+
   render() {
     const { viz_type } = this.props.form_data;
     const allSectionsToRender = this.sectionsToRender();
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
     allSectionsToRender.forEach(section => {
-      if (
-        (viz_type === 'box_plot_run_comp' ||
-          viz_type === 'box_plot_fin' ||
-          viz_type === 'box_plot_fin_str' ||
-          viz_type === 'multi_boxplot' ||
-          viz_type === 'spot_price_histogram') &&
-        section.label === 'Time'
-      ) {
+      if (empowerCharts.includes(viz_type) && section.label === 'Time') {
         return;
       }
       // if at least one control in the secion is not `renderTrigger`
@@ -234,32 +250,30 @@ class ControlPanelsContainer extends React.Component {
     });
 
     return (
-      <div className="scrollbar-container">
-        <div className="scrollbar-content">
-          {this.props.alert && (
-            <Alert bsStyle="warning">
-              {this.props.alert}
-              <i
-                role="button"
-                tabIndex={0}
-                className="fa fa-close pull-right"
-                onClick={this.removeAlert}
-                style={{ cursor: 'pointer' }}
-              />
-            </Alert>
-          )}
-          <Tabs id="controlSections">
-            <Tab eventKey="query" title={t('Data')}>
-              {querySectionsToRender.map(this.renderControlPanelSection)}
+      <Styles>
+        {this.props.alert && (
+          <Alert bsStyle="warning">
+            {this.props.alert}
+            <i
+              role="button"
+              tabIndex={0}
+              className="fa fa-close pull-right"
+              onClick={this.removeAlert}
+              style={{ cursor: 'pointer' }}
+            />
+          </Alert>
+        )}
+        <Tabs id="controlSections">
+          <Tab eventKey="query" title={t('Data')}>
+            {querySectionsToRender.map(this.renderControlPanelSection)}
+          </Tab>
+          {displaySectionsToRender.length > 0 && (
+            <Tab eventKey="display" title={t('Customize')}>
+              {displaySectionsToRender.map(this.renderControlPanelSection)}
             </Tab>
-            {displaySectionsToRender.length > 0 && (
-              <Tab eventKey="display" title={t('Customize')}>
-                {displaySectionsToRender.map(this.renderControlPanelSection)}
-              </Tab>
-            )}
-          </Tabs>
-        </div>
-      </div>
+          )}
+        </Tabs>
+      </Styles>
     );
   }
 }

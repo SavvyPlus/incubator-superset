@@ -150,11 +150,18 @@ def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
 
     # End early if assumption process failed
     if simulation.assumption.status != 'Processed':
-        g.result = 'Run failed'
-        g.detail = 'The assumption process failed, please check the detail of the assumption'
-        simulation.status = 'Run failed'
-        simulation.status_detail = 'The assumption process failed, please check the detail of the assumption'
-        db.session.commit()
+        if simulation.assumption.status == 'Error':
+            g.result = 'Run failed'
+            g.detail = 'The assumption process failed, please check the detail of the assumption'
+            simulation.status = 'Run failed'
+            simulation.status_detail = 'The assumption process failed, please check the detail of the assumption'
+            db.session.commit()
+        elif simulation.assumption.status == 'Uploaded':
+            g.result = 'Run failed'
+            g.detail = 'Please delete the cache data in S3 first'
+            simulation.status = 'Run failed'
+            simulation.status_detail = 'Please delete the cache data in S3 first'
+            db.session.commit()
     else:
         try:
             print('generate parameters')
@@ -1031,7 +1038,7 @@ class SimulationModelView(
     def post_add(self, item):
         db.session.flush()
         g.id = item.id
-        item.run_id = item.id + 10000
+        item.run_id = item.id + 20000
         db.session.commit()
 
 

@@ -28,11 +28,30 @@ export interface SelectOption {
   value: any;
 }
 
+export interface CardSortSelectOption {
+  desc: boolean;
+  id: any;
+  label: string;
+  value: any;
+}
+
 export interface Filter {
   Header: string;
   id: string;
   operators?: SelectOption[];
-  operator?: string;
+  operator?:
+    | 'sw'
+    | 'ew'
+    | 'ct'
+    | 'eq'
+    | 'nsw'
+    | 'new'
+    | 'nct'
+    | 'neq'
+    | 'rel_m_m'
+    | 'rel_o_m'
+    | 'title_or_slug'
+    | 'name_or_description';
   input?: 'text' | 'textarea' | 'select' | 'checkbox' | 'search';
   unfilteredLabel?: string;
   selects?: SelectOption[];
@@ -62,20 +81,4 @@ export interface FetchDataConfig {
 
 export interface InternalFilter extends FilterValue {
   Header?: string;
-}
-
-export interface FilterOperatorMap {
-  [columnId: string]: Array<{
-    name: string;
-    operator:
-      | 'sw'
-      | 'ew'
-      | 'ct'
-      | 'eq'
-      | 'nsw'
-      | 'new'
-      | 'nct'
-      | 'neq'
-      | 'rel_m_m';
-  }>;
 }

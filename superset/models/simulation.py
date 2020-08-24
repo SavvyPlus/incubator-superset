@@ -181,6 +181,11 @@ class DataTableMixin:
     __tablename__ = None
     included_keys = None
     column_type_dict = None
+
+    def __init__(self, **kwargs):
+        for key in kwargs.keys():
+            self.__setattr__(key, kwargs[key])
+
     def get_def_col_name(self):
         return self.__tablename__ + '_Definition'
 

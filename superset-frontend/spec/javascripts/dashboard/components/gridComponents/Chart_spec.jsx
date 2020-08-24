@@ -20,7 +20,7 @@ import React from 'react';
 import { shallow } from 'enzyme';
 import sinon from 'sinon';
 
-import Chart from 'src/dashboard/components/gridComponents/Chart';
+import { ChartUnconnected as Chart } from 'src/dashboard/components/gridComponents/Chart';
 import SliceHeader from 'src/dashboard/components/SliceHeader';
 import ChartContainer from 'src/chart/ChartContainer';
 
@@ -44,6 +44,7 @@ describe('Chart', () => {
     slice: {
       ...sliceEntities.slices[queryId],
       description_markeddown: 'markdown',
+      owners: [],
     },
     sliceName: sliceEntities.slices[queryId].slice_name,
     timeout: 60,
@@ -52,6 +53,13 @@ describe('Chart', () => {
     toggleExpandSlice() {},
     addFilter() {},
     logEvent() {},
+    handleToggleFullSize() {},
+    changeFilter() {},
+    setFocusedFilterField() {},
+    unsetFocusedFilterField() {},
+    addDangerToast() {},
+    componentId: 'test',
+    dashboardId: 111,
     editMode: false,
     isExpanded: false,
     supersetCanExplore: false,
@@ -66,20 +74,20 @@ describe('Chart', () => {
 
   it('should render a SliceHeader', () => {
     const wrapper = setup();
-    expect(wrapper.find(SliceHeader)).toHaveLength(1);
+    expect(wrapper.find(SliceHeader)).toExist();
   });
 
   it('should render a ChartContainer', () => {
     const wrapper = setup();
-    expect(wrapper.find(ChartContainer)).toHaveLength(1);
+    expect(wrapper.find(ChartContainer)).toExist();
   });
 
   it('should render a description if it has one and isExpanded=true', () => {
     const wrapper = setup();
-    expect(wrapper.find('.slice_description')).toHaveLength(0);
+    expect(wrapper.find('.slice_description')).not.toExist();
 
     wrapper.setProps({ ...props, isExpanded: true });
-    expect(wrapper.find('.slice_description')).toHaveLength(1);
+    expect(wrapper.find('.slice_description')).toExist();
   });
 
   it('should call refreshChart when SliceHeader calls forceRefresh', () => {

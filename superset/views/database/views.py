@@ -19,8 +19,9 @@ import tempfile
 from typing import TYPE_CHECKING
 
 from flask import flash, g, redirect
-from flask_appbuilder import SimpleFormView
+from flask_appbuilder import expose, SimpleFormView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
+from flask_appbuilder.security.decorators import has_access
 from flask_babel import lazy_gettext as _
 from werkzeug.wrappers import Response
 from wtforms.fields import StringField
@@ -31,7 +32,9 @@ from superset import app, db
 from superset.connectors.sqla.models import SqlaTable
 from superset.constants import RouteMethod
 from superset.exceptions import CertificateException
+from superset.extensions import feature_flag_manager
 from superset.sql_parse import Table
+from superset.typing import FlaskResponse
 from superset.utils import core as utils
 from superset.views.base import DeleteMixin, SupersetModelView, YamlExportMixin
 
@@ -92,6 +95,17 @@ class DatabaseView(
 
     def _delete(self, pk: int) -> None:
         DeleteMixin._delete(self, pk)
+
+    @expose("/list/")
+    @has_access
+    def list(self) -> FlaskResponse:
+        if not (
+            app.config["ENABLE_REACT_CRUD_VIEWS"]
+            and feature_flag_manager.is_feature_enabled("SIP_34_DATABASE_UI")
+        ):
+            return super().list()
+
+        return super().render_app_template()
 
 
 class CsvToDatabaseView(SimpleFormView):
@@ -263,10 +277,9 @@ class ExcelToDatabaseView(SimpleFormView):
     def form_get(self, form: ExcelToDatabaseForm) -> None:
         form.header.data = 0
         form.mangle_dupe_cols.data = True
-        form.skipinitialspace.data = False
         form.decimal.data = "."
         form.if_exists.data = "fail"
-        form.sheet_name = None
+        form.sheet_name.data = ""
 
     def form_post(self, form: ExcelToDatabaseForm) -> Response:
         database = form.con.data
@@ -307,16 +320,23 @@ class ExcelToDatabaseView(SimpleFormView):
             database = (
                 db.session.query(models.Database).filter_by(id=con.data.get("id")).one()
             )
+
+            # some params are not supported by pandas.read_excel (e.g. chunksize).
+            # More can be found here:
+            # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_excel.html
             excel_to_df_kwargs = {
                 "header": form.header.data if form.header.data else 0,
                 "index_col": form.index_col.data,
                 "mangle_dupe_cols": form.mangle_dupe_cols.data,
-                "skipinitialspace": form.skipinitialspace.data,
                 "skiprows": form.skiprows.data,
                 "nrows": form.nrows.data,
-                "sheet_name": form.sheet_name.data,
-                "chunksize": 1000,
+                "sheet_name": form.sheet_name.data if form.sheet_name.data else 0,
+                "parse_dates": form.parse_dates.data,
             }
+            if form.null_values.data:
+                excel_to_df_kwargs["na_values"] = form.null_values.data
+                excel_to_df_kwargs["keep_default_na"] = False
+
             df_to_sql_kwargs = {
                 "name": excel_table.table,
                 "if_exists": form.if_exists.data,
@@ -336,7 +356,7 @@ class ExcelToDatabaseView(SimpleFormView):
             # E.g. if hive was used to upload a excel, presto will be a better option
             # to explore the table.
             expore_database = database
-            explore_database_id = database.get_extra().get("explore_database_id", None)
+            explore_database_id = database.explore_database_id
             if explore_database_id:
                 expore_database = (
                     db.session.query(models.Database)
@@ -389,7 +409,7 @@ class ExcelToDatabaseView(SimpleFormView):
         os.remove(uploaded_tmp_file_path)
         # Go back to welcome page / splash screen
         message = _(
-            'CSV file "%(excel_filename)s" uploaded to table "%(table_name)s" in '
+            'Excel file "%(excel_filename)s" uploaded to table "%(table_name)s" in '
             'database "%(db_name)s"',
             excel_filename=form.excel_file.data.filename,
             table_name=str(excel_table),

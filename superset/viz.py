@@ -21,6 +21,7 @@ These objects represent the backend of all the visualizations that
 Superset can render.
 """
 import copy
+import dataclasses
 import inspect
 import logging
 import math
@@ -29,9 +30,19 @@ import uuid
 from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
 from itertools import product
-from typing import Any, cast, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+)
 
-import dataclasses
 import geohash
 import numpy as np
 import pandas as pd
@@ -61,6 +72,7 @@ from superset.utils.core import (
     QueryMode,
     to_adhoc,
 )
+from superset.utils.dates import datetime_to_epoch
 from superset.utils.hashing import md5_sha_from_str
 
 from superset.calculation.financial.metrics import generate_fin_metric
@@ -113,7 +125,7 @@ class BaseViz:
         self.form_data = form_data
 
         self.query = ""
-        self.token = self.form_data.get("token", "token_" + uuid.uuid4().hex[:8])
+        self.token = utils.get_form_data_token(form_data)
 
         self.groupby: List[str] = self.form_data.get("groupby") or []
         self.time_shift = timedelta()
@@ -208,6 +220,14 @@ class BaseViz:
             df = df.cumsum()
         if min_periods:
             df = df[min_periods:]
+        if df.empty:
+            raise QueryObjectValidationError(
+                _(
+                    "Applied rolling window did not return any data. Please make sure "
+                    "the source query satisfies the minimum periods defined in the "
+                    "rolling window."
+                )
+            )
         return df
 
     def get_samples(self) -> List[Dict[str, Any]]:
@@ -322,14 +342,17 @@ class BaseViz:
         # default order direction
         order_desc = form_data.get("order_desc", True)
 
-        since, until = utils.get_since_until(
-            relative_start=relative_start,
-            relative_end=relative_end,
-            time_range=form_data.get("time_range"),
-            since=form_data.get("since"),
-            until=form_data.get("until"),
-        )
-        # since, until = None, None
+        try:
+            since, until = utils.get_since_until(
+                relative_start=relative_start,
+                relative_end=relative_end,
+                time_range=form_data.get("time_range"),
+                since=form_data.get("since"),
+                until=form_data.get("until"),
+            )
+        except ValueError as ex:
+            raise QueryObjectValidationError(str(ex))
+
         time_shift = form_data.get("time_shift", "")
         self.time_shift = utils.parse_past_timedelta(time_shift)
         from_dttm = None if since is None else (since - self.time_shift)
@@ -464,12 +487,40 @@ class BaseViz:
 
         if query_obj and not is_loaded:
             try:
+                invalid_columns = [
+                    col
+                    for col in (query_obj.get("columns") or [])
+                    + (query_obj.get("groupby") or [])
+                    + utils.get_column_names_from_metrics(
+                        cast(
+                            List[Union[str, Dict[str, Any]]], query_obj.get("metrics"),
+                        )
+                    )
+                    if col not in self.datasource.column_names
+                ]
+                if invalid_columns:
+                    raise QueryObjectValidationError(
+                        _(
+                            "Columns missing in datasource: %(invalid_columns)s",
+                            invalid_columns=invalid_columns,
+                        )
+                    )
                 df = self.get_df(query_obj)
                 if self.status != utils.QueryStatus.FAILED:
                     stats_logger.incr("loaded_from_source")
                     if not self.force:
                         stats_logger.incr("loaded_from_source_without_force")
                     is_loaded = True
+            except QueryObjectValidationError as ex:
+                error = dataclasses.asdict(
+                    SupersetError(
+                        message=str(ex),
+                        level=ErrorLevel.ERROR,
+                        error_type=SupersetErrorType.VIZ_GET_DF_ERROR,
+                    )
+                )
+                self.errors.append(error)
+                self.status = utils.QueryStatus.FAILED
             except Exception as ex:
                 logger.exception(ex)
 
@@ -740,6 +791,7 @@ class PivotTableViz(BaseViz):
     verbose_name = _("Pivot Table")
     credits = 'a <a href="https://github.com/airbnb/superset">Superset</a> original'
     is_timeseries = False
+    enforce_numerical_metrics = False
 
     def query_obj(self) -> QueryObjectDict:
         d = super().query_obj()
@@ -770,6 +822,18 @@ class PivotTableViz(BaseViz):
             raise QueryObjectValidationError(_("Group By' and 'Columns' can't overlap"))
         return d
 
+    @staticmethod
+    def get_aggfunc(
+        metric: str, df: pd.DataFrame, form_data: Dict[str, Any]
+    ) -> Union[str, Callable[[Any], Any]]:
+        aggfunc = form_data.get("pandas_aggfunc") or "sum"
+        if pd.api.types.is_numeric_dtype(df[metric]):
+            # Ensure that Pandas's sum function mimics that of SQL.
+            if aggfunc == "sum":
+                return lambda x: x.sum(min_count=1)
+        # only min and max work properly for non-numerics
+        return aggfunc if aggfunc in ("min", "max") else "max"
+
     def get_data(self, df: pd.DataFrame) -> VizData:
         if df.empty:
             return None
@@ -777,22 +841,33 @@ class PivotTableViz(BaseViz):
         if self.form_data.get("granularity") == "all" and DTTM_ALIAS in df:
             del df[DTTM_ALIAS]
 
-        aggfunc = self.form_data.get("pandas_aggfunc") or "sum"
+        metrics = [utils.get_metric_name(m) for m in self.form_data["metrics"]]
+        aggfuncs: Dict[str, Union[str, Callable[[Any], Any]]] = {}
+        for metric in metrics:
+            aggfuncs[metric] = self.get_aggfunc(metric, df, self.form_data)
 
-        # Ensure that Pandas's sum function mimics that of SQL.
-        if aggfunc == "sum":
-            aggfunc = lambda x: x.sum(min_count=1)
+        groupby = self.form_data.get("groupby") or []
+        columns = self.form_data.get("columns") or []
 
-        groupby = self.form_data.get("groupby")
-        columns = self.form_data.get("columns")
+        def _format_datetime(value: Any) -> Optional[str]:
+            if isinstance(value, str):
+                return f"__timestamp:{datetime_to_epoch(pd.Timestamp(value))}"
+            return None
+
+        for column_name in groupby + columns:
+            column = self.datasource.get_column(column_name)
+            if column and column.type in ("DATE", "DATETIME", "TIMESTAMP"):
+                ts = df[column_name].apply(_format_datetime)
+                df[column_name] = ts
+
         if self.form_data.get("transpose_pivot"):
             groupby, columns = columns, groupby
-        metrics = [utils.get_metric_name(m) for m in self.form_data["metrics"]]
+
         df = df.pivot_table(
             index=groupby,
             columns=columns,
             values=metrics,
-            aggfunc=aggfunc,
+            aggfunc=aggfuncs,
             margins=self.form_data.get("pivot_margins"),
         )
 
@@ -872,13 +947,16 @@ class CalHeatmapViz(BaseViz):
                 values[str(v / 10 ** 9)] = obj.get(metric)
             data[metric] = values
 
-        start, end = utils.get_since_until(
-            relative_start=relative_start,
-            relative_end=relative_end,
-            time_range=form_data.get("time_range"),
-            since=form_data.get("since"),
-            until=form_data.get("until"),
-        )
+        try:
+            start, end = utils.get_since_until(
+                relative_start=relative_start,
+                relative_end=relative_end,
+                time_range=form_data.get("time_range"),
+                since=form_data.get("since"),
+                until=form_data.get("until"),
+            )
+        except ValueError as ex:
+            raise QueryObjectValidationError(str(ex))
         if not start or not end:
             raise QueryObjectValidationError(
                 "Please provide both time bounds (Since and Until)"
@@ -1948,7 +2026,10 @@ class NVD3TimeSeriesViz(NVD3Viz):
 
         for option in time_compare:
             query_object = self.query_obj()
-            delta = utils.parse_past_timedelta(option)
+            try:
+                delta = utils.parse_past_timedelta(option)
+            except ValueError as ex:
+                raise QueryObjectValidationError(str(ex))
             query_object["inner_from_dttm"] = query_object["from_dttm"]
             query_object["inner_to_dttm"] = query_object["to_dttm"]
 
@@ -2034,8 +2115,8 @@ class MultiLineViz(NVD3Viz):
     def get_data(self, df: pd.DataFrame) -> VizData:
         fd = self.form_data
         # Late imports to avoid circular import issues
-        from superset.models.slice import Slice
         from superset import db
+        from superset.models.slice import Slice
 
         slice_ids1 = fd.get("line_charts")
         slices1 = db.session.query(Slice).filter(Slice.id.in_(slice_ids1)).all()
@@ -2207,11 +2288,43 @@ class DistributionPieViz(NVD3Viz):
     is_timeseries = False
 
     def get_data(self, df: pd.DataFrame) -> VizData:
+        def _label_aggfunc(labels: pd.Series) -> str:
+            """
+            Convert a single or multi column label into a single label, replacing
+            null values with `NULL_STRING` and joining multiple columns together
+            with a comma. Examples:
+
+            >>> _label_aggfunc(pd.Series(["abc"]))
+            'abc'
+            >>> _label_aggfunc(pd.Series([1]))
+            '1'
+            >>> _label_aggfunc(pd.Series(["abc", "def"]))
+            'abc, def'
+            >>> # note: integer floats are stripped of decimal digits
+            >>> _label_aggfunc(pd.Series([0.1, 2.0, 0.3]))
+            '0.1, 2, 0.3'
+            >>> _label_aggfunc(pd.Series([1, None, "abc", 0.8], dtype="object"))
+            '1, <NULL>, abc, 0.8'
+            """
+            label_list: List[str] = []
+            for label in labels:
+                if isinstance(label, str):
+                    label_recast = label
+                elif label is None or isinstance(label, float) and math.isnan(label):
+                    label_recast = NULL_STRING
+                elif isinstance(label, float) and label.is_integer():
+                    label_recast = str(int(label))
+                else:
+                    label_recast = str(label)
+                label_list.append(label_recast)
+
+            return ", ".join(label_list)
+
         if df.empty:
             return None
         metric = self.metric_labels[0]
         df = pd.DataFrame(
-            {"x": df[self.groupby].agg(func=", ".join, axis=1), "y": df[metric]}
+            {"x": df[self.groupby].agg(func=_label_aggfunc, axis=1), "y": df[metric]}
         )
         df.sort_values(by="y", ascending=False, inplace=True)
         return df.to_dict(orient="records")
@@ -2648,25 +2761,6 @@ class FilterBoxViz(BaseViz):
         return d
 
 
-class IFrameViz(BaseViz):
-
-    """You can squeeze just about anything in this iFrame component"""
-
-    viz_type = "iframe"
-    verbose_name = _("iFrame")
-    credits = 'a <a href="https://github.com/airbnb/superset">Superset</a> original'
-    is_timeseries = False
-
-    def query_obj(self) -> QueryObjectDict:
-        return {}
-
-    def get_df(self, query_obj: Optional[QueryObjectDict] = None) -> pd.DataFrame:
-        return pd.DataFrame()
-
-    def get_data(self, df: pd.DataFrame) -> VizData:
-        return {"iframe": True}
-
-
 class ParallelCoordinatesViz(BaseViz):
 
     """Interactive parallel coordinate implementation
@@ -2912,8 +3006,8 @@ class DeckGLMultiLayer(BaseViz):
     def get_data(self, df: pd.DataFrame) -> VizData:
         fd = self.form_data
         # Late imports to avoid circular import issues
-        from superset.models.slice import Slice
         from superset import db
+        from superset.models.slice import Slice
 
         slice_ids = fd.get("deck_slices")
         slices = db.session.query(Slice).filter(Slice.id.in_(slice_ids)).all()

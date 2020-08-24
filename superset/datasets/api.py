@@ -67,6 +67,7 @@ class DatasetRestApi(BaseSupersetModelRestApi):
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {
         RouteMethod.EXPORT,
         RouteMethod.RELATED,
+        RouteMethod.DISTINCT,
         "refresh",
         "related_objects",
     }
@@ -100,6 +101,7 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         "database.database_name",
     ]
     show_columns = [
+        "id",
         "database.database_name",
         "database.id",
         "table_name",
@@ -120,6 +122,8 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         "owners.last_name",
         "columns",
         "metrics",
+        "datasource_type",
+        "url",
     ]
     add_model_schema = DatasetPostSchema()
     edit_model_schema = DatasetPutSchema()
@@ -148,6 +152,7 @@ class DatasetRestApi(BaseSupersetModelRestApi):
     }
     filter_rel_fields = {"database": [["id", DatabaseFilter, lambda: []]]}
     allowed_rel_fields = {"database", "owners"}
+    allowed_distinct_fields = {"schema"}
 
     openapi_spec_component_schemas = (DatasetRelatedObjectsResponse,)
 

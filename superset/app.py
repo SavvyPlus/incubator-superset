@@ -36,6 +36,7 @@ from superset.extensions import (
     db,
     feature_flag_manager,
     jinja_context_manager,
+    machine_auth_provider_factory,
     manifest_processor,
     migrate,
     results_backend_manager,
@@ -124,47 +125,49 @@ class SupersetAppInitializer:
         #
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
+        from superset.charts.api import ChartRestApi
         from superset.connectors.druid.views import (
-            DruidDatasourceModelView,
-            DruidClusterModelView,
-            DruidMetricInlineView,
-            DruidColumnInlineView,
             Druid,
+            DruidClusterModelView,
+            DruidColumnInlineView,
+            DruidDatasourceModelView,
+            DruidMetricInlineView,
         )
+        from superset.connectors.sqla.views import (
+            RowLevelSecurityFiltersModelView,
+            SqlMetricInlineView,
+            TableColumnInlineView,
+            TableModelView,
+        )
+        from superset.dashboards.api import DashboardRestApi
+        from superset.databases.api import DatabaseRestApi
         from superset.datasets.api import DatasetRestApi
         from superset.queries.api import QueryRestApi
-        from superset.connectors.sqla.views import (
-            TableColumnInlineView,
-            SqlMetricInlineView,
-            TableModelView,
-            RowLevelSecurityFiltersModelView,
-        )
+        from superset.views.access_requests import AccessRequestsModelView
+        from superset.views.alerts import AlertLogModelView, AlertModelView
         from superset.views.annotations import (
             AnnotationLayerModelView,
             AnnotationModelView,
         )
         from superset.views.api import Api
+        from superset.views.chart.views import SliceAsync, SliceModelView
         from superset.views.core import Superset
-        from superset.views.redirects import R
-        from superset.views.key_value import KV
-        from superset.views.access_requests import AccessRequestsModelView
-        from superset.views.css_templates import CssTemplateAsyncModelView
-        from superset.views.css_templates import CssTemplateModelView
-        from superset.charts.api import ChartRestApi
-        from superset.views.chart.views import SliceModelView, SliceAsync
-        from superset.dashboards.api import DashboardRestApi
+        from superset.views.css_templates import (
+            CssTemplateAsyncModelView,
+            CssTemplateModelView,
+        )
         from superset.views.dashboard.views import (
-            DashboardModelView,
             Dashboard,
+            DashboardModelView,
             DashboardModelViewAsync,
         )
-        from superset.databases.api import DatabaseRestApi
         from superset.views.database.views import (
-            DatabaseView,
             CsvToDatabaseView,
+            DatabaseView,
             ExcelToDatabaseView,
         )
         from superset.views.datasource import Datasource
+        from superset.views.key_value import KV
         from superset.views.simulation.views import (
             ClientModelView,
             ProjectModelView,
@@ -176,23 +179,21 @@ class SupersetAppInitializer:
         )
         from superset.views.simulation.assumption_check import (
             UploadISPView,
+            AssumptionBookModelView,
         )
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
+        from superset.views.redirects import R
         from superset.views.schedules import (
             DashboardEmailScheduleView,
             SliceEmailScheduleView,
         )
-        from superset.views.alerts import (
-            AlertModelView,
-            AlertLogModelView,
-        )
         from superset.views.sql_lab import (
-            SavedQueryViewApi,
             SavedQueryView,
-            TabStateView,
-            TableSchemaView,
+            SavedQueryViewApi,
             SqlLab,
+            TableSchemaView,
+            TabStateView,
         )
         from superset.views.tags import TagView
         from superset.views.nem.views import NemModelView
@@ -292,33 +293,42 @@ class SupersetAppInitializer:
             icon="fa-list-ol",
             category="Modeling",
         )
-        # appbuilder.add_view(
-        #     EditAssumptionModelView,
-        #     "Edit Assumption",
-        #     label=__("Edit Assumption"),
-        #     icon="fa-edit",
-        #     category="Assumption Book",
-        #     category_icon="",
-        # )
-        # appbuilder.add_separator("Assumption Book")
-        # appbuilder.add_link(
-        #     "Upload assumption file",
-        #     label="Upload Assumption excel",
-        #     href="/upload_base_excel/form",
-        #     icon="fa-upload",
-        #     category="Assumption Book",
-        #     category_label="Assumption Book",
-        #     category_icon="fa-wrench",
-        # )
-        # appbuilder.add_link(
-        #     "Upload ISP case",
-        #     label="Upload ISP case",
-        #     href="/upload_isp/form",
-        #     icon="fa-upload",
-        #     category="Assumption Book",
-        #     category_label="Assumption Book",
-        #     category_icon="fa-wrench"
-        # )
+        appbuilder.add_view(
+            EditAssumptionModelView,
+            "Edit Assumption",
+            label=__("Edit Assumption"),
+            icon="fa-edit",
+            category="Assumption Book",
+            category_icon="",
+        )
+        appbuilder.add_separator("Assumption Book")
+        appbuilder.add_view(
+            AssumptionBookModelView,
+            "Assumption Book",
+            label="Comparison",
+            icon="fa-bar-chart",
+            category="Assumption Book",
+            category_label="Assumption Book",
+            category_icon="",
+        )
+        appbuilder.add_link(
+            "Upload assumption file",
+            label="Upload Assumption excel",
+            href="/upload_base_excel/form",
+            icon="fa-upload",
+            category="Assumption Book",
+            category_label="Assumption Book",
+            category_icon="fa-wrench",
+        )
+        appbuilder.add_link(
+            "Upload ISP case",
+            label="Upload ISP case",
+            href="/upload_isp/form",
+            icon="fa-upload",
+            category="Assumption Book",
+            category_label="Assumption Book",
+            category_icon="fa-wrench"
+        )
         appbuilder.add_view(
             CssTemplateModelView,
             "CSS Templates",
@@ -570,6 +580,7 @@ class SupersetAppInitializer:
         self.configure_fab()
         self.configure_url_map_converters()
         self.configure_data_sources()
+        self.configure_auth_provider()
 
         # Hook that provides administrators a handle on the Flask APP
         # after initialization
@@ -600,6 +611,9 @@ class SupersetAppInitializer:
             self.init_app_in_ctx()
 
         self.post_init()
+
+    def configure_auth_provider(self) -> None:
+        machine_auth_provider_factory.init_app(self.flask_app)
 
     def setup_event_logger(self) -> None:
         _event_logger["event_logger"] = get_event_logger_from_cfg_value(
@@ -643,8 +657,10 @@ class SupersetAppInitializer:
         # Doing local imports here as model importing causes a reference to
         # app.config to be invoked and we need the current_app to have been setup
         #
-        from superset.utils.url_map_converters import RegexConverter
-        from superset.utils.url_map_converters import ObjectTypeConverter
+        from superset.utils.url_map_converters import (
+            ObjectTypeConverter,
+            RegexConverter,
+        )
 
         self.flask_app.url_map.converters["regex"] = RegexConverter
         self.flask_app.url_map.converters["object_type"] = ObjectTypeConverter

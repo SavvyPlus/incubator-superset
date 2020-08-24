@@ -20,11 +20,11 @@ import React from 'react';
 import styled from '@superset-ui/style';
 import PropTypes from 'prop-types';
 import rison from 'rison';
-import { Select, AsyncSelect } from 'src/components/Select';
-import { Label } from 'react-bootstrap';
+import { AsyncSelect, CreatableSelect, Select } from 'src/components/Select';
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
 
+import Label from 'src/components/Label';
 import FormLabel from 'src/components/FormLabel';
 
 import SupersetAsyncSelect from './AsyncSelect';
@@ -33,7 +33,7 @@ import './TableSelector.less';
 
 const FieldTitle = styled.p`
   color: ${({ theme }) => theme.colors.secondary.light2};
-  font-size: ${({ theme }) => theme.typography.sizes.s};
+  font-size: ${({ theme }) => theme.typography.sizes.s}px;
   margin: 20px 0 10px 0;
   text-transform: uppercase;
 `;
@@ -188,10 +188,13 @@ export default class TableSelector extends React.PureComponent {
     const actualDbId = dbId || this.props.dbId;
     if (actualDbId) {
       this.setState({ schemaLoading: true });
-      const endpoint = `/superset/schemas/${actualDbId}/${forceRefresh}/`;
+      const queryParams = rison.encode({
+        force: Boolean(forceRefresh),
+      });
+      const endpoint = `/api/v1/database/${actualDbId}/schemas/?q=${queryParams}`;
       return SupersetClient.get({ endpoint })
         .then(({ json }) => {
-          const schemaOptions = json.schemas.map(s => ({
+          const schemaOptions = json.result.map(s => ({
             value: s,
             label: s,
             title: s,
@@ -243,7 +246,7 @@ export default class TableSelector extends React.PureComponent {
 
   renderDatabaseOption(db) {
     return (
-      <span>
+      <span title={db.database_name}>
         <Label bsStyle="default" className="m-r-5">
           {db.backend}
         </Label>
@@ -254,7 +257,7 @@ export default class TableSelector extends React.PureComponent {
 
   renderTableOption(option) {
     return (
-      <span className="TableLabel">
+      <span className="TableLabel" title={option.label}>
         <span className="m-r-5">
           <small className="text-muted">
             <i
@@ -358,31 +361,49 @@ export default class TableSelector extends React.PureComponent {
       tableSelectDisabled = true;
     }
     const options = this.state.tableOptions;
-    const select = this.props.schema ? (
-      <Select
-        name="select-table"
-        isLoading={this.state.tableLoading}
-        ignoreAccents={false}
-        placeholder={t('Select table or type table name')}
-        autosize={false}
-        onChange={this.changeTable}
-        options={options}
-        value={this.state.tableName}
-        optionRenderer={this.renderTableOption}
-      />
-    ) : (
-      <AsyncSelect
-        name="async-select-table"
-        placeholder={tableSelectPlaceholder}
-        disabled={tableSelectDisabled}
-        autosize={false}
-        onChange={this.changeTable}
-        value={this.state.tableName}
-        loadOptions={this.getTableNamesBySubStr}
-        optionRenderer={this.renderTableOption}
-        isDisabled={this.props.formMode}
-      />
-    );
+    let select = null;
+    if (this.props.schema && !this.props.formMode) {
+      select = (
+        <Select
+          name="select-table"
+          isLoading={this.state.tableLoading}
+          ignoreAccents={false}
+          placeholder={t('Select table or type table name')}
+          autosize={false}
+          onChange={this.changeTable}
+          options={options}
+          value={this.state.tableName}
+          optionRenderer={this.renderTableOption}
+        />
+      );
+    } else if (this.props.formMode) {
+      select = (
+        <CreatableSelect
+          name="select-table"
+          isLoading={this.state.tableLoading}
+          ignoreAccents={false}
+          placeholder={t('Select table or type table name')}
+          autosize={false}
+          onChange={this.changeTable}
+          options={options}
+          value={this.state.tableName}
+          optionRenderer={this.renderTableOption}
+        />
+      );
+    } else {
+      select = (
+        <AsyncSelect
+          name="async-select-table"
+          placeholder={tableSelectPlaceholder}
+          isDisabled={tableSelectDisabled}
+          autosize={false}
+          onChange={this.changeTable}
+          value={this.state.tableName}
+          loadOptions={this.getTableNamesBySubStr}
+          optionRenderer={this.renderTableOption}
+        />
+      );
+    }
     const refresh = !this.props.formMode && (
       <RefreshLabel
         onClick={() => this.changeSchema({ value: this.props.schema }, true)}

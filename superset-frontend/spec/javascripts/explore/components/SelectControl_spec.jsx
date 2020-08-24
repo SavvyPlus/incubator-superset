@@ -48,19 +48,19 @@ describe('SelectControl', () => {
   });
 
   it('renders with Select by default', () => {
-    expect(wrapper.find(OnPasteSelect)).toHaveLength(0);
+    expect(wrapper.find(OnPasteSelect)).not.toExist();
     expect(wrapper.findWhere(x => x.type() === Select)).toHaveLength(1);
   });
 
   it('renders with OnPasteSelect when multi', () => {
     wrapper.setProps({ multi: true });
-    expect(wrapper.find(OnPasteSelect)).toHaveLength(1);
+    expect(wrapper.find(OnPasteSelect)).toExist();
     expect(wrapper.findWhere(x => x.type() === Select)).toHaveLength(0);
   });
 
   it('renders with Creatable when freeForm', () => {
     wrapper.setProps({ freeForm: true });
-    expect(wrapper.find(OnPasteSelect)).toHaveLength(0);
+    expect(wrapper.find(OnPasteSelect)).not.toExist();
     expect(wrapper.findWhere(x => x.type() === CreatableSelect)).toHaveLength(
       1,
     );
@@ -145,7 +145,7 @@ describe('SelectControl', () => {
     });
   });
 
-  describe('componentWillReceiveProps', () => {
+  describe('UNSAFE_componentWillReceiveProps', () => {
     it('sets state.options if props.choices has changed', () => {
       const updatedOptions = [
         { value: 'three', label: 'three' },

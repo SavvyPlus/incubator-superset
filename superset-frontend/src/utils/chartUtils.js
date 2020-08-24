@@ -19,6 +19,15 @@
  * under the License.
  */
 
+export const empowerCharts = [
+  'box_plot_run_comp',
+  'box_plot_fin',
+  'box_plot_fin_str',
+  'multi_boxplot',
+  'spot_price_histogram',
+  'amcharts_stock',
+];
+
 const REGION_BORDER_COLOR = {
   NSW: '#1F497D',
   QLD: '#F2C80F',
@@ -51,6 +60,10 @@ const REGION_BORDER_COLOR = {
 // function getBoxPlotYMax(allBoxData) {
 //   return RoundUp(maxBoxData(allBoxData));
 // }
+
+export function barFormatter(value) {
+  return `${value / 1000}K`;
+}
 
 export function boxplotFormatter(param) {
   return [

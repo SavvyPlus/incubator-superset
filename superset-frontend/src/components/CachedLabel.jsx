@@ -18,9 +18,10 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Label } from 'react-bootstrap';
 import moment from 'moment';
 import { t } from '@superset-ui/translation';
+
+import Label from 'src/components/Label';
 import TooltipWrapper from './TooltipWrapper';
 
 const propTypes = {
@@ -70,9 +71,8 @@ class CacheLabel extends React.PureComponent {
     return (
       <TooltipWrapper tooltip={this.state.tooltipContent} label="cache-desc">
         <Label
-          className={this.props.className}
+          className={`${this.props.className} m-r-5 pointer`}
           bsStyle={labelStyle}
-          style={{ fontSize: '10px', marginRight: '5px', cursor: 'pointer' }}
           onClick={this.props.onClick}
           onMouseOver={this.mouseOver.bind(this)}
           onMouseOut={this.mouseOut.bind(this)}
