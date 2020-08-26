@@ -1038,7 +1038,7 @@ class SimulationModelView(
     def post_add(self, item):
         db.session.flush()
         g.id = item.id
-        item.run_id = item.id + int(os.environ.get("RUN_ID_INC", 30000))
+        item.run_id = item.id + int(os.environ.get("RUN_ID_INC", 90000))
         db.session.commit()
 
     def prefill_hidden_field(self, form):
