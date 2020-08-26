@@ -1038,9 +1038,8 @@ class SimulationModelView(
     def post_add(self, item):
         db.session.flush()
         g.id = item.id
-        item.run_id = item.id + 30000
+        item.run_id = item.id + int(os.environ.get("RUN_ID_INCR", 30000))
         db.session.commit()
-
 
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
@@ -1311,8 +1310,8 @@ class SimulationModelView(
             'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
             # 'spottbl': f'spot_demand_{"Run_196".lower()}',
             'duids': data,
-            'year_start': simulation.start_date.year,
-            'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
+            'year_start': str(simulation.start_date.year),
+            'year_end': str(get_full_week_end_date(simulation.start_date, simulation.end_date).year),
             'supersetURL': get_current_external_ip(),
             'email': g.user.email,
         }
