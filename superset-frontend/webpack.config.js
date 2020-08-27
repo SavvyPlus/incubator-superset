@@ -181,6 +181,7 @@ const config = {
     dashboard: addPreamble('/src/dashboard/index.jsx'),
     sqllab: addPreamble('/src/SqlLab/index.tsx'),
     crudViews: addPreamble('/src/views/index.tsx'),
+    menu: addPreamble('src/views/menu.tsx'),
     profile: addPreamble('/src/profile/index.tsx'),
     generation: addPreamble('/src/generation/index.tsx'),
     assumption: addPreamble('/src/assumption/index.tsx'),
