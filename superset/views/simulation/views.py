@@ -1038,9 +1038,8 @@ class SimulationModelView(
     def post_add(self, item):
         db.session.flush()
         g.id = item.id
-        item.run_id = item.id + 10000
+        item.run_id = item.id + int(os.environ.get("RUN_ID_INC", 90000))
         db.session.commit()
-
 
     def prefill_hidden_field(self, form):
         flt_dic = self.get_filter_args()
@@ -1262,7 +1261,18 @@ class SimulationModelView(
         g.user = None
         data = json.loads(request.data.decode())
         # print(data)
-        status_keys = ['s3Status', 'glueStats', 'crawlerStatus', 'msgSQS', 'queryId', 'queryStatus', 'updateStatus', 'exportStatus']
+        if 'queryStatus' in data.keys():
+            if data['queryStatus'] == 'FAILED':
+                run_id = data['run_id']
+                simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
+                simulation.status = 'Query failed'
+                simulation.status_detail = \
+                    'Errors occurred while querying Athena. Please run the query again'
+                db.session.commit()
+
+        error = ''
+        status_keys = ['s3Status', 'glueStats', 'crawlerStatus', 'msgSQS', 'queryId',
+                       'queryStatus', 'updateStatus', 'exportStatus']
         for key in status_keys:
             if key in data.keys() and ('error' in data[key] or 'timeout' in data[key] or 'failure' in data[key]):
                 error = f'{key} error: {data[key]}'
@@ -1270,53 +1280,55 @@ class SimulationModelView(
         g.detail = error
         return '200 OK'
 
+    @simulation_logger.log_simulation(action_name='start query')
+    @expose('/query-result/<sim_id>/', methods=['POST'])
+    def query_result(self, sim_id):
+        query_sqs = \
+            'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
+        print('get query result')
+        data = request.form['duid_list']
+        data = data.strip('\t').replace('\n', '').split(',')
+        simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
+        msg = {
+            'sim_tag': simulation.run_id,
+            # 'sim_tag': 'Run_196',
+            'outBucket': bucket_inputs,
+            'query_list': [
+                'Technology_Generation_by_percentile_cal',
+                'DUID_Generation_by_percentile_cal',
+                'DUID_Average_Price_by_percentile_cal',
+                'DUID_Revenue_by_percentile_cal',
+                'DUID_Spot_Premium_by_percentile_cal',
+                'TWA_Simulation_by_simulation_cal',
+                'DUID_Generation_by_simulation_cal',
+                'DUID_Average_Price_by_simulation_cal',
+                'DUID_Revenue_by_simulation_cal'
+            ],
+            'dbname': 'dex_poc',
+            'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
+            # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
+            'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
+            # 'spottbl': f'spot_demand_{"Run_196".lower()}',
+            'duids': data,
+            'year_start': str(simulation.start_date.year),
+            'year_end': str(get_full_week_end_date(simulation.start_date, simulation.end_date).year),
+            'supersetURL': get_current_external_ip(),
+            'email': g.user.email,
+        }
+        # if send_sqs_msg(msg, queue_url=query_sqs):
+        g.action_object = simulation.name
+        g.action_object_type = 'simulation'
+        if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
+            message = 'Success! the data files will be sent to your email when ready.'
+            g.result = 'send query result'
+            g.detail = json.dumps(msg)
+        else:
+            message = \
+                'Failed to send query to sqs, please try again later or contact dev team.'
+            g.result = 'send query result'
+            g.detail = message
+        return jsonify({'message': message})
 
-    # @simulation_logger.log_simulation(action_name='start query')
-    # @expose('/query_result/<sim_id>/', methods=['POST'])
-    # def query_result(self, sim_id):
-    #     query_sqs = 'https://sqs.ap-southeast-2.amazonaws.com/000581985601/sim_athena_queries'
-    #     print('get query result')
-    #     data = request.form['duid_list']
-    #     data = data.strip('\t').replace('\n', '').split(',')
-    #     simulation = db.session.query(Simulation).filter_by(id=sim_id).first()
-    #     msg = {
-    #         'sim_tag': simulation.run_id,
-    #         # 'sim_tag': 'Run_196',
-    #         'outBucket': bucket_inputs,
-    #         'query_list': [
-    #             'Technology_Generation_by_percentile_cal',
-    #             'DUID_Generation_by_percentile_cal',
-    #             'DUID_Average_Price_by_percentile_cal',
-    #             'DUID_Revenue_by_percentile_cal',
-    #             'DUID_Spot_Premium_by_percentile_cal',
-    #             'TWA_Simulation_by_simulation_cal',
-    #             'DUID_Generation_by_simulation_cal',
-    #             'DUID_Average_Price_by_simulation_cal',
-    #             'DUID_Revenue_by_simulation_cal'
-    #         ],
-    #         'dbname': 'dex_poc',
-    #         'dispatchtbl': f'dispatch_{str(simulation.run_id).lower()}',
-    #         # 'dispatchtbl': f'dispatch_{"Run_196".lower()}',
-    #         'spottbl': f'spot_demand_{str(simulation.run_id).lower()}',
-    #         # 'spottbl': f'spot_demand_{"Run_196".lower()}',
-    #         'duids': data,
-    #         'year_start': simulation.start_date.year,
-    #         'year_end': get_full_week_end_date(simulation.start_date, simulation.end_date).year,
-    #         'supersetURL': get_current_external_ip(),
-    #         'email': g.user.email,
-    #     }
-    #     # if send_sqs_msg(msg, queue_url=query_sqs):
-    #     g.action_object = simulation.name
-    #     g.action_object_type = 'simulation'
-    #     if send_sqs_msg(json.dumps(msg), queue_url=query_sqs):
-    #         message = 'Query has been sent, the data files will be sent to your email when ready.'
-    #         g.result = 'send query result'
-    #         g.detail = json.dumps(msg)
-    #     else:
-    #         message = 'Query failed to send to sqs, please try again later or contact dev team.'
-    #         g.result = 'send query result'
-    #         g.detail=message
-    #     return jsonify({'message': message})
 
 class ProjectModelView(EmpowerModelView):
 
