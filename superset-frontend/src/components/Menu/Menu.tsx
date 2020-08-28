@@ -164,7 +164,7 @@ export default function Menu({
       <Navbar inverse fluid staticTop role="navigation">
         <Navbar.Header>
           <Navbar.Brand>
-            <a className="navbar-brand m-t-m-13" href={brand.path}>
+            <a className="navbar-brand" href={brand.path}>
               <img width="106" src={brand.icon} alt={brand.alt} />
             </a>
           </Navbar.Brand>
