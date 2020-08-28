@@ -16,30 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-@import '../../../stylesheets/less/variables.less';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { supersetTheme, ThemeProvider } from '@superset-ui/style';
+import Menu from 'src/components/Menu/Menu';
 
-#main-menu {
-  .navbar .caret {
-    width: 1rem;
-    padding: 0 0 18px 0;
-
-    &:before {
-      position: relative;
-      top: -2px;
-    }
-  }
-
-  .navbar-inverse {
-    border-bottom: 2px solid @gray-bg;
-  }
-
-  .version-info {
-    padding: 5px 20px;
-    color: @gray-heading;
-    font-size: @font-size-xs;
-
-    div {
-      white-space: nowrap;
-    }
-  }
-}
+const container = document.getElementById('app');
+const bootstrapJson = container?.getAttribute('data-bootstrap') ?? '{}';
+const bootstrap = JSON.parse(bootstrapJson);
+const menu = { ...bootstrap.common.menu_data };
+const app = (
+  <ThemeProvider theme={supersetTheme}>
+    <Menu data={menu} />
+  </ThemeProvider>
+);
+ReactDOM.render(app, document.getElementById('app-menu'));

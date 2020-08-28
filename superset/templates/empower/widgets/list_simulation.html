@@ -67,40 +67,76 @@
             {% endfor %}
             <td>
                 {% if item['status']=='Running' %}
-                <button class="btn btn-primary btn-sm" data-toggle="modal"
-                    data-target="#startModal{{ pk }}" data-client="{{ pk }}" disabled>
-                Start
-                </button>
+                    <button class="btn btn-primary btn-sm" data-toggle="modal"
+                            data-target="#startModal{{ pk }}" data-client="{{ pk }}"
+                            disabled>
+                        Start
+                    </button>
                 {% else %}
-                <button class="btn btn-primary btn-sm" data-toggle="modal"
-                    data-target="#startModal{{ pk }}" data-client="{{ pk }}"
-                >
-                Start
-                </button>
-            </td>
-                <div class="modal fade" id="startModal{{ pk }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    {% if item['status'] == 'Query failed' %}
+                        <button class="btn btn-primary btn-sm" data-toggle="modal"
+                                data-target="#startModal{{ pk }}" data-client="{{ pk }}"
+                        >
+                            Re-query
+                        </button>
+                    {% else %}
+                        <button class="btn btn-primary btn-sm" data-toggle="modal"
+                                data-target="#startModal{{ pk }}" data-client="{{ pk }}"
+                        >
+                            Start
+                        </button>
+                    {% endif %}
+                    </td>
+                    <div class="modal fade" id="startModal{{ pk }}" tabindex="-1"
+                         role="dialog" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="modal-title-run">Start Run for {{item['name']}}</h5>
+                                    <h5 class="modal-title" id="modal-title-run">
+                                        {% if item['status'] == 'Query failed' %}
+                                            Rerun the Athena query for {{ item['name'] }}
+                                        {% else %}
+                                             Start Run for {{ item['name'] }}
+                                        {% endif %}
+                                    </h5>
                                 </div>
                                 <div class="modal-body">
+                                    {% if item['status'] != 'Query failed' %}
+                                        <div style="margin-bottom: 20px">
+                                            <label for="project-select-{{ pk }}">
+                                                Choose to start a test run or full run
+                                            </label>
+                                            <select id="run-select-{{ pk }}"
+                                                    name="{{ pk }}"
+                                                    class="select2-chosen">
+                                                <option value="test">Test run</option>
+                                                <option value="full">Full run</option>
+                                            </select>
+                                        </div>
+                                    {% endif %}
+
                                     <div>
-                                    <label for="project-select-{{ pk }}">Choose to start a test run or full run</label>
-                                    <select id="run-select-{{ pk }}" name="{{pk}}" class="select2-chosen">
-                                        <option value="test">Test run</option>
-                                        <option value="full">Full run</option>
-                                    </select>
-                                    </div>
-                                    <div>
-                                    <label for="query-trigger-input-{{ pk }}">Please input the list of DUIDs:</label>
-                                    <textarea id="query-trigger-input-{{ pk }}" name="{{pk}}" placeholder="XNUMURKAHSF, COLEASF1, ..."
-                                    rows="5" cols="40"></textarea>
+                                        <label for="query-trigger-input-{{ pk }}">Please
+                                            input the list of DUIDs:</label>
+                                        <textarea id="query-trigger-input-{{ pk }}"
+                                                  name="{{ pk }}"
+                                                  placeholder="XNUMURKAHSF, COLEASF1, ..."
+                                                  style="display: block"
+                                                  rows="5" cols="40"></textarea>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button class="btn btn-primary" id="run-btn-{{pk}}" name="{{ pk }}">Start run</button>
-                                    <button class="btn btn-secondary" data-dismiss="modal" id="close-btn-run">
+                                    {% if item['status'] == 'Query failed' %}
+                                        <button class="btn btn-primary"
+                                                id="query-btn-{{ pk }}"
+                                                name="{{ pk }}">Run Query</button>
+                                    {% else %}
+                                        <button class="btn btn-primary"
+                                                id="run-btn-{{ pk }}"
+                                                name="{{ pk }}">Start run</button>
+                                    {% endif %}
+                                    <button class="btn btn-secondary" data-dismiss="modal"
+                                            id="close-btn-run">
                                         Close
                                     </button>
                                 </div>
@@ -217,51 +253,57 @@
             });
         })
 
-        // $('[id^=query-btn]').click(function(e) {
-        //     e.preventDefault();
-        //     let button = this
-        //     let href = '/simulationmodelview/query_result/'
-        //
-        //     button.innerHTML = 'Sending query'
-        //     this.setAttribute('disabled', true)
-        //     let pk = this.name
-        //     let query_input = document.getElementById('query-input-'+pk).value
-        //     var csrf_token = "{{ csrf_token() if csrf_token else '' }}";
-        //     let formdata = new FormData();
-        //     formdata.append('duid_list', query_input)
-        //     href = href + pk + '/'
-        //     $.ajax({
-        //         type: "POST",
-        //         url: href,
-        //         xhr: function () {
-        //             var myXhr = $.ajaxSettings.xhr();
-        //             return myXhr;
-        //         },
-        //         success: function (data) {
-        //             alert(data['message'])
-        //             button.removeAttribute('disabled')
-        //             // console.log(document.getElementById('assumption'))
-        //             button.innerHTML = 'Start run'
-        //             window.location.reload(true)
-        //         },
-        //         error: function(error, str){
-        //             if (str =='timeout'){
-        //                 alert('Timeout, please try again later.')
-        //             }
-        //             else if (str == 'error'){
-        //                 alert(error['message'])
-        //             }
-        //             button.removeAttribute('disabled')
-        //             button.innerHTML = 'Start run'
-        //         },
-        //         timeout: 30000,
-        //         async: true,
-        //         data:formdata,
-        //         cache: false,
-        //         contentType: false,
-        //         processData: false,
-        //     });
-        // })
+        $('[id^=query-btn]').on('click', function (e) {
+            e.preventDefault();
+            let button = this
+            let href = '/simulationmodelview/query-result/'
+
+            button.innerHTML = 'Sending query'
+            this.setAttribute('disabled', true)
+            let pk = this.name
+            let query_input = document.getElementById('query-trigger-input-' + pk).value
+            let csrf_token = "{{ csrf_token() if csrf_token else '' }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            let formdata = new FormData();
+            formdata.append('duid_list', query_input)
+            href = href + pk + '/'
+            $.ajax({
+                type: "POST",
+                url: href,
+                xhr: function () {
+                    var myXhr = $.ajaxSettings.xhr();
+                    return myXhr;
+                },
+                success: function (data) {
+                    alert(data['message'])
+                    button.removeAttribute('disabled')
+                    // console.log(document.getElementById('assumption'))
+                    button.innerHTML = 'Start run'
+                    window.location.reload()
+                },
+                error: function (error, str) {
+                    if (str == 'timeout') {
+                        alert('Timeout, please try again later.')
+                    } else if (str == 'error') {
+                        alert(error['message'])
+                    }
+                    button.removeAttribute('disabled')
+                    button.innerHTML = 'Start run'
+                },
+                timeout: 30000,
+                async: true,
+                data: formdata,
+                cache: false,
+                contentType: false,
+                processData: false,
+            });
+        })
     </script>
 {% endblock %}
 
