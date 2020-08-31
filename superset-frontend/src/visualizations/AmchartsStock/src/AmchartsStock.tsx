@@ -52,11 +52,9 @@ export default function AmchartsStock(props: AmchartsStockProps) {
     x.data = data as any[];
 
     const dateAxis = x.xAxes.push(new am4charts.DateAxis());
-    dateAxis.baseInterval = {
-      timeUnit: 'minute',
-      count: 30,
-    };
-    dateAxis.tooltipDateFormat = 'yyyy-MM-dd HH:mm:ss';
+    dateAxis.start = 0.5;
+    dateAxis.keepSelection = true;
+    dateAxis.groupData = true;
 
     const valueAxis = x.yAxes.push(new am4charts.ValueAxis());
     valueAxis.tooltip!.disabled = true;
@@ -72,6 +70,7 @@ export default function AmchartsStock(props: AmchartsStockProps) {
         series.dataFields.valueY = `${key}`;
         series.tooltip!.background.fill = am4core.color('#fff');
         series.tooltipText = '{name}: [bold]{valueY}[/]';
+        series.groupFields.valueY = 'sum';
         // series.stroke = am4core.color('red');
         // series.fill = am4core.color('red');
 
@@ -86,9 +85,6 @@ export default function AmchartsStock(props: AmchartsStockProps) {
 
     x.cursor = new am4charts.XYCursor();
     x.cursor.lineY.opacity = 0;
-
-    dateAxis.start = 0.8;
-    dateAxis.keepSelection = true;
 
     // Add range selector
     const selector = new am4plugins_rangeSelector.DateAxisRangeSelector();
