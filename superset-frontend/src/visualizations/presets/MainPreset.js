@@ -62,6 +62,7 @@ import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
 import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPlugin';
 import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
 import { AmchartsStockChartPlugin } from '../AmchartsStock/src';
+import { HalfHourSpotChartPlugin } from '../HalfHourSpot/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -74,6 +75,7 @@ export default class MainPreset extends Preset {
         new BarChartPlugin().configure({ key: 'bar' }),
         new BigNumberChartPlugin().configure({ key: 'big_number' }),
         new BigNumberTotalChartPlugin().configure({ key: 'big_number_total' }),
+        new HalfHourSpotChartPlugin().configure({ key: 'half_hour_spot' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_run_comp' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_fin' }),
