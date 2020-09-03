@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/camelcase */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -83,10 +82,10 @@ export default function HalfHourSpot(props: HalfHourSpotProps) {
       if (idx === 0) {
         series.tooltipText = `[bold]{categoryX}[/]\n\n${toolTxt}`;
       }
-      series.tooltip!.pointerOrientation = 'vertical';
-      series.tooltip!.background.cornerRadius = 20;
-      series.tooltip!.background.fillOpacity = 0.5;
-      series.tooltip!.label.padding(12, 12, 12, 12);
+      (series.tooltip as any).pointerOrientation = 'vertical';
+      (series.tooltip as any).background.cornerRadius = 20;
+      (series.tooltip as any).background.fillOpacity = 0.5;
+      (series.tooltip as any).label.padding(12, 12, 12, 12);
       scrollbarX.series.push(series);
     });
 
@@ -100,11 +99,11 @@ export default function HalfHourSpot(props: HalfHourSpotProps) {
     x.legend.position = 'top';
     x.legend.useDefaultMarker = true;
     x.legend.itemContainers.template.events.on('hit', function (ev) {
-      const targetSeries = ev.target.dataItem!.dataContext as any;
+      const targetSeries = (ev.target.dataItem as any).dataContext as any;
       if (!(targetSeries.isHidden || targetSeries.isHiding)) {
         toolTxt = '';
         x.series.values.forEach(value => {
-          const vy = value.dataFields.valueY!;
+          const vy = value.dataFields.valueY as string;
           if (vy !== targetSeries.dataFields.valueY) {
             if (!(value.isHidden || value.isHiding)) {
               toolTxt += `${vy.replace('_', '-')}: \${${vy}}\n`;
@@ -116,7 +115,7 @@ export default function HalfHourSpot(props: HalfHourSpotProps) {
       } else {
         toolTxt = '';
         x.series.values.forEach(value => {
-          const vy = value.dataFields.valueY!;
+          const vy = value.dataFields.valueY as string;
           if (!(value.isHidden || value.isHiding)) {
             // console.log(vy);
             toolTxt += `${vy.replace('_', '-')}: \${${vy}}\n`;
@@ -131,10 +130,10 @@ export default function HalfHourSpot(props: HalfHourSpotProps) {
     });
 
     const marker: any = x.legend.markers.template.children.getIndex(0);
-    marker!.cornerRadius(12, 12, 12, 12);
-    marker!.strokeWidth = 1;
-    marker!.strokeOpacity = 1;
-    marker!.stroke = am4core.color('#ccc');
+    marker.cornerRadius(12, 12, 12, 12);
+    marker.strokeWidth = 1;
+    marker.strokeOpacity = 1;
+    marker.stroke = am4core.color('#ccc');
 
     chart.current = x as any;
     return () => {

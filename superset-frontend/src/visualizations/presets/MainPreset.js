@@ -63,6 +63,7 @@ import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPl
 import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
 import { AmchartsStockChartPlugin } from '../AmchartsStock/src';
 import { HalfHourSpotChartPlugin } from '../HalfHourSpot/src';
+import { TechGenerationChartPlugin } from '../TechGeneration/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -110,6 +111,7 @@ export default class MainPreset extends Preset {
         new SankeyChartPlugin().configure({ key: 'sankey' }),
         new SunburstChartPlugin().configure({ key: 'sunburst' }),
         new TableChartPlugin().configure({ key: 'table' }),
+        new TechGenerationChartPlugin().configure({ key: 'tech_generation' }),
         new TimePivotChartPlugin().configure({ key: 'time_pivot' }),
         new TimeTableChartPlugin().configure({ key: 'time_table' }),
         new TreemapChartPlugin().configure({ key: 'treemap' }),
