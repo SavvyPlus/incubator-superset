@@ -26,6 +26,7 @@ export const empowerCharts = [
   'multi_boxplot',
   'spot_price_histogram',
   'amcharts_stock',
+  'half_hour_spot',
 ];
 
 const REGION_BORDER_COLOR = {
@@ -259,7 +260,7 @@ export function getOption(queryResponse) {
           formatter:
             chart_type === 'value'
               ? // ? value => '$' + value / Math.pow(10, 6) + 'M'
-                value => `$${value}`
+              value => `$${value}`
               : value => `${value * 100}%`,
           fontSize: 16,
         },

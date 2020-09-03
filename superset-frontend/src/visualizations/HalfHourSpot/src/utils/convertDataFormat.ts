@@ -10,19 +10,20 @@ export function convertDataFormat(
 ): FinalDataProps[] {
   const finalData: FinalDataProps[] = [];
   const orderedData = rawData.sort((a, b) =>
-    a['`HHStarting`'] > b['`HHStarting`'] ? 1 : -1,
+    (a['`HHStarting`'] as string) > (b['`HHStarting`'] as string) ? 1 : -1,
   );
   const dataLen = Object.keys(orderedData).length;
   const calNum = dataLen / 48;
-  let curHH = {};
+  let curHH: FinalDataProps = { hhs: '' };
   orderedData.forEach((od, idx) => {
     const hhs = od['`HHStarting`'] as string;
     const period = (od['`Period`'] as string).replace('-', '_');
-    const sp = od['`SpotPrice`'] as number;
+    const sp =
+      Math.round(((od['`SpotPrice`'] as number) + Number.EPSILON) * 100) / 100;
 
     if (idx % calNum === 0) {
       if (idx !== 0) finalData.push(curHH);
-      curHH = {};
+      curHH = { hhs: '' };
       curHH.hhs = hhs;
       curHH[period] = sp;
     } else if (idx === dataLen - 1) {

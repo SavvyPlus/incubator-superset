@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/camelcase */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -38,12 +39,12 @@ export type HalfHourSpotProps = {
 
 export default function HalfHourSpot(props: HalfHourSpotProps) {
   const { data, height, width } = props;
-  console.log(data);
-  const cals = Object.keys(data[0]).filter(k => k.includes('Cal'));
-  // console.log(cals);
+  // console.log(data);
+  const cals = Object.keys(data[0])
+    .filter(k => k.includes('Cal'))
+    .sort();
 
   const chart = useRef(null);
-  const controls = useRef(null);
 
   useLayoutEffect(() => {
     // Create chart instance
@@ -51,7 +52,7 @@ export default function HalfHourSpot(props: HalfHourSpotProps) {
     const x = am4core.create('chartdiv', am4charts.XYChart);
 
     // Add data
-    x.data = data;
+    x.data = data as any[];
 
     // Create axes
     const categoryAxis = x.xAxes.push(new am4charts.CategoryAxis());
@@ -61,29 +62,79 @@ export default function HalfHourSpot(props: HalfHourSpotProps) {
     categoryAxis.renderer.minGridDistance = 50;
 
     const valueAxis = x.yAxes.push(new am4charts.ValueAxis());
+    valueAxis.title.text = 'Nominal Spot Price ($/MWh)';
 
+    // Add scrollbar
+    const scrollbarX = new am4charts.XYChartScrollbar();
+    scrollbarX.minHeight = 30;
+
+    let toolTxt = '';
     cals.forEach(cal => {
+      toolTxt += `${cal.replace('_', '-')}: \${${cal}}\n`;
+    });
+    cals.forEach((cal, idx) => {
       // Create series
-      console.log(cal);
       const series = x.series.push(new am4charts.LineSeries());
+      series.name = cal.replace('_', '-');
       series.dataFields.valueY = cal;
       series.dataFields.categoryX = 'hhs';
       series.strokeWidth = 2;
       series.minBulletDistance = 10;
-      series.tooltipText = '{valueY}';
-      series.tooltip.pointerOrientation = 'vertical';
-      series.tooltip.background.cornerRadius = 20;
-      series.tooltip.background.fillOpacity = 0.5;
-      series.tooltip.label.padding(12, 12, 12, 12);
+      if (idx === 0) {
+        series.tooltipText = `[bold]{categoryX}[/]\n\n${toolTxt}`;
+      }
+      series.tooltip!.pointerOrientation = 'vertical';
+      series.tooltip!.background.cornerRadius = 20;
+      series.tooltip!.background.fillOpacity = 0.5;
+      series.tooltip!.label.padding(12, 12, 12, 12);
+      scrollbarX.series.push(series);
     });
 
-    // Add scrollbar
-    x.scrollbarX = new am4charts.XYChartScrollbar();
-    // x.scrollbarX.series.push(series);
-
+    x.scrollbarX = scrollbarX;
+    x.scrollbarX.parent = x.bottomAxesContainer;
     // Add cursor
     x.cursor = new am4charts.XYCursor();
     x.cursor.xAxis = categoryAxis;
+
+    x.legend = new am4charts.Legend();
+    x.legend.position = 'top';
+    x.legend.useDefaultMarker = true;
+    x.legend.itemContainers.template.events.on('hit', function (ev) {
+      const targetSeries = ev.target.dataItem!.dataContext as any;
+      if (!(targetSeries.isHidden || targetSeries.isHiding)) {
+        toolTxt = '';
+        x.series.values.forEach(value => {
+          const vy = value.dataFields.valueY!;
+          if (vy !== targetSeries.dataFields.valueY) {
+            if (!(value.isHidden || value.isHiding)) {
+              toolTxt += `${vy.replace('_', '-')}: \${${vy}}\n`;
+            }
+          }
+        });
+
+        x.series.values[0].tooltipText = `[bold]{categoryX}[/]\n\n${toolTxt}`;
+      } else {
+        toolTxt = '';
+        x.series.values.forEach(value => {
+          const vy = value.dataFields.valueY!;
+          if (!(value.isHidden || value.isHiding)) {
+            // console.log(vy);
+            toolTxt += `${vy.replace('_', '-')}: \${${vy}}\n`;
+          }
+
+          if (targetSeries.dataFields.valueY === vy) {
+            toolTxt += `${vy.replace('_', '-')}: \${${vy}}\n`;
+          }
+          x.series.values[0].tooltipText = `[bold]{categoryX}[/]\n\n${toolTxt}`;
+        });
+      }
+    });
+
+    const marker: any = x.legend.markers.template.children.getIndex(0);
+    marker!.cornerRadius(12, 12, 12, 12);
+    marker!.strokeWidth = 1;
+    marker!.strokeOpacity = 1;
+    marker!.stroke = am4core.color('#ccc');
 
     chart.current = x as any;
     return () => {
@@ -91,27 +142,6 @@ export default function HalfHourSpot(props: HalfHourSpotProps) {
     };
   }, [data]);
 
-  function generateChartData() {
-    const chartData = [];
-    const firstDate = new Date();
-    firstDate.setDate(firstDate.getDate() - 1000);
-    let visits = 1200;
-    for (let i = 0; i < 500; i++) {
-      // we create date objects here. In your data, you can have date strings
-      // and then set format of your dates using chart.dataDateFormat property,
-      // however when possible, use date objects, as this will speed up chart rendering.
-      const newDate = new Date(firstDate);
-      newDate.setDate(newDate.getDate() + i);
-
-      visits += Math.round((Math.random() < 0.5 ? 1 : -1) * Math.random() * 10);
-
-      chartData.push({
-        date: newDate,
-        visits,
-      });
-    }
-    return chartData;
-  }
   return (
     <div id="chartdiv" style={{ width: `${width}px`, height: `${height}px` }} />
   );
