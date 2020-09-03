@@ -70,6 +70,7 @@ from superset.connectors.sqla.models import (
     TableColumn,
 )
 from superset.dashboards.dao import DashboardDAO
+from superset.databases.filters import DatabaseFilter
 from superset.exceptions import (
     CertificateException,
     DatabaseNotFound,
@@ -112,7 +113,6 @@ from superset.views.base import (
     json_success,
     validate_sqlatable,
 )
-from superset.views.database.filters import DatabaseFilter
 from superset.views.utils import (
     _deserialize_results_payload,
     apply_display_max_row_limit,
@@ -1732,6 +1732,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         session.commit()
         return json_success(json.dumps({"published": dash.published}))
 
+    @event_logger.log_this
     @has_access
     @expose("/dashboard/<dashboard_id_or_slug>/")
     def dashboard(  # pylint: disable=too-many-locals
@@ -2677,6 +2678,8 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
     def welcome(self) -> FlaskResponse:
         """Personalized welcome page"""
         if not g.user or not g.user.get_id():
+            if conf.get("PUBLIC_ROLE_LIKE_GAMMA", False) or conf["PUBLIC_ROLE_LIKE"]:
+                return self.render_template("superset/public_welcome.html")
             return redirect(appbuilder.get_url_for_login)
 
         welcome_dashboard_id = (
