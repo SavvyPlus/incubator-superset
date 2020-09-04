@@ -210,7 +210,7 @@ def simulation_start_invoker(run_id, sim_num, start_run_msg=None):
             #                          year_end=simulation.end_date.year, interval=500)
             # batch_invoke_merger_all(bucket_test, 'Run_191', 0, 1, output_count=1, interval=500)
             invoker(payload={'run_id': sim_tag, 'bucket': bucket_inputs, 'supersetURL': get_current_external_ip()},
-                    function_name='spot-simulation-prod-stk-check-spot-output')
+                    function_name='spot-simulation-{}-stk-check-spot-output'.format(os.environ['EMPOWER_ENV']))
 
             # simulation.status = 'Run finished'
             #

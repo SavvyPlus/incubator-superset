@@ -136,8 +136,8 @@ db_pass_mysql = "Elecmms_2020"
 db_schema_ElecMMS3 = "ElecMMS3"
 
 # S3 data folders:
-bucket_inputs = os.environ["SIM_BUCKET"]
-bucket_hist = os.environ["SIM_BUCKET"]
+bucket_inputs = "spot-price-forecast-simulation-{}".format(os.environ["EMPOWER_ENV"])
+bucket_hist = "spot-price-forecast-simulation-{}".format(os.environ["EMPOWER_ENV"])
 rooftop_pv_path = 'historical-generation/{}/rooftop-pv'  # state
 public_holiday_path = 'public_holiday/{}.pickle'  # state
 wind_solar_path = 'historical-generation/{}/{}/{}'  # state, wind/solar, duid

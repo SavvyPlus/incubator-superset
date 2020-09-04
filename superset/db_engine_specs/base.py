@@ -305,7 +305,9 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         return select_exprs
 
     @classmethod
-    def fetch_data(cls, cursor: Any, limit: int) -> List[Tuple[Any, ...]]:
+    def fetch_data(
+        cls, cursor: Any, limit: Optional[int] = None
+    ) -> List[Tuple[Any, ...]]:
         """
 
         :param cursor: Cursor instance
@@ -314,7 +316,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         """
         if cls.arraysize:
             cursor.arraysize = cls.arraysize
-        if cls.limit_method == LimitMethod.FETCH_MANY:
+        if cls.limit_method == LimitMethod.FETCH_MANY and limit:
             return cursor.fetchmany(limit)
         return cursor.fetchall()
 
@@ -440,17 +442,6 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         return parsed_query.set_or_update_query_limit(limit)
 
     @staticmethod
-    def excel_to_df(**kwargs: Any) -> pd.DataFrame:
-        """ Read excel into Pandas DataFrame
-           :param kwargs: params to be passed to DataFrame.read_excel
-           :return: Pandas DataFrame containing data from excel
-        """
-        kwargs["encoding"] = "utf-8"
-        kwargs["iterator"] = True
-        df = pd.read_excel(**kwargs)
-        return df
-
-    @staticmethod
     def csv_to_df(**kwargs: Any) -> pd.DataFrame:
         """ Read csv into Pandas DataFrame
         :param kwargs: params to be passed to DataFrame.read_csv
@@ -519,7 +510,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         Create table from contents of a excel. Note: this method does not create
         metadata for the table.
         """
-        df = cls.excel_to_df(io=filename, **excel_to_df_kwargs,)
+        df = pd.read_excel(io=filename, **excel_to_df_kwargs)
         engine = cls.get_engine(database)
         if table.schema:
             # only add schema when it is preset and non empty

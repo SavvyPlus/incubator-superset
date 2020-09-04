@@ -1,20 +1,19 @@
-import boto3
-import json
-import time
-import threading
 import datetime
+import json
+import os
+import threading
+import time
 
-from superset import celery_app, simulation_logger
+import boto3
 
-from .util import write_pickle_to_s3, read_pickle_from_s3, list_object_keys
 from .simulation_config import bucket_inputs, parameters_for_batch_v2
+from .util import read_pickle_from_s3, list_object_keys
 
 client = boto3.client('lambda', region_name='ap-southeast-2')
 s3 = boto3.client('s3', region_name='ap-southeast-2')
 
 
-
-def invoker(payload, function_name='spot-simulation-prod-stk2-lp-v2'):
+def invoker(payload, function_name='spot-simulation-{}-stk2-lp-v2'.format(os.environ['EMPOWER_ENV'])):
     response = client.invoke(
         FunctionName=function_name,
         InvocationType='Event',
@@ -43,7 +42,7 @@ def batch_invoke(sim_tag, sim_ref_para, sim_index):
 def merger(sim_index, sim_tag):
     payload = {"sim_index": sim_index, "sim_tag": sim_tag}
     response = client.invoke(
-        FunctionName='spot-simulation-prod-stk2-merger',
+        FunctionName='spot-simulation-{}-stk2-merger'.format(os.environ['EMPOWER_ENV']),
         InvocationType='Event',
         Payload=json.dumps(payload),
     )
@@ -57,7 +56,7 @@ def merger2(sim_index, sim_tag, prefix, output_name, bucket_from=bucket_inputs, 
                "bucket_from": bucket_from,
                "bucket_to": bucket_to}
     response = client.invoke(
-        FunctionName='spot-simulation-prod-stk2-merger',
+        FunctionName='spot-simulation-{}-stk2-merger'.format(os.environ['EMPOWER_ENV']),
         InvocationType='Event',
         Payload=json.dumps(payload),
     )
