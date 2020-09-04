@@ -25,7 +25,7 @@ import thumbnail from '../images/thumbnail.png';
 
 const metadata = new ChartMetadata({
   description: 'Tech Generation',
-  name: t('TechGeneration'),
+  name: t('Tech Generation'),
   thumbnail,
 });
 
