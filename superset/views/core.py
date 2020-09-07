@@ -710,12 +710,10 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         has_scenario = 'RunComb' in datasource.column_names
         has_state = 'State' in datasource.column_names
         has_year = "CalYear" in datasource.column_names and "FinYear" in datasource.column_names
-        has_daylike = 'DayLike' in datasource.column_names
         scenarios = []
         states = []
         cal_year = []
         fin_year = []
-        daylike = []
 
         # if the datasource is one of simulation result, get simulation assumption file to display
         run_id = None
@@ -761,7 +759,6 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             result = engine.execute("SELECT DISTINCT PriceBucket FROM {}".format(datasource.table_name))
             for row in result:
                 price_bins.append(row[0])
-
 
         # data for financial charts
         fin_scenarios = []
@@ -826,11 +823,24 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             result = engine.execute("SELECT DISTINCT FinYear FROM {}".format(datasource.table_name))
             for row in result:
                 fin_year.append(row[0])
-        if has_daylike:
+
+        periods = []
+        if 'Period' in datasource.column_names:
             engine = self.appbuilder.get_session.get_bind()
-            result = engine.execute("SELECT DISTINCT DayLike FROM {}".format(datasource.table_name))
+            result = engine.execute("SELECT DISTINCT Period FROM {}".format(
+                datasource.table_name
+            ))
             for row in result:
-                daylike.append(row[0])
+                periods.append(row[0])
+
+        run_ids = []
+        if 'RunID' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT RunID FROM {}".format(
+                datasource.table_name
+            ))
+            for row in result:
+                run_ids.append(row[0])
 
         bootstrap_data = {
             "can_add": slice_add_perm,
@@ -849,7 +859,6 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             "states": states,
             "cal_year": cal_year,
             "fin_year": fin_year,
-            # "daylike": daylike,
             "fin_scenarios": fin_scenarios,
             "fin_firm_techs": fin_firm_techs,
             "fin_periods": fin_periods,
@@ -861,6 +870,8 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             "period_quarterly": period_quarterly,
             "price_bins": price_bins,
             "assumption_name": assumption_name or None,
+            "periods": periods,
+            "run_ids": run_ids,
         }
         table_name = (
             datasource.table_name
