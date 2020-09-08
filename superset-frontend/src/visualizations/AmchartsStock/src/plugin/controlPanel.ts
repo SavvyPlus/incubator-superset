@@ -95,7 +95,7 @@ const config: ControlPanelConfig = {
   // For control input types, see: superset-frontend/src/explore/components/controls/index.js
   controlPanelSections: [
     {
-      label: t('Query'),
+      label: t('Filter'),
       expanded: true,
       controlSetRows: [
         // ['groupby'],

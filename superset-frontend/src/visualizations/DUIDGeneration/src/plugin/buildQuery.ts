@@ -37,12 +37,16 @@ import AdhocFilter from '../../../../explore/AdhocFilter';
  */
 export default function buildQuery(formData: QueryFormData) {
   formData.metrics = [];
-  const mtr: string[] = formData.fuel_type.map((ft: any) => `\`${ft}\``);
-  mtr.unshift('`State`');
-  mtr.unshift('`Percentile`');
-  mtr.unshift('`Year`');
-
-  mtr.forEach(m => {
+  [
+    '`Year`',
+    '`RunID`',
+    '`Duid`',
+    '`0`',
+    '`0.25`',
+    '`0.5`',
+    '`0.75`',
+    '`1`',
+  ].forEach(m => {
     formData.metrics.push(
       new AdhocMetric({
         expressionType: 'SQL',
@@ -53,24 +57,30 @@ export default function buildQuery(formData: QueryFormData) {
   });
 
   formData.adhoc_filters = [];
-  formData.adhoc_filters.push(
-    new AdhocFilter({
-      clause: 'WHERE',
-      comparator: formData.percentile,
-      expressionType: 'SIMPLE',
-      operator: '==',
-      subject: 'Percentile',
-    }),
-  );
-  formData.adhoc_filters.push(
-    new AdhocFilter({
-      clause: 'WHERE',
-      comparator: formData.state,
-      expressionType: 'SIMPLE',
-      operator: '==',
-      subject: 'State',
-    }),
-  );
+  // console.log(formData);
+  if (!formData.period.includes('All')) {
+    formData.adhoc_filters.push(
+      new AdhocFilter({
+        clause: 'WHERE',
+        comparator: formData.period,
+        expressionType: 'SIMPLE',
+        operator: 'in',
+        subject: 'Year',
+      }),
+    );
+  }
+
+  if (!formData.run_id.includes('All')) {
+    formData.adhoc_filters.push(
+      new AdhocFilter({
+        clause: 'WHERE',
+        comparator: formData.run_id,
+        expressionType: 'SIMPLE',
+        operator: 'in',
+        subject: 'RunID',
+      }),
+    );
+  }
 
   return buildQueryContext(formData, baseQueryObject => [
     {

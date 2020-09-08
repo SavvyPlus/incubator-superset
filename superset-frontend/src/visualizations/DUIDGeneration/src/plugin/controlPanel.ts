@@ -19,7 +19,7 @@
 import { t } from '@superset-ui/translation';
 import { validateNonEmpty } from '@superset-ui/validator';
 import { ControlPanelConfig } from '@superset-ui/chart-controls';
-import { allFuelTypes } from '../utils';
+import { formatSelectOptions } from '../utils';
 
 const config: ControlPanelConfig = {
   /**
@@ -96,64 +96,42 @@ const config: ControlPanelConfig = {
   // For control input types, see: superset-frontend/src/explore/components/controls/index.js
   controlPanelSections: [
     {
-      label: t('Query'),
+      label: t('Filter'),
       expanded: true,
       controlSetRows: [
         [
           {
-            name: 'percentile',
+            name: 'period',
             config: {
               type: 'SelectControl',
-              multi: false,
-              label: t('Percentile'),
-              default: '0.05',
+              multi: true,
+              label: t('Period'),
+              default: ['All'],
               validators: [validateNonEmpty],
-              choices: [
-                // [value, label]
-                ['0', '0%'],
-                ['0.05', '5%'],
-                ['0.25', '25%'],
-                ['0.5', '50%'],
-                ['0.75', '75%'],
-                ['0.95', '95%'],
-                ['1', '100%'],
-              ],
-              description: t('Choose a percentile'),
-            },
-          },
-        ],
-        [
-          {
-            name: 'state',
-            config: {
-              type: 'SelectControl',
-              multi: false,
-              label: t('State'),
-              default: 'VIC1',
-              validators: [validateNonEmpty],
-              choices: [
-                // [value, label]
-                ['VIC1', 'VIC'],
-                ['NSW1', 'NSW'],
-                ['SA1', 'SA'],
-                ['QLD1', 'QLD'],
-                ['TAS1', 'TAS'],
-              ],
-              description: t('Choose a state'),
-            },
-          },
-        ],
-        [
-          {
-            name: 'fuel_type',
-            config: {
-              type: 'TextControl',
-              label: t('Fuel Types'),
-              disabled: true,
-              description: t('All fuel types. Readonly.'),
               mapStateToProps: state => ({
-                default: allFuelTypes(state.datasource),
+                // @ts-ignore
+                // [value, label]
+                choices: formatSelectOptions(state.periods),
               }),
+              description: t('Periods of percentiles'),
+            },
+          },
+        ],
+        [
+          {
+            name: 'run_id',
+            config: {
+              type: 'SelectControl',
+              multi: true,
+              label: t('Run ID'),
+              default: ['All'],
+              validators: [validateNonEmpty],
+              mapStateToProps: state => ({
+                // @ts-ignore
+                // [value, label]
+                choices: formatSelectOptions(state.run_ids),
+              }),
+              description: t('Run IDs of percentiles'),
             },
           },
         ],
@@ -168,9 +146,6 @@ const config: ControlPanelConfig = {
     series: {
       validators: [validateNonEmpty],
       clearable: false,
-    },
-    row_limit: {
-      default: 100,
     },
   },
 };

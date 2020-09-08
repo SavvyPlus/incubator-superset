@@ -65,6 +65,7 @@ import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
 import { AmchartsStockChartPlugin } from '../AmchartsStock/src';
 import { HalfHourSpotChartPlugin } from '../HalfHourSpot/src';
 import { TechGenerationChartPlugin } from '../TechGeneration/src';
+import { DuidGenerationChartPlugin } from '../DUIDGeneration/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -77,6 +78,7 @@ export default class MainPreset extends Preset {
         new BarChartPlugin().configure({ key: 'bar' }),
         new BigNumberChartPlugin().configure({ key: 'big_number' }),
         new BigNumberTotalChartPlugin().configure({ key: 'big_number_total' }),
+        new DuidGenerationChartPlugin().configure({ key: 'duid_generation' }),
         new HalfHourSpotChartPlugin().configure({ key: 'half_hour_spot' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_run_comp' }),

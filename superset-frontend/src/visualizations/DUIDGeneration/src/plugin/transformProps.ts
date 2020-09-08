@@ -17,9 +17,14 @@
  * under the License.
  */
 import { ChartProps, DataRecord } from '@superset-ui/chart';
-import { transformData } from '../utils';
+import {
+  transformData,
+  getPeriods,
+  boxplotFormatter,
+  yAxisLabelFormatter,
+} from '../utils';
 
-export type TechGenerationDatum = DataRecord;
+export type DuidGenerationDatum = DataRecord;
 
 export default function transformProps(chartProps: ChartProps) {
   /**
@@ -29,7 +34,7 @@ export default function transformProps(chartProps: ChartProps) {
    *
    * The transformProps function is also quite useful to return
    * additional/modified props to your data viz component. The formData
-   * can also be accessed from your TechGeneration.tsx file, but
+   * can also be accessed from your DuidGeneration.tsx file, but
    * doing supplying custom props here is often handy for integrating third
    * party libraries that rely on specific props.
    *
@@ -52,17 +57,115 @@ export default function transformProps(chartProps: ChartProps) {
    * be seen until restarting the development server.
    */
   const { width, height, queryData } = chartProps;
-  const data = queryData.data as TechGenerationDatum[];
+  const data = queryData.data as DuidGenerationDatum[];
 
   // console.log('formData via TransformProps.ts', formData);
-  // console.log(data);
+  // console.log(queryData);
   const transformedData = transformData(data);
+  const periods = getPeriods(data);
+  const keys = transformedData.map(entry => entry.duid);
+
+  const echartOptions = {
+    // title: {
+    //   text: 'Spot Price Forecast',
+    //   left: 'center',
+    //   textStyle: {
+    //     fontSize: 30,
+    //   },
+    // },
+    legend: {
+      top: '2%',
+      data: keys,
+      textStyle: {
+        fontSize: 16,
+      },
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: {
+          title: 'Save as image',
+        },
+      },
+    },
+    tooltip: {
+      trigger: 'item',
+      axisPointer: {
+        type: 'shadow',
+      },
+    },
+    grid: {
+      left: '10%',
+      top: '10%',
+      right: '10%',
+      bottom: '10%',
+    },
+    xAxis: {
+      type: 'category',
+      data: periods,
+      boundaryGap: true,
+      nameGap: 30,
+      splitArea: {
+        show: true,
+      },
+      axisLabel: {
+        formatter: '{value}',
+        fontSize: 16,
+      },
+      splitLine: {
+        show: false,
+      },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'MWh',
+      nameLocation: 'middle',
+      nameTextStyle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+      },
+      nameGap: 60,
+      boundaryGap: [0, '5%'],
+      splitArea: {
+        show: false,
+      },
+      axisLabel: {
+        fontSize: 16,
+        formatter: yAxisLabelFormatter,
+      },
+    },
+    dataZoom: [
+      {
+        type: 'inside',
+        start: 0,
+        end: 100,
+      },
+      {
+        show: true,
+        height: 20,
+        type: 'slider',
+        top: '95%',
+        xAxisIndex: [0],
+        start: 0,
+        end: 20,
+      },
+    ],
+    series: transformedData.map((d, i) => ({
+      name: d.duid,
+      type: 'boxplot',
+      data: d.values,
+      tooltip: { formatter: boxplotFormatter },
+      // itemStyle: {
+      //   borderColor: REGION_BORDER_COLOR[regions[i]],
+      // },
+    })),
+  };
+
+  // console.log(echartOptions);
 
   return {
     width,
     height,
     data,
-    // and now your control data, manipulated as needed, and passed through as props!
-    transformedData,
+    echartOptions,
   };
 }
