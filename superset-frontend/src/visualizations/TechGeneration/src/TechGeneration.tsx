@@ -25,78 +25,33 @@ import am4themes_animated from '@amcharts/amcharts4/themes/animated';
 
 am4core.useTheme(am4themes_animated);
 
+export interface TransformedDataProps {
+  [key: string]: string;
+}
+
 export type TechGenerationProps = {
   height: number;
   width: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<any, any>; // please add additional typing for your data here
   // add typing here for the props you pass in from transformProps.ts!
-  boldText: boolean;
-  headerFontSize: 'xxs' | 'xs' | 's' | 'm' | 'l' | 'xl' | 'xxl';
-  headerText: string;
+  transformedData: TransformedDataProps;
 };
 
 export default function TechGeneration(props: TechGenerationProps) {
-  const { data, height, width } = props;
+  const { data, height, width, transformedData } = props;
 
   const chart = useRef(null);
 
   useLayoutEffect(() => {
     const x = am4core.create('chartdiv', am4charts.XYChart);
 
-    // Add data
-    // Add data
-    x.data = [
-      {
-        period: 'Cal-20',
-        battery: 2.5,
-        brown_coal: 2.5,
-        demand: 2.1,
-        solar: 0.3,
-        wind: 0.2,
-        gas: 0.1,
-      },
-      {
-        period: 'Cal-21',
-        battery: 2.6,
-        brown_coal: 2.7,
-        demand: 2.2,
-        solar: 0.3,
-        wind: 0.3,
-        gas: 0.1,
-      },
-      {
-        period: 'Cal-22',
-        battery: 2.8,
-        brown_coal: 2.9,
-        demand: 2.4,
-        solar: 0.3,
-        wind: 0.3,
-        gas: 0.1,
-      },
-      {
-        period: 'Cal-23',
-        battery: 2.8,
-        brown_coal: 2.9,
-        demand: 2.4,
-        solar: 0.3,
-        wind: 0.3,
-        gas: 0.1,
-      },
-      {
-        period: 'Cal-24',
-        battery: 2.8,
-        brown_coal: 2.9,
-        demand: 2.4,
-        solar: 0.3,
-        wind: 0.3,
-        gas: 0.1,
-      },
-    ];
-
+    // @ts-ignore
+    x.data = transformedData;
+    // console.log(transformedData);
     // Create axes
     const categoryAxis = x.xAxes.push(new am4charts.CategoryAxis());
-    categoryAxis.dataFields.category = 'period';
+    categoryAxis.dataFields.category = 'year';
     categoryAxis.renderer.grid.template.location = 0;
 
     const valueAxis = x.yAxes.push(new am4charts.ValueAxis());
@@ -104,14 +59,20 @@ export default function TechGeneration(props: TechGenerationProps) {
     // valueAxis.renderer.inside = true;
     // valueAxis.renderer.labels.template.disabled = true;
     valueAxis.min = 0;
+    x.numberFormatter.numberFormat = '#.b';
 
     [
       ['battery', 'Battery', '#9f5d8d'],
-      ['brown_coal', 'Brown Coal', '#7f4d38'],
+      ['biomass', 'Biomass', '#dd5025'],
+      ['blackcoal', 'Black Coal', '#000000'],
+      ['browncoal', 'Brown Coal', '#7f4d38'],
       ['demand', 'Demand', '#cccccc'],
-      ['solar', 'Solar', '#f1d563'],
-      ['wind', 'Wind', '#58b5aa'],
       ['gas', 'Gas', '#e73727'],
+      ['hydro', 'Hydro', '#98d2e8'],
+      ['liquidfuel', 'Liquid Fuel', '#a75834'],
+      ['solar', 'Solar', '#f1d563'],
+      ['solarpv', 'Solar PV', '#f8e9a8'],
+      ['wind', 'Wind', '#58b5aa'],
     ].forEach(region => {
       const series = x.series.push(new am4charts.ColumnSeries());
       const name = region[1];
@@ -119,7 +80,7 @@ export default function TechGeneration(props: TechGenerationProps) {
       const hex = region[2];
       series.name = name;
       series.dataFields.valueY = field;
-      series.dataFields.categoryX = 'period';
+      series.dataFields.categoryX = 'year';
       series.sequencedInterpolation = true;
 
       // Make it stacked
@@ -134,7 +95,7 @@ export default function TechGeneration(props: TechGenerationProps) {
 
       // Add label
       const labelBullet = series.bullets.push(new am4charts.LabelBullet());
-      labelBullet.label.text = '{valueY}';
+      // labelBullet.label.text = '{valueY}';
       labelBullet.locationY = 0.5;
       labelBullet.label.hideOversized = true;
     });

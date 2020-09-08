@@ -19,6 +19,7 @@
 import { t } from '@superset-ui/translation';
 import { validateNonEmpty } from '@superset-ui/validator';
 import { ControlPanelConfig } from '@superset-ui/chart-controls';
+import { allFuelTypes } from '../utils';
 
 const config: ControlPanelConfig = {
   /**
@@ -97,59 +98,68 @@ const config: ControlPanelConfig = {
     {
       label: t('Query'),
       expanded: true,
-      controlSetRows: [['groupby'], ['metrics'], ['adhoc_filters'], ['row_limit', null]],
-    },
-    {
-      label: t('Hello Controls!'),
-      expanded: true,
       controlSetRows: [
         [
           {
-            name: 'header_text',
-            config: {
-              type: 'TextControl',
-              default: 'Hello, World!',
-              renderTrigger: true,
-              // ^ this makes it apply instantaneously, without triggering a "run query" button
-              label: t('Header Text'),
-              description: t('The text you want to see in the header'),
-            },
-          },
-        ],
-        [
-          {
-            name: 'bold_text',
-            config: {
-              type: 'CheckboxControl',
-              label: t('Bold Text'),
-              renderTrigger: true,
-              default: true,
-              description: t('A checkbox to make the '),
-            },
-          },
-        ],
-        [
-          {
-            name: 'header_font_size',
+            name: 'percentile',
             config: {
               type: 'SelectControl',
-              label: t('Font Size'),
-              default: 'xl',
+              multi: false,
+              label: t('Percentile'),
+              default: '0.05',
+              validators: [validateNonEmpty],
               choices: [
                 // [value, label]
-                ['xxs', 'xx-small'],
-                ['xs', 'x-small'],
-                ['s', 'small'],
-                ['m', 'medium'],
-                ['l', 'large'],
-                ['xl', 'x-large'],
-                ['xxl', 'xx-large'],
+                ['0', '0%'],
+                ['0.05', '5%'],
+                ['0.25', '25%'],
+                ['0.5', '50%'],
+                ['0.75', '75%'],
+                ['0.95', '95%'],
+                ['1', '100%'],
               ],
-              renderTrigger: true,
-              description: t('The size of your header font'),
+              description: t('Choose a percentile'),
             },
           },
         ],
+        [
+          {
+            name: 'state',
+            config: {
+              type: 'SelectControl',
+              multi: false,
+              label: t('State'),
+              default: 'VIC1',
+              validators: [validateNonEmpty],
+              choices: [
+                // [value, label]
+                ['VIC1', 'VIC'],
+                ['NSW1', 'NSW'],
+                ['SA1', 'SA'],
+                ['QLD1', 'QLD'],
+                ['TAS1', 'TAS'],
+              ],
+              description: t('Choose a state'),
+            },
+          },
+        ],
+        [
+          {
+            name: 'fuel_type',
+            config: {
+              type: 'TextControl',
+              label: t('Fuel Types'),
+              disabled: true,
+              description: t('All fuel types. Readonly.'),
+              mapStateToProps: state => ({
+                default: allFuelTypes(state.datasource),
+              }),
+            },
+          },
+        ],
+        // ['groupby'],
+        // ['metrics'],
+        // ['adhoc_filters'],
       ],
     },
   ],

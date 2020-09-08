@@ -17,8 +17,9 @@
  * under the License.
  */
 import { ChartProps, DataRecord } from '@superset-ui/chart';
+import { transformData } from '../utils';
 
-type TechGenerationDatum = DataRecord;
+export type TechGenerationDatum = DataRecord;
 
 export default function transformProps(chartProps: ChartProps) {
   /**
@@ -50,18 +51,18 @@ export default function transformProps(chartProps: ChartProps) {
    * function during development with hot reloading, changes won't
    * be seen until restarting the development server.
    */
-  const { width, height, formData, queryData } = chartProps;
+  const { width, height, queryData } = chartProps;
   const data = queryData.data as TechGenerationDatum[];
 
-  console.log('formData via TransformProps.ts', formData);
+  // console.log('formData via TransformProps.ts', formData);
+  // console.log(data);
+  const transformedData = transformData(data);
 
   return {
     width,
     height,
     data,
     // and now your control data, manipulated as needed, and passed through as props!
-    boldText: formData.boldText,
-    headerFontSize: formData.headerFontSize,
-    headerText: formData.headerText,
+    transformedData,
   };
 }

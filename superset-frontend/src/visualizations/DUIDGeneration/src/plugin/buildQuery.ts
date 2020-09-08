@@ -38,14 +38,14 @@ import AdhocFilter from '../../../../explore/AdhocFilter';
 export default function buildQuery(formData: QueryFormData) {
   formData.metrics = [];
   [
-    '`Period`',
+    '`Year`',
     '`RunID`',
-    '`DUID`',
-    '`Percentile0`',
-    '`Percentile0.25`',
-    '`Percentile0.5`',
-    '`Percentile0.75`',
-    '`Percentile1`',
+    '`Duid`',
+    '`0`',
+    '`0.25`',
+    '`0.5`',
+    '`0.75`',
+    '`1`',
   ].forEach(m => {
     formData.metrics.push(
       new AdhocMetric({
@@ -65,7 +65,7 @@ export default function buildQuery(formData: QueryFormData) {
         comparator: formData.period,
         expressionType: 'SIMPLE',
         operator: 'in',
-        subject: 'Period',
+        subject: 'Year',
       }),
     );
   }

@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +18,8 @@
  * under the License.
  */
 import { buildQueryContext, QueryFormData } from '@superset-ui/query';
+import AdhocMetric from '../../../../explore/AdhocMetric';
+import AdhocFilter from '../../../../explore/AdhocFilter';
 
 /**
  * The buildQuery function is used to create an instance of QueryContext that's
@@ -33,6 +36,42 @@ import { buildQueryContext, QueryFormData } from '@superset-ui/query';
  * if a viz needs multiple different result sets.
  */
 export default function buildQuery(formData: QueryFormData) {
+  formData.metrics = [];
+  const mtr: string[] = formData.fuel_type.map((ft: any) => `\`${ft}\``);
+  mtr.unshift('`State`');
+  mtr.unshift('`Percentile`');
+  mtr.unshift('`Year`');
+
+  mtr.forEach(m => {
+    formData.metrics.push(
+      new AdhocMetric({
+        expressionType: 'SQL',
+        sqlExpression: m,
+        label: m,
+      }),
+    );
+  });
+
+  formData.adhoc_filters = [];
+  formData.adhoc_filters.push(
+    new AdhocFilter({
+      clause: 'WHERE',
+      comparator: formData.percentile,
+      expressionType: 'SIMPLE',
+      operator: '==',
+      subject: 'Percentile',
+    }),
+  );
+  formData.adhoc_filters.push(
+    new AdhocFilter({
+      clause: 'WHERE',
+      comparator: formData.state,
+      expressionType: 'SIMPLE',
+      operator: '==',
+      subject: 'State',
+    }),
+  );
+
   return buildQueryContext(formData, baseQueryObject => [
     {
       ...baseQueryObject,

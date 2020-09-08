@@ -833,6 +833,14 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             for row in result:
                 periods.append(row[0])
 
+        if 'Year' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT Year FROM {}".format(
+                datasource.table_name
+            ))
+            for row in result:
+                periods.append(row[0])
+
         run_ids = []
         if 'RunID' in datasource.column_names:
             engine = self.appbuilder.get_session.get_bind()

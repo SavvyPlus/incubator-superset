@@ -17,7 +17,12 @@
  * under the License.
  */
 import { ChartProps, DataRecord } from '@superset-ui/chart';
-import { transformData, getPeriods, boxplotFormatter } from '../utils';
+import {
+  transformData,
+  getPeriods,
+  boxplotFormatter,
+  yAxisLabelFormatter,
+} from '../utils';
 
 export type DuidGenerationDatum = DataRecord;
 
@@ -51,7 +56,7 @@ export default function transformProps(chartProps: ChartProps) {
    * function during development with hot reloading, changes won't
    * be seen until restarting the development server.
    */
-  const { width, height, formData, queryData } = chartProps;
+  const { width, height, queryData } = chartProps;
   const data = queryData.data as DuidGenerationDatum[];
 
   // console.log('formData via TransformProps.ts', formData);
@@ -59,9 +64,6 @@ export default function transformProps(chartProps: ChartProps) {
   const transformedData = transformData(data);
   const periods = getPeriods(data);
   const keys = transformedData.map(entry => entry.duid);
-  console.log(transformData);
-  console.log(periods);
-  console.log(keys);
 
   const echartOptions = {
     // title: {
@@ -115,19 +117,20 @@ export default function transformProps(chartProps: ChartProps) {
     },
     yAxis: {
       type: 'value',
-      name: 'Nominal $/MWh',
+      name: 'MWh',
       nameLocation: 'middle',
       nameTextStyle: {
         fontSize: 16,
         fontWeight: 'bold',
       },
-      nameGap: 40,
+      nameGap: 60,
       boundaryGap: [0, '5%'],
       splitArea: {
         show: false,
       },
       axisLabel: {
         fontSize: 16,
+        formatter: yAxisLabelFormatter,
       },
     },
     dataZoom: [
@@ -157,7 +160,7 @@ export default function transformProps(chartProps: ChartProps) {
     })),
   };
 
-  console.log(echartOptions);
+  // console.log(echartOptions);
 
   return {
     width,

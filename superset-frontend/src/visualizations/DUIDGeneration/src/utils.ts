@@ -15,16 +15,16 @@ export function formatSelectOptions(options: string[]): string[][] {
 export function transformData(data: DuidGenerationDatum[]) {
   const transformedData: TransformedDataProps[] = [];
   const orderedData = data.sort((a, b) =>
-    (a['`Period`'] as string) > (b['`Period`'] as string) ? 1 : -1,
+    (a['`Year`'] as string) > (b['`Year`'] as string) ? 1 : -1,
   );
-  console.log(orderedData);
+  // console.log(orderedData);
   orderedData.forEach(item => {
-    const duid = item['`DUID`'] as string;
-    const per0 = item['`Percentile0`'] as number;
-    const per25 = item['`Percentile0.25`'] as number;
-    const per50 = item['`Percentile0.5`'] as number;
-    const per75 = item['`Percentile0.75`'] as number;
-    const per100 = item['`Percentile1`'] as number;
+    const duid = item['`Duid`'] as string;
+    const per0 = item['`0`'] as number;
+    const per25 = item['`0.25`'] as number;
+    const per50 = item['`0.5`'] as number;
+    const per75 = item['`0.75`'] as number;
+    const per100 = item['`1`'] as number;
     const idx = transformedData.findIndex(d => d.duid === duid);
     if (idx === -1) {
       transformedData.push({
@@ -41,9 +41,9 @@ export function transformData(data: DuidGenerationDatum[]) {
 
 export function getPeriods(data: DuidGenerationDatum[]) {
   const orderedData = data.sort((a, b) =>
-    (a['`Period`'] as string) > (b['`Period`'] as string) ? 1 : -1,
+    (a['`Year`'] as string) > (b['`Year`'] as string) ? 1 : -1,
   );
-  return Array.from(new Set(orderedData.map(entry => entry['`Period`'])));
+  return Array.from(new Set(orderedData.map(entry => entry['`Year`'])));
 }
 
 export function boxplotFormatter(param: any) {
@@ -58,4 +58,9 @@ export function boxplotFormatter(param: any) {
     `Q3: <strong>${param.data[4].toFixed(2)}</strong>`,
     `Maximum: <strong>${param.data[5].toFixed(2)}</strong>`,
   ].join('<br/>');
+}
+
+export function yAxisLabelFormatter(value: number) {
+  // Formatted to be month/day; display year only in the first label
+  return `${(value / 1000000).toFixed(2)}M`;
 }
