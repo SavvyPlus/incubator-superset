@@ -1,5 +1,5 @@
 /* eslint-disable dot-notation */
-import { DuidGenerationDatum } from './plugin/transformProps';
+import { DuidSpotPremiumDatum } from './plugin/transformProps';
 
 interface TransformedDataProps {
   duid: string;
@@ -12,7 +12,7 @@ export function formatSelectOptions(options: string[]): string[][] {
   return choices;
 }
 
-export function transformData(data: DuidGenerationDatum[]) {
+export function transformData(data: DuidSpotPremiumDatum[]) {
   const transformedData: TransformedDataProps[] = [];
   const orderedData = data.sort((a, b) =>
     (a['`Year`'] as string) > (b['`Year`'] as string) ? 1 : -1,
@@ -39,7 +39,7 @@ export function transformData(data: DuidGenerationDatum[]) {
   return transformedData;
 }
 
-export function getPeriods(data: DuidGenerationDatum[]) {
+export function getPeriods(data: DuidSpotPremiumDatum[]) {
   const orderedData = data.sort((a, b) =>
     (a['`Year`'] as string) > (b['`Year`'] as string) ? 1 : -1,
   );
