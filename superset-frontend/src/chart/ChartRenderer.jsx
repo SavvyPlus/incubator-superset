@@ -19,8 +19,7 @@
 import { snakeCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { SuperChart } from '@superset-ui/chart';
-import { logging } from '@superset-ui/core';
+import { SuperChart, logging } from '@superset-ui/core';
 import ReactEcharts from 'echarts-for-react';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from '../logger/LogUtils';
 import { getOption, empowerCharts } from '../utils/chartUtils';
