@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ChartProps, DataRecord } from '@superset-ui/chart';
+import { ChartProps, DataRecord } from '@superset-ui/core';
 import { transformData } from '../utils';
 
 export type TechGenerationDatum = DataRecord;

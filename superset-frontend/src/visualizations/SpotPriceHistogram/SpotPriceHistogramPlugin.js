@@ -16,8 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { t } from '@superset-ui/translation';
-import { ChartMetadata, ChartPlugin } from '@superset-ui/chart';
+import { t, ChartMetadata } from '@superset-ui/core';
 import HistogramChartPlugin from '@superset-ui/legacy-plugin-chart-histogram';
 import thumbnail from './images/thumbnail.png';
 

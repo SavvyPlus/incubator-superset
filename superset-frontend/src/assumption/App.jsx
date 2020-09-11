@@ -22,7 +22,7 @@ import thunk from 'redux-thunk';
 import { createStore, applyMiddleware, compose } from 'redux';
 import { initFeatureFlags } from 'src/featureFlags';
 import { Provider } from 'react-redux';
-import { supersetTheme, ThemeProvider } from '@superset-ui/style';
+import { supersetTheme, ThemeProvider } from '@superset-ui/core';
 
 import App from './components/App';
 import { initEnhancer } from '../reduxUtils';

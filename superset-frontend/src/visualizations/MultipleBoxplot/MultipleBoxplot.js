@@ -16,8 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { t } from '@superset-ui/translation';
-import { ChartMetadata } from '@superset-ui/chart';
+import { t, ChartMetadata } from '@superset-ui/core';
 import { LegacyBoxPlotChartPlugin } from '@superset-ui/preset-chart-xy';
 import thumbnail from './images/boxplot-multi.jpg';
 
