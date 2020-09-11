@@ -267,7 +267,7 @@ class SupersetAppInitializer:
             "Clients",
             label=__("Clients"),
             icon="fa-dashboard",
-            category="Modeling",
+            category="Modelling",
             category_icon="fa-wrench",
         )
         appbuilder.add_view(
@@ -275,7 +275,7 @@ class SupersetAppInitializer:
             "Projects",
             label=__("Projects"),
             icon="fa-dashboard",
-            category="Modeling",
+            category="Modelling",
             # category_icon="fa-wrench",
         )
         appbuilder.add_view(
@@ -283,23 +283,23 @@ class SupersetAppInitializer:
             "Scenario",
             label=__("Scenario"),
             icon="fa-dashboard",
-            category="Modeling",
+            category="Modelling",
             # category_icon="fa-wrench",
         )
         appbuilder.add_view(
             SimulationModelView,
-            "Modeling",
-            label=__("Modeling"),
+            "Modelling",
+            label=__("Modelling"),
             icon="fa-dashboard",
-            category="Modeling",
+            category="Modelling",
         )
-        appbuilder.add_separator("Modeling")
+        appbuilder.add_separator("Modelling")
         appbuilder.add_view(
             SimulationLogModelView,
             'Logs',
             label=__("Logs"),
             icon="fa-list-ol",
-            category="Modeling",
+            category="Modelling",
         )
         appbuilder.add_view(
             EditAssumptionModelView,

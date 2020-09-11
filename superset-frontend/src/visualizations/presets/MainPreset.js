@@ -68,6 +68,7 @@ import { TechGenerationChartPlugin } from '../TechGeneration/src';
 import { DuidGenerationChartPlugin } from '../DUIDGeneration/src';
 import { DuidAveragePriceChartPlugin } from '../DUIDAveragePrice/src';
 import { DuidSpotPremiumChartPlugin } from '../DUIDSpotPremium/src';
+import { DuidRevenueChartPlugin } from '../DUIDRevenue/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -84,6 +85,7 @@ export default class MainPreset extends Preset {
           key: 'duid_average_price',
         }),
         new DuidGenerationChartPlugin().configure({ key: 'duid_generation' }),
+        new DuidRevenueChartPlugin().configure({ key: 'duid_revenue' }),
         new DuidSpotPremiumChartPlugin().configure({
           key: 'duid_spot_premium',
         }),
