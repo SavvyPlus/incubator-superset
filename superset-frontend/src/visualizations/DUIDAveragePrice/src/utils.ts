@@ -62,5 +62,5 @@ export function boxplotFormatter(param: any) {
 
 export function yAxisLabelFormatter(value: number) {
   // Formatted to be month/day; display year only in the first label
-  return `${(value / 1000000).toFixed(2)}M`;
+  return `$${value}`;
 }

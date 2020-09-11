@@ -117,7 +117,7 @@ export default function transformProps(chartProps: ChartProps) {
     },
     yAxis: {
       type: 'value',
-      name: 'MWh',
+      name: '$/MWh',
       nameLocation: 'middle',
       nameTextStyle: {
         fontSize: 16,

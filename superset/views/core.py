@@ -842,9 +842,9 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                 periods.append(row[0])
 
         run_ids = []
-        if 'RunID' in datasource.column_names:
+        if 'RunId' in datasource.column_names:
             engine = self.appbuilder.get_session.get_bind()
-            result = engine.execute("SELECT DISTINCT RunID FROM {}".format(
+            result = engine.execute("SELECT DISTINCT RunId FROM {}".format(
                 datasource.table_name
             ))
             for row in result:

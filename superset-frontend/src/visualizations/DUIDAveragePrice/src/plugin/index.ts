@@ -24,7 +24,7 @@ import thumbnail from '../images/thumbnail.png';
 
 const metadata = new ChartMetadata({
   description: 'DUID Average Price',
-  name: t('DuidAveragePrice'),
+  name: t('DUID Average Price'),
   thumbnail,
 });
 

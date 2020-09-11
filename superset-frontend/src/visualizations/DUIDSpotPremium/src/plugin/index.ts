@@ -24,7 +24,7 @@ import thumbnail from '../images/thumbnail.png';
 
 const metadata = new ChartMetadata({
   description: 'DUID Spot Premium',
-  name: t('DuidSpotPremium'),
+  name: t('DUID Spot Premium'),
   thumbnail,
 });
 

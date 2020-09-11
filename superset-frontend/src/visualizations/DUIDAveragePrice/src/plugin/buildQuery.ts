@@ -77,7 +77,7 @@ export default function buildQuery(formData: QueryFormData) {
         comparator: formData.run_id,
         expressionType: 'SIMPLE',
         operator: 'in',
-        subject: 'RunID',
+        subject: 'RunId',
       }),
     );
   }
