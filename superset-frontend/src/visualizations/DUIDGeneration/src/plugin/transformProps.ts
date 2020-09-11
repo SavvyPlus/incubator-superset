@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ChartProps, DataRecord } from '@superset-ui/chart';
+import { ChartProps, DataRecord } from '@superset-ui/core';
 import {
   transformData,
   getPeriods,
@@ -149,7 +149,7 @@ export default function transformProps(chartProps: ChartProps) {
         end: 20,
       },
     ],
-    series: transformedData.map((d, i) => ({
+    series: transformedData.map(d => ({
       name: d.duid,
       type: 'boxplot',
       data: d.values,

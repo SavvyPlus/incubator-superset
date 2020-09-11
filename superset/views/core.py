@@ -842,9 +842,9 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                 periods.append(row[0])
 
         run_ids = []
-        if 'RunID' in datasource.column_names:
+        if 'RunId' in datasource.column_names:
             engine = self.appbuilder.get_session.get_bind()
-            result = engine.execute("SELECT DISTINCT RunID FROM {}".format(
+            result = engine.execute("SELECT DISTINCT RunId FROM {}".format(
                 datasource.table_name
             ))
             for row in result:
@@ -1329,7 +1329,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             logger.warning("Stopped an unsafe database connection")
             return json_error_response(_(str(ex)), 400)
         except Exception as ex:  # pylint: disable=broad-except
-            logger.error("Unexpected error %s", type(ex).__name__)
+            logger.warning("Unexpected error %s", type(ex).__name__)
             return json_error_response(
                 _("Unexpected error occurred, please check your logs for details"), 400
             )
@@ -1751,7 +1751,6 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         session.commit()
         return json_success(json.dumps({"published": dash.published}))
 
-    @event_logger.log_this
     @has_access
     @expose("/dashboard/<dashboard_id_or_slug>/")
     def dashboard(  # pylint: disable=too-many-locals

@@ -66,6 +66,9 @@ import { AmchartsStockChartPlugin } from '../AmchartsStock/src';
 import { HalfHourSpotChartPlugin } from '../HalfHourSpot/src';
 import { TechGenerationChartPlugin } from '../TechGeneration/src';
 import { DuidGenerationChartPlugin } from '../DUIDGeneration/src';
+import { DuidAveragePriceChartPlugin } from '../DUIDAveragePrice/src';
+import { DuidSpotPremiumChartPlugin } from '../DUIDSpotPremium/src';
+import { DuidRevenueChartPlugin } from '../DUIDRevenue/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -78,7 +81,14 @@ export default class MainPreset extends Preset {
         new BarChartPlugin().configure({ key: 'bar' }),
         new BigNumberChartPlugin().configure({ key: 'big_number' }),
         new BigNumberTotalChartPlugin().configure({ key: 'big_number_total' }),
+        new DuidAveragePriceChartPlugin().configure({
+          key: 'duid_average_price',
+        }),
         new DuidGenerationChartPlugin().configure({ key: 'duid_generation' }),
+        new DuidRevenueChartPlugin().configure({ key: 'duid_revenue' }),
+        new DuidSpotPremiumChartPlugin().configure({
+          key: 'duid_spot_premium',
+        }),
         new HalfHourSpotChartPlugin().configure({ key: 'half_hour_spot' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_run_comp' }),

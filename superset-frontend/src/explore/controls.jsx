@@ -57,23 +57,17 @@
  * each and every visualization type.
  */
 import React from 'react';
-import { t } from '@superset-ui/translation';
 import {
+  t,
   getCategoricalSchemeRegistry,
   getSequentialSchemeRegistry,
-} from '@superset-ui/color';
-import {
   legacyValidateInteger,
   validateNonEmpty,
-} from '@superset-ui/validator';
+  ColumnOption,
+} from '@superset-ui/core';
 
-import { ColumnOption } from '@superset-ui/chart-controls';
+import { formatSelectOptionsForRange, formatSelectOptions, mainMetric } from '../modules/utils';
 import * as v from './validators';
-import {
-  formatSelectOptionsForRange,
-  formatSelectOptions,
-  mainMetric,
-} from '../modules/utils';
 import { TIME_FILTER_LABELS } from './constants';
 
 const categoricalSchemeRegistry = getCategoricalSchemeRegistry();

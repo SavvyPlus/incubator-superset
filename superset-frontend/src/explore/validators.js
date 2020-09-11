@@ -22,7 +22,7 @@
  * as arguments and return something that evals to false if v is valid,
  * and an error message if not valid.
  * */
-import { t } from '@superset-ui/translation';
+import { t } from '@superset-ui/core';
 
 export function numeric(v) {
   if (v && isNaN(v)) {

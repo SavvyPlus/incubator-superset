@@ -16,8 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { t } from '@superset-ui/translation';
-import { SupersetClient } from '@superset-ui/connection';
+import { t, SupersetClient } from '@superset-ui/core';
 import axios from 'axios';
 import { addSuccessToast, addDangerToast } from '../../messageToasts/actions';
 

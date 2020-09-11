@@ -17,7 +17,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { buildQueryContext, QueryFormData } from '@superset-ui/query';
+import { buildQueryContext, QueryFormData } from '@superset-ui/core';
 import AdhocMetric from '../../../../explore/AdhocMetric';
 import AdhocFilter from '../../../../explore/AdhocFilter';
 

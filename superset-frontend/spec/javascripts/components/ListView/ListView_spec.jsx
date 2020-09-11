@@ -20,9 +20,10 @@ import React from 'react';
 import { mount, shallow } from 'enzyme';
 import { act } from 'react-dom/test-utils';
 import { QueryParamProvider } from 'use-query-params';
-import { supersetTheme, ThemeProvider } from '@superset-ui/style';
+import { supersetTheme, ThemeProvider } from '@superset-ui/core';
 
 import Button from 'src/components/Button';
+import { Empty } from 'src/common/components';
 import CardCollection from 'src/components/ListView/CardCollection';
 import { CardSortSelect } from 'src/components/ListView/CardSortSelect';
 import IndeterminateCheckbox from 'src/components/IndeterminateCheckbox';
@@ -344,6 +345,16 @@ describe('ListView', () => {
     }).toThrowErrorMatchingInlineSnapshot(
       '"Invalid filter config, some_column is not present in columns"',
     );
+  });
+
+  it('renders and empty state when there is no data', () => {
+    const props = {
+      ...mockedProps,
+      data: [],
+    };
+
+    const wrapper2 = factory(props);
+    expect(wrapper2.find(Empty)).toExist();
   });
 
   it('renders UI filters', () => {

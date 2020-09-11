@@ -102,30 +102,40 @@ export default function HalfHourSpot(props: HalfHourSpotProps) {
       const targetSeries = (ev.target.dataItem as any).dataContext as any;
       if (!(targetSeries.isHidden || targetSeries.isHiding)) {
         toolTxt = '';
-        x.series.values.forEach(value => {
+        const activeIdx1: number[] = [];
+        x.series.values.forEach((value, index) => {
+          x.series.values[index].tooltipText = '';
           const vy = value.dataFields.valueY as string;
           if (vy !== targetSeries.dataFields.valueY) {
             if (!(value.isHidden || value.isHiding)) {
               toolTxt += `${vy.replace('_', '-')}: \${${vy}}\n`;
+              activeIdx1.push(index);
             }
           }
         });
 
-        x.series.values[0].tooltipText = `[bold]{categoryX}[/]\n\n${toolTxt}`;
+        x.series.values[
+          activeIdx1[0]
+        ].tooltipText = `[bold]{categoryX}[/]\n\n${toolTxt}`;
       } else {
         toolTxt = '';
-        x.series.values.forEach(value => {
+        const activeIdx2: number[] = [];
+        x.series.values.forEach((value, index) => {
+          x.series.values[index].tooltipText = '';
           const vy = value.dataFields.valueY as string;
           if (!(value.isHidden || value.isHiding)) {
-            // console.log(vy);
+            activeIdx2.push(index);
             toolTxt += `${vy.replace('_', '-')}: \${${vy}}\n`;
           }
 
           if (targetSeries.dataFields.valueY === vy) {
+            activeIdx2.push(index);
             toolTxt += `${vy.replace('_', '-')}: \${${vy}}\n`;
           }
-          x.series.values[0].tooltipText = `[bold]{categoryX}[/]\n\n${toolTxt}`;
         });
+        x.series.values[
+          activeIdx2[0]
+        ].tooltipText = `[bold]{categoryX}[/]\n\n${toolTxt}`;
       }
     });
 

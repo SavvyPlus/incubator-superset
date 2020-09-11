@@ -1,5 +1,4 @@
-import { t } from '@superset-ui/translation';
-import { validateNonEmpty } from '@superset-ui/validator';
+import { t, validateNonEmpty } from '@superset-ui/core';
 // import { columnChoices, controls } from '../controls';
 import { formatSelectOptions } from '../../modules/utils';
 
