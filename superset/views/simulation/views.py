@@ -844,12 +844,25 @@ class SimulationModelView(
                 simulation_id = str(simulation.id)
 
         # Send notification email
-        # base_url = "http://localhost:9000/simulationmodelview/"
-        base_url = f"{get_current_external_ip()}/simulationmodelview/"
-        # base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
+        emp_env = os.environ['EMPOWER_ENV']
+        if emp_env == 'test':
+            base_url = "http://localhost:9000/simulationmodelview/"
+        elif emp_env == 'staging':
+            base_url = f"{get_current_external_ip()}/simulationmodelview/"
+        elif emp_env == 'production':
+            base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
+        else:
+            base_url = "http://localhost:9000/simulationmodelview/"
+
         forecast_url = base_url + "load-results/" + run_id + "/spot_price_percentiles_" + run_id + "_" + sim_num + "sims/"
         cap_url = base_url + "load-results/" + run_id + "/300_Cap_Payouts_percentiles_" + run_id + "_" + sim_num + "sims/"
         distribution_url = base_url + "load-results/" + run_id + "/spot_price_distribution_" + run_id + "_" + sim_num + "sims/"
+        duid_generation_url = base_url + "load-results/" + run_id + '/duid_generation_' + run_id + "_" + sim_num + "sims/"
+        duid_average_price_url = base_url + "load-results/" + run_id + '/duid_average_price_' + run_id + "_" + sim_num + "sims/"
+        duid_spot_premium_url = base_url + "load-results/" + run_id + '/duid_spot_premium_' + run_id + "_" + sim_num + "sims/"
+        duid_revenue_url = base_url + "load-results/" + run_id + '/duid_revenue_' + run_id + "_" + sim_num + "sims/"
+        half_hour_spot_url = base_url + "load-results/" + run_id + '/half_hour_spot_' + run_id + "_" + sim_num + "sims/"
+        tech_generation_url = base_url + "load-results/" + run_id + '/tech_generation_' + run_id + "_" + sim_num + "sims/"
         dynamic_template_data = {
             "run_id": run_id,
             "assumption_name": assumption_name,
@@ -860,6 +873,12 @@ class SimulationModelView(
             "spot_price_forecast": forecast_url,
             "cap_of_300": cap_url,
             "spot_price_distribution": distribution_url,
+            "duid_generation": duid_generation_url,
+            "duid_average_price": duid_average_price_url,
+            "duid_spot_premium": duid_spot_premium_url,
+            "duid_revenue": duid_revenue_url,
+            "half_hour_spot": half_hour_spot_url,
+            "tech_generation": tech_generation_url,
         }
         send_sendgrid_mail(email_to, dynamic_template_data, 'd-622c2bd9a8eb49a2bbfa98a0a93ce65f')
 
@@ -872,9 +891,21 @@ class SimulationModelView(
         chart_link1 = ChartLink('Spot Price Forecast', simulation, forecast_url)
         chart_link2 = ChartLink('300 Cap', simulation, cap_url)
         chart_link3 = ChartLink('Spot Price Distribution', simulation, distribution_url)
+        chart_link4 = ChartLink('DUID Generation', simulation, duid_generation_url)
+        chart_link5 = ChartLink('DUID Average Price', simulation, duid_average_price_url)
+        chart_link6 = ChartLink('DUID Spot Premium', simulation, duid_spot_premium_url)
+        chart_link7 = ChartLink('DUID Revenue', simulation, duid_revenue_url)
+        chart_link8 = ChartLink('Half Hour Spot', simulation, half_hour_spot_url)
+        chart_link9 = ChartLink('Tech Generation', simulation, tech_generation_url)
         db.session.add(chart_link1)
         db.session.add(chart_link2)
         db.session.add(chart_link3)
+        db.session.add(chart_link4)
+        db.session.add(chart_link5)
+        db.session.add(chart_link6)
+        db.session.add(chart_link7)
+        db.session.add(chart_link8)
+        db.session.add(chart_link9)
         db.session.commit()
 
         return json_success(json.dumps({

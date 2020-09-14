@@ -80,13 +80,13 @@ export default function transformProps(chartProps: ChartProps) {
         fontSize: 16,
       },
     },
-    toolbox: {
-      feature: {
-        saveAsImage: {
-          title: 'Save as image',
-        },
-      },
-    },
+    // toolbox: {
+    //   feature: {
+    //     saveAsImage: {
+    //       title: 'Save as image',
+    //     },
+    //   },
+    // },
     tooltip: {
       trigger: 'item',
       axisPointer: {

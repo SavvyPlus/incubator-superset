@@ -130,13 +130,13 @@ export function getOption(queryResponse) {
           fontSize: 16,
         },
       },
-      toolbox: {
-        feature: {
-          saveAsImage: {
-            title: 'Save as image',
-          },
-        },
-      },
+      // toolbox: {
+      //   feature: {
+      //     saveAsImage: {
+      //       title: 'Save as image',
+      //     },
+      //   },
+      // },
       tooltip: {
         trigger: 'item',
         axisPointer: {
@@ -237,13 +237,13 @@ export function getOption(queryResponse) {
           fontSize: 16,
         },
       },
-      toolbox: {
-        feature: {
-          saveAsImage: {
-            title: 'Save as image',
-          },
-        },
-      },
+      // toolbox: {
+      //   feature: {
+      //     saveAsImage: {
+      //       title: 'Save as image',
+      //     },
+      //   },
+      // },
       grid: {
         left: '5%',
         top: '18%',
