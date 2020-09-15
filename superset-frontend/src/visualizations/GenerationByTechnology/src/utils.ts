@@ -1,5 +1,5 @@
-import { TechGenerationDatum } from './plugin/transformProps';
-import { TransformedDataProps } from './TechGeneration';
+import { GenerationByTechnologyDatum } from './plugin/transformProps';
+import { TransformedDataProps } from './GenerationByTechnology';
 
 export function allFuelTypes(datasource: any) {
   if (datasource && datasource.columns) {
@@ -12,7 +12,7 @@ export function allFuelTypes(datasource: any) {
   return [];
 }
 
-export function transformData(data: TechGenerationDatum[]) {
+export function transformData(data: GenerationByTechnologyDatum[]) {
   const orderedData = data.sort((a, b) =>
     (a['`Year`'] as string) > (b['`Year`'] as string) ? 1 : -1,
   );

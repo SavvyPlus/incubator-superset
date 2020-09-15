@@ -19,8 +19,7 @@
 import { ChartProps, DataRecord } from '@superset-ui/core';
 import { transformData } from '../utils';
 
-export type TechGenerationDatum = DataRecord;
-
+export type GenerationByTechnologyDatum = DataRecord;
 export default function transformProps(chartProps: ChartProps) {
   /**
    * This function is called after a successful response has been
@@ -52,7 +51,7 @@ export default function transformProps(chartProps: ChartProps) {
    * be seen until restarting the development server.
    */
   const { width, height, queryData } = chartProps;
-  const data = queryData.data as TechGenerationDatum[];
+  const data = queryData.data as GenerationByTechnologyDatum[];
 
   // console.log('formData via TransformProps.ts', formData);
   // console.log(data);

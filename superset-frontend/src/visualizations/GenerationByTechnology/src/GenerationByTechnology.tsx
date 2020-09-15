@@ -29,7 +29,7 @@ export interface TransformedDataProps {
   [key: string]: string;
 }
 
-export type TechGenerationProps = {
+export type GenerationByTechnologyProps = {
   height: number;
   width: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +38,9 @@ export type TechGenerationProps = {
   transformedData: TransformedDataProps;
 };
 
-export default function TechGeneration(props: TechGenerationProps) {
+export default function GenerationByTechnology(
+  props: GenerationByTechnologyProps,
+) {
   const { data, height, width, transformedData } = props;
 
   const chart = useRef(null);
@@ -59,7 +61,7 @@ export default function TechGeneration(props: TechGenerationProps) {
     // valueAxis.renderer.inside = true;
     // valueAxis.renderer.labels.template.disabled = true;
     valueAxis.min = 0;
-    x.numberFormatter.numberFormat = '#.b';
+    x.numberFormatter.numberFormat = '#.a';
 
     [
       ['battery', 'Battery', '#9f5d8d'],

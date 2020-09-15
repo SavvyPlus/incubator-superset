@@ -70,7 +70,7 @@ export default function AmchartsStock(props: AmchartsStockProps) {
         series.dataFields.valueY = `${key}`;
         series.tooltip!.background.fill = am4core.color('#fff');
         series.tooltipText = '{name}: [bold]{valueY}[/]';
-        series.groupFields.valueY = 'sum';
+        series.groupFields.valueY = 'average';
         // series.stroke = am4core.color('red');
         // series.fill = am4core.color('red');
 

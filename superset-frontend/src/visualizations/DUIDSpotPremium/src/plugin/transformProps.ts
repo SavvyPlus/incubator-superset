@@ -117,13 +117,13 @@ export default function transformProps(chartProps: ChartProps) {
     },
     yAxis: {
       type: 'value',
-      name: 'MWh',
+      name: 'Premium Percentage',
       nameLocation: 'middle',
       nameTextStyle: {
         fontSize: 16,
         fontWeight: 'bold',
       },
-      nameGap: 60,
+      nameGap: 90,
       boundaryGap: [0, '5%'],
       splitArea: {
         show: false,

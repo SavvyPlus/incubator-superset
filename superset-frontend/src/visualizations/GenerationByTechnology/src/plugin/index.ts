@@ -23,12 +23,12 @@ import transformProps from './transformProps';
 import thumbnail from '../images/thumbnail.png';
 
 const metadata = new ChartMetadata({
-  description: 'Tech Generation',
-  name: t('Tech Generation'),
+  description: 'Generation by Technology',
+  name: t('Generation by Technology'),
   thumbnail,
 });
 
-export default class TechGenerationChartPlugin extends ChartPlugin {
+export default class GenerationByTechnologyChartPlugin extends ChartPlugin {
   /**
    * The constructor is used to pass relevant metadata and callbacks that get
    * registered in respective registries that are used throughout the library
@@ -43,7 +43,7 @@ export default class TechGenerationChartPlugin extends ChartPlugin {
     super({
       buildQuery,
       controlPanel,
-      loadChart: () => import('../TechGeneration'),
+      loadChart: () => import('../GenerationByTechnology'),
       metadata,
       transformProps,
     });

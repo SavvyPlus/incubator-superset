@@ -116,6 +116,7 @@ const config: ControlPanelConfig = {
                 ['0.75', '75%'],
                 ['0.95', '95%'],
                 ['1', '100%'],
+                ['avg', 'avg'],
               ],
               description: t('Choose a percentile'),
             },

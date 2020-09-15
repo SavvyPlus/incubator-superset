@@ -64,11 +64,11 @@ import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPl
 import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
 import { AmchartsStockChartPlugin } from '../AmchartsStock/src';
 import { HalfHourSpotChartPlugin } from '../HalfHourSpot/src';
-import { TechGenerationChartPlugin } from '../TechGeneration/src';
 import { DuidGenerationChartPlugin } from '../DUIDGeneration/src';
 import { DuidAveragePriceChartPlugin } from '../DUIDAveragePrice/src';
 import { DuidSpotPremiumChartPlugin } from '../DUIDSpotPremium/src';
 import { DuidRevenueChartPlugin } from '../DUIDRevenue/src';
+import { GenerationByTechnologyChartPlugin } from '../GenerationByTechnology/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -106,6 +106,9 @@ export default class MainPreset extends Preset {
         new EventFlowChartPlugin().configure({ key: 'event_flow' }),
         new FilterBoxChartPlugin().configure({ key: 'filter_box' }),
         new ForceDirectedChartPlugin().configure({ key: 'directed_force' }),
+        new GenerationByTechnologyChartPlugin().configure({
+          key: 'generation_by_technology',
+        }),
         new HeatmapChartPlugin().configure({ key: 'heatmap' }),
         new HistogramChartPlugin().configure({ key: 'histogram' }),
         new SpotPriceHistogramPlugin().configure({
@@ -124,7 +127,6 @@ export default class MainPreset extends Preset {
         new SankeyChartPlugin().configure({ key: 'sankey' }),
         new SunburstChartPlugin().configure({ key: 'sunburst' }),
         new TableChartPlugin().configure({ key: 'table' }),
-        new TechGenerationChartPlugin().configure({ key: 'tech_generation' }),
         new TimePivotChartPlugin().configure({ key: 'time_pivot' }),
         new TimeTableChartPlugin().configure({ key: 'time_table' }),
         new TreemapChartPlugin().configure({ key: 'treemap' }),

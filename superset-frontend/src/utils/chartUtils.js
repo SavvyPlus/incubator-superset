@@ -28,9 +28,10 @@ export const empowerCharts = [
   'amcharts_stock',
   'half_hour_spot',
   'duid_generation',
-  'tech_generation',
   'duid_average_price',
   'duid_spot_premium',
+  'duid_revenue',
+  'generation_by_technology',
 ];
 
 const REGION_BORDER_COLOR = {
