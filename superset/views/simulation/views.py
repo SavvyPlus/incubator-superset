@@ -1231,7 +1231,7 @@ class SimulationModelView(
         s3_list = ast.literal_eval(data['outS3Keys'])
         bucket = data['outBucket']
         run_id = data['sim_tag']
-        simulation = db.query(Simulation).filter_by(run_id=run_id).first()
+        simulation = db.session.query(Simulation).filter_by(run_id=run_id).first()
         attachments = []
         for s3_file in s3_list:
             path = tempfile.NamedTemporaryFile(
