@@ -39,13 +39,14 @@ export default function buildQuery(formData: QueryFormData) {
   formData.metrics = [];
   [
     '`Year`',
-    '`RunID`',
+    // '`RunID`',
     '`Duid`',
-    '`0`',
-    '`0.25`',
-    '`0.5`',
-    '`0.75`',
-    '`1`',
+    '`Generation`',
+    // '`0`',
+    // '`0.25`',
+    // '`0.5`',
+    // '`0.75`',
+    // '`1`',
   ].forEach(m => {
     formData.metrics.push(
       new AdhocMetric({

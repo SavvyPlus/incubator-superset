@@ -20,6 +20,7 @@ import { ChartProps, DataRecord } from '@superset-ui/core';
 import {
   transformData,
   getPeriods,
+  getDuids,
   boxplotFormatter,
   yAxisLabelFormatter,
 } from '../utils';
@@ -56,14 +57,15 @@ export default function transformProps(chartProps: ChartProps) {
    * function during development with hot reloading, changes won't
    * be seen until restarting the development server.
    */
-  const { width, height, queryData } = chartProps;
+  const { width, height, queryData, formData } = chartProps;
   const data = queryData.data as DuidGenerationDatum[];
 
   // console.log('formData via TransformProps.ts', formData);
+  const whiskerType = formData.whisker;
   // console.log(queryData);
-  const transformedData = transformData(data);
+  const transformedData = transformData(data, whiskerType);
   const periods = getPeriods(data);
-  const keys = transformedData.map(entry => entry.duid);
+  const duids = getDuids(data);
 
   const echartOptions = {
     // title: {
@@ -75,7 +77,7 @@ export default function transformProps(chartProps: ChartProps) {
     // },
     legend: {
       top: '2%',
-      data: keys,
+      data: duids,
       textStyle: {
         fontSize: 16,
       },
@@ -149,15 +151,35 @@ export default function transformProps(chartProps: ChartProps) {
         end: 20,
       },
     ],
-    series: transformedData.map(d => ({
-      name: d.duid,
-      type: 'boxplot',
-      data: d.values,
-      tooltip: { formatter: boxplotFormatter },
-      // itemStyle: {
-      //   borderColor: REGION_BORDER_COLOR[regions[i]],
-      // },
-    })),
+    series:
+      whiskerType === 'min/max'
+        ? transformedData.map((d, i) => ({
+            name: duids[i],
+            type: 'boxplot',
+            data: d.boxData,
+            tooltip: { formatter: boxplotFormatter },
+            // itemStyle: {
+            //   borderColor: REGION_BORDER_COLOR[regions[i]],
+            // },
+          }))
+        : (transformedData.map((d, i) => ({
+            name: duids[i],
+            type: 'boxplot',
+            data: d.boxData,
+            tooltip: { formatter: boxplotFormatter },
+            // itemStyle: {
+            //   borderColor: REGION_BORDER_COLOR[regions[i]],
+            // },
+          })) as any[]).concat(
+            transformedData.map((d, i) => ({
+              name: duids[i],
+              type: 'pictorialBar',
+              symbolPosition: 'end',
+              barGap: '34.7%',
+              symbolSize: 4,
+              data: d.outliers,
+            })),
+          ),
   };
 
   // console.log(echartOptions);

@@ -112,7 +112,7 @@ const config: ControlPanelConfig = {
                 // [value, label]
                 choices: formatSelectOptions(state.periods),
               }),
-              description: t('Periods of percentiles'),
+              description: t('Choose periods of percentiles.'),
             },
           },
         ],
@@ -130,7 +130,25 @@ const config: ControlPanelConfig = {
                 // [value, label]
                 choices: formatSelectOptions(state.run_ids),
               }),
-              description: t('Run IDs of percentiles'),
+              description: t('Choose run IDs of percentiles.'),
+            },
+          },
+        ],
+        [
+          {
+            name: 'whisker',
+            config: {
+              type: 'SelectControl',
+              multi: false,
+              label: t('Whisker/outlier options'),
+              default: 'min/max',
+              validators: [validateNonEmpty],
+              choices: [
+                // [value, label]
+                ['min/max', 'Min/max (no outliers)'],
+                ['outliers', 'Outliers'],
+              ],
+              description: t('Determines whether to inclide outliers.'),
             },
           },
         ],
