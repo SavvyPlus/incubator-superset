@@ -70,7 +70,7 @@ export function getPercentileData(
   const axisData: string[] = [];
   const useExtreme = boundIQR === 0;
 
-  for (let i = 0; i < rawData.length; i++) {
+  for (let i = 0; i < rawData.length; i += 1) {
     axisData.push(`${periods[i]}`);
     let ascList: number[] = [];
     if (rawData[i].length === 0) {
@@ -89,7 +89,7 @@ export function getPercentileData(
     const high = useExtreme ? max : Math.min(max, Q3 + bound);
     boxData.push([low, Q1, Q2, Q3, high]);
 
-    for (let j = 0; j < ascList.length; j++) {
+    for (let j = 0; j < ascList.length; j += 1) {
       const dataItem = ascList[j];
 
       if (dataItem < low || dataItem > high) {

@@ -125,7 +125,7 @@
     "json-bigint": "^0.3.0",
     "lodash": "^4.17.20",
     "lodash-es": "^4.17.14",
-    "material-table": "^1.67.1",
+    "material-table": "^1.69.0",
     "mathjs": "^3.20.2",
     "memoize-one": "^5.1.1",
     "moment": "^2.20.1",

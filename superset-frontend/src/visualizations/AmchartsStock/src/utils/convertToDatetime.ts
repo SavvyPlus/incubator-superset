@@ -1,7 +1,7 @@
 import { AmchartsStockDatum } from '../plugin/transformProps';
 
 export function convertToDatetime(d: AmchartsStockDatum[]) {
-  for (let i = 0; i < d.length; i++) {
+  for (let i = 0; i < d.length; i += 1) {
     // eslint-disable-next-line no-param-reassign
     d[i]['`HalfHourStarting`'] = new Date(d[i]['`HalfHourStarting`'] as string);
   }

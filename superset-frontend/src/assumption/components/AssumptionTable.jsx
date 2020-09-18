@@ -48,7 +48,7 @@ export default function AssumptionTable({
   const getTableData = td => {
     const cols = [];
     const dateKeys = [];
-    for (let i = 0; i < td.columns.length; i++) {
+    for (let i = 0; i < td.columns.length; i += 1) {
       if (td.columns[i].type === 'date') dateKeys.push(td.columns[i].name);
 
       cols.push({
@@ -59,8 +59,8 @@ export default function AssumptionTable({
     }
 
     const formattedData = [...td.data];
-    for (let i = 0; i < dateKeys.length; i++) {
-      for (let j = 0; j < td.data.length; j++) {
+    for (let i = 0; i < dateKeys.length; i += 1) {
+      for (let j = 0; j < td.data.length; j += 1) {
         formattedData[j][dateKeys[i]] = new Date(formattedData[j][dateKeys[i]]);
       }
     }

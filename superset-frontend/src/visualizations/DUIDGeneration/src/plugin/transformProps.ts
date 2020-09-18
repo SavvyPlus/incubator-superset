@@ -96,10 +96,10 @@ export default function transformProps(chartProps: ChartProps) {
       },
     },
     grid: {
-      left: '10%',
-      top: '10%',
-      right: '10%',
-      bottom: '10%',
+      left: '8%',
+      top: '11%',
+      right: '8%',
+      bottom: '8%',
     },
     xAxis: {
       type: 'category',
@@ -145,7 +145,7 @@ export default function transformProps(chartProps: ChartProps) {
         show: true,
         height: 20,
         type: 'slider',
-        top: '95%',
+        top: '97%',
         xAxisIndex: [0],
         start: 0,
         end: 20,
