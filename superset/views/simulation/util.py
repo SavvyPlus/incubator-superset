@@ -214,85 +214,85 @@ def get_redirect_endpoint(table_name: str, table_id: int) -> str:
                 "period_quarterly_picker": None
             }, separators=(',', ':')))
         )
-    elif table_name.startswith('duid_generation'):
-        endpoint = "/superset/explore/?form_data={}".format(
-            parse.quote_plus(json.dumps({
-                "queryFields": {},
-                "datasource": str(table_id) + "__table",
-                "viz_type": "duid_generation",
-                "url_params": {},
-                "time_range_endpoints": ["inclusive", "exclusive"],
-                "time_range": "Last week",
-                "period": ["All"],
-                "run_id": ["All"]
-            }, separators=(',', ':')))
-        )
-    elif table_name.startswith('duid_average_price'):
-        endpoint = "/superset/explore/?form_data={}".format(
-            parse.quote_plus(json.dumps({
-                "queryFields": {},
-                "datasource": str(table_id) + "__table",
-                "viz_type": "duid_average_price",
-                "url_params": {},
-                "time_range_endpoints": ["inclusive", "exclusive"],
-                "time_range": "Last week",
-                "period": ["All"],
-                "run_id": ["All"]
-            }, separators=(',', ':')))
-        )
-    elif table_name.startswith('duid_spot_premium'):
-        endpoint = "/superset/explore/?form_data={}".format(
-            parse.quote_plus(json.dumps({
-                "queryFields": {},
-                "datasource": str(table_id) + "__table",
-                "viz_type": "duid_spot_premium",
-                "url_params": {},
-                "time_range_endpoints": ["inclusive", "exclusive"],
-                "time_range": "Last week",
-                "period": ["All"],
-                "run_id": ["All"]
-            }, separators=(',', ':')))
-        )
-    elif table_name.startswith('duid_revenue'):
-        endpoint = "/superset/explore/?form_data={}".format(
-            parse.quote_plus(json.dumps({
-                "queryFields": {},
-                "datasource": str(table_id) + "__table",
-                "viz_type": "duid_revenue",
-                "url_params": {},
-                "time_range_endpoints": ["inclusive", "exclusive"],
-                "time_range": "Last week",
-                "period": ["All"],
-                "run_id": ["All"]
-            }, separators=(',', ':')))
-        )
-    elif table_name.startswith('half_hour_spot'):
-        endpoint = "/superset/explore/?form_data={}".format(
-            parse.quote_plus(json.dumps({
-                "queryFields": {},
-                "datasource": str(table_id) + "__table",
-                "viz_type": "half_hour_spot",
-                "url_params": {},
-                "time_range_endpoints": ["inclusive", "exclusive"],
-                "time_range": "Last week",
-                "region": "VIC",
-                "percentile": "0.5"
-            }, separators=(',', ':')))
-        )
-    elif table_name.startswith('tech_generation'):
-        endpoint = "/superset/explore/?form_data={}".format(
-            parse.quote_plus(json.dumps({
-                "queryFields": {},
-                "datasource": str(table_id) + "__table",
-                "viz_type": "tech_generation",
-                "url_params": {},
-                "time_range_endpoints": ["inclusive", "exclusive"],
-                "time_range": "Last week",
-                "percentile": "0.05",
-                "state": "VIC1",
-                "fuel_type": ["Battery","Biomass","BlackCoal","BrownCoal","Demand","Gas","Hydro","LiquidFuel","Solar","SolarPV","Wind"]
-            }, separators=(',', ':')))
-        )
+    # elif table_name.startswith('duid_generation'):
+    #     endpoint = "/superset/explore/?form_data={}".format(
+    #         parse.quote_plus(json.dumps({
+    #             "queryFields": {},
+    #             "datasource": str(table_id) + "__table",
+    #             "viz_type": "duid_generation",
+    #             "url_params": {},
+    #             "time_range_endpoints": ["inclusive", "exclusive"],
+    #             "time_range": "Last week",
+    #             "period": ["All"],
+    #             "run_id": ["All"]
+    #         }, separators=(',', ':')))
+    #     )
+    # elif table_name.startswith('duid_average_price'):
+    #     endpoint = "/superset/explore/?form_data={}".format(
+    #         parse.quote_plus(json.dumps({
+    #             "queryFields": {},
+    #             "datasource": str(table_id) + "__table",
+    #             "viz_type": "duid_average_price",
+    #             "url_params": {},
+    #             "time_range_endpoints": ["inclusive", "exclusive"],
+    #             "time_range": "Last week",
+    #             "period": ["All"],
+    #             "run_id": ["All"]
+    #         }, separators=(',', ':')))
+    #     )
+    # elif table_name.startswith('duid_spot_premium'):
+    #     endpoint = "/superset/explore/?form_data={}".format(
+    #         parse.quote_plus(json.dumps({
+    #             "queryFields": {},
+    #             "datasource": str(table_id) + "__table",
+    #             "viz_type": "duid_spot_premium",
+    #             "url_params": {},
+    #             "time_range_endpoints": ["inclusive", "exclusive"],
+    #             "time_range": "Last week",
+    #             "period": ["All"],
+    #             "run_id": ["All"]
+    #         }, separators=(',', ':')))
+    #     )
+    # elif table_name.startswith('duid_revenue'):
+    #     endpoint = "/superset/explore/?form_data={}".format(
+    #         parse.quote_plus(json.dumps({
+    #             "queryFields": {},
+    #             "datasource": str(table_id) + "__table",
+    #             "viz_type": "duid_revenue",
+    #             "url_params": {},
+    #             "time_range_endpoints": ["inclusive", "exclusive"],
+    #             "time_range": "Last week",
+    #             "period": ["All"],
+    #             "run_id": ["All"]
+    #         }, separators=(',', ':')))
+    #     )
+    # elif table_name.startswith('half_hour_spot'):
+    #     endpoint = "/superset/explore/?form_data={}".format(
+    #         parse.quote_plus(json.dumps({
+    #             "queryFields": {},
+    #             "datasource": str(table_id) + "__table",
+    #             "viz_type": "half_hour_spot",
+    #             "url_params": {},
+    #             "time_range_endpoints": ["inclusive", "exclusive"],
+    #             "time_range": "Last week",
+    #             "region": "VIC",
+    #             "percentile": "0.5"
+    #         }, separators=(',', ':')))
+    #     )
+    # elif table_name.startswith('tech_generation'):
+    #     endpoint = "/superset/explore/?form_data={}".format(
+    #         parse.quote_plus(json.dumps({
+    #             "queryFields": {},
+    #             "datasource": str(table_id) + "__table",
+    #             "viz_type": "tech_generation",
+    #             "url_params": {},
+    #             "time_range_endpoints": ["inclusive", "exclusive"],
+    #             "time_range": "Last week",
+    #             "percentile": "0.05",
+    #             "state": "VIC1",
+    #             "fuel_type": ["Battery","Biomass","BlackCoal","BrownCoal","Demand","Gas","Hydro","LiquidFuel","Solar","SolarPV","Wind"]
+    #         }, separators=(',', ':')))
+    #     )
     else:
         endpoint = "/superset/explore/?form_data={}".format(
             parse.quote_plus(json.dumps({
