@@ -130,7 +130,7 @@ function BarChart({
             {
               name: data[0].name,
               type: 'bar',
-              barGap: 0,
+              barGap: '0%',
               // label: labelOption,
               data: data[0].values,
             },

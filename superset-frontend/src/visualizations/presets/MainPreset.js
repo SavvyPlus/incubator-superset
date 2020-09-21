@@ -56,12 +56,19 @@ import {
 } from '@superset-ui/legacy-preset-chart-nvd3';
 import { LegacyBoxPlotChartPlugin } from '@superset-ui/preset-chart-xy';
 import { DeckGLChartPreset } from '@superset-ui/legacy-preset-chart-deckgl';
+import { EchartsTimeseriesChartPlugin } from '@superset-ui/plugin-chart-echarts';
 
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable/TimeTableChartPlugin';
 import SpotPriceHistogramPlugin from '../SpotPriceHistogram/SpotPriceHistogramPlugin';
 import MultipleBoxplot from '../MultipleBoxplot/MultipleBoxplot';
 import { AmchartsStockChartPlugin } from '../AmchartsStock/src';
+import { HalfHourSpotChartPlugin } from '../HalfHourSpot/src';
+import { TechGenerationChartPlugin } from '../TechGeneration/src';
+import { DuidGenerationChartPlugin } from '../DUIDGeneration/src';
+import { DuidAveragePriceChartPlugin } from '../DUIDAveragePrice/src';
+import { DuidSpotPremiumChartPlugin } from '../DUIDSpotPremium/src';
+import { DuidRevenueChartPlugin } from '../DUIDRevenue/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -74,6 +81,15 @@ export default class MainPreset extends Preset {
         new BarChartPlugin().configure({ key: 'bar' }),
         new BigNumberChartPlugin().configure({ key: 'big_number' }),
         new BigNumberTotalChartPlugin().configure({ key: 'big_number_total' }),
+        new DuidAveragePriceChartPlugin().configure({
+          key: 'duid_average_price',
+        }),
+        new DuidGenerationChartPlugin().configure({ key: 'duid_generation' }),
+        new DuidRevenueChartPlugin().configure({ key: 'duid_revenue' }),
+        new DuidSpotPremiumChartPlugin().configure({
+          key: 'duid_spot_premium',
+        }),
+        new HalfHourSpotChartPlugin().configure({ key: 'half_hour_spot' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_run_comp' }),
         new LegacyBoxPlotChartPlugin().configure({ key: 'box_plot_fin' }),
@@ -108,11 +124,15 @@ export default class MainPreset extends Preset {
         new SankeyChartPlugin().configure({ key: 'sankey' }),
         new SunburstChartPlugin().configure({ key: 'sunburst' }),
         new TableChartPlugin().configure({ key: 'table' }),
+        new TechGenerationChartPlugin().configure({ key: 'tech_generation' }),
         new TimePivotChartPlugin().configure({ key: 'time_pivot' }),
         new TimeTableChartPlugin().configure({ key: 'time_table' }),
         new TreemapChartPlugin().configure({ key: 'treemap' }),
         new WordCloudChartPlugin().configure({ key: 'word_cloud' }),
         new WorldMapChartPlugin().configure({ key: 'world_map' }),
+        new EchartsTimeseriesChartPlugin().configure({
+          key: 'echarts_timeseries',
+        }),
       ],
     });
   }

@@ -70,6 +70,7 @@ from superset.connectors.sqla.models import (
     TableColumn,
 )
 from superset.dashboards.dao import DashboardDAO
+from superset.databases.filters import DatabaseFilter
 from superset.exceptions import (
     CertificateException,
     DatabaseNotFound,
@@ -112,7 +113,6 @@ from superset.views.base import (
     json_success,
     validate_sqlatable,
 )
-from superset.views.database.filters import DatabaseFilter
 from superset.views.utils import (
     _deserialize_results_payload,
     apply_display_max_row_limit,
@@ -710,12 +710,10 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         has_scenario = 'RunComb' in datasource.column_names
         has_state = 'State' in datasource.column_names
         has_year = "CalYear" in datasource.column_names and "FinYear" in datasource.column_names
-        has_daylike = 'DayLike' in datasource.column_names
         scenarios = []
         states = []
         cal_year = []
         fin_year = []
-        daylike = []
 
         # if the datasource is one of simulation result, get simulation assumption file to display
         run_id = None
@@ -761,7 +759,6 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             result = engine.execute("SELECT DISTINCT PriceBucket FROM {}".format(datasource.table_name))
             for row in result:
                 price_bins.append(row[0])
-
 
         # data for financial charts
         fin_scenarios = []
@@ -826,11 +823,32 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             result = engine.execute("SELECT DISTINCT FinYear FROM {}".format(datasource.table_name))
             for row in result:
                 fin_year.append(row[0])
-        if has_daylike:
+
+        periods = []
+        if 'Period' in datasource.column_names:
             engine = self.appbuilder.get_session.get_bind()
-            result = engine.execute("SELECT DISTINCT DayLike FROM {}".format(datasource.table_name))
+            result = engine.execute("SELECT DISTINCT Period FROM {}".format(
+                datasource.table_name
+            ))
             for row in result:
-                daylike.append(row[0])
+                periods.append(row[0])
+
+        if 'Year' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT Year FROM {}".format(
+                datasource.table_name
+            ))
+            for row in result:
+                periods.append(row[0])
+
+        run_ids = []
+        if 'RunId' in datasource.column_names:
+            engine = self.appbuilder.get_session.get_bind()
+            result = engine.execute("SELECT DISTINCT RunId FROM {}".format(
+                datasource.table_name
+            ))
+            for row in result:
+                run_ids.append(row[0])
 
         bootstrap_data = {
             "can_add": slice_add_perm,
@@ -849,7 +867,6 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             "states": states,
             "cal_year": cal_year,
             "fin_year": fin_year,
-            # "daylike": daylike,
             "fin_scenarios": fin_scenarios,
             "fin_firm_techs": fin_firm_techs,
             "fin_periods": fin_periods,
@@ -861,6 +878,8 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             "period_quarterly": period_quarterly,
             "price_bins": price_bins,
             "assumption_name": assumption_name or None,
+            "periods": periods,
+            "run_ids": run_ids,
         }
         table_name = (
             datasource.table_name
@@ -1310,7 +1329,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             logger.warning("Stopped an unsafe database connection")
             return json_error_response(_(str(ex)), 400)
         except Exception as ex:  # pylint: disable=broad-except
-            logger.error("Unexpected error %s", type(ex).__name__)
+            logger.warning("Unexpected error %s", type(ex).__name__)
             return json_error_response(
                 _("Unexpected error occurred, please check your logs for details"), 400
             )
@@ -1579,12 +1598,16 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         """Warms up the cache for the slice or table.
 
         Note for slices a force refresh occurs.
+
+        In terms of the `extra_filters` these can be obtained from records in the JSON
+        encoded `logs.json` column associated with the `explore_json` action.
         """
         session = db.session()
         slice_id = request.args.get("slice_id")
         dashboard_id = request.args.get("dashboard_id")
         table_name = request.args.get("table_name")
         db_name = request.args.get("db_name")
+        extra_filters = request.args.get("extra_filters")
 
         if not slice_id and not (table_name and db_name):
             return json_error_response(
@@ -1630,8 +1653,10 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             try:
                 form_data = get_form_data(slc.id, use_slice_data=True)[0]
                 if dashboard_id:
-                    form_data["extra_filters"] = get_dashboard_extra_filters(
-                        slc.id, dashboard_id
+                    form_data["extra_filters"] = (
+                        json.loads(extra_filters)
+                        if extra_filters
+                        else get_dashboard_extra_filters(slc.id, dashboard_id)
                     )
 
                 obj = get_viz(
@@ -2671,6 +2696,8 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
     def welcome(self) -> FlaskResponse:
         """Personalized welcome page"""
         if not g.user or not g.user.get_id():
+            if conf.get("PUBLIC_ROLE_LIKE_GAMMA", False) or conf["PUBLIC_ROLE_LIKE"]:
+                return self.render_template("superset/public_welcome.html")
             return redirect(appbuilder.get_url_for_login)
 
         welcome_dashboard_id = (

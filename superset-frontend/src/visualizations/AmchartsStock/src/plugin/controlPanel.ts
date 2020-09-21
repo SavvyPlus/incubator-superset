@@ -16,8 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { t } from '@superset-ui/translation';
-import { validateNonEmpty } from '@superset-ui/validator';
+import { t, validateNonEmpty } from '@superset-ui/core';
 import { ControlPanelConfig } from '@superset-ui/chart-controls';
 
 const config: ControlPanelConfig = {
@@ -95,7 +94,7 @@ const config: ControlPanelConfig = {
   // For control input types, see: superset-frontend/src/explore/components/controls/index.js
   controlPanelSections: [
     {
-      label: t('Query'),
+      label: t('Filter'),
       expanded: true,
       controlSetRows: [
         // ['groupby'],

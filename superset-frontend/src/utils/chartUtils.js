@@ -26,6 +26,11 @@ export const empowerCharts = [
   'multi_boxplot',
   'spot_price_histogram',
   'amcharts_stock',
+  'half_hour_spot',
+  'duid_generation',
+  'tech_generation',
+  'duid_average_price',
+  'duid_spot_premium',
 ];
 
 const REGION_BORDER_COLOR = {

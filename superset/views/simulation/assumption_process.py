@@ -178,6 +178,7 @@ def process_assumptions(file_path, assumptions_version):
     adjust_demand(file_path)
     update_gas_price_escalation(file_path, assumptions_version)
 
+
 def check_assumption(file_path, assumtpions_version, simulation):
 
     assumption_time_forecast_year = ['Demand_Growth', 'Rooftop_Solar_Forecast', 'Behind_The_Meter_Battery']
@@ -239,18 +240,18 @@ def ref_day_generation_check(simulation, run_type):
                 "ref_start_date": '2017-01-01',
                 "ref_end_date": '2019-07-31',
             }
-            t = threading.Thread(target=invoker, args=(payload, 'spot-simulation-prod-stk2-ref-day-gen'))
+            t = threading.Thread(target=invoker, args=(payload, 'spot-simulation-{}-stk2-ref-day-gen'.format(os.environ['EMPOWER_ENV'])))
             print('ref day generate:'+repr(payload))
             threads.append(t)
             t.start()
             # break
 
 
-
 def upload_assumption_file(file_path, assumptions_version):
     put_file_to_s3(file_path, bucket_inputs, excel_path.format(assumptions_version), is_public=True)
     return get_download_url(bucket_inputs, excel_path.format(assumptions_version)), \
            get_s3_url(bucket_inputs, excel_path.format(assumptions_version))
+
 
 def process_assumption_to_df_dict(file_path):
     df_dict = {}
@@ -270,6 +271,7 @@ def process_assumption_to_df_dict(file_path):
         df_dict[sheet] = df_dict[sheet].rename(columns=sheet_col_name_to_tab_col_name_dict[sheet])
 
     return df_dict
+
 
 def save_as_new_tab_version(db, df, tab_model, tab_data_model, note=None, scenario=None, **kwargs):
     from sqlalchemy import exc
@@ -303,9 +305,8 @@ def save_as_new_tab_version(db, df, tab_model, tab_data_model, note=None, scenar
     #         df.iloc[i:i+1].to_sql(tab_data_model.__tablename__, db.engine, if_exists='append', index=False)
     #     except exc.IntegrityError:
     #         pass
-
-
     return new_tab_def
+
 
 def check_assumption_processed(run_id):
     object_list = list_object_keys(bucket_inputs, cache_path.format(run_id))
