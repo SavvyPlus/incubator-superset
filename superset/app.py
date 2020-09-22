@@ -346,14 +346,14 @@ class SupersetAppInitializer:
             category_label=__("Manage"),
             category_icon="",
         )
-        appbuilder.add_view(
-            NemModelView,
-            "NEM",
-            label=__("NEM"),
-            icon="fa-bolt",
-            category="",
-            category_icon="",
-        )
+        # appbuilder.add_view(
+        #     NemModelView,
+        #     "NEM",
+        #     label=__("NEM"),
+        #     icon="fa-bolt",
+        #     category="",
+        #     category_icon="",
+        # )
         if self.config["ENABLE_ROW_LEVEL_SECURITY"]:
             appbuilder.add_view(
                 RowLevelSecurityFiltersModelView,
