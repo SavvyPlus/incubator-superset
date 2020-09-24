@@ -128,11 +128,11 @@ def test_alert_observer(setup_database):
     assert alert3.sql_observer[0].observations[-1].value is None
     assert alert3.sql_observer[0].observations[-1].error_msg is None
 
-    # Test SQLObserver with empty SQL return
+    # Test SQLObserver with empty SQL return, expected
     alert4 = create_alert(dbsession, "SELECT first FROM test_table WHERE first = -1")
     observe(alert4.id, dbsession)
     assert alert4.sql_observer[0].observations[-1].value is None
-    assert alert4.sql_observer[0].observations[-1].error_msg is not None
+    assert alert4.sql_observer[0].observations[-1].error_msg is None
 
     # Test SQLObserver with str result
     alert5 = create_alert(dbsession, "SELECT 'test_string' as string_value")
@@ -153,6 +153,27 @@ def test_alert_observer(setup_database):
     observe(alert7.id, dbsession)
     assert alert7.sql_observer[0].observations[-1].value is None
     assert alert7.sql_observer[0].observations[-1].error_msg is not None
+
+    # Test multiline SQLObserver
+    alert8 = create_alert(
+        dbsession,
+        """
+        -- comment
+        SELECT
+            1 -- comment
+        FROM test_table
+            WHERE first = 1
+        """,
+    )
+    observe(alert8.id, dbsession)
+    assert alert8.sql_observer[0].observations[-1].value == 1.0
+    assert alert8.sql_observer[0].observations[-1].error_msg is None
+
+    # Test jinja
+    alert9 = create_alert(dbsession, "SELECT {{ 2 }}")
+    observe(alert9.id, dbsession)
+    assert alert9.sql_observer[0].observations[-1].value == 2.0
+    assert alert9.sql_observer[0].observations[-1].error_msg is None
 
 
 @patch("superset.tasks.schedules.deliver_alert")

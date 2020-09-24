@@ -437,7 +437,7 @@ class Header extends React.PureComponent {
             />
           )}
 
-          {!editMode && (
+          {!editMode && userCanEdit && (
             <span
               role="button"
               tabIndex={0}

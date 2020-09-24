@@ -22,8 +22,8 @@ from typing import Optional
 import pandas as pd
 from sqlalchemy.orm import Session
 
+from superset import jinja_context
 from superset.models.alerts import Alert, SQLObservation
-from superset.sql_parse import ParsedQuery
 
 logger = logging.getLogger("tasks.email_reports")
 
@@ -42,13 +42,13 @@ def observe(alert_id: int, session: Session) -> Optional[str]:
 
     value = None
 
-    parsed_query = ParsedQuery(sql_observer.sql)
-    sql = parsed_query.stripped()
-    df = sql_observer.database.get_df(sql)
+    tp = jinja_context.get_template_processor(database=sql_observer.database)
+    rendered_sql = tp.process_template(sql_observer.sql)
+    df = sql_observer.database.get_df(rendered_sql)
 
     error_msg = validate_observer_result(df, alert.id, alert.label)
 
-    if not error_msg and df.to_records()[0][1] is not None:
+    if not error_msg and not df.empty and df.to_records()[0][1] is not None:
         value = float(df.to_records()[0][1])
 
     observation = SQLObservation(
@@ -74,9 +74,9 @@ def validate_observer_result(
     Returns an error message if the result is invalid.
     """
     try:
-        assert (
-            not sql_result.empty
-        ), f"Observer for alert <{alert_id}:{alert_label}> returned no rows"
+        if sql_result.empty:
+            # empty results are used for the not null validator
+            return None
 
         rows = sql_result.to_records()
 
