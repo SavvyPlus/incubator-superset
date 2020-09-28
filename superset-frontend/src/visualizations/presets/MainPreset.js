@@ -71,6 +71,8 @@ import { DuidAveragePriceChartPlugin } from '../DUIDAveragePrice/src';
 import { DuidSpotPremiumChartPlugin } from '../DUIDSpotPremium/src';
 import { DuidRevenueChartPlugin } from '../DUIDRevenue/src';
 import { GenerationByTechnologyChartPlugin } from '../GenerationByTechnology/src';
+import { GenerationTechPieChartPlugin } from '../GenerationTechPie/src';
+import { GenerationTechWaterfallChartPlugin } from '../GenerationTechWaterfall/src';
 
 export default class MainPreset extends Preset {
   constructor() {
@@ -110,6 +112,12 @@ export default class MainPreset extends Preset {
         new ForceDirectedChartPlugin().configure({ key: 'directed_force' }),
         new GenerationByTechnologyChartPlugin().configure({
           key: 'generation_by_technology',
+        }),
+        new GenerationTechPieChartPlugin().configure({
+          key: 'generation_tech_pie',
+        }),
+        new GenerationTechWaterfallChartPlugin().configure({
+          key: 'generation_tech_waterfall',
         }),
         new HeatmapChartPlugin().configure({ key: 'heatmap' }),
         new HistogramChartPlugin().configure({ key: 'histogram' }),

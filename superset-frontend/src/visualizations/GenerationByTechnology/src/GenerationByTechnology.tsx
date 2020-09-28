@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -112,7 +111,7 @@ export default function GenerationByTechnology(
     return () => {
       x.dispose();
     };
-  }, [data]);
+  }, [data, transformedData]);
 
   return (
     <div id="chartdiv" style={{ width: `${width}px`, height: `${height}px` }} />
