@@ -66,7 +66,7 @@ import {
   ColumnOption,
 } from '@superset-ui/core';
 
-import { formatSelectOptionsForRange, formatSelectOptions, mainMetric } from '../modules/utils';
+import { formatSelectOptions, mainMetric } from '../modules/utils';
 import * as v from './validators';
 import { TIME_FILTER_LABELS } from './constants';
 
@@ -402,7 +402,13 @@ export const controls = {
     multi: true,
     default: ['2020'],
     label: t('Financial years'),
-    choices: formatSelectOptionsForRange(2018, 2022),
+    choices: [
+      [2018, '2018'],
+      [2019, '2019'],
+      [2020, '2020'],
+      [2021, '2021'],
+      [2022, '2022'],
+    ],
     description: t('Select financial years'),
   },
 
