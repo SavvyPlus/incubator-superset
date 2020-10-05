@@ -30,7 +30,7 @@ Superset
 [![Dependencies Status](https://david-dm.org/apache/incubator-superset/status.svg?path=superset-frontend)](https://david-dm.org/apache/incubator-superset?path=superset-frontend)
 
 <img
-  src="https://cloud.githubusercontent.com/assets/130878/20946612/49a8a25c-bbc0-11e6-8314-10bef902af51.png"
+  src="https://github.com/apache/incubator-superset/raw/master/superset-frontend/branding/superset-logo-horiz-apache.png"
   alt="Superset"
   width="500"
 />
@@ -158,6 +158,6 @@ how to set up a development environment.
   * [Create Time Series Charts](https://preset.io/blog/2020-06-26-timeseries-chart/)
 * [Docker image](https://hub.docker.com/r/preset/superset/)
 * [Youtube Channel](https://www.youtube.com/channel/UCMuwrvBsg_jjI2gLcm04R0g)
-  * [May 15, 2020: Virtual Meetup Recording. Topics: 0.36 Overview, Committers Self-Intro, Roadmap](https://www.youtube.com/watch?v=tXGDmqjmcTs&t=20s)
-  * [July 16, 2020: Virtual Meetup Recording. Topics: Visualization Plugins, 0.37 Preview, Demo](https://www.youtube.com/watch?v=f6up5x_iRbI)
+  * [May 2020: Virtual Meetup Recording. Topics: 0.36 Overview, Committers Self-Intro, Roadmap](https://www.youtube.com/watch?v=tXGDmqjmcTs&t=20s)
+  * [July 2020: Virtual Meetup Recording. Topics: Visualization Plugins, 0.37 Preview, Demo](https://www.youtube.com/watch?v=f6up5x_iRbI)
 * [So, You Want to Build a Superset Viz Plugin...](https://preset.io/blog/2020-07-02-hello-world/)

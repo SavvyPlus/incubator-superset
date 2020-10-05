@@ -258,6 +258,17 @@ function ChartList(props: ChartListProps) {
         disableSortBy: true,
       },
       {
+        Cell: ({
+          row: {
+            original: { created_by: createdBy },
+          },
+        }: any) =>
+          createdBy ? `${createdBy.first_name} ${createdBy.last_name}` : '',
+        Header: t('Created By'),
+        accessor: 'created_by',
+        disableSortBy: true,
+      },
+      {
         Cell: ({ row: { original } }: any) => {
           const handleDelete = () => handleChartDelete(original);
           const openEditModal = () => openChartEditModal(original);
@@ -297,7 +308,7 @@ function ChartList(props: ChartListProps) {
                   className="action-button"
                   onClick={openEditModal}
                 >
-                  <Icon name="pencil" />
+                  <Icon name="edit-alt" />
                 </span>
               )}
             </span>
@@ -324,7 +335,27 @@ function ChartList(props: ChartListProps) {
         createErrorHandler(errMsg =>
           props.addDangerToast(
             t(
-              'An error occurred while fetching chart dataset values: %s',
+              'An error occurred while fetching chart owners values: %s',
+              errMsg,
+            ),
+          ),
+        ),
+      ),
+      paginate: true,
+    },
+    {
+      Header: t('Created By'),
+      id: 'created_by',
+      input: 'select',
+      operator: 'rel_o_m',
+      unfilteredLabel: 'All',
+      fetchSelects: createFetchRelated(
+        'chart',
+        'created_by',
+        createErrorHandler(errMsg =>
+          props.addDangerToast(
+            t(
+              'An error occurred while fetching chart created by values: %s',
               errMsg,
             ),
           ),
@@ -364,7 +395,7 @@ function ChartList(props: ChartListProps) {
       Header: t('Search'),
       id: 'slice_name',
       input: 'search',
-      operator: 'name_or_description',
+      operator: 'chart_all_text',
     },
   ];
 
@@ -423,7 +454,7 @@ function ChartList(props: ChartListProps) {
             tabIndex={0}
             onClick={() => openChartEditModal(chart)}
           >
-            <ListViewCard.MenuIcon name="pencil" /> Edit
+            <ListViewCard.MenuIcon name="edit-alt" /> Edit
           </Menu.Item>
         )}
       </Menu>
@@ -454,7 +485,7 @@ function ChartList(props: ChartListProps) {
           <ListViewCard.Actions>
             {renderFaveStar(chart.id)}
             <Dropdown overlay={menu}>
-              <Icon name="more" />
+              <Icon name="more-horiz" />
             </Dropdown>
           </ListViewCard.Actions>
         }
@@ -466,13 +497,16 @@ function ChartList(props: ChartListProps) {
     <>
       <SubMenu
         name={t('Charts')}
-        secondaryButton={
+        buttons={
           canDelete
-            ? {
-                name: t('Bulk Select'),
-                onClick: toggleBulkSelect,
-              }
-            : undefined
+            ? [
+                {
+                  name: t('Bulk Select'),
+                  buttonStyle: 'secondary',
+                  onClick: toggleBulkSelect,
+                },
+              ]
+            : []
         }
       />
       {sliceCurrentlyEditing && (
