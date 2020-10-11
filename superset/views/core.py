@@ -26,24 +26,14 @@ from urllib import parse
 import backoff
 import pandas as pd
 import simplejson as json
-from flask import (
-    abort,
-    flash,
-    g,
-    make_response,
-    Markup,
-    redirect,
-    render_template,
-    request,
-    Response,
-)
+from flask import abort, flash, g, Markup, redirect, render_template, request, Response
 from flask_appbuilder import expose
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_appbuilder.security.decorators import has_access, has_access_api
 from flask_appbuilder.security.sqla import models as ab_models
 from flask_babel import gettext as __, lazy_gettext as _
 from jinja2.exceptions import TemplateError
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import (
     ArgumentError,
@@ -127,12 +117,9 @@ from superset.views.utils import (
     _deserialize_results_payload,
     apply_display_max_row_limit,
     bootstrap_user_data,
-    check_dashboard_perms,
     check_datasource_perms,
     check_slice_perms,
     get_cta_schema_name,
-    get_dashboard,
-    get_dashboard_changedon_dt,
     get_dashboard_extra_filters,
     get_datasource_info,
     get_form_data,
@@ -1309,8 +1296,8 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             username = g.user.username if g.user is not None else None
             engine = database.get_sqla_engine(user_name=username)
 
-            with closing(engine.connect()) as conn:
-                conn.scalar(select([1]))
+            with closing(engine.raw_connection()) as conn:
+                engine.dialect.do_ping(conn)
                 return json_success('"OK"')
         except CertificateException as ex:
             logger.info("Certificate exception")
@@ -1765,32 +1752,49 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         return json_success(json.dumps({"published": dash.published}))
 
     @has_access
-    @etag_cache(
-        0,
-        check_perms=check_dashboard_perms,
-        get_last_modified=get_dashboard_changedon_dt,
-        skip=lambda _self, dashboard_id_or_slug: not is_feature_enabled(
-            "ENABLE_DASHBOARD_ETAG_HEADER"
-        ),
-    )
     @expose("/dashboard/<dashboard_id_or_slug>/")
     def dashboard(  # pylint: disable=too-many-locals
         self, dashboard_id_or_slug: str
     ) -> FlaskResponse:
         """Server side rendering for a dashboard"""
-        dash = get_dashboard(dashboard_id_or_slug)
+        session = db.session()
+        qry = session.query(Dashboard)
+        if dashboard_id_or_slug.isdigit():
+            qry = qry.filter_by(id=int(dashboard_id_or_slug))
+        else:
+            qry = qry.filter_by(slug=dashboard_id_or_slug)
 
-        slices_by_datasources = defaultdict(list)
+        dash = qry.one_or_none()
+        if not dash:
+            abort(404)
+
+        datasources = defaultdict(list)
         for slc in dash.slices:
             datasource = slc.datasource
             if datasource:
-                slices_by_datasources[datasource].append(slc)
+                datasources[datasource].append(slc)
+
+        if config["ENABLE_ACCESS_REQUEST"]:
+            for datasource in datasources:
+                if datasource and not security_manager.can_access_datasource(
+                    datasource
+                ):
+                    flash(
+                        __(
+                            security_manager.get_datasource_access_error_msg(datasource)
+                        ),
+                        "danger",
+                    )
+                    return redirect(
+                        "superset/request_access/?" f"dashboard_id={dash.id}&"
+                    )
+
         # Filter out unneeded fields from the datasource payload
         datasources_payload = {
             datasource.uid: datasource.data_for_slices(slices)
             if is_feature_enabled("REDUCE_DASHBOARD_BOOTSTRAP_PAYLOAD")
             else datasource.data
-            for datasource, slices in slices_by_datasources.items()
+            for datasource, slices in datasources.items()
         }
 
         dash_edit_perm = check_ownership(
@@ -1824,7 +1828,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         if is_feature_enabled("REMOVE_SLICE_LEVEL_LABEL_COLORS"):
             # dashboard metadata has dashboard-level label_colors,
             # so remove slice-level label_colors from its form_data
-            for slc in dashboard_data.get("slices") or []:
+            for slc in dashboard_data.get("slices"):
                 form_data = slc.get("form_data")
                 form_data.pop("label_colors", None)
 
@@ -1858,17 +1862,15 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                 json.dumps(bootstrap_data, default=utils.pessimistic_json_iso_dttm_ser)
             )
 
-        return make_response(
-            self.render_template(
-                "superset/dashboard.html",
-                entry="dashboard",
-                standalone_mode=standalone_mode,
-                title=dash.dashboard_title,
-                custom_css=dashboard_data.get("css"),
-                bootstrap_data=json.dumps(
-                    bootstrap_data, default=utils.pessimistic_json_iso_dttm_ser
-                ),
-            )
+        return self.render_template(
+            "superset/dashboard.html",
+            entry="dashboard",
+            standalone_mode=standalone_mode,
+            title=dash.dashboard_title,
+            custom_css=dashboard_data.get("css"),
+            bootstrap_data=json.dumps(
+                bootstrap_data, default=utils.pessimistic_json_iso_dttm_ser
+            ),
         )
 
     @api
@@ -1943,7 +1945,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
     @expose("/get_or_create_table/", methods=["POST"])
     @event_logger.log_this
     def sqllab_table_viz(self) -> FlaskResponse:  # pylint: disable=no-self-use
-        """ Gets or creates a table object with attributes passed to the API.
+        """Gets or creates a table object with attributes passed to the API.
 
         It expects the json with params:
         * datasourceName - e.g. table name, required

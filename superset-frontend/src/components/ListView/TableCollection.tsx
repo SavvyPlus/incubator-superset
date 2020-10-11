@@ -30,11 +30,23 @@ interface TableCollectionProps {
   rows: TableInstance['rows'];
   columns: TableInstance['column'][];
   loading: boolean;
+  highlightRowId?: number;
 }
 
 const Table = styled.table`
+  background-color: white;
   border-collapse: separate;
+  border-radius: ${({ theme }) => theme.borderRadius}px;
 
+  thead > tr > th {
+    border: 0;
+  }
+
+  tbody {
+    tr:first-of-type > td {
+      border-top: 0;
+    }
+  }
   th {
     background: ${({ theme }) => theme.colors.grayscale.light5};
     position: sticky;
@@ -176,10 +188,6 @@ const Table = styled.table`
     }
   }
 
-  .sort-icon {
-    position: absolute;
-  }
-
   @keyframes loading-shimmer {
     40% {
       background-position: 100% 0;
@@ -199,6 +207,7 @@ export default function TableCollection({
   columns,
   rows,
   loading,
+  highlightRowId,
 }: TableCollectionProps) {
   return (
     <Table {...getTableProps()} className="table table-hover">
@@ -262,7 +271,9 @@ export default function TableCollection({
               <tr
                 {...row.getRowProps()}
                 className={cx('table-row', {
-                  'table-row-selected': row.isSelected,
+                  'table-row-selected':
+                    // @ts-ignore
+                    row.isSelected || row.original.id === highlightRowId,
                 })}
               >
                 {row.cells.map(cell => {

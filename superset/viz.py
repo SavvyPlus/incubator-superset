@@ -145,7 +145,7 @@ class BaseViz:
         force: bool = False,
     ) -> None:
         if not datasource:
-            raise Exception(_("Viz is missing a datasource"))
+            raise QueryObjectValidationError(_("Viz is missing a datasource"))
 
         self.datasource = datasource
         self.request = request

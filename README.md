@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
+
 Superset
 =========
 
@@ -71,6 +72,7 @@ A modern, enterprise-ready business intelligence web application.
 **Choose from a wide array of visualizations**
 
 <kbd><img title="Visualizations" src="https://raw.githubusercontent.com/apache/incubator-superset/master/superset-frontend/images/screenshots/visualizations.png"></kbd><br/>
+
 
 ## Why Superset
 
