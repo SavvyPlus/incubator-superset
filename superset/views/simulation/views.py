@@ -849,7 +849,7 @@ class SimulationModelView(
             base_url = "http://localhost:9000/simulationmodelview/"
         elif emp_env == 'staging':
             base_url = f"{get_current_external_ip()}/simulationmodelview/"
-        elif emp_env == 'production':
+        elif emp_env == 'prod':
             base_url = "https://app.empoweranalytics.com.au/simulationmodelview/"
         else:
             base_url = "http://localhost:9000/simulationmodelview/"
