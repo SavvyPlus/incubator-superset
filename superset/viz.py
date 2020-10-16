@@ -729,6 +729,10 @@ class TableViz(BaseViz):
                 if sort_by_label not in d["metrics"]:
                     d["metrics"].append(sort_by)
                 d["orderby"] = [(sort_by, not fd.get("order_desc", True))]
+            elif d["metrics"]:
+                # Legacy behavior of sorting by first metric by default
+                first_metric = d["metrics"][0]
+                d["orderby"] = [(first_metric, not fd.get("order_desc", True))]
         return d
 
     def get_data(self, df: pd.DataFrame) -> VizData:
@@ -2083,8 +2087,8 @@ class NVD3TimeSeriesViz(NVD3Viz):
             if not query_object["from_dttm"] or not query_object["to_dttm"]:
                 raise QueryObjectValidationError(
                     _(
-                        "`Since` and `Until` time bounds should be specified "
-                        "when using the `Time Shift` feature."
+                        "An enclosed time range (both start and end) must be specified "
+                        "when using a Time Comparison."
                     )
                 )
             query_object["from_dttm"] -= delta

@@ -129,6 +129,7 @@ class SaveModal extends React.PureComponent {
         saveType === SAVE_TYPE_NEWDASHBOARD ? newDashName : dashboardTitle,
       duplicate_slices: this.state.duplicateSlices,
       refresh_frequency: refreshFrequency,
+      last_modified_time: dashboardInfo.lastModifiedTime,
     };
 
     if (saveType === SAVE_TYPE_NEWDASHBOARD && !newDashName) {
@@ -193,7 +194,11 @@ class SaveModal extends React.PureComponent {
         }
         modalFooter={
           <div>
-            <Button buttonStyle="primary" onClick={this.saveDashboard}>
+            <Button
+              data-test="save-modal-save-button"
+              buttonStyle="primary"
+              onClick={this.saveDashboard}
+            >
               {t('Save')}
             </Button>
           </div>
