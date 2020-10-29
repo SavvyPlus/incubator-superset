@@ -18,7 +18,6 @@
  */
 import React from 'react';
 import { act } from 'react-dom/test-utils';
-import { Modal } from 'react-bootstrap';
 import configureStore from 'redux-mock-store';
 import { mount } from 'enzyme';
 import fetchMock from 'fetch-mock';
@@ -27,8 +26,10 @@ import sinon from 'sinon';
 import { supersetTheme, ThemeProvider } from '@superset-ui/core';
 
 import waitForComponentToPaint from 'spec/helpers/waitForComponentToPaint';
+import Modal from 'src/common/components/Modal';
 import DatasourceModal from 'src/datasource/DatasourceModal';
 import DatasourceEditor from 'src/datasource/DatasourceEditor';
+import * as featureFlags from 'src/featureFlags';
 import mockDatasource from '../../fixtures/mockDatasource';
 
 const mockStore = configureStore([thunk]);
@@ -61,10 +62,17 @@ async function mountAndWait(props = mockedProps) {
 
 describe('DatasourceModal', () => {
   let wrapper;
-
+  let isFeatureEnabledMock;
   beforeEach(async () => {
+    isFeatureEnabledMock = jest
+      .spyOn(featureFlags, 'isFeatureEnabled')
+      .mockReturnValue(true);
     fetchMock.reset();
     wrapper = await mountAndWait();
+  });
+
+  afterAll(() => {
+    isFeatureEnabledMock.restore();
   });
 
   it('renders', () => {
@@ -72,7 +80,7 @@ describe('DatasourceModal', () => {
   });
 
   it('renders a Modal', () => {
-    expect(wrapper.find(Modal)).toHaveLength(2);
+    expect(wrapper.find(Modal)).toExist();
   });
 
   it('renders a DatasourceEditor', () => {
@@ -97,5 +105,36 @@ describe('DatasourceModal', () => {
     expect(callsP._calls.map(call => call[0])).toEqual(
       expected,
     ); /* eslint no-underscore-dangle: 0 */
+  });
+
+  it('renders a legacy data source btn', () => {
+    expect(
+      wrapper.find('button[data-test="datasource-modal-legacy-edit"]'),
+    ).toExist();
+  });
+});
+
+describe('DatasourceModal without legacy data btn', () => {
+  let wrapper;
+  let isFeatureEnabledMock;
+  beforeEach(async () => {
+    isFeatureEnabledMock = jest
+      .spyOn(featureFlags, 'isFeatureEnabled')
+      .mockReturnValue(false);
+    fetchMock.reset();
+    wrapper = await mountAndWait();
+  });
+
+  afterAll(() => {
+    isFeatureEnabledMock.restore();
+  });
+
+  it('hides legacy data source btn', () => {
+    isFeatureEnabledMock = jest
+      .spyOn(featureFlags, 'isFeatureEnabled')
+      .mockReturnValue(false);
+    expect(
+      wrapper.find('button[data-test="datasource-modal-legacy-edit"]'),
+    ).not.toExist();
   });
 });

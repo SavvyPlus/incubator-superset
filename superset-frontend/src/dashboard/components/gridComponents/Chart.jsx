@@ -196,8 +196,8 @@ class Chart extends React.Component {
     this.props.setFocusedFilterField(chartId, column);
   }
 
-  handleFilterMenuClose() {
-    this.props.unsetFocusedFilterField();
+  handleFilterMenuClose(chartId, column) {
+    this.props.unsetFocusedFilterField(chartId, column);
   }
 
   exploreChart() {
@@ -301,6 +301,7 @@ class Chart extends React.Component {
           addDangerToast={addDangerToast}
           handleToggleFullSize={handleToggleFullSize}
           isFullSize={isFullSize}
+          chartStatus={chart.chartStatus}
         />
 
         {/*

@@ -185,7 +185,7 @@ class SaveModal extends React.Component {
               data-test="new-chart-name"
             />
           </FormGroup>
-          <FormGroup>
+          <FormGroup data-test="save-chart-modal-select-dashboard-form">
             <FormLabel required>{t('Add to dashboard')}</FormLabel>
             <CreatableSelect
               id="dashboard-creatable-select"
@@ -232,7 +232,9 @@ class SaveModal extends React.Component {
               disabled={!this.state.newSliceName}
               data-test="btn-modal-save"
             >
-              {t('Save')}
+              {!this.props.can_overwrite && this.props.slice
+                ? t('Save as new chart')
+                : t('Save')}
             </Button>
           </div>
         </Modal.Footer>

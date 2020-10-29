@@ -19,7 +19,9 @@
 import json
 from typing import List, Optional
 from datetime import datetime
+from io import BytesIO
 from unittest import mock
+from zipfile import is_zipfile
 
 import humanize
 import prison
@@ -818,6 +820,30 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin):
         data = json.loads(rv.data.decode("utf-8"))
         self.assertEqual(data["result"][0]["rowcount"], 45)
 
+    def test_chart_data_applied_time_extras(self):
+        """
+        Chart data API: Test chart data query with applied time extras
+        """
+        self.login(username="admin")
+        table = self.get_table_by_name("birth_names")
+        request_payload = get_query_context(table.name, table.id, table.type)
+        request_payload["queries"][0]["applied_time_extras"] = {
+            "__time_range": "100 years ago : now",
+            "__time_origin": "now",
+        }
+        rv = self.post_assert_metric(CHART_DATA_URI, request_payload, "data")
+        self.assertEqual(rv.status_code, 200)
+        data = json.loads(rv.data.decode("utf-8"))
+        self.assertEqual(
+            data["result"][0]["applied_filters"],
+            [{"column": "gender"}, {"column": "__time_range"},],
+        )
+        self.assertEqual(
+            data["result"][0]["rejected_filters"],
+            [{"column": "__time_origin", "reason": "not_druid_datasource"},],
+        )
+        self.assertEqual(data["result"][0]["rowcount"], 45)
+
     def test_chart_data_limit_offset(self):
         """
         Chart data API: Test chart data query with limit and offset
@@ -962,7 +988,6 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin):
             }
         ]
         rv = self.post_assert_metric(CHART_DATA_URI, request_payload, "data")
-        print(rv.data)
         self.assertEqual(rv.status_code, 200)
         response_payload = json.loads(rv.data.decode("utf-8"))
         result = response_payload["result"][0]
@@ -1074,3 +1099,44 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin):
         result = response_payload["result"][0]["query"]
         if get_example_database().backend != "presto":
             assert "('boy' = 'boy')" in result
+
+    def test_export_chart(self):
+        """
+        Chart API: Test export dataset
+        """
+        example_chart = db.session.query(Slice).all()[0]
+        argument = [example_chart.id]
+        uri = f"api/v1/chart/export/?q={prison.dumps(argument)}"
+
+        self.login(username="admin")
+        rv = self.get_assert_metric(uri, "export")
+
+        assert rv.status_code == 200
+
+        buf = BytesIO(rv.data)
+        assert is_zipfile(buf)
+
+    def test_export_chart_not_found(self):
+        """
+        Dataset API: Test export dataset not found
+        """
+        # Just one does not exist and we get 404
+        argument = [-1, 1]
+        uri = f"api/v1/chart/export/?q={prison.dumps(argument)}"
+        self.login(username="admin")
+        rv = self.get_assert_metric(uri, "export")
+
+        assert rv.status_code == 404
+
+    def test_export_chart_gamma(self):
+        """
+        Dataset API: Test export dataset has gamma
+        """
+        example_chart = db.session.query(Slice).all()[0]
+        argument = [example_chart.id]
+        uri = f"api/v1/chart/export/?q={prison.dumps(argument)}"
+
+        self.login(username="gamma")
+        rv = self.client.get(uri)
+
+        assert rv.status_code == 404

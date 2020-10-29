@@ -79,6 +79,7 @@ const propTypes = {
   logEvent: PropTypes.func.isRequired,
   hasUnsavedChanges: PropTypes.bool.isRequired,
   maxUndoHistoryExceeded: PropTypes.bool.isRequired,
+  lastModifiedTime: PropTypes.number.isRequired,
 
   // redux
   onUndo: PropTypes.func.isRequired,
@@ -104,6 +105,14 @@ const StyledDashboardHeader = styled.div`
   button,
   .fave-unfave-icon {
     margin-left: ${({ theme }) => theme.gridUnit * 2}px;
+  }
+  .button-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    .action-button {
+      font-size: ${({ theme }) => theme.typography.sizes.xl}px;
+    }
   }
 `;
 
@@ -269,17 +278,27 @@ class Header extends React.PureComponent {
       dashboardInfo,
       refreshFrequency: currentRefreshFrequency,
       shouldPersistRefreshFrequency,
+      lastModifiedTime,
     } = this.props;
 
     const scale = CategoricalColorNamespace.getScale(
       colorScheme,
       colorNamespace,
     );
-    const labelColors = colorScheme ? scale.getColorMap() : {};
+
+    // use the colorScheme for default labels
+    let labelColors = colorScheme ? scale.getColorMap() : {};
+    // but allow metadata to overwrite if it exists
+    // eslint-disable-next-line camelcase
+    const metadataLabelColors = dashboardInfo.metadata?.label_colors;
+    if (metadataLabelColors) {
+      labelColors = { ...labelColors, ...metadataLabelColors };
+    }
+
     // check refresh frequency is for current session or persist
     const refreshFrequency = shouldPersistRefreshFrequency
       ? currentRefreshFrequency
-      : dashboardInfo.metadata.refresh_frequency; // eslint-disable camelcase
+      : dashboardInfo.metadata?.refresh_frequency; // eslint-disable-line camelcase
 
     const data = {
       positions,
@@ -290,7 +309,7 @@ class Header extends React.PureComponent {
       label_colors: labelColors,
       dashboard_title: dashboardTitle,
       refresh_frequency: refreshFrequency,
-      last_modified_time: dashboardInfo.lastModifiedTime,
+      last_modified_time: lastModifiedTime,
     };
 
     // make sure positions data less than DB storage limitation:
@@ -345,6 +364,7 @@ class Header extends React.PureComponent {
       refreshFrequency,
       shouldPersistRefreshFrequency,
       setRefreshFrequency,
+      lastModifiedTime,
     } = this.props;
 
     const userCanEdit = dashboardInfo.dash_edit_perm;
@@ -516,6 +536,7 @@ class Header extends React.PureComponent {
             showPropertiesModal={this.showPropertiesModal}
             refreshLimit={refreshLimit}
             refreshWarning={refreshWarning}
+            lastModifiedTime={lastModifiedTime}
           />
         </div>
       </StyledDashboardHeader>

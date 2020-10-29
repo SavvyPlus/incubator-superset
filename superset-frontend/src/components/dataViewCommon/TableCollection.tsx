@@ -34,6 +34,7 @@ interface TableCollectionProps {
 }
 
 export const Table = styled.table`
+  background-color: ${({ theme }) => theme.colors.grayscale.light5};
   border-collapse: separate;
   border-radius: ${({ theme }) => theme.borderRadius}px;
 
@@ -155,6 +156,7 @@ export const Table = styled.table`
   .table-row {
     .actions {
       opacity: 0;
+      font-size: ${({ theme }) => theme.typography.sizes.xl}px;
     }
 
     &:hover {
@@ -290,7 +292,7 @@ export default function TableCollection({
                   const columnCellProps = cell.column.cellProps || {};
                   return (
                     <td
-                      data-test="table-cell"
+                      data-test="table-row-cell"
                       className={cx('table-cell', {
                         'table-cell-loader': loading,
                         [cell.column.size || '']: cell.column.size,

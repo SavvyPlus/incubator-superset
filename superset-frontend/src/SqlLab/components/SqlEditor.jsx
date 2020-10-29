@@ -414,7 +414,7 @@ class SqlEditor extends React.PureComponent {
 
       ctasControls = (
         <FormGroup>
-          <InputGroup>
+          <InputGroup bsSize="small">
             <FormControl
               type="text"
               bsSize="small"
@@ -558,7 +558,7 @@ class SqlEditor extends React.PureComponent {
         </div>
         <div className="rightItems">
           <Button
-            className="autocomplete"
+            data-test="autocomplete"
             buttonSize="small"
             onClick={this.handleToggleAutocompleteEnabled}
           >

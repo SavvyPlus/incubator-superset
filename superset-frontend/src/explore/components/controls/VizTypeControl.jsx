@@ -39,16 +39,17 @@ const propTypes = {
   name: PropTypes.string.isRequired,
   onChange: PropTypes.func,
   value: PropTypes.string.isRequired,
+  labelBsStyle: PropTypes.string,
 };
 
 const defaultProps = {
   onChange: () => {},
+  labelBsStyle: 'default',
 };
 
 const registry = getChartMetadataRegistry();
 
 const IMAGE_PER_ROW = 6;
-const LABEL_STYLE = { cursor: 'pointer' };
 const DEFAULT_ORDER = [
   'line',
   'big_number',
@@ -166,7 +167,7 @@ export default class VizTypeControl extends React.PureComponent {
 
   render() {
     const { filter, showModal } = this.state;
-    const { value } = this.props;
+    const { value, labelBsStyle } = this.props;
 
     const filterString = filter.toLowerCase();
     const filteredTypes = DEFAULT_ORDER.filter(type => registry.has(type))
@@ -214,7 +215,7 @@ export default class VizTypeControl extends React.PureComponent {
           }
         >
           <>
-            <Label onClick={this.toggleModal} style={LABEL_STYLE}>
+            <Label onClick={this.toggleModal} bsStyle={labelBsStyle}>
               {registry.has(value) ? registry.get(value).name : `${value}`}
             </Label>
             {!registry.has(value) && (

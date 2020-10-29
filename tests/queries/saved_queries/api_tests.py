@@ -168,8 +168,10 @@ class TestSavedQueryApi(SupersetTestCase):
         """
         admin = self.get_user("admin")
         saved_queries = (
-            db.session.query(SavedQuery).filter(SavedQuery.created_by == admin).all()
-        )
+            db.session.query(SavedQuery)
+            .filter(SavedQuery.created_by == admin)
+            .order_by(SavedQuery.schema.asc())
+        ).all()
         self.login(username="admin")
         query_string = {"order_column": "schema", "order_direction": "asc"}
         uri = f"api/v1/saved_query/?q={prison.dumps(query_string)}"
@@ -213,6 +215,56 @@ class TestSavedQueryApi(SupersetTestCase):
         assert rv.status_code == 200
         data = json.loads(rv.data.decode("utf-8"))
         assert data["count"] == len(all_queries)
+
+    @pytest.mark.usefixtures("create_saved_queries")
+    def test_get_list_filter_database_saved_query(self):
+        """
+        Saved Query API: Test get list and database saved query
+        """
+        example_db = get_example_database()
+        admin_user = self.get_user("admin")
+
+        all_db_queries = (
+            db.session.query(SavedQuery)
+            .filter(SavedQuery.db_id == example_db.id)
+            .filter(SavedQuery.created_by_fk == admin_user.id)
+            .all()
+        )
+
+        self.login(username="admin")
+        query_string = {
+            "filters": [{"col": "database", "opr": "rel_o_m", "value": example_db.id}],
+        }
+        uri = f"api/v1/saved_query/?q={prison.dumps(query_string)}"
+        rv = self.get_assert_metric(uri, "get_list")
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode("utf-8"))
+        assert data["count"] == len(all_db_queries)
+
+    @pytest.mark.usefixtures("create_saved_queries")
+    def test_get_list_filter_schema_saved_query(self):
+        """
+        Saved Query API: Test get list and schema saved query
+        """
+        schema_name = "schema1"
+        admin_user = self.get_user("admin")
+
+        all_db_queries = (
+            db.session.query(SavedQuery)
+            .filter(SavedQuery.schema == schema_name)
+            .filter(SavedQuery.created_by_fk == admin_user.id)
+            .all()
+        )
+
+        self.login(username="admin")
+        query_string = {
+            "filters": [{"col": "schema", "opr": "eq", "value": schema_name}],
+        }
+        uri = f"api/v1/saved_query/?q={prison.dumps(query_string)}"
+        rv = self.get_assert_metric(uri, "get_list")
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode("utf-8"))
+        assert data["count"] == len(all_db_queries)
 
     @pytest.mark.usefixtures("create_saved_queries")
     def test_get_list_custom_filter_schema_saved_query(self):

@@ -35,6 +35,7 @@ import {
   SET_DIRECT_PATH,
   SET_MOUNTED_TAB,
   SET_FOCUSED_FILTER_FIELD,
+  UNSET_FOCUSED_FILTER_FIELD,
 } from '../actions/dashboardState';
 
 export default function dashboardStateReducer(state = {}, action) {
@@ -106,6 +107,8 @@ export default function dashboardStateReducer(state = {}, action) {
         maxUndoHistoryExceeded: false,
         editMode: false,
         updatedColorScheme: false,
+        // server-side compare last_modified_time in second level
+        lastModifiedTime: new Date().getTime() / 1000,
       };
     },
     [SET_UNSAVED_CHANGES]() {
@@ -137,18 +140,28 @@ export default function dashboardStateReducer(state = {}, action) {
       };
     },
     [SET_FOCUSED_FILTER_FIELD]() {
-      const { focusedFilterField } = state;
-      if (action.chartId && action.column) {
-        focusedFilterField.push({
+      return {
+        ...state,
+        focusedFilterField: {
           chartId: action.chartId,
           column: action.column,
-        });
-      } else {
-        focusedFilterField.shift();
+        },
+      };
+    },
+    [UNSET_FOCUSED_FILTER_FIELD]() {
+      // dashboard only has 1 focused filter field at a time,
+      // but when user switch different filter boxes,
+      // browser didn't always fire onBlur and onFocus events in order.
+      if (
+        !state.focusedFilterField ||
+        action.chartId !== state.focusedFilterField.chartId ||
+        action.column !== state.focusedFilterField.column
+      ) {
+        return state;
       }
       return {
         ...state,
-        focusedFilterField,
+        focusedFilterField: null,
       };
     },
   };

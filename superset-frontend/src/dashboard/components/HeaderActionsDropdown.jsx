@@ -61,6 +61,7 @@ const propTypes = {
   showPropertiesModal: PropTypes.func.isRequired,
   refreshLimit: PropTypes.number,
   refreshWarning: PropTypes.string,
+  lastModifiedTime: PropTypes.number.isRequired,
 };
 
 const defaultProps = {
@@ -138,6 +139,7 @@ class HeaderActionsDropdown extends React.PureComponent {
       isLoading,
       refreshLimit,
       refreshWarning,
+      lastModifiedTime,
     } = this.props;
 
     const emailTitle = t('Superset Dashboard');
@@ -149,7 +151,7 @@ class HeaderActionsDropdown extends React.PureComponent {
         title={<Icon name="more-horiz" />}
         noCaret
         id="save-dash-split-button"
-        bsSize="small"
+        bsSize="large"
         style={{ border: 'none', padding: 0, marginLeft: '4px' }}
         pullRight
       >
@@ -166,6 +168,7 @@ class HeaderActionsDropdown extends React.PureComponent {
               expandedSlices={expandedSlices}
               refreshFrequency={refreshFrequency}
               shouldPersistRefreshFrequency={shouldPersistRefreshFrequency}
+              lastModifiedTime={lastModifiedTime}
               customCss={customCss}
               colorNamespace={colorNamespace}
               colorScheme={colorScheme}
@@ -190,7 +193,11 @@ class HeaderActionsDropdown extends React.PureComponent {
           isMenuItem
           triggerNode={<span>{t('Share dashboard')}</span>}
         />
-        <MenuItem onClick={forceRefreshAllCharts} disabled={isLoading}>
+        <MenuItem
+          data-test="refresh-dashboard-menu-item"
+          onClick={forceRefreshAllCharts}
+          disabled={isLoading}
+        >
           {t('Refresh dashboard')}
         </MenuItem>
         <MenuItem divider />

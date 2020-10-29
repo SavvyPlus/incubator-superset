@@ -15,15 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 import logging
+from datetime import datetime
+from io import BytesIO
 from typing import Any, Optional
+from zipfile import ZipFile
 
-from flask import g, request, Response
+from flask import g, request, Response, send_file
 from flask_appbuilder.api import expose, protect, rison, safe
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_babel import gettext as _
 from marshmallow import ValidationError
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import (
+    DBAPIError,
     NoSuchModuleError,
     NoSuchTableError,
     OperationalError,
@@ -43,6 +47,7 @@ from superset.databases.commands.exceptions import (
     DatabaseSecurityUnsafeError,
     DatabaseUpdateFailedError,
 )
+from superset.databases.commands.export import ExportDatabasesCommand
 from superset.databases.commands.test_connection import TestConnectionDatabaseCommand
 from superset.databases.commands.update import UpdateDatabaseCommand
 from superset.databases.dao import DatabaseDAO
@@ -54,6 +59,7 @@ from superset.databases.schemas import (
     DatabasePutSchema,
     DatabaseRelatedObjectsResponse,
     DatabaseTestConnectionSchema,
+    get_export_ids_schema,
     SchemasResponseSchema,
     SelectStarResponseSchema,
     TableMetadataResponseSchema,
@@ -72,6 +78,7 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
     datamodel = SQLAInterface(Database)
 
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {
+        RouteMethod.EXPORT,
         "table_metadata",
         "select_star",
         "schemas",
@@ -583,7 +590,7 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
             )
         except DatabaseSecurityUnsafeError as ex:
             return self.response_422(message=ex)
-        except OperationalError:
+        except DBAPIError:
             logger.warning("Connection failed")
             return self.response(
                 500,
@@ -652,4 +659,62 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
             200,
             charts={"count": len(charts), "result": charts},
             dashboards={"count": len(dashboards), "result": dashboards},
+        )
+
+    @expose("/export/", methods=["GET"])
+    @protect()
+    @safe
+    @statsd_metrics
+    @rison(get_export_ids_schema)
+    def export(self, **kwargs: Any) -> Response:
+        """Export database(s) with associated datasets
+        ---
+        get:
+          description: Download database(s) and associated dataset(s) as a zip file
+          parameters:
+          - in: query
+            name: q
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    type: integer
+          responses:
+            200:
+              description: A zip file with database(s) and dataset(s) as YAML
+              content:
+                application/zip:
+                  schema:
+                    type: string
+                    format: binary
+            401:
+              $ref: '#/components/responses/401'
+            404:
+              $ref: '#/components/responses/404'
+            500:
+              $ref: '#/components/responses/500'
+        """
+        requested_ids = kwargs["rison"]
+        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+        root = f"database_export_{timestamp}"
+        filename = f"{root}.zip"
+
+        buf = BytesIO()
+        with ZipFile(buf, "w") as bundle:
+            try:
+                for file_name, file_content in ExportDatabasesCommand(
+                    requested_ids
+                ).run():
+                    with bundle.open(f"{root}/{file_name}", "w") as fp:
+                        fp.write(file_content.encode())
+            except DatabaseNotFoundError:
+                return self.response_404()
+        buf.seek(0)
+
+        return send_file(
+            buf,
+            mimetype="application/zip",
+            as_attachment=True,
+            attachment_filename=filename,
         )

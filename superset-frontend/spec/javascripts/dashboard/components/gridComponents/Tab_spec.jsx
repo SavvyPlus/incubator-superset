@@ -81,7 +81,9 @@ describe('Tabs', () => {
       const wrapper = setup();
       const title = wrapper.find(EditableTitle);
       expect(title).toHaveLength(1);
-      expect(title.find('input').prop('value')).toBe(props.component.meta.text);
+      expect(title.find('.editable-title')).toHaveText(
+        props.component.meta.text,
+      );
     });
 
     it('should call updateComponents when EditableTitle changes', () => {
@@ -126,7 +128,7 @@ describe('Tabs', () => {
       wrapper.find(WithPopoverMenu).simulate('click'); // focus
       wrapper.find('.icon-button').simulate('click');
 
-      const modal = document.getElementsByClassName('modal');
+      const modal = document.getElementsByClassName('ant-modal');
       expect(modal).toHaveLength(1);
       expect(deleteComponent.callCount).toBe(0);
     });

@@ -18,10 +18,10 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { OverlayTrigger } from 'react-bootstrap';
-import { withTheme } from '@superset-ui/core';
 
+import Popover from 'src/common/components/Popover';
 import Label from 'src/components/Label';
+import AdhocMetricEditPopoverTitle from 'src/explore/components/AdhocMetricEditPopoverTitle';
 import AdhocMetricEditPopover from './AdhocMetricEditPopover';
 import AdhocMetric from '../AdhocMetric';
 import columnType from '../propTypes/columnType';
@@ -37,45 +37,76 @@ const propTypes = {
 class AdhocMetricOption extends React.PureComponent {
   constructor(props) {
     super(props);
-    this.closeMetricEditOverlay = this.closeMetricEditOverlay.bind(this);
-    this.onOverlayEntered = this.onOverlayEntered.bind(this);
-    this.onOverlayExited = this.onOverlayExited.bind(this);
     this.onPopoverResize = this.onPopoverResize.bind(this);
-    this.state = { overlayShown: false };
-    this.overlay = null;
+    this.onLabelChange = this.onLabelChange.bind(this);
+    this.closePopover = this.closePopover.bind(this);
+    this.togglePopover = this.togglePopover.bind(this);
+    this.state = {
+      popoverVisible: undefined,
+      title: {
+        label: props.adhocMetric.label,
+        hasCustomLabel: props.adhocMetric.hasCustomLabel,
+      },
+    };
+  }
+
+  componentDidMount() {
+    const { adhocMetric } = this.props;
+    // isNew is used to auto-open the popup. Once popup is opened, it's not
+    // considered new anymore.
+    // put behind setTimeout so in case consequetive re-renderings are triggered
+    // for some reason, the popup can still show up.
+    setTimeout(() => {
+      adhocMetric.isNew = false;
+    });
+  }
+
+  onLabelChange(e) {
+    const label = e.target.value;
+    this.setState({
+      title: {
+        label: label || this.props.adhocMetric.label,
+        hasCustomLabel: !!label,
+      },
+    });
   }
 
   onPopoverResize() {
     this.forceUpdate();
   }
 
-  onOverlayEntered() {
-    // isNew is used to indicate whether to automatically open the overlay
-    // once the overlay has been opened, the metric/filter will never be
-    // considered new again.
-    this.props.adhocMetric.isNew = false;
-    this.setState({ overlayShown: true });
+  closePopover() {
+    this.setState({ popoverVisible: false });
   }
 
-  onOverlayExited() {
-    this.setState({ overlayShown: false });
-  }
-
-  closeMetricEditOverlay() {
-    this.overlay.hide();
+  togglePopover(visible) {
+    this.setState(({ popoverVisible }) => {
+      return {
+        popoverVisible: visible === undefined ? !popoverVisible : visible,
+      };
+    });
   }
 
   render() {
-    const { adhocMetric, theme } = this.props;
+    const { adhocMetric } = this.props;
+
     const overlayContent = (
       <AdhocMetricEditPopover
-        onResize={this.onPopoverResize}
         adhocMetric={adhocMetric}
-        onChange={this.props.onMetricEdit}
-        onClose={this.closeMetricEditOverlay}
+        title={this.state.title}
         columns={this.props.columns}
         datasourceType={this.props.datasourceType}
-        theme={theme}
+        onResize={this.onPopoverResize}
+        onClose={this.closePopover}
+        onChange={this.props.onMetricEdit}
+      />
+    );
+
+    const popoverTitle = (
+      <AdhocMetricEditPopoverTitle
+        title={this.state.title}
+        defaultLabel={adhocMetric.label}
+        onChange={this.onLabelChange}
       />
     );
 
@@ -83,36 +114,31 @@ class AdhocMetricOption extends React.PureComponent {
       <div
         className="metric-option"
         data-test="metric-option"
-        onMouseDownCapture={e => e.stopPropagation()}
+        role="button"
+        tabIndex={0}
+        onMouseDown={e => e.stopPropagation()}
+        onKeyDown={e => e.stopPropagation()}
       >
-        <OverlayTrigger
-          ref={ref => {
-            this.overlay = ref;
-          }}
+        <Popover
           placement="right"
           trigger="click"
           disabled
-          overlay={overlayContent}
-          rootClose
-          shouldUpdatePosition
-          defaultOverlayShown={adhocMetric.isNew}
-          onEntered={this.onOverlayEntered}
-          onExited={this.onOverlayExited}
+          content={overlayContent}
+          defaultVisible={adhocMetric.isNew}
+          visible={this.state.popoverVisible}
+          onVisibleChange={this.togglePopover}
+          title={popoverTitle}
         >
-          <Label className="option-label adhoc-option">
+          <Label className="option-label adhoc-option" data-test="option-label">
             {adhocMetric.label}
-            <i
-              className={`fa fa-caret-${
-                this.state.overlayShown ? 'left' : 'right'
-              } adhoc-label-arrow`}
-            />
+            <i className="fa fa-caret-right adhoc-label-arrow" />
           </Label>
-        </OverlayTrigger>
+        </Popover>
       </div>
     );
   }
 }
 
-export default withTheme(AdhocMetricOption);
+export default AdhocMetricOption;
 
 AdhocMetricOption.propTypes = propTypes;

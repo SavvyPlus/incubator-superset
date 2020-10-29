@@ -34,12 +34,7 @@ from flask_babel import gettext as __, lazy_gettext as _
 from jinja2.exceptions import TemplateError
 from sqlalchemy import and_, or_
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.exc import (
-    ArgumentError,
-    NoSuchModuleError,
-    OperationalError,
-    SQLAlchemyError,
-)
+from sqlalchemy.exc import ArgumentError, DBAPIError, NoSuchModuleError, SQLAlchemyError
 from sqlalchemy.orm.session import Session
 from werkzeug.urls import Href
 
@@ -85,6 +80,7 @@ from superset.models.datasource_access_request import DatasourceAccessRequest
 from superset.models.slice import Slice
 from superset.models.sql_lab import Query, TabState
 from superset.models.user_attributes import UserAttribute
+from superset.queries.dao import QueryDAO
 from superset.security.analytics_db_safety import (
     check_sqlalchemy_uri,
     DBSecurityException,
@@ -514,6 +510,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         payloads based on the request args in the first block
 
         TODO: break into one endpoint for each return shape"""
+
         response_type = utils.ChartDataResultFormat.JSON.value
         responses: List[
             Union[utils.ChartDataResultFormat, utils.ChartDataResultType]
@@ -1041,6 +1038,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             "form_data": slc.form_data,
             "slice": slc.data,
             "dashboard_url": dash.url if dash else None,
+            "dashboard_id": dash.id if dash else None,
         }
 
         if dash and request.args.get("goto_dash") == "true":
@@ -1316,8 +1314,10 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             engine = database.get_sqla_engine(user_name=username)
 
             with closing(engine.raw_connection()) as conn:
-                engine.dialect.do_ping(conn)
-                return json_success('"OK"')
+                if engine.dialect.do_ping(conn):
+                    return json_success('"OK"')
+
+                raise DBAPIError(None, None, None)
         except CertificateException as ex:
             logger.info("Certificate exception")
             return json_error_response(ex.message)
@@ -1339,7 +1339,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                     "'DRIVER://USER:PASSWORD@DB-HOST/DATABASE-NAME'"
                 )
             )
-        except OperationalError:
+        except DBAPIError:
             logger.warning("Connection failed")
             return json_error_response(
                 _("Connection failed, please check your connection settings"), 400
@@ -2309,6 +2309,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         """
         logger.info("Query %i: Running query on a Celery worker", query.id)
         # Ignore the celery future object and the request may time out.
+        query_id = query.id
         try:
             task = sql_lab.get_sql_results.delay(
                 query.id,
@@ -2335,6 +2336,10 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
             query.error_message = msg
             session.commit()
             return json_error_response("{}".format(msg))
+
+        # Update saved query with execution info from the query execution
+        QueryDAO.update_saved_query_exec_info(query_id)
+
         resp = json_success(
             json.dumps(
                 {"query": query.to_dict()},
@@ -2369,6 +2374,7 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                 is_feature_enabled("SQLLAB_BACKEND_PERSISTENCE")
                 and not query.select_as_cta
             )
+            query_id = query.id
             with utils.timeout(seconds=timeout, error_message=timeout_msg):
                 # pylint: disable=no-value-for-parameter
                 data = sql_lab.get_sql_results(
@@ -2380,6 +2386,9 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
                     expand_data=expand_data,
                     log_params=log_params,
                 )
+
+            # Update saved query if needed
+            QueryDAO.update_saved_query_exec_info(query_id)
 
             payload = json.dumps(
                 apply_display_max_row_limit(data),
